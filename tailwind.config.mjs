@@ -10,6 +10,11 @@ export default {
           red: "#d23f00",
           dark: "#0b0f1f",
           ink: "#101622"
+        },
+        flag: {
+          blue: "#007fff",
+          red: "#ce1021",
+          yellow: "#f7d618"
         }
       },
       fontFamily: {

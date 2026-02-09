@@ -24,10 +24,19 @@ const nav = [
 ];
 ---
 <header class="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-slate-200">
-  <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-    <a href="/" class="flex items-center gap-3">
-      <img src="/brand/logo.png" alt="Bloc Leopards" class="h-16 w-auto" />
+  <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 relative">
+    
+    <!-- Mobile Menu Button -->
+    <button id="mobile-menu-btn" class="md:hidden p-2 text-slate-700" aria-label="Menu">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+    </button>
+
+    <!-- Logo (Centered on mobile, Left on desktop) -->
+    <a href="/" class="flex items-center gap-3 absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0">
+      <img src="/brand/logo.png" alt="Bloc Leopards" class="h-12 md:h-16 w-auto" />
     </a>
+
+    <!-- Desktop Nav -->
     <nav class="hidden items-center gap-6 text-sm md:flex">
       {nav.map((item) => (
         item.children ? (
@@ -53,13 +62,63 @@ const nav = [
         )
       ))}
     </nav>
+
+    <!-- CTA Button -->
     <a href="/rejoindre" class="gradient-border relative hidden rounded-full px-4 py-2 text-sm font-semibold md:block">
       <span class="relative z-10">Rejoindre le Bloc</span>
     </a>
   </div>
-  <div class="flex items-center justify-center gap-4 overflow-x-auto px-4 pb-3 text-xs text-slate-600 md:hidden">
-    {nav.map((item) => (
-      <a href={item.href} class="whitespace-nowrap px-2 py-1 hover:text-brand-yellow">{item.label}</a>
-    ))}
+
+  <!-- Mobile Menu Overlay -->
+  <div id="mobile-menu" class="hidden md:hidden border-t border-slate-100 bg-white absolute top-full left-0 right-0 shadow-xl max-h-[calc(100vh-80px)] overflow-y-auto">
+    <div class="flex flex-col p-4 space-y-2">
+      {nav.map((item) => (
+        item.children ? (
+          <div class="border-b border-slate-100 pb-2 last:border-0">
+            <button class="w-full flex items-center justify-between py-2 text-slate-800 font-medium mobile-dropdown-btn">
+              {item.label}
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-200"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div class="hidden pl-4 space-y-2 mt-1 mobile-dropdown-content">
+              {item.children.map(child => (
+                <a href={child.href} class="block py-2 text-sm text-slate-600 hover:text-brand-yellow">
+                  {child.label}
+                </a>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <a href={item.href} class="block py-3 text-slate-800 font-medium border-b border-slate-100 last:border-0 hover:text-brand-yellow">
+            {item.label}
+          </a>
+        )
+      ))}
+      <div class="pt-4">
+        <a href="/rejoindre" class="block w-full text-center rounded-full bg-brand-blue text-white px-4 py-3 text-sm font-semibold">
+          Rejoindre le Bloc
+        </a>
+      </div>
+    </div>
   </div>
 </header>
+<script>
+  // Mobile menu toggle
+  const menuBtn = document.getElementById('mobile-menu-btn');
+  const mobileMenu = document.getElementById('mobile-menu');
+  
+  menuBtn?.addEventListener('click', () => {
+    mobileMenu?.classList.toggle('hidden');
+  });
+
+  // Mobile dropdown toggles
+  const dropdownBtns = document.querySelectorAll('.mobile-dropdown-btn');
+  dropdownBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const content = btn.nextElementSibling;
+      const arrow = btn.querySelector('svg');
+      
+      content?.classList.toggle('hidden');
+      arrow?.classList.toggle('rotate-180');
+    });
+  });
+</script>
