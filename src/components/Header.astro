@@ -1,0 +1,65 @@
+---
+const nav = [
+  { label: "Accueil", href: "/" },
+  { 
+    label: "Mouvement", 
+    href: "/mouvement",
+    children: [
+      { label: "Qui sommes-nous ?", href: "/mouvement" },
+      { label: "Charte", href: "/charte" },
+      { label: "Partenaires", href: "/partenaires" },
+      { label: "Contact", href: "/contact" }
+    ]
+  },
+  { 
+    label: "Actions", 
+    href: "/matchs",
+    children: [
+      { label: "Matchs", href: "/matchs" },
+      { label: "Evenements", href: "/evenements" },
+      { label: "Campagnes", href: "/campagnes" }
+    ]
+  },
+  { label: "Media", href: "/media" }
+];
+---
+<header class="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-slate-200">
+  <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+    <a href="/" class="flex items-center gap-3">
+      <img src="/brand/logo.png" alt="Bloc Leopards" class="h-16 w-auto" />
+    </a>
+    <nav class="hidden items-center gap-6 text-sm md:flex">
+      {nav.map((item) => (
+        item.children ? (
+          <div class="relative group">
+            <a href={item.href} class="flex items-center gap-1 text-slate-700 transition hover:text-brand-yellow py-2">
+              {item.label}
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-50 group-hover:rotate-180 transition-transform"><path d="m6 9 6 6 6-6"/></svg>
+            </a>
+            <div class="absolute left-0 top-full hidden pt-2 group-hover:block w-56">
+              <div class="rounded-xl border border-slate-100 bg-white p-2 shadow-xl flex flex-col gap-1 ring-1 ring-black/5">
+                {item.children.map(child => (
+                   <a href={child.href} class="block rounded-lg px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-brand-yellow transition-colors">
+                     {child.label}
+                   </a>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <a href={item.href} class="text-slate-700 transition hover:text-brand-yellow">
+            {item.label}
+          </a>
+        )
+      ))}
+    </nav>
+    <a href="/rejoindre" class="gradient-border relative hidden rounded-full px-4 py-2 text-sm font-semibold md:block">
+      <span class="relative z-10">Rejoindre le Bloc</span>
+    </a>
+  </div>
+  <div class="flex items-center justify-center gap-4 overflow-x-auto px-4 pb-3 text-xs text-slate-600 md:hidden">
+    {nav.map((item) => (
+      <a href={item.href} class="whitespace-nowrap px-2 py-1 hover:text-brand-yellow">{item.label}</a>
+    ))}
+  </div>
+</header>

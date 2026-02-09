@@ -1,0 +1,5 @@
+<svg width="1200" height="800" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="800" fill="#141a2c" />
+  <rect x="140" y="140" width="920" height="520" rx="60" fill="rgba(242,194,0,0.35)" />
+  <text x="110" y="700" font-family="Bebas Neue, Arial" font-size="80" fill="#f5f7ff">Fan Zone</text>
+</svg>

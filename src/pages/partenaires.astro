@@ -1,0 +1,21 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import PageHero from "../components/PageHero.astro";
+import SectionHeader from "../components/SectionHeader.astro";
+---
+<BaseLayout title="Partenaires" description="Partenaires institutionnels et sponsors.">
+  <PageHero title="Partenaires" subtitle="Soutien officiel et engagement" image="/media/campagne-2.svg" />
+  <section class="mx-auto max-w-6xl px-4 py-16">Leopards agit en complementarite avec les missions du Ministere des Sports pour promouvoir la discipline, la jeunesse et la cohesion." />
+    <div class="rounded-3xl border border-slate-200 bg-white p-6 text-sm text-slate-700">
+      <p>Le mouvement se positionne comme un relais citoyen pour l'animation officielle, sans se substituer aux institutions. Les informations officielles restent publiees par le Ministere et les federations.</p>
+      <div class="mt-4">
+        <p class="text-xs uppercase tracking-[0.3em] text-brand-yellow">Liens utiles</p>
+        <ul class="mt-2 list-disc pl-4">
+          <li><a class="text-brand-yellow" href="https://sports.gouv.cd" target="_blank" rel="noopener">Ministere des Sports (sports.gouv.cd)</a></li>
+          <li>Federations nationales (liens a ajouter)</li>
+          <li>Directions provinciales (liens a ajouter)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

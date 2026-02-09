@@ -1,0 +1,5 @@
+<svg width="1200" height="800" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="800" fill="#0f1527" />
+  <rect x="120" y="140" width="960" height="520" rx="50" fill="rgba(28,46,143,0.6)" />
+  <text x="90" y="700" font-family="Bebas Neue, Arial" font-size="80" fill="#f2c200">Humilite & Respect</text>
+</svg>

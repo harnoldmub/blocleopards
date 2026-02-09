@@ -1,0 +1,58 @@
+---
+const { items } = Astro.props;
+---
+<div class="grid gap-4 md:grid-cols-3" data-gallery>
+  {items.map((item, idx) => (
+    <button
+      class="group overflow-hidden rounded-2xl border border-slate-200 bg-white text-left"
+      data-gallery-item
+      data-gallery-src={item.image}
+      data-gallery-title={item.title}
+      data-gallery-category={item.category}
+      type="button"
+    >
+      <img src={item.image} alt={item.title} class="h-56 w-full object-cover transition duration-500 group-hover:scale-105" />
+      <div class="p-4">
+        <p class="text-sm font-semibold">{item.title}</p>
+        <p class="text-xs text-slate-500">{item.category}</p>
+      </div>
+    </button>
+  ))}
+</div>
+
+<dialog class="rounded-3xl border border-slate-200 bg-white p-0 text-slate-900" data-gallery-modal>
+  <div class="relative">
+    <button class="absolute right-4 top-4 rounded-full bg-white/10 px-3 py-1 text-xs" data-gallery-close>Fermer</button>
+    <img src="" alt="" class="max-h-[70vh] w-full object-cover" data-gallery-image />
+    <div class="p-4">
+      <p class="text-sm font-semibold" data-gallery-title></p>
+      <p class="text-xs text-slate-500" data-gallery-category></p>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  const gallery = document.querySelector('[data-gallery]');
+  const modal = document.querySelector('[data-gallery-modal]');
+  if (gallery && modal) {
+    const image = modal.querySelector('[data-gallery-image]');
+    const title = modal.querySelector('[data-gallery-title]');
+    const category = modal.querySelector('[data-gallery-category]');
+    const close = modal.querySelector('[data-gallery-close]');
+
+    gallery.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-gallery-item]');
+      if (!button) return;
+      image.src = button.dataset.gallerySrc;
+      image.alt = button.dataset.galleryTitle;
+      title.textContent = button.dataset.galleryTitle;
+      category.textContent = button.dataset.galleryCategory;
+      modal.showModal();
+    });
+
+    close.addEventListener('click', () => modal.close());
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) modal.close();
+    });
+  }
+</script>

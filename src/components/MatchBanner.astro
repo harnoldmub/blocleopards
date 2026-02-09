@@ -1,0 +1,9 @@
+---
+const { label, href, ctaLabel } = Astro.props;
+---
+<div class="bg-brand-yellow text-brand-dark">
+  <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 text-sm font-semibold">
+    <span>{label}</span>
+    <a href={href} class="rounded-full bg-white px-4 py-2 text-xs uppercase tracking-[0.2em] text-brand-yellow">{ctaLabel ?? "Mobilisation"}</a>
+  </div>
+</div>

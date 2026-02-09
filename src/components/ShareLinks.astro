@@ -1,0 +1,10 @@
+---
+const { title, url } = Astro.props;
+const encodedUrl = encodeURIComponent(url ?? "");
+const encodedTitle = encodeURIComponent(title ?? "Bloc Leopards");
+---
+<div class="mt-6 flex flex-wrap gap-3 text-xs">
+  <a class="rounded-full border border-slate-300 px-4 py-2" href={`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`} target="_blank" rel="noopener">Partager Facebook</a>
+  <a class="rounded-full border border-slate-300 px-4 py-2" href={`https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`} target="_blank" rel="noopener">Partager X</a>
+  <a class="rounded-full border border-slate-300 px-4 py-2" href={`https://wa.me/?text=${encodedTitle}%20${encodedUrl}`} target="_blank" rel="noopener">Partager WhatsApp</a>
+</div>

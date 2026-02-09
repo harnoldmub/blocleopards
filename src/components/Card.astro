@@ -1,0 +1,17 @@
+---
+const { title, description, meta, image, href, cta } = Astro.props;
+---
+<article class="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-deep transition duration-300 hover:-translate-y-1 hover:shadow-glow">
+  {image && <img src={image} alt={title} class="h-48 w-full object-cover" />}
+  <div class="p-6">
+    {meta && <p class="text-xs uppercase tracking-[0.3em] text-brand-yellow">{meta}</p>}
+    <h3 class="mt-2 text-xl font-semibold">{title}</h3>
+    <p class="mt-2 text-sm text-slate-600">{description}</p>
+    {href && (
+      <a href={href} class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-brand-yellow">
+        {cta ?? "Voir"}
+        <span aria-hidden="true">→</span>
+      </a>
+    )}
+  </div>
+</article>

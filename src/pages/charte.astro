@@ -1,0 +1,80 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import PageHero from "../components/PageHero.astro";
+import SectionHeader from "../components/SectionHeader.astro";
+import kit from "../data/kit.json";
+---
+<BaseLayout title="Charte" description="Charte officielle du supporter des Leopards.">
+  <PageHero title="Charte du Supporter" subtitle="Nos valeurs, nos engagements" image="/media/campagne-1.svg" />
+  <section class="mx-auto max-w-4xl px-4 py-16">
+    <SectionHeader description="Document de reference pour un soutien responsable, uni et respectueux." />
+      <div class="rounded-3xl border border-slate-200 bg-white p-8">
+        <p class="text-sm text-slate-600">Telechargement: <a class="text-brand-yellow" href="/downloads/charte-bloc-leopards.pdf">Charte PDF</a></p>
+        <div class="mt-8 space-y-8 text-sm text-slate-700">
+          <section>
+            <h3 class="text-lg font-semibold">A) Preambule</h3>
+            <p class="mt-2">Nous, supporters des Leopardes, affirmons notre unite nationale, notre respect des institutions, et notre fierte de representer la RDC. Bloc Leopards est un mouvement positif qui rassemble au-dela des regions et des differences.</p>
+          </section>
+          <section>
+            <h3 class="text-lg font-semibold">B) Nos valeurs</h3>
+            <ul class="mt-2 list-disc pl-4">
+              <li>Unite: une seule voix, un meme objectif.</li>
+              <li>Respect: joueurs, adversaires, arbitres et supporters.</li>
+              <li>Discipline: organisation et responsabilite.</li>
+              <li>Fierte: porter nos couleurs avec dignite.</li>
+              <li>Excellence: encourager la performance par l'energie positive.</li>
+              <li>Inclusion: toutes les provinces, toutes les generations.</li>
+            </ul>
+          </section>
+          <section>
+            <h3 class="text-lg font-semibold">C) Regles en tribune</h3>
+            <ul class="mt-2 list-disc pl-4">
+              <li>Chants unifies et coordonnes par les capos.</li>
+              <li>Zero violence, zero racisme, zero insultes.</li>
+              <li>Respect des consignes de securite et des stewards.</li>
+              <li>Protection des familles et des enfants.</li>
+            </ul>
+          </section>
+          <section>
+            <h3 class="text-lg font-semibold">D) Responsabilites</h3>
+            <p class="mt-2">Les capos et animateurs garantissent l'harmonie des chants. Les equipes securite et logistique travaillent en coordination avec les autorites. Chaque membre veille a un comportement exemplaire.</p>
+          </section>
+          <section>
+            <h3 class="text-lg font-semibold">E) Dress code & visuels</h3>
+            <ul class="mt-2 list-disc pl-4">
+              <li>Couleurs officielles: bleu et jaune, touches rouge.</li>
+              <li>Drapeaux nationaux autorises, messages haineux interdits.</li>
+              <li>Banderoles validées par l'equipe visuelle.</li>
+              <li>Tenue propre, respectueuse, sans messages politiques.</li>
+            </ul>
+          </section>
+          <section>
+            <h3 class="text-lg font-semibold">F) Engagement digital</h3>
+            <ul class="mt-2 list-disc pl-4">
+              <li>Utiliser les hashtags officiels pour amplifier la mobilisation.</li>
+              <li>Pas de fake news, pas d'attaques personnelles.</li>
+              <li>Respecter l'image des joueurs et des equipes techniques.</li>
+            </ul>
+          </section>
+          <section>
+            <h3 class="text-lg font-semibold">G) Sanctions internes</h3>
+            <p class="mt-2">Le non-respect de la charte entraine avertissement, suspension ou exclusion du mouvement, selon la gravite.</p>
+          </section>
+          <section>
+            <h3 class="text-lg font-semibold">H) Signature & adhesion</h3>
+            <p class="mt-2">L'adhesion officielle implique l'acceptation complete de la presente charte. Un formulaire d'adhesion est disponible en ligne.</p>
+          </section>
+        </div>
+      </div>
+
+      <div class="mt-10 rounded-3xl border border-slate-200 bg-slate-50 p-8">
+        <h3 class="text-lg font-semibold">Resume 10 points</h3>
+        <ul class="mt-4 grid gap-3 text-sm text-slate-700 md:grid-cols-2">
+          {kit.resumeCharte.map((item) => (
+            <li class="rounded-xl border border-slate-200 bg-white p-3">{item}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

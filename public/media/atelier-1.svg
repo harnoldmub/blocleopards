@@ -1,0 +1,5 @@
+<svg width="1200" height="800" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="800" fill="#0d1324" />
+  <circle cx="600" cy="320" r="200" fill="rgba(28,46,143,0.55)" />
+  <text x="90" y="700" font-family="Bebas Neue, Arial" font-size="80" fill="#f5f7ff">Atelier Capos</text>
+</svg>

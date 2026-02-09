@@ -1,0 +1,41 @@
+---
+const links = [
+  { label: "Contact", href: "/contact" },
+  { label: "Partenaires", href: "/partenaires" },
+  { label: "Mentions legales", href: "/mentions-legales" },
+  { label: "Confidentialite", href: "/confidentialite" },
+  { label: "Admin", href: "/admin" }
+];
+---
+<footer class="bg-brand-blue text-white">
+  <div class="grid h-2 w-full grid-cols-3">
+    <div class="bg-brand-blue"></div>
+    <div class="bg-brand-yellow"></div>
+    <div class="bg-brand-red"></div>
+  </div>
+  <div class="mx-auto grid max-w-6xl gap-8 px-4 py-12 md:grid-cols-3">
+    <div>
+      <a href="/" class="block mb-6">
+        <img src="/brand/logo.png" alt="Bloc Leopards" class="h-24 w-auto" />
+      </a>
+      <p class="mt-2 text-sm text-slate-300">Un seul bloc. Une seule voix. Mouvement officiel des supporters pour une mobilisation positive et respectueuse.</p>
+      <p class="mt-6 text-xs text-slate-400">Extension citoyenne en partenariat institutionnel avec le Ministere des Sports.</p>
+    </div>
+    <div>
+      <p class="mb-4 text-sm font-bold uppercase tracking-[0.2em] text-brand-yellow">Navigation</p>
+      <div class="grid gap-3 text-sm text-slate-300">
+        {links.map((item) => (
+          <a href={item.href} class="hover:text-brand-yellow transition-colors">{item.label}</a>
+        ))}
+      </div>
+    </div>
+    <div>
+      <p class="mb-4 text-sm font-bold uppercase tracking-[0.2em] text-brand-yellow">Contacts</p>
+      <div class="text-sm text-slate-300 space-y-2">
+        <p>Email: <a href="mailto:contact@blocaleopards.cd" class="hover:text-brand-yellow transition-colors">contact@blocaleopards.cd</a></p>
+        <p>Kinshasa, RDC</p>
+      </div>
+      <p class="mt-6 text-xs text-slate-400">© 2026 Bloc Leopards. Tous droits reserves.</p>
+    </div>
+  </div>
+</footer>

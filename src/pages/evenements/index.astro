@@ -1,0 +1,26 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import PageHero from "../../components/PageHero.astro";
+import SectionHeader from "../../components/SectionHeader.astro";
+import Card from "../../components/Card.astro";
+import { getCollection } from "astro:content";
+
+const events = (await getCollection("events")).sort((a, b) => a.data.date.localeCompare(b.data.date));
+---
+<BaseLayout title="Evenements" description="Agenda des fan zones et animations Bloc Leopards.">
+  <PageHero title="Evenements" subtitle="Fan Zones et Animations" image="/media/fete-1.svg" />
+  <section class="mx-auto max-w-6xl px-4 py-16">
+    <div class="grid gap-6 md:grid-cols-3">
+      {events.map((event) => (
+        <Card
+          title={event.data.title}
+          description={`${event.data.date} • ${event.data.time} • ${event.data.location}`}
+          meta={event.data.cta}
+          image={event.data.image}
+          href={`/evenements/${event.slug}`}
+          cta="Details"
+        />
+      ))}
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,5 @@
+<svg width="1200" height="800" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="800" fill="#0b0f1f" />
+  <polygon points="0,100 1200,0 1200,800 0,700" fill="rgba(242,194,0,0.3)" />
+  <text x="90" y="700" font-family="Bebas Neue, Arial" font-size="80" fill="#f5f7ff">Unite Nationale</text>
+</svg>

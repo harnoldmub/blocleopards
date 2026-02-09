@@ -1,0 +1,22 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import PageHero from "../components/PageHero.astro";
+import SectionHeader from "../components/SectionHeader.astro";
+import Gallery from "../components/Gallery.astro";
+import media from "../data/media.json";
+---
+<BaseLayout title="Media" description="Galerie photos et videos du Bloc Leopards.">
+  <PageHero title="Media" subtitle="L'ambiance du bloc en images" image="/media/ambiance-2.svg" />
+  <section class="mx-auto max-w-6xl px-4 py-16">
+    <Gallery items={media} />
+  </section>
+
+  <section class="bg-slate-50">
+    <div class="mx-auto max-w-6xl px-4 py-16">
+      <SectionHeader eyebrow="Instagram" title="Flux social" description="Optionnel - integration Instagram a activer." />
+      <div class="rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-600">
+        Zone d'embed Instagram. Ajouter le code d'integration officiel ici.
+      </div>
+    </div>
+  </section>
+</BaseLayout>

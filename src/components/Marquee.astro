@@ -1,0 +1,19 @@
+---
+const { items } = Astro.props;
+---
+<div class="ticker border-y border-slate-200 bg-white py-2">
+  <div class="ticker__track text-xs uppercase tracking-[0.35em] text-slate-500">
+    {items.map((item) => (
+      <span class="inline-flex items-center gap-2">
+        <span class="h-2 w-2 rounded-full bg-brand-yellow"></span>
+        {item}
+      </span>
+    ))}
+    {items.map((item) => (
+      <span class="inline-flex items-center gap-2">
+        <span class="h-2 w-2 rounded-full bg-brand-yellow"></span>
+        {item}
+      </span>
+    ))}
+  </div>
+</div>

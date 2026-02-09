@@ -1,0 +1,29 @@
+---
+import "../styles/global.css";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import SEO from "../components/SEO.astro";
+
+const { title, description, image, url } = Astro.props;
+const siteName = "Bloc Leopards";
+const defaultDescription = "Bloc Leopards est le mouvement officiel des supporters des Leopardes de la RDC. Un seul bloc. Une seule voix.";
+const pageTitle = title ? `${title} | ${siteName}` : siteName;
+const pageDescription = description ?? defaultDescription;
+const pageUrl = url ?? Astro.url?.toString();
+---
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <SEO title={pageTitle} description={pageDescription} image={image} url={pageUrl} />
+    <link rel="icon" type="image/x-icon" href="/brand/logo.png" />
+  </head>
+  <body class="bg-white text-slate-900">
+    <Header />
+    <main class="min-h-screen">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

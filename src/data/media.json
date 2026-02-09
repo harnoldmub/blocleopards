@@ -1,0 +1,8 @@
+[
+  { "title": "Ambiance bleue", "category": "Ambiance", "image": "/media/ambiance-1.svg" },
+  { "title": "Chants unifies", "category": "Chants", "image": "/media/ambiance-2.svg" },
+  { "title": "Fan zone", "category": "Fan Zone", "image": "/media/fanzone-1.svg" },
+  { "title": "Coregraphie", "category": "Tribune", "image": "/media/ambiance-3.svg" },
+  { "title": "Atelier supporters", "category": "Formation", "image": "/media/atelier-1.svg" },
+  { "title": "Fete du bloc", "category": "Evenement", "image": "/media/fete-1.svg" }
+]
