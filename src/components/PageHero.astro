@@ -5,7 +5,7 @@ const { title, subtitle, image } = Astro.props;
 <section class="relative flex items-center justify-center min-h-[40vh] overflow-hidden bg-brand-dark">
   <!-- Background Image -->
   <div class="absolute inset-0 z-0">
-    {image && <img src={image} alt={title} class="h-full w-full object-cover opacity-40" />}
+    {image && <img src={image} alt={title} class="hidden h-full w-full object-cover opacity-40 md:block" />}
     {!image && <div class="h-full w-full bg-stadium opacity-20"></div>}
   </div>
 

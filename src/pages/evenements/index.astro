@@ -5,11 +5,15 @@ import SectionHeader from "../../components/SectionHeader.astro";
 import Card from "../../components/Card.astro";
 import { getCollection } from "astro:content";
 
-const events = (await getCollection("events")).sort((a, b) => a.data.date.localeCompare(b.data.date));
+const today = new Date().toISOString().slice(0, 10);
+const events = (await getCollection("events"))
+  .sort((a, b) => a.data.date.localeCompare(b.data.date))
+  .filter((event) => event.data.date >= today);
 ---
 <BaseLayout title="Evenements" description="Agenda des fan zones et animations Bloc Leopards.">
-  <PageHero title="Evenements" subtitle="Fan Zones et Animations" image="/media/fete-1.svg" />
+  <PageHero title="Evenements" subtitle="Preparation, matchs et diaspora" image="/media/web-liesse-kinshasa.jpg" />
   <section class="mx-auto max-w-6xl px-4 py-16">
+    <SectionHeader eyebrow="Agenda reel" title="Prochains rendez-vous" description="Donnees issues des informations publiees autour de la preparation des Leopards." />
     <div class="grid gap-6 md:grid-cols-3">
       {events.map((event) => (
         <Card

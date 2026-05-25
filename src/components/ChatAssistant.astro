@@ -1,0 +1,230 @@
+---
+const quickActions = [
+  "Prochain match",
+  "Quiz Leopards",
+  "Recruter",
+  "Plan diaspora"
+];
+---
+
+<div class="bloc-chat" data-bloc-chat>
+  <button class="bloc-chat__launcher" type="button" data-chat-launcher aria-label="Ouvrir le chat Bloc Leopards">
+    <span>BL</span>
+    <span class="bloc-chat__pulse" aria-hidden="true"></span>
+  </button>
+
+  <section class="bloc-chat__panel" data-chat-panel aria-label="Assistant Bloc Leopards">
+    <header class="bloc-chat__header">
+      <div>
+        <p>Assistant Bloc</p>
+        <strong>Mobilisation live</strong>
+      </div>
+      <button type="button" data-chat-close aria-label="Fermer le chat">×</button>
+    </header>
+
+    <div class="bloc-chat__status">
+      <span data-chat-mood>Mode: matchday</span>
+      <span>Liege • Marbella • Kinshasa</span>
+    </div>
+
+    <div class="bloc-chat__messages" data-chat-messages>
+      <div class="bloc-chat__message bloc-chat__message--bot">
+        Mbote. Je peux lancer un quiz Leopards, donner les prochains rendez-vous ou t'aider a recruter quelqu'un dans le Bloc.
+      </div>
+    </div>
+
+    <div class="bloc-chat__chips" aria-label="Actions rapides">
+      {quickActions.map((action) => (
+        <button type="button" data-chat-chip={action}>{action}</button>
+      ))}
+    </div>
+
+    <form class="bloc-chat__form" data-chat-form>
+      <input data-chat-input type="text" placeholder="Ecris ton message..." autocomplete="off" />
+      <button type="submit">Envoyer</button>
+    </form>
+  </section>
+</div>
+
+<script>
+  const root = document.querySelector('[data-bloc-chat]');
+  if (root) {
+    const launcher = root.querySelector('[data-chat-launcher]');
+    const panel = root.querySelector('[data-chat-panel]');
+    const close = root.querySelector('[data-chat-close]');
+    const form = root.querySelector('[data-chat-form]');
+    const input = root.querySelector('[data-chat-input]');
+    const messages = root.querySelector('[data-chat-messages]');
+    const mood = root.querySelector('[data-chat-mood]');
+    const chips = root.querySelectorAll('[data-chat-chip]');
+
+    const state = {
+      score: Number(localStorage.getItem('bloc-chat-score') ?? 0),
+      quizIndex: 0,
+      activeQuiz: null,
+      opened: localStorage.getItem('bloc-chat-open') === 'true'
+    };
+
+    const data = {
+      events: [
+        '26 mai: entrainement des Leopards au stade Tata Raphael, Kinshasa.',
+        '3 juin a 20h: RDC vs Danemark au stade Maurice-Dufrasne, Liege.',
+        '9 juin: RDC vs Chili a Marbella, Espagne.'
+      ],
+      chants: [
+        'Un seul bloc, une seule voix, pour la nation on donne la voix.',
+        'Bleu, jaune, rouge dans la tribune, les Leopards montent vers la lune.',
+        "Fimbu n'a fimbu, drapeau devant, tout le peuple pousse maintenant."
+      ],
+      quiz: [
+        {
+          q: 'Depuis quelle annee la RDC attendait-elle son retour au Mondial ?',
+          options: ['1974', '1998', '2010'],
+          answer: '1974',
+          fact: "La qualification 2026 met fin a 52 ans d'attente."
+        },
+        {
+          q: 'Ou se joue RDC vs Danemark ?',
+          options: ['Liege', 'Marbella', 'Kinshasa'],
+          answer: 'Liege',
+          fact: 'Le match est annonce au stade Maurice-Dufrasne, le 3 juin a 20h.'
+        },
+        {
+          q: 'Quel adversaire les Leopards affrontent-ils a Marbella ?',
+          options: ['Chili', 'Danemark', 'Jamaique'],
+          answer: 'Chili',
+          fact: 'RDC vs Chili est annonce le 9 juin a Marbella.'
+        }
+      ],
+      recruitMessage: "Rejoins le Bloc Leopards avec moi. On se mobilise pour soutenir les Leopards: infos matchs, chants, diaspora et adhesion rapide ici: "
+    };
+
+    const setOpen = (value) => {
+      root.classList.toggle('is-open', value);
+      localStorage.setItem('bloc-chat-open', String(value));
+      state.opened = value;
+    };
+
+    const addMessage = (text, who = 'bot') => {
+      const bubble = document.createElement('div');
+      bubble.className = `bloc-chat__message bloc-chat__message--${who}`;
+      bubble.textContent = text;
+      messages.appendChild(bubble);
+      messages.scrollTop = messages.scrollHeight;
+    };
+
+    const addTypingReply = (text) => {
+      const typing = document.createElement('div');
+      typing.className = 'bloc-chat__message bloc-chat__message--bot bloc-chat__message--typing';
+      typing.textContent = 'Le Bloc prepare la reponse...';
+      messages.appendChild(typing);
+      messages.scrollTop = messages.scrollHeight;
+      window.setTimeout(() => {
+        typing.remove();
+        addMessage(text);
+      }, 450);
+    };
+
+    const addActionMessage = (html) => {
+      const bubble = document.createElement('div');
+      bubble.className = 'bloc-chat__message bloc-chat__message--bot bloc-chat__message--wide';
+      bubble.innerHTML = html;
+      messages.appendChild(bubble);
+      messages.scrollTop = messages.scrollHeight;
+    };
+
+    const startQuiz = () => {
+      const item = data.quiz[state.quizIndex % data.quiz.length];
+      state.activeQuiz = item;
+      mood.textContent = `Quiz: score ${state.score}`;
+      addActionMessage(`
+        <strong>Quiz Leopards</strong>
+        <span>${item.q}</span>
+        <div class="bloc-chat__choice-grid">
+          ${item.options.map((option) => `<button type="button" data-quiz-answer="${option}">${option}</button>`).join('')}
+        </div>
+      `);
+    };
+
+    const showRecruit = () => {
+      const inviteUrl = `${window.location.origin}/rejoindre`;
+      const text = encodeURIComponent(`${data.recruitMessage}${inviteUrl}`);
+      addActionMessage(`
+        <strong>Recruter facilement</strong>
+        <span>Partage une invitation prete a envoyer ou ouvre directement la page adhesion.</span>
+        <div class="bloc-chat__choice-grid">
+          <a href="https://wa.me/?text=${text}" target="_blank" rel="noopener">Inviter WhatsApp</a>
+          <a href="/rejoindre">Page adhesion</a>
+        </div>
+      `);
+    };
+
+    const normalize = (value) => value.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
+
+    const answer = (raw) => {
+      const text = normalize(raw);
+      if (text.includes('match') || text.includes('evenement') || text.includes('prochain')) {
+        return `Prochains rendez-vous: ${data.events.join(' ')}`;
+      }
+      if (text.includes('chant') || text.includes('fimbu')) {
+        const chant = data.chants[Math.floor(Math.random() * data.chants.length)];
+        return `Chant propose: ${chant}`;
+      }
+      if (text.includes('quiz')) {
+        startQuiz();
+        return '';
+      }
+      if (text.includes('recrut') || text.includes('inviter') || text.includes('adhesion') || text.includes('rejoindre')) {
+        showRecruit();
+        return '';
+      }
+      if (text.includes('diaspora') || text.includes('plan') || text.includes('liege') || text.includes('marbella')) {
+        return 'Plan diaspora: 1. choisir le point de rassemblement, 2. partager le chant commun, 3. arriver en couleurs, 4. envoyer photos/videos au media du Bloc apres le match.';
+      }
+      if (text.includes('article') || text.includes('actu')) {
+        return 'Actus a lire: liste officielle, programme Danemark-Chili, retour au Mondial apres 52 ans, et hommage a la diaspora.';
+      }
+      return 'Je peux aider sur les matchs, lancer un quiz, ou creer une invitation pour recruter. Essaie: quiz, recruter, prochain match, ou plan diaspora.';
+    };
+
+    launcher.addEventListener('click', () => setOpen(!state.opened));
+    close.addEventListener('click', () => setOpen(false));
+
+    chips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        const value = chip.dataset.chatChip;
+        addMessage(value, 'user');
+        const reply = answer(value);
+        if (reply) addTypingReply(reply);
+      });
+    });
+
+    messages.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-quiz-answer]');
+      if (!button || !state.activeQuiz) return;
+      const selected = button.dataset.quizAnswer;
+      const correct = selected === state.activeQuiz.answer;
+      if (correct) {
+        state.score += 1;
+        localStorage.setItem('bloc-chat-score', String(state.score));
+      }
+      addMessage(selected, 'user');
+      addTypingReply(`${correct ? 'Bonne reponse.' : `Presque. La bonne reponse est ${state.activeQuiz.answer}.`} ${state.activeQuiz.fact} Score: ${state.score}/${state.quizIndex + 1}. Tape quiz pour continuer.`);
+      state.quizIndex += 1;
+      state.activeQuiz = null;
+      mood.textContent = `Quiz: score ${state.score}`;
+    });
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const value = input.value.trim();
+      if (!value) return;
+      addMessage(value, 'user');
+      input.value = '';
+      const reply = answer(value);
+      if (reply) addTypingReply(reply);
+    });
+
+    setOpen(state.opened);
+  }
+</script>

@@ -4,11 +4,14 @@ import SectionHeader from "../../components/SectionHeader.astro";
 import Card from "../../components/Card.astro";
 import { getCollection } from "astro:content";
 
-const news = (await getCollection("news")).sort((a, b) => b.data.date.localeCompare(a.data.date));
+const news = (await getCollection("news")).sort((a, b) => {
+  const byDate = b.data.date.localeCompare(a.data.date);
+  return byDate || b.slug.localeCompare(a.slug);
+});
 ---
 <BaseLayout title="Actualites" description="Annonces et actualites du Bloc Leopards.">
   <section class="mx-auto max-w-6xl px-4 py-16">
-    <SectionHeader eyebrow="Actus" title="Dernieres actualites" description="DEMO - Informations non officielles, a titre d'exemple." />
+    <SectionHeader eyebrow="Actus" title="Dernieres actualites" description="Articles, sources et mobilisation autour des Leopards de la RD Congo." />
     <div class="grid gap-6 md:grid-cols-3">
       {news.map((item) => (
         <Card

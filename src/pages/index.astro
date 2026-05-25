@@ -10,13 +10,15 @@ import Gallery from "../components/Gallery.astro";
 import site from "../data/site.json";
 import { getCollection } from "astro:content";
 
-const news = (await getCollection("news")).sort((a, b) => b.data.date.localeCompare(a.data.date)).slice(0, 3);
-const events = (await getCollection("events")).sort((a, b) => a.data.date.localeCompare(b.data.date)).slice(0, 3);
+const today = new Date().toISOString().slice(0, 10);
+const allEvents = (await getCollection("events")).sort((a, b) => a.data.date.localeCompare(b.data.date));
+const upcomingEvents = allEvents.filter((event) => event.data.date >= today);
+const events = (upcomingEvents.length ? upcomingEvents : allEvents).slice(0, 3);
 const tickerItems = [
   "Un seul bloc. Une seule voix.",
   "Support positif et respectueux",
   "Bleu & jaune partout",
-  "Chants unifies, energie partagee",
+  "Energie partagee",
   "Toko bloque bango tiii na tiii"
 ];
 ---
@@ -31,42 +33,21 @@ const tickerItems = [
     <!-- Overlay -->
     <div class="absolute inset-0 bg-gradient-to-r from-brand-dark/90 to-brand-dark/40 -z-10"></div>
     
-    <div class="mx-auto grid max-w-6xl gap-12 px-4 py-20 md:grid-cols-[1.1fr_0.9fr] relative z-10">
+    <div class="mx-auto grid max-w-6xl gap-12 px-4 py-16 md:grid-cols-[1fr_0.9fr] relative z-10">
       <div class="animate-fade-in-up">
         <p class="text-xs uppercase tracking-[0.4em] text-brand-yellow font-bold">Bloc Leopards</p>
-        <h1 class="section-title mt-4 text-5xl md:text-7xl text-white">Un seul bloc. Une seule voix.</h1>
-        <p class="mt-4 max-w-2xl text-lg text-slate-200">Le mouvement officiel des supporters pour une mobilisation positive, une tribune unie et une experience fan inoubliable.</p>
-        <p class="mt-3 text-sm text-brand-yellow/80">Punchline: Toko bloque bango tiii na tiii 🐆🇨🇩</p>
+        <h1 class="section-title mt-4 text-5xl md:text-7xl text-white">Un seul bloc.</h1>
+        <p class="mt-4 max-w-xl text-lg text-slate-200">La tribune congolaise se rassemble: chants, drapeaux, ferveur et discipline.</p>
         <div class="mt-8 flex flex-wrap gap-4">
           <a href="/rejoindre" class="rounded-full bg-brand-yellow px-6 py-3 text-sm font-semibold text-brand-dark pulse-glow hover:bg-white transition-colors">Rejoindre le Bloc</a>
           <a href="/matchs" class="rounded-full border border-white/30 bg-white/10 backdrop-blur-sm px-6 py-3 text-sm font-semibold text-white hover:bg-white/20 transition-colors">Voir la mobilisation</a>
         </div>
-        <div class="mt-10 grid gap-6 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-md p-6 shadow-2xl md:grid-cols-3">
-          <div>
-            <p class="text-xs uppercase tracking-[0.3em] text-brand-yellow font-bold">Support</p>
-            <p class="mt-2 text-sm text-slate-300">Chants unifies, coregraphies et coordination par les capos.</p>
-          </div>
-          <div>
-            <p class="text-xs uppercase tracking-[0.3em] text-brand-yellow font-bold">Mobilisation</p>
-            <p class="mt-2 text-sm text-slate-300">Fan zones, actions digitales et kits supporters officiels.</p>
-          </div>
-          <div>
-            <p class="text-xs uppercase tracking-[0.3em] text-brand-yellow font-bold">Respect</p>
-            <p class="mt-2 text-sm text-slate-300">Zero violence, discipline en tribune, unite nationale.</p>
-          </div>
-        </div>
       </div>
-      <div class="flex flex-col items-center gap-6 animate-fade-in-up" style="animation-delay: 0.3s">
-        <div class="relative w-full max-w-sm rounded-[32px] border border-white/10 bg-white/5 backdrop-blur-md p-6 shadow-2xl float-slow">
-          <img src="/brand/logo.png" alt="Bloc Leopards" class="mx-auto h-48 w-auto object-contain drop-shadow-xl" />
-          <div class="mt-6 grid gap-3">
-            <div class="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
-              Jour de match: rassemblement officiel + kit chants + fan zone.
-            </div>
-            <div class="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
-              Capos, tambours, drapeaux: coordination totale pour une tribune unie.
-            </div>
-          </div>
+      <div class="hidden flex-col items-center gap-6 animate-fade-in-up md:flex" style="animation-delay: 0.3s">
+        <div class="grid w-full max-w-md grid-cols-2 gap-3 float-slow">
+          <img src="/media/supporters-diaspora-01.jpg" alt="Supporter des Leopards" class="h-64 w-full rounded-3xl border border-white/10 object-cover shadow-2xl" />
+          <img src="/media/supporters-diaspora-07.jpg" alt="Supporter drape du Congo" class="mt-10 h-64 w-full rounded-3xl border border-white/10 object-cover shadow-2xl" />
+          <img src="/media/liste-officielle-leopards-2026.jpg" alt="Liste officielle des Leopards" class="col-span-2 h-48 w-full rounded-3xl border border-white/10 object-cover object-top shadow-2xl" />
         </div>
         <div class="rounded-full border border-white/20 bg-white/10 backdrop-blur px-5 py-2 text-xs uppercase tracking-[0.3em] text-white">Ambiance live</div>
       </div>
@@ -95,7 +76,7 @@ const tickerItems = [
   </section>
 
   <section class="mx-auto max-w-6xl px-4 py-16">
-    <SectionHeader eyebrow="Agenda" title="Prochains evenements" description="DEMO - Calendrier indicatif. Aucun evenement officiel n'est publie ici." />
+    <SectionHeader eyebrow="Agenda" title="Prochains evenements" description="Rendez-vous reels autour de la preparation des Leopards." />
     <div class="grid gap-6 md:grid-cols-3">
       {events.map((event) => (
         <Card
@@ -110,26 +91,26 @@ const tickerItems = [
     </div>
   </section>
 
-  <section class="bg-slate-50">
-    <div class="mx-auto max-w-6xl px-4 py-16">
-      <SectionHeader eyebrow="Actus" title="Dernieres actualites" description="Infos et annonces DEMO pour la mobilisation." />
-      <div class="grid gap-6 md:grid-cols-3">
-      {news.map((item) => (
-        <Card
-          title={item.data.title}
-          description={item.data.description}
-          meta={item.data.date}
-          image={item.data.image}
-          href={`/actus/${item.slug}`}
-          cta="Lire"
-        />
-      ))}
+  <section class="mx-auto grid max-w-6xl gap-8 px-4 py-16 md:grid-cols-[1.15fr_0.85fr]">
+    <div>
+      <SectionHeader eyebrow="Video" title="Hommage a la diaspora" description="Liege, Marbella, les chants et les couleurs en mouvement." />
+      <div class="mx-auto max-w-sm">
+        <video class="aspect-[9/16] w-full rounded-3xl border border-slate-200 bg-slate-950 object-cover shadow-deep" controls poster="/media/hommage-diaspora-cover.jpg">
+          <source src="/videos/hommage-diaspora-match-amical.mp4" type="video/mp4" />
+        </video>
       </div>
+    </div>
+    <div class="flex flex-col justify-center rounded-3xl border border-slate-200 bg-white p-6 shadow-deep">
+      <p class="text-xs uppercase tracking-[0.3em] text-brand-yellow">Diaspora</p>
+      <h3 class="section-title mt-3 text-4xl">De Liege a Marbella</h3>
+      <p class="mt-3 text-sm leading-6 text-slate-600">Un hommage aux supporters qui portent le drapeau partout ou les Leopards jouent.</p>
+      <audio class="mt-6 w-full" controls src="/audio/hommage-diaspora.mp3"></audio>
+      <a href="/actus/2026-05-25-hommage-diaspora" class="mt-6 inline-flex rounded-full bg-brand-yellow px-5 py-3 text-sm font-semibold text-brand-dark">Voir l'article</a>
     </div>
   </section>
 
   <section class="mx-auto max-w-6xl px-4 py-16">
-    <SectionHeader eyebrow="Ambiance" title="Galerie officielle" description="Visuels DEMO. L'energie du bloc en images." />
+    <SectionHeader eyebrow="Ambiance" title="Galerie officielle" description="L'energie du bloc en images." />
     <Gallery items={media} />
   </section>
 

@@ -1,8 +1,21 @@
 [
-  { "title": "Ambiance bleue", "category": "Ambiance", "image": "/media/ambiance-1.svg" },
-  { "title": "Chants unifies", "category": "Chants", "image": "/media/ambiance-2.svg" },
-  { "title": "Fan zone", "category": "Fan Zone", "image": "/media/fanzone-1.svg" },
-  { "title": "Coregraphie", "category": "Tribune", "image": "/media/ambiance-3.svg" },
-  { "title": "Atelier supporters", "category": "Formation", "image": "/media/atelier-1.svg" },
-  { "title": "Fete du bloc", "category": "Evenement", "image": "/media/fete-1.svg" }
+  { "title": "Supporter RDC", "category": "Wikimedia Commons", "image": "/media/web-rdc-supporter.jpg" },
+  { "title": "Liesse a Kinshasa", "category": "Wikimedia Commons", "image": "/media/web-liesse-kinshasa.jpg" },
+  { "title": "Supporters CHAN", "category": "Wikimedia Commons", "image": "/media/web-supporters-chan.jpg" },
+  { "title": "Cri du bloc", "category": "Diaspora", "image": "/media/supporters-diaspora-01.jpg" },
+  { "title": "Drapeau leve", "category": "Fierte", "image": "/media/supporters-diaspora-02.jpg" },
+  { "title": "Couleurs en tribune", "category": "Tribune", "image": "/media/supporters-diaspora-03.jpg" },
+  { "title": "Tambours et voix", "category": "Ambiance", "image": "/media/supporters-diaspora-04.jpg" },
+  { "title": "Voix des supporters", "category": "Chants", "image": "/media/supporters-diaspora-05.jpg" },
+  { "title": "Marbella en bleu", "category": "Marbella", "image": "/media/supporters-diaspora-06.jpg" },
+  { "title": "Regard Leopards", "category": "Portrait", "image": "/media/supporters-diaspora-07.jpg" },
+  { "title": "Ferveur populaire", "category": "Diaspora", "image": "/media/supporters-diaspora-08.jpg" },
+  { "title": "Un seul bloc", "category": "Mobilisation", "image": "/media/supporters-diaspora-09.jpg" },
+  { "title": "Tribune debout", "category": "Ambiance", "image": "/media/supporters-diaspora-10.jpg" },
+  { "title": "Liege rassemble", "category": "Liege", "image": "/media/supporters-diaspora-11.jpg" },
+  { "title": "Drapeau sur les epaules", "category": "Fierte", "image": "/media/supporters-diaspora-12.jpg" },
+  { "title": "Fierte du bloc", "category": "Supporters", "image": "/media/supporters-diaspora-13.jpg" },
+  { "title": "La voix du peuple", "category": "Chants", "image": "/media/supporters-diaspora-14.jpg" },
+  { "title": "Liste officielle", "category": "Leopards", "image": "/media/liste-officielle-leopards-2026.jpg" },
+  { "title": "Hommage a la diaspora", "category": "Video", "image": "/media/hommage-diaspora-cover.jpg" }
 ]

@@ -11,7 +11,7 @@ const { items } = Astro.props;
       data-gallery-category={item.category}
       type="button"
     >
-      <img src={item.image} alt={item.title} class="h-56 w-full object-cover transition duration-500 group-hover:scale-105" />
+      <img src={item.image} alt={item.title} class="aspect-[3/4] w-full object-cover transition duration-500 group-hover:scale-105 md:aspect-[4/3]" />
       <div class="p-4">
         <p class="text-sm font-semibold">{item.title}</p>
         <p class="text-xs text-slate-500">{item.category}</p>
@@ -23,7 +23,7 @@ const { items } = Astro.props;
 <dialog class="rounded-3xl border border-slate-200 bg-white p-0 text-slate-900" data-gallery-modal>
   <div class="relative">
     <button class="absolute right-4 top-4 rounded-full bg-white/10 px-3 py-1 text-xs" data-gallery-close>Fermer</button>
-    <img src="" alt="" class="max-h-[70vh] w-full object-cover" data-gallery-image />
+    <img src="" alt="" class="aspect-[3/4] max-h-[78vh] w-full object-cover md:aspect-auto" data-gallery-image />
     <div class="p-4">
       <p class="text-sm font-semibold" data-gallery-title></p>
       <p class="text-xs text-slate-500" data-gallery-category></p>

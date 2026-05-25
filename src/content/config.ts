@@ -7,7 +7,11 @@ const news = defineCollection({
     description: z.string(),
     date: z.string(),
     tags: z.array(z.string()).default([]),
-    image: z.string().optional()
+    image: z.string().optional(),
+    video: z.string().optional(),
+    audio: z.string().optional(),
+    sourceTitle: z.string().optional(),
+    sourceUrl: z.string().optional()
   })
 });
 
