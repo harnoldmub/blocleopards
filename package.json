@@ -12,10 +12,13 @@
     "preview": "astro preview",
     "cms:dev": "sanity dev --host 127.0.0.1 --port 3333",
     "cms:deploy": "sanity deploy",
+    "db:migrate": "set -a; [ -f .env ] && . ./.env; set +a; psql \"$DATABASE_URL\" -f db/migrations/001_neon_forms.sql",
     "generate:pdf": "node scripts/generate-pdf.mjs"
   },
   "dependencies": {
+    "@astrojs/netlify": "^5.5.4",
     "@astrojs/react": "^5.0.5",
+    "@neondatabase/serverless": "^1.1.0",
     "@sanity/astro": "^3.4.0",
     "@sanity/client": "^7.22.0",
     "@types/react": "^19.2.15",

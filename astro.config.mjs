@@ -1,9 +1,12 @@
 import { defineConfig } from "astro/config";
 import tailwind from "@astrojs/tailwind";
 import sanity from "@sanity/astro";
+import netlify from "@astrojs/netlify";
 
 export default defineConfig({
   site: "https://bloc-leopards.example",
+  output: "server",
+  adapter: netlify(),
   integrations: [
     tailwind(),
     sanity({

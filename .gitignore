@@ -1,5 +1,10 @@
 node_modules
 .dist
+dist
 .astro
+.env
+.env.*
+!.env.example
+.netlify
 .DS_Store
 public/downloads/*.pdf

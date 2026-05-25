@@ -4,17 +4,23 @@ import PageHero from "../components/PageHero.astro";
 import SectionHeader from "../components/SectionHeader.astro";
 ---
 <BaseLayout title="Partenaires" description="Partenaires institutionnels et sponsors.">
-  <PageHero title="Partenaires" subtitle="Soutien officiel et engagement" image="/media/campagne-2.svg" />
-  <section class="mx-auto max-w-6xl px-4 py-16">Leopards agit en complementarite avec les missions du Ministere des Sports pour promouvoir la discipline, la jeunesse et la cohesion." />
-    <div class="rounded-3xl border border-slate-200 bg-white p-6 text-sm text-slate-700">
-      <p>Le mouvement se positionne comme un relais citoyen pour l'animation officielle, sans se substituer aux institutions. Les informations officielles restent publiees par le Ministere et les federations.</p>
-      <div class="mt-4">
-        <p class="text-xs uppercase tracking-[0.3em] text-brand-yellow">Liens utiles</p>
-        <ul class="mt-2 list-disc pl-4">
-          <li><a class="text-brand-yellow" href="https://sports.gouv.cd" target="_blank" rel="noopener">Ministere des Sports (sports.gouv.cd)</a></li>
-          <li>Federations nationales (liens a ajouter)</li>
-          <li>Directions provinciales (liens a ajouter)</li>
-        </ul>
+  <PageHero title="Partenaires" subtitle="Institutions, medias et acteurs de la mobilisation" image="/media/web-liesse-kinshasa.jpg" />
+  <section class="mx-auto max-w-6xl px-4 py-16">
+    <SectionHeader eyebrow="Positionnement" title="Un relais de supporters, pas une source institutionnelle" description="Bloc Leopards accompagne la mobilisation populaire et renvoie les annonces officielles vers les organismes competents." />
+    <div class="grid gap-6 md:grid-cols-2">
+      <div class="rounded-3xl border border-slate-200 bg-white p-6 text-sm text-slate-700">
+        <h3 class="text-lg font-semibold text-slate-900">Institutions</h3>
+        <p class="mt-3">Les politiques sportives, infrastructures, federations et cadres officiels relevent des autorites publiques et des instances sportives. Le site renvoie vers ces sources lorsqu'une information institutionnelle est necessaire.</p>
+        <a class="mt-4 inline-flex text-brand-yellow" href="https://sports.gouv.cd/sports" target="_blank" rel="noopener">Ministere des Sports et Loisirs</a>
+      </div>
+      <div class="rounded-3xl border border-slate-200 bg-white p-6 text-sm text-slate-700">
+        <h3 class="text-lg font-semibold text-slate-900">Medias & sources sportives</h3>
+        <p class="mt-3">Les contenus match, qualification et preparation sont recoupes avec FIFA, CAF et les medias cites dans les articles du site.</p>
+        <div class="mt-4 grid gap-2">
+          <a class="text-brand-yellow" href="https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/teams/congo-dr" target="_blank" rel="noopener">FIFA - Congo DR</a>
+          <a class="text-brand-yellow" href="https://www.cafonline.com/fifa-world-cup/news/dr-congo-end-52-year-world-cup-wait-with-extra-time-victory-over-jamaica/" target="_blank" rel="noopener">CAF - qualification</a>
+          <a class="text-brand-yellow" href="https://digitalcongo.org/detail15035-mondial-2026-les-leopards-s-offrent-le-danemark-et-le-chili-en-amical" target="_blank" rel="noopener">Digital Congo - amicaux</a>
+        </div>
       </div>
     </div>
   </section>

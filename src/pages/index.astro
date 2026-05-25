@@ -22,7 +22,7 @@ const tickerItems = [
   "Toko bloque bango tiii na tiii"
 ];
 ---
-<BaseLayout title="Accueil" description="Supporters officiels des Leopards. Mobilisation positive, chants unifies et fan experience.">
+<BaseLayout title="Accueil" description="Supporters des Leopards. Mobilisation positive, informations verifiees et fan experience.">
   {site.matchDay && <MatchBanner label={site.matchDayLabel} href={site.matchDayCTA} ctaLabel={site.matchDayCTALabel} />}
   <section class="relative min-h-[80vh] flex items-center overflow-hidden">
     <!-- Video Background -->
@@ -110,7 +110,7 @@ const tickerItems = [
   </section>
 
   <section class="mx-auto max-w-6xl px-4 py-16">
-    <SectionHeader eyebrow="Ambiance" title="Galerie officielle" description="L'energie du bloc en images." />
+    <SectionHeader eyebrow="Ambiance" title="Galerie" description="L'energie du bloc en images." />
     <Gallery items={media} />
   </section>
 
@@ -129,7 +129,7 @@ const tickerItems = [
       <div>
         <p class="text-xs uppercase tracking-[0.3em]">Rejoindre</p>
         <h2 class="section-title mt-2 text-4xl">Rejoins le Bloc Leopards</h2>
-        <p class="mt-3 text-sm">Deviens membre officiel, recois le kit supporters, et participe aux fan zones.</p>
+        <p class="mt-3 text-sm">Rejoins le mouvement, recois le kit supporters, et participe aux mobilisations confirmees.</p>
         <div class="mt-6 flex flex-wrap gap-4">
           <a href="/rejoindre" class="rounded-full bg-white px-6 py-3 text-sm font-semibold text-brand-yellow">Formulaire d'adhesion</a>
           <a href="/charte" class="rounded-full border border-brand-dark px-6 py-3 text-sm font-semibold">Lire la charte</a>
@@ -137,7 +137,7 @@ const tickerItems = [
       </div>
       <div class="rounded-3xl bg-white p-6 text-slate-900">
         <p class="text-xs uppercase tracking-[0.3em] text-brand-yellow">Newsletter</p>
-        <p class="mt-3 text-sm text-slate-600">Recevoir les convocations de mobilisation, fan zones, et kits officiels.</p>
+        <p class="mt-3 text-sm text-slate-600">Recevoir les mobilisations confirmees, fan zones, et kits supporters.</p>
         <NewsletterForm />
       </div>
     </div>

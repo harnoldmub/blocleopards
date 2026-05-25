@@ -1,7 +1,7 @@
 [
   {
-    "q": "Comment devenir membre officiel ?",
-    "a": "Remplir le formulaire d'adhesion et accepter la charte du supporter."
+    "q": "Comment rejoindre le mouvement ?",
+    "a": "Remplir le formulaire d'adhesion, accepter la charte du supporter et choisir son role de participation."
   },
   {
     "q": "Le mouvement est-il politique ?",
@@ -13,6 +13,6 @@
   },
   {
     "q": "Comment recevoir le kit supporters ?",
-    "a": "Apres inscription, telecharge le kit PDF ou retire un kit lors des evenements DEMO."
+    "a": "Apres inscription, le kit numerique est disponible en ligne. Les retraits physiques sont communiques uniquement quand une activation est confirmee."
   }
 ]
