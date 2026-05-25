@@ -12,10 +12,6 @@ const { items } = Astro.props;
       type="button"
     >
       <img src={item.image} alt={item.title} class="aspect-[3/4] w-full object-cover transition duration-500 group-hover:scale-105 md:aspect-[4/3]" />
-      <div class="p-4">
-        <p class="text-sm font-semibold">{item.title}</p>
-        <p class="text-xs text-slate-500">{item.category}</p>
-      </div>
     </button>
   ))}
 </div>
@@ -24,10 +20,6 @@ const { items } = Astro.props;
   <div class="relative">
     <button class="absolute right-4 top-4 rounded-full bg-white/10 px-3 py-1 text-xs" data-gallery-close>Fermer</button>
     <img src="" alt="" class="aspect-[3/4] max-h-[78vh] w-full object-cover md:aspect-auto" data-gallery-image />
-    <div class="p-4">
-      <p class="text-sm font-semibold" data-gallery-title></p>
-      <p class="text-xs text-slate-500" data-gallery-category></p>
-    </div>
   </div>
 </dialog>
 
@@ -36,8 +28,6 @@ const { items } = Astro.props;
   const modal = document.querySelector('[data-gallery-modal]');
   if (gallery && modal) {
     const image = modal.querySelector('[data-gallery-image]');
-    const title = modal.querySelector('[data-gallery-title]');
-    const category = modal.querySelector('[data-gallery-category]');
     const close = modal.querySelector('[data-gallery-close]');
 
     gallery.addEventListener('click', (event) => {
@@ -45,8 +35,6 @@ const { items } = Astro.props;
       if (!button) return;
       image.src = button.dataset.gallerySrc;
       image.alt = button.dataset.galleryTitle;
-      title.textContent = button.dataset.galleryTitle;
-      category.textContent = button.dataset.galleryCategory;
       modal.showModal();
     });
 

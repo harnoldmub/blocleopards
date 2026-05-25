@@ -3,15 +3,31 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "cms:dev": "sanity dev --host 127.0.0.1 --port 3333",
+    "cms:deploy": "sanity deploy",
     "generate:pdf": "node scripts/generate-pdf.mjs"
   },
   "dependencies": {
+    "@astrojs/react": "^5.0.5",
+    "@sanity/astro": "^3.4.0",
+    "@sanity/client": "^7.22.0",
+    "@types/react": "^19.2.15",
+    "@types/react-dom": "^19.2.3",
+    "@types/react-is": "^19.2.0",
     "astro": "^4.16.2",
-    "jimp": "^1.6.0"
+    "jimp": "^1.6.0",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "react-is": "^19.2.6",
+    "sanity": "^5.26.0",
+    "styled-components": "^6.4.2"
   },
   "devDependencies": {
     "@astrojs/tailwind": "^5.1.0",
