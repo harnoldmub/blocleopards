@@ -5,12 +5,25 @@ create table if not exists adhesions (
   prenom text not null,
   nom text not null,
   email text not null,
+  telephone text,
+  pays text,
   ville text not null,
+  role text,
+  canal text,
+  disponibilite text,
   motivation text,
   charte_accepted boolean not null default false,
+  newsletter_opt_in boolean not null default false,
   source text default 'website',
   created_at timestamptz not null default now()
 );
+
+alter table adhesions add column if not exists telephone text;
+alter table adhesions add column if not exists pays text;
+alter table adhesions add column if not exists role text;
+alter table adhesions add column if not exists canal text;
+alter table adhesions add column if not exists disponibilite text;
+alter table adhesions add column if not exists newsletter_opt_in boolean not null default false;
 
 create index if not exists adhesions_email_idx on adhesions (lower(email));
 

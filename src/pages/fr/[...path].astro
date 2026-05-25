@@ -1,0 +1,9 @@
+---
+export const prerender = false;
+
+const path = Astro.params.path ?? "";
+const search = Astro.url.search;
+const target = `/${path}${search}`;
+
+return Astro.redirect(target === "/" ? "/" : target, 302);
+---
