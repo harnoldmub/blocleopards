@@ -76,6 +76,20 @@ const tickerItems = [
   </section>
 
   <section class="mx-auto max-w-6xl px-4 py-16">
+    <div class="grid gap-8 md:grid-cols-[0.9fr_1.4fr] md:items-center">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-brand-yellow">52 ans apres</p>
+        <h2 class="section-title mt-3 text-4xl text-slate-950">Les Leopards sont de retour</h2>
+        <p class="mt-4 text-sm leading-6 text-slate-600">Premiere nation d'Afrique subsaharienne a avoir joue une Coupe du monde, la RDC retrouve la scene mondiale avec ambition.</p>
+        <a href="/actus/2026-05-25-retour-mondial-52-ans" class="mt-6 inline-flex rounded-full bg-brand-yellow px-5 py-3 text-sm font-semibold text-brand-dark">Lire le contexte</a>
+      </div>
+      <video class="aspect-video w-full rounded-3xl border border-slate-200 bg-slate-950 object-cover shadow-deep" controls playsinline preload="metadata" poster="/media/web-liesse-kinshasa.jpg">
+        <source src="/videos/retour-mondial-52-ans.mp4" type="video/mp4" />
+      </video>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-6xl px-4 py-16">
     <SectionHeader eyebrow="Agenda" title="Prochains evenements" description="Rendez-vous reels autour de la preparation des Leopards." />
     <div class="grid gap-6 md:grid-cols-3">
       {events.map((event) => (
