@@ -3,5 +3,5 @@ import { isAdminAuthed } from "../lib/auth";
 if (!isAdminAuthed(Astro.cookies)) {
   return Astro.redirect("/admin/login");
 }
-return Astro.redirect("/admin/billets");
+return Astro.redirect("/admin/dashboard");
 ---
