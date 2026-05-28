@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@astrojs/node": "^8.3.4",
-    "@astrojs/react": "^5.0.5",
+    "@astrojs/react": "5.0.6",
     "@neondatabase/serverless": "^1.1.0",
     "@sanity/astro": "^3.4.0",
     "@sanity/client": "^7.22.0",

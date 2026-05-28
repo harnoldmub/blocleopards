@@ -29,17 +29,12 @@ export default defineConfig({
     server: {
       allowedHosts: true,
     },
-    esbuild: {
-      include: /\.[jt]sx?$/,
-      exclude: [],
-    },
     optimizeDeps: {
       include: [
         "react",
         "react-dom",
         "react/jsx-dev-runtime",
         "framer-motion",
-        "country-state-city",
       ],
     },
   },
