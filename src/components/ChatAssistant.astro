@@ -33,7 +33,7 @@ const quickActions = [
 
     <div class="bloc-chat__messages" data-chat-messages>
       <div class="bloc-chat__message bloc-chat__message--bot">
-        Bienvenue dans le Bloc des Léopards 🐆🔥<br/>
+        Bienvenue dans le Bloc des Léopards 🔥<br/>
         Je suis Captain Léopard, ton guide supporter officiel.<br/>
         Dis-moi ce que tu veux faire !
       </div>
@@ -197,7 +197,7 @@ const quickActions = [
 
     const submitBillet = async () => {
       state.billetStep = 'submitting';
-      addTypingReply("Un instant, j'enregistre ta demande... 🐆", 300);
+      addTypingReply("Un instant, j'enregistre ta demande... ", 300);
       const d = state.billetData;
       try {
         const res = await fetch('/api/billets', {
@@ -289,7 +289,7 @@ const quickActions = [
 
     const showRecruit = () => {
       const inviteUrl = `${window.location.origin}/billets`;
-      const text = encodeURIComponent(`Rejoins le Bloc des Léopards 🇨🇩🐆 Demande ta place pour soutenir la RDC ici : ${inviteUrl}`);
+      const text = encodeURIComponent(`Rejoins le Bloc des Léopards 🇨🇩 Demande ta place pour soutenir la RDC ici : ${inviteUrl}`);
       addActionMessage(`
         <strong>📢 Recruter des supporters</strong>
         <span>Partage et agrandis le Bloc !</span>
@@ -308,7 +308,7 @@ const quickActions = [
       const text = normalize(raw);
       if (text.includes('billet') || text.includes('place') || text.includes('ticket') || text.includes('rejoindre')) {
         if (!billeterieEnabled) {
-          return "La billetterie n'est pas encore ouverte 🐆 Reviens bientôt !";
+          return "La billetterie n'est pas encore ouverte  Reviens bientôt !";
         }
         startBilletFlow();
         return '';
@@ -331,7 +331,7 @@ const quickActions = [
         return '"Un seul bloc, une seule voix, pour la nation on donne la voix. 🔥"';
       }
       if (text.includes('merci') || text.includes('super') || text.includes('bravo')) {
-        return 'Parfait supporter 🇨🇩🐆 Le bloc compte sur toi. Allez les Léopards !';
+        return 'Parfait supporter 🇨🇩 Le bloc compte sur toi. Allez les Léopards !';
       }
       return "Je peux t'aider à : 🎫 demander un billet, ⚽ voir les prochains matchs, 🏆 quiz Léopards, ou 📢 recruter un ami. Que veux-tu faire ?";
     };
@@ -350,7 +350,7 @@ const quickActions = [
           if (billeterieEnabled) {
             startBilletFlow();
           } else {
-            addTypingReply("La billetterie n'est pas encore ouverte 🐆 Reviens bientôt !");
+            addTypingReply("La billetterie n'est pas encore ouverte  Reviens bientôt !");
           }
         } else {
           const reply = answer(value);

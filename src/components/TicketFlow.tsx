@@ -53,17 +53,17 @@ const PROGRESS_STEPS: Step[] = ["name", "location", "contact", "confirm"];
 // ─── Animation variants ───────────────────────────────────────────────────────
 
 const pageVariants = {
-  initial: { opacity: 0, y: 32, scale: 0.97 },
+  initial: { opacity: 1, y: 24, scale: 0.98 },
   animate: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } },
-  exit: { opacity: 0, y: -20, scale: 0.97, transition: { duration: 0.25, ease: "easeIn" } },
+  exit: { opacity: 0, y: -16, scale: 0.98, transition: { duration: 0.2, ease: "easeIn" } },
 };
 
 const cardVariants = {
-  initial: { opacity: 0, y: 40 },
+  initial: { opacity: 1, y: 32 },
   animate: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.12, duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+    transition: { delay: i * 0.1, duration: 0.45, ease: [0.22, 1, 0.36, 1] },
   }),
 };
 
@@ -168,7 +168,7 @@ function ProgressBar({ step }: { step: Step }) {
 function StepQuestion({ text }: { text: string }) {
   return (
     <motion.h2
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 1, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.1, duration: 0.4 }}
       style={{
@@ -641,7 +641,7 @@ export default function TicketFlow() {
             fontFamily: "'Sora', sans-serif", fontSize: "13px", textDecoration: "none",
           }}
         >
-          🐆 Accueil
+          ← Accueil
         </a>
       </div>
 
@@ -652,15 +652,15 @@ export default function TicketFlow() {
           {step === "match" && (
             <motion.div key="match" variants={pageVariants} initial="initial" animate="animate" exit="exit" style={{ width: "100%", maxWidth: "820px", textAlign: "center" }}>
               <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
+                initial={{ opacity: 1, scale: 0.85 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                style={{ marginBottom: "16px", fontSize: "clamp(2.4rem, 8vw, 4.5rem)", animation: "float 4s ease-in-out infinite" }}
+                style={{ marginBottom: "16px", animation: "float 4s ease-in-out infinite", display: "flex", justifyContent: "center" }}
               >
-                🐆
+                <img src="/brand/logo.png" alt="Bloc Léopards" style={{ height: "72px", width: "auto", filter: "drop-shadow(0 4px 24px rgba(247,214,24,0.4))" }} />
               </motion.div>
               <motion.h1
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 1, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1, duration: 0.5 }}
                 style={{
@@ -677,7 +677,7 @@ export default function TicketFlow() {
                 <span style={{ color: "#f7d618" }}>des Léopards</span>
               </motion.h1>
               <motion.p
-                initial={{ opacity: 0 }}
+                initial={{ opacity: 1 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.25, duration: 0.5 }}
                 style={{ color: "rgba(255,255,255,0.6)", fontSize: "16px", marginBottom: "48px", maxWidth: "480px", margin: "0 auto 48px" }}
@@ -783,17 +783,17 @@ export default function TicketFlow() {
           {step === "success" && (
             <motion.div key="success" variants={pageVariants} initial="initial" animate="animate" exit="exit" style={{ width: "100%", maxWidth: "520px", textAlign: "center" }}>
               <motion.div
-                initial={{ scale: 0, rotate: -30 }}
+                initial={{ scale: 0.5, rotate: -20 }}
                 animate={{ scale: 1, rotate: 0 }}
-                transition={{ delay: 0.15, duration: 0.6, type: "spring", stiffness: 200 }}
+                transition={{ delay: 0.1, duration: 0.5, type: "spring", stiffness: 200 }}
                 style={{ fontSize: "80px", marginBottom: "24px", display: "inline-block" }}
               >
                 🏆
               </motion.div>
               <motion.h2
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 1, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.4 }}
+                transition={{ delay: 0.2, duration: 0.4 }}
                 style={{
                   fontFamily: "'Bebas Neue', sans-serif",
                   fontSize: "clamp(2.5rem, 8vw, 4.2rem)",
@@ -805,18 +805,18 @@ export default function TicketFlow() {
                 Mission accomplie !
               </motion.h2>
               <motion.p
-                initial={{ opacity: 0 }}
+                initial={{ opacity: 1 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.45, duration: 0.4 }}
+                transition={{ delay: 0.3, duration: 0.4 }}
                 style={{ color: "rgba(255,255,255,0.75)", fontSize: "17px", lineHeight: 1.65, marginBottom: "36px" }}
               >
                 Ta demande est enregistrée dans le Bloc des Léopards.<br />
                 Si tu es sélectionné·e, nous te contacterons rapidement.
               </motion.p>
               <motion.p
-                initial={{ opacity: 0, scale: 0.9 }}
+                initial={{ opacity: 1, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.6, duration: 0.4 }}
+                transition={{ delay: 0.4, duration: 0.4 }}
                 style={{
                   fontFamily: "'Bebas Neue', sans-serif",
                   fontSize: "2rem",
@@ -827,7 +827,7 @@ export default function TicketFlow() {
               >
                 <img src="/flags/cd.png" height={28} style={{ verticalAlign: "middle", borderRadius: 3, marginRight: 8 }} alt="RDC" /> Allez les Léopards ! <img src="/flags/cd.png" height={28} style={{ verticalAlign: "middle", borderRadius: 3, marginLeft: 8 }} alt="RDC" />
               </motion.p>
-              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.75 }} style={{ display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center" }}>
+              <motion.div initial={{ opacity: 1, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} style={{ display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center" }}>
                 <a
                   href="/"
                   style={{
@@ -974,7 +974,7 @@ function MatchCard({ matchKey, match, index, onSelect }: {
 function MatchBadge({ match }: { match: typeof MATCHES[MatchKey] }) {
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
+      initial={{ opacity: 1, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       style={{
         display: "inline-flex",

@@ -436,7 +436,7 @@ export default function AdminBilletsDashboard() {
         flexWrap: "wrap",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-          <span style={{ fontSize: "28px" }}>🐆</span>
+          <img src="/brand/logo.png" alt="Bloc Léopards" style={{ height: "28px", width: "auto" }} />
           <div>
             <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "1.5rem", color: "#f7d618", letterSpacing: "0.06em" }}>
               Admin · Billets
