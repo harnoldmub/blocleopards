@@ -1,0 +1,12 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import AdminArticlesDashboard from "../../components/AdminArticlesDashboard.tsx";
+import { isAdminAuthed } from "../../lib/auth";
+
+if (!isAdminAuthed(Astro.cookies)) {
+  return Astro.redirect("/admin/login");
+}
+---
+<AdminLayout title="Articles — Admin Bloc Léopards" section="articles">
+  <AdminArticlesDashboard client:load />
+</AdminLayout>

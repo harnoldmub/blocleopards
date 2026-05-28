@@ -2,12 +2,10 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import SectionHeader from "../../components/SectionHeader.astro";
 import Card from "../../components/Card.astro";
-import { getCollection } from "astro:content";
+import { requireDatabase } from "../../lib/neon";
 
-const news = (await getCollection("news")).sort((a, b) => {
-  const byDate = b.data.date.localeCompare(a.data.date);
-  return byDate || b.slug.localeCompare(a.slug);
-});
+const sql = requireDatabase();
+const news = await sql`SELECT * FROM articles WHERE published = true ORDER BY date DESC, created_at DESC`;
 ---
 <BaseLayout title="Actualites" description="Annonces et actualites du Bloc Leopards.">
   <section class="mx-auto max-w-6xl px-4 py-16">
@@ -15,10 +13,10 @@ const news = (await getCollection("news")).sort((a, b) => {
     <div class="grid gap-6 md:grid-cols-3">
       {news.map((item) => (
         <Card
-          title={item.data.title}
-          description={item.data.description}
-          meta={item.data.date}
-          image={item.data.image}
+          title={item.title}
+          description={item.description}
+          meta={item.date}
+          image={item.image}
           href={`/actus/${item.slug}`}
           cta="Lire"
         />
