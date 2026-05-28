@@ -64,15 +64,16 @@ const nav = [
     </nav>
 
     <!-- CTA Buttons -->
-    <div class="hidden md:flex items-center gap-2">
+    <div class="flex items-center gap-2">
       {billeterieActive && (
         <a href="/billets" class="relative hidden rounded-full px-4 py-2 text-sm font-semibold md:flex items-center gap-1.5" style="background:linear-gradient(135deg,#1c2e8f,#0b0f1f);color:#f7d618;border:1px solid rgba(247,214,24,0.3);box-shadow:0 4px 20px rgba(28,46,143,0.35);">
           <span>🎫</span>
           <span>Billets</span>
         </a>
       )}
-      <a href="/rejoindre" class="gradient-border relative hidden rounded-full px-4 py-2 text-sm font-semibold md:block">
-        <span class="relative z-10">Rejoindre le Bloc</span>
+      <a href="/rejoindre" class="gradient-border relative rounded-full px-4 py-2 text-sm font-semibold">
+        <span class="relative z-10 hidden md:inline">Rejoindre le Bloc</span>
+        <span class="relative z-10 md:hidden">Rejoindre</span>
       </a>
     </div>
   </div>
