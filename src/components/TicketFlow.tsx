@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Country, City } from "country-state-city";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -253,40 +252,30 @@ function StyledInput({
   );
 }
 
-function CountrySelect({
+function LocationInput({
+  label,
   value,
   onChange,
+  placeholder,
+  required,
 }: {
+  label: string;
   value: string;
-  onChange: (country: string, code: string) => void;
+  onChange: (v: string) => void;
+  placeholder: string;
+  required?: boolean;
 }) {
-  const [search, setSearch] = useState(value);
-  const [open, setOpen] = useState(false);
   const [focused, setFocused] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  const allCountries = Country.getAllCountries();
-  const filtered = search.length > 0
-    ? allCountries.filter((c) => c.name.toLowerCase().includes(search.toLowerCase())).slice(0, 40)
-    : allCountries.slice(0, 40);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
   return (
-    <div ref={ref} className="mb-4" style={{ position: "relative" }}>
+    <div className="mb-4">
       <label style={{ display: "block", fontSize: "11px", letterSpacing: "0.18em", textTransform: "uppercase", color: focused ? "#f7d618" : "rgba(255,255,255,0.5)", marginBottom: "8px", fontFamily: "'Sora', sans-serif", fontWeight: 700, transition: "color 0.2s" }}>
-        Pays <span style={{ color: "#ce1021" }}>*</span>
+        {label} {required && <span style={{ color: "#ce1021" }}>*</span>}
       </label>
       <input
-        value={search}
-        onChange={(e) => { setSearch(e.target.value); setOpen(true); }}
-        onFocus={() => { setFocused(true); setOpen(true); }}
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         style={{
           width: "100%",
@@ -304,166 +293,6 @@ function CountrySelect({
           caretColor: "#f7d618",
         }}
       />
-      <AnimatePresence>
-        {open && filtered.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 4 }}
-            transition={{ duration: 0.15 }}
-            style={{
-              position: "absolute",
-              top: "calc(100% + 8px)",
-              left: 0,
-              right: 0,
-              background: "#0e1628",
-              border: "1.5px solid rgba(247,214,24,0.25)",
-              borderRadius: "14px",
-              maxHeight: "220px",
-              overflowY: "auto",
-              zIndex: 100,
-              boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
-            }}
-          >
-            {filtered.map((c) => (
-              <button
-                key={c.isoCode}
-                type="button"
-                onMouseDown={() => {
-                  onChange(c.name, c.isoCode);
-                  setSearch(c.name);
-                  setOpen(false);
-                }}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  width: "100%",
-                  padding: "12px 16px",
-                  background: "transparent",
-                  border: "none",
-                  color: "#fff",
-                  fontFamily: "'Sora', sans-serif",
-                  fontSize: "14px",
-                  cursor: "pointer",
-                  textAlign: "left",
-                  transition: "background 0.15s",
-                }}
-                onMouseEnter={(e) => ((e.target as HTMLElement).style.background = "rgba(247,214,24,0.08)")}
-                onMouseLeave={(e) => ((e.target as HTMLElement).style.background = "transparent")}
-              >
-                <span style={{ fontSize: "18px" }}>{c.flag}</span>
-                <span>{c.name}</span>
-              </button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-function CitySelect({ countryCode, value, onChange }: { countryCode: string; value: string; onChange: (v: string) => void }) {
-  const [search, setSearch] = useState(value);
-  const [open, setOpen] = useState(false);
-  const [focused, setFocused] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  const allCities = countryCode ? City.getCitiesOfCountry(countryCode) || [] : [];
-  const filtered = search.length > 0
-    ? allCities.filter((c) => c.name.toLowerCase().includes(search.toLowerCase())).slice(0, 40)
-    : allCities.slice(0, 40);
-
-  useEffect(() => {
-    setSearch(value);
-  }, [value]);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  return (
-    <div ref={ref} className="mb-4" style={{ position: "relative" }}>
-      <label style={{ display: "block", fontSize: "11px", letterSpacing: "0.18em", textTransform: "uppercase", color: focused ? "#f7d618" : "rgba(255,255,255,0.5)", marginBottom: "8px", fontFamily: "'Sora', sans-serif", fontWeight: 700, transition: "color 0.2s" }}>
-        Ville <span style={{ color: "#ce1021" }}>*</span>
-      </label>
-      <input
-        value={search}
-        onChange={(e) => { setSearch(e.target.value); onChange(e.target.value); if (allCities.length > 0) setOpen(true); }}
-        onFocus={() => { setFocused(true); if (allCities.length > 0) setOpen(true); }}
-        onBlur={() => setFocused(false)}
-        style={{
-          width: "100%",
-          background: focused ? "rgba(247,214,24,0.06)" : "rgba(255,255,255,0.06)",
-          border: `1.5px solid ${focused ? "#f7d618" : "rgba(255,255,255,0.14)"}`,
-          borderRadius: "14px",
-          padding: "16px 18px",
-          color: "#fff",
-          fontSize: "16px",
-          fontFamily: "'Sora', sans-serif",
-          fontWeight: 500,
-          outline: "none",
-          transition: "all 0.2s ease",
-          boxShadow: focused ? "0 0 0 3px rgba(247,214,24,0.14)" : "0 2px 10px rgba(0,0,0,0.15)",
-          caretColor: "#f7d618",
-        }}
-      />
-      <AnimatePresence>
-        {open && filtered.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 4 }}
-            transition={{ duration: 0.15 }}
-            style={{
-              position: "absolute",
-              top: "calc(100% + 8px)",
-              left: 0,
-              right: 0,
-              background: "#0e1628",
-              border: "1.5px solid rgba(247,214,24,0.25)",
-              borderRadius: "14px",
-              maxHeight: "220px",
-              overflowY: "auto",
-              zIndex: 100,
-              boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
-            }}
-          >
-            {filtered.map((c, i) => (
-              <button
-                key={`${c.name}-${i}`}
-                type="button"
-                onMouseDown={() => {
-                  onChange(c.name);
-                  setSearch(c.name);
-                  setOpen(false);
-                }}
-                style={{
-                  display: "block",
-                  width: "100%",
-                  padding: "12px 16px",
-                  background: "transparent",
-                  border: "none",
-                  color: "#fff",
-                  fontFamily: "'Sora', sans-serif",
-                  fontSize: "14px",
-                  cursor: "pointer",
-                  textAlign: "left",
-                  transition: "background 0.15s",
-                }}
-                onMouseEnter={(e) => ((e.target as HTMLElement).style.background = "rgba(247,214,24,0.08)")}
-                onMouseLeave={(e) => ((e.target as HTMLElement).style.background = "transparent")}
-              >
-                {c.name}
-              </button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
@@ -714,14 +543,19 @@ export default function TicketFlow() {
               <ProgressBar step="location" />
               {match && <MatchBadge match={match} />}
               <StepQuestion text={`Où est basé\nton bloc ?`} />
-              <CountrySelect
+              <LocationInput
+                label="Pays"
                 value={form.country}
-                onChange={(name, code) => { set("country", name); set("countryCode", code); set("city", ""); }}
+                onChange={(v) => { set("country", v); set("countryCode", ""); }}
+                placeholder="Ex: RDC, Belgique, France..."
+                required
               />
-              <CitySelect
-                countryCode={form.countryCode}
+              <LocationInput
+                label="Ville"
                 value={form.city}
                 onChange={(v) => set("city", v)}
+                placeholder="Ex: Kinshasa, Liège, Bruxelles..."
+                required
               />
               {error && <ErrorMsg msg={error} />}
               <div style={{ marginTop: "24px" }}>
