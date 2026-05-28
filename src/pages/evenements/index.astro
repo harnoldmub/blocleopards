@@ -2,29 +2,90 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import PageHero from "../../components/PageHero.astro";
 import SectionHeader from "../../components/SectionHeader.astro";
-import Card from "../../components/Card.astro";
 import { getCollection } from "astro:content";
 
 const today = new Date().toISOString().slice(0, 10);
-const events = (await getCollection("events"))
-  .sort((a, b) => a.data.date.localeCompare(b.data.date))
-  .filter((event) => event.data.date >= today);
+const all = (await getCollection("events"))
+  .sort((a, b) => a.data.date.localeCompare(b.data.date));
+
+const upcoming = all.filter((e) => e.data.date >= today);
+const past = all.filter((e) => e.data.date < today);
+
+const isMatch = (title: string) => title.toLowerCase().includes(" vs ");
 ---
-<BaseLayout title="Evenements" description="Agenda des fan zones et animations Bloc Leopards.">
-  <PageHero title="Evenements" subtitle="Preparation, matchs et diaspora" image="/media/web-liesse-kinshasa.jpg" />
-  <section class="mx-auto max-w-6xl px-4 py-16">
-    <SectionHeader eyebrow="Agenda reel" title="Prochains rendez-vous" description="Donnees issues des informations publiees autour de la preparation des Leopards." />
-    <div class="grid gap-6 md:grid-cols-3">
-      {events.map((event) => (
-        <Card
-          title={event.data.title}
-          description={`${event.data.date} • ${event.data.time} • ${event.data.location}`}
-          meta={event.data.cta}
-          image={event.data.image}
-          href={`/evenements/${event.slug}`}
-          cta="Details"
-        />
-      ))}
+<BaseLayout title="Calendrier — Bloc Léopards" description="Calendrier des matchs et événements du Bloc des Léopards.">
+  <PageHero title="Calendrier" subtitle="Matchs & événements" image="/media/hommage-diaspora-cover.jpg" />
+
+  <section class="mx-auto max-w-5xl px-4 py-16">
+    <SectionHeader eyebrow="À venir" title="Prochains rendez-vous" description="Les rendez-vous officiels du Bloc des Léopards." />
+
+    <div class="flex flex-col gap-6">
+      {upcoming.map((event) => {
+        const match = isMatch(event.data.title);
+        return (
+          <a
+            href={`/evenements/${event.slug}`}
+            class={`group flex gap-0 overflow-hidden rounded-3xl border transition-all ${match ? "border-brand-yellow/30 bg-brand-dark" : "border-slate-200 bg-white hover:border-slate-300"}`}
+            style={match ? "box-shadow: 0 4px 40px -10px rgba(247,214,24,0.2);" : ""}
+          >
+            <div class="hidden w-2 shrink-0 md:block" style={match ? "background:linear-gradient(to bottom,#f7d618,#ce1021);" : "background:#e2e8f0;"} />
+            <div class={`flex flex-1 flex-col gap-4 p-6 md:flex-row md:items-center md:gap-8 ${match ? "text-white" : ""}`}>
+              {/* Date badge */}
+              <div class="shrink-0 text-center md:w-24">
+                <div class={`text-xs font-bold uppercase tracking-widest ${match ? "text-brand-yellow" : "text-brand-yellow"}`}>
+                  {new Date(event.data.date + "T12:00:00").toLocaleDateString("fr-FR", { month: "short" }).toUpperCase()}
+                </div>
+                <div class={`text-5xl font-black leading-none ${match ? "text-white" : "text-slate-900"}`} style="font-family:'Bebas Neue',sans-serif;">
+                  {new Date(event.data.date + "T12:00:00").getDate()}
+                </div>
+                <div class={`text-xs font-semibold ${match ? "text-white/50" : "text-slate-400"}`}>{event.data.time}</div>
+              </div>
+
+              {/* Info */}
+              <div class="flex-1">
+                <div class={`mb-1 text-xs font-bold uppercase tracking-widest ${match ? "text-brand-yellow/70" : "text-slate-400"}`}>
+                  {match ? "Match amical · Préparation Mondial 2026" : "Événement"}
+                </div>
+                <h3 class={`text-xl font-bold ${match ? "text-white" : "text-slate-900"}`} style={match ? "font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:0.04em;" : ""}>
+                  {event.data.title}
+                </h3>
+                <p class={`mt-1 text-sm ${match ? "text-white/60" : "text-slate-500"}`}>{event.data.location}</p>
+              </div>
+
+              {/* CTA */}
+              <div class="shrink-0">
+                <span class={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-all ${match ? "bg-brand-yellow text-brand-dark group-hover:bg-yellow-300" : "border border-slate-200 text-slate-700 group-hover:border-slate-400"}`}>
+                  {match ? "🎫 Rejoindre le Bloc" : "En savoir plus"} →
+                </span>
+              </div>
+            </div>
+          </a>
+        );
+      })}
     </div>
+
+    {past.length > 0 && (
+      <div class="mt-16">
+        <SectionHeader eyebrow="Passés" title="Événements terminés" />
+        <div class="flex flex-col gap-4 opacity-60">
+          {past.map((event) => (
+            <div class="flex items-center gap-6 rounded-2xl border border-slate-200 bg-white p-4">
+              <div class="shrink-0 text-center w-16">
+                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  {new Date(event.data.date + "T12:00:00").toLocaleDateString("fr-FR", { month: "short" }).toUpperCase()}
+                </div>
+                <div class="text-2xl font-black text-slate-400" style="font-family:'Bebas Neue',sans-serif;">
+                  {new Date(event.data.date + "T12:00:00").getDate()}
+                </div>
+              </div>
+              <div>
+                <p class="font-semibold text-slate-600">{event.data.title}</p>
+                <p class="text-sm text-slate-400">{event.data.location}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
   </section>
 </BaseLayout>

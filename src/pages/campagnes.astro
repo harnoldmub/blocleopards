@@ -1,43 +1,80 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import SectionHeader from "../components/SectionHeader.astro";
-import Card from "../components/Card.astro";
 import kit from "../data/kit.json";
 import { getCollection } from "astro:content";
 
 const campaigns = await getCollection("campaigns");
 ---
-<BaseLayout title="Campagnes" description="Campagnes d'influence et hashtags Bloc Leopards.">
+<BaseLayout title="Campagnes — Bloc Léopards" description="Campagnes d'influence et hashtags Bloc Léopards.">
+
   <section class="mx-auto max-w-6xl px-4 py-16">
-    <SectionHeader eyebrow="Influence" title="Campagnes de mobilisation" description="Des messages courts, positifs et verifiables pour accompagner le retour des Leopards au Mondial." />
-    <div class="grid gap-6 md:grid-cols-2">
-      {campaigns.map((campaign) => (
-        <Card
-          title={campaign.data.title}
-          description={`${campaign.data.description} Hashtag: ${campaign.data.hashtag}`}
-          meta={campaign.data.status}
-          image={campaign.data.image}
-        />
+    <SectionHeader eyebrow="Influence" title="Campagnes de mobilisation" description="Des messages courts, positifs et vérifiables pour accompagner le retour des Léopards au Mondial." />
+
+    <div class="flex flex-col gap-16">
+      {campaigns.map((campaign, i) => (
+        <article class={`grid gap-0 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-deep md:grid-cols-2 ${i % 2 !== 0 ? 'md:[direction:rtl]' : ''}`}>
+          {/* Image */}
+          <div class="aspect-[4/3] overflow-hidden md:aspect-auto md:[direction:ltr]">
+            <img
+              src={campaign.data.image}
+              alt={campaign.data.title}
+              class="h-full w-full object-cover transition duration-500 hover:scale-105"
+            />
+          </div>
+
+          {/* Content */}
+          <div class="flex flex-col justify-center gap-6 p-8 md:p-12 md:[direction:ltr]">
+            <div class="flex items-center gap-3">
+              <span class="rounded-full bg-brand-yellow px-3 py-1 text-xs font-bold uppercase tracking-widest text-brand-dark">
+                {campaign.data.status}
+              </span>
+            </div>
+
+            <div>
+              <h2 class="text-2xl font-bold text-slate-900 md:text-3xl">{campaign.data.title}</h2>
+              <p class="mt-3 text-base text-slate-600 leading-relaxed">{campaign.data.description}</p>
+              {campaign.body && (
+                <p class="mt-3 text-sm text-slate-500 leading-relaxed">{campaign.body}</p>
+              )}
+            </div>
+
+            <div class="flex items-center gap-3">
+              <div class="h-px flex-1 bg-slate-100" />
+              <span class="rounded-full border border-slate-200 px-4 py-1.5 text-sm font-bold tracking-wide text-slate-700">
+                {campaign.data.hashtag}
+              </span>
+            </div>
+
+            <div class="flex gap-3 flex-wrap">
+              <a
+                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(campaign.data.hashtag + ' 🇨🇩🐆 Allez les Léopards !')}`}
+                target="_blank" rel="noopener"
+                class="inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700"
+              >
+                𝕏 Partager
+              </a>
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent(campaign.data.hashtag + ' 🇨🇩 ' + campaign.data.description)}`}
+                target="_blank" rel="noopener"
+                class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-400"
+              >
+                💬 WhatsApp
+              </a>
+            </div>
+          </div>
+        </article>
       ))}
     </div>
   </section>
 
   <section class="bg-slate-50">
-    <div class="mx-auto max-w-6xl px-4 py-16">
-      <SectionHeader eyebrow="Slogans" title="Idees de campagnes" description="Propositions pour affiches, stories et messages de rassemblement." />
-      <div class="grid gap-4 md:grid-cols-2">
-        {kit.slogans.map((slogan) => (
-          <div class="rounded-2xl border border-slate-200 bg-white p-4 text-sm">{slogan}</div>
-        ))}
-      </div>
-      <div class="mt-10 rounded-3xl border border-slate-200 bg-white p-6 text-sm text-slate-700">
-        <p class="text-xs uppercase tracking-[0.3em] text-brand-yellow">{kit.communique.title}</p>
-        <p class="mt-3">{kit.communique.body}</p>
-      </div>
-      <div class="mt-6 rounded-3xl border border-slate-200 bg-white p-6 text-sm text-slate-700">
-        <p class="text-xs uppercase tracking-[0.3em] text-brand-yellow">Regle editoriale</p>
-        <p class="mt-3">Les campagnes ne doivent pas annoncer de score, de convocation ou de changement de programme sans lien vers une source fiable. Les rendez-vous Danemark et Chili sont relies aux informations publiees par Digital Congo.</p>
+    <div class="mx-auto max-w-4xl px-4 py-16">
+      <SectionHeader eyebrow="Communiqué" title={kit.communique.title} />
+      <div class="rounded-3xl border border-slate-200 bg-white p-8 text-sm text-slate-700 leading-relaxed">
+        {kit.communique.body}
       </div>
     </div>
   </section>
+
 </BaseLayout>

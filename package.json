@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@astrojs/node": "^8.3.4",
-    "@astrojs/react": "^5.0.5",
+    "@astrojs/react": "^3.6.3",
     "@neondatabase/serverless": "^1.1.0",
     "@sanity/astro": "^3.4.0",
     "@sanity/client": "^7.22.0",
@@ -26,6 +26,8 @@
     "@types/react-dom": "^19.2.3",
     "@types/react-is": "^19.2.0",
     "astro": "^4.16.2",
+    "country-state-city": "^3.2.1",
+    "framer-motion": "^12.40.0",
     "jimp": "^1.6.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",

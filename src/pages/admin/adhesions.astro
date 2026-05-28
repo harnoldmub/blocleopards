@@ -1,0 +1,12 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import AdminAdhesionsDashboard from "../../components/AdminAdhesionsDashboard.tsx";
+import { isAdminAuthed } from "../../lib/auth";
+
+if (!isAdminAuthed(Astro.cookies)) {
+  return Astro.redirect("/admin/login");
+}
+---
+<AdminLayout title="Adhésions — Admin Bloc Léopards" section="adhesions">
+  <AdminAdhesionsDashboard client:load />
+</AdminLayout>

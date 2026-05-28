@@ -1,0 +1,12 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import AdminContactsDashboard from "../../components/AdminContactsDashboard.tsx";
+import { isAdminAuthed } from "../../lib/auth";
+
+if (!isAdminAuthed(Astro.cookies)) {
+  return Astro.redirect("/admin/login");
+}
+---
+<AdminLayout title="Messages — Admin Bloc Léopards" section="contacts">
+  <AdminContactsDashboard client:load />
+</AdminLayout>

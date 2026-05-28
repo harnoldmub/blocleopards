@@ -1,5 +1,6 @@
 import { defineConfig } from "astro/config";
 import tailwind from "@astrojs/tailwind";
+import react from "@astrojs/react";
 import sanity from "@sanity/astro";
 import node from "@astrojs/node";
 
@@ -10,6 +11,7 @@ export default defineConfig({
     mode: "standalone"
   }),
   integrations: [
+    react(),
     tailwind(),
     sanity({
       projectId: process.env.PUBLIC_SANITY_PROJECT_ID || "blocleopards",
@@ -26,6 +28,19 @@ export default defineConfig({
   vite: {
     server: {
       allowedHosts: true,
+    },
+    esbuild: {
+      include: /\.[jt]sx?$/,
+      exclude: [],
+    },
+    optimizeDeps: {
+      include: [
+        "react",
+        "react-dom",
+        "react/jsx-dev-runtime",
+        "framer-motion",
+        "country-state-city",
+      ],
     },
   },
 });

@@ -1,0 +1,105 @@
+---
+import "../styles/global.css";
+import SEO from "../components/SEO.astro";
+const { title = "Admin — Bloc Léopards", section = "", noSidebar = false } = Astro.props;
+
+const nav = [
+  { id: "dashboard", label: "Dashboard", icon: "◉", href: "/admin" },
+  { id: "billets", label: "Billets", icon: "🎫", href: "/admin/billets" },
+  { id: "adhesions", label: "Adhésions", icon: "🤝", href: "/admin/adhesions" },
+  { id: "contacts", label: "Messages", icon: "✉️", href: "/admin/contacts" },
+  { id: "newsletter", label: "Newsletter", icon: "📮", href: "/admin/newsletter" },
+];
+---
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <SEO title={title} description="Backoffice Bloc Léopards." />
+    <link rel="icon" type="image/x-icon" href="/brand/logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { background: #07090f; color: #e2e8f0; min-height: 100vh; font-family: 'Sora', sans-serif; display: flex; }
+      .admin-sidebar {
+        position: fixed; top: 0; left: 0; bottom: 0; width: 220px;
+        background: #0d1117; border-right: 1px solid rgba(255,255,255,0.06);
+        display: flex; flex-direction: column; z-index: 100;
+        padding: 0 0 24px;
+      }
+      .admin-sidebar__brand {
+        padding: 20px 20px 16px;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        display: flex; align-items: center; gap: 10px;
+      }
+      .admin-sidebar__brand img { height: 32px; width: auto; }
+      .admin-sidebar__brand-text { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.4); font-weight: 700; }
+      .admin-sidebar__nav { flex: 1; padding: 16px 12px; display: flex; flex-direction: column; gap: 4px; }
+      .admin-sidebar__link {
+        display: flex; align-items: center; gap: 10px;
+        padding: 10px 12px; border-radius: 10px;
+        color: rgba(255,255,255,0.5); font-size: 13px; font-weight: 600;
+        text-decoration: none; transition: all 0.15s ease;
+      }
+      .admin-sidebar__link:hover { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.85); }
+      .admin-sidebar__link.active { background: rgba(247,214,24,0.12); color: #f7d618; }
+      .admin-sidebar__link-icon { font-size: 15px; width: 20px; text-align: center; flex-shrink: 0; }
+      .admin-sidebar__footer { padding: 12px; border-top: 1px solid rgba(255,255,255,0.06); }
+      .admin-sidebar__logout {
+        display: flex; align-items: center; gap: 8px; width: 100%;
+        padding: 10px 12px; border-radius: 10px; border: none; cursor: pointer;
+        background: rgba(206,16,33,0.08); color: rgba(206,16,33,0.8);
+        font-size: 13px; font-weight: 600; font-family: 'Sora', sans-serif;
+        transition: all 0.15s ease;
+      }
+      .admin-sidebar__logout:hover { background: rgba(206,16,33,0.18); color: #ff6b7a; }
+      .admin-main { margin-left: 220px; flex: 1; min-height: 100vh; padding: 32px; max-width: calc(100vw - 220px); }
+      .admin-main--full { margin-left: 0; max-width: 100vw; }
+      @media (max-width: 768px) {
+        .admin-sidebar { width: 64px; }
+        .admin-sidebar__brand-text, .admin-sidebar__link span:last-child { display: none; }
+        .admin-sidebar__brand img { margin: 0 auto; }
+        .admin-main { margin-left: 64px; max-width: calc(100vw - 64px); padding: 20px 16px; }
+        .admin-main--full { margin-left: 0; max-width: 100vw; }
+      }
+    </style>
+  </head>
+  <body>
+    <aside class="admin-sidebar">
+      <div class="admin-sidebar__brand">
+        <img src="/brand/logo.png" alt="Bloc Léopards" />
+        <span class="admin-sidebar__brand-text">Admin</span>
+      </div>
+      <nav class="admin-sidebar__nav">
+        {nav.map((item) => (
+          <a
+            href={item.href}
+            class={`admin-sidebar__link${section === item.id ? ' active' : ''}`}
+          >
+            <span class="admin-sidebar__link-icon">{item.icon}</span>
+            <span>{item.label}</span>
+          </a>
+        ))}
+      </nav>
+      <div class="admin-sidebar__footer">
+        <button class="admin-sidebar__logout" id="admin-logout-btn">
+          <span>⬡</span>
+          <span>Déconnexion</span>
+        </button>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+      <slot />
+    </main>
+
+    <script>
+      document.getElementById('admin-logout-btn')?.addEventListener('click', async () => {
+        await fetch('/api/admin/auth', { method: 'DELETE' });
+        window.location.href = '/admin/login';
+      });
+    </script>
+  </body>
+</html>

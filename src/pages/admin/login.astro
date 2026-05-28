@@ -1,0 +1,102 @@
+---
+import { isAdminAuthed } from "../../lib/auth";
+
+if (isAdminAuthed(Astro.cookies)) {
+  return Astro.redirect("/admin/billets");
+}
+---
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Connexion Admin — Bloc Léopards</title>
+    <link rel="icon" type="image/x-icon" href="/brand/logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { background: #07090f; color: #e2e8f0; min-height: 100vh; font-family: 'Sora', sans-serif; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    </style>
+  </head>
+  <body>
+    <div style="width:100%; max-width:400px;">
+      <div style="text-align:center; margin-bottom:36px;">
+        <img src="/brand/logo.png" alt="Bloc Léopards" style="height:64px; width:auto; margin:0 auto 16px; display:block;" />
+        <h1 style="font-family:'Bebas Neue',sans-serif; font-size:2.5rem; letter-spacing:0.06em; color:#f7d618; margin-bottom:6px;">
+          Accès Admin
+        </h1>
+        <p style="color:rgba(255,255,255,0.45); font-size:13px;">Bloc Léopards · Espace de gestion</p>
+      </div>
+
+      <div style="background:rgba(255,255,255,0.04); border:1.5px solid rgba(255,255,255,0.1); border-radius:24px; padding:36px;">
+        <div id="error-msg" style="display:none; margin-bottom:20px; padding:12px 14px; background:rgba(206,16,33,0.15); border:1px solid rgba(206,16,33,0.3); border-radius:12px; color:#ff6b7a; font-size:14px;">
+          Mot de passe incorrect. Réessaie.
+        </div>
+
+        <div style="margin-bottom:28px;">
+          <label style="display:block; font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:rgba(255,255,255,0.5); margin-bottom:8px; font-weight:700;">
+            Mot de passe
+          </label>
+          <input
+            id="password-input"
+            type="password"
+            autocomplete="current-password"
+            autofocus
+            style="width:100%; padding:14px 16px; background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.14); border-radius:12px; color:#fff; font-size:15px; font-family:'Sora',sans-serif; outline:none; transition:all 0.2s ease; caret-color:#f7d618;"
+            onfocus="this.style.borderColor='#f7d618'; this.style.boxShadow='0 0 0 3px rgba(247,214,24,0.12)'"
+            onblur="this.style.borderColor='rgba(255,255,255,0.14)'; this.style.boxShadow='none'"
+          />
+        </div>
+
+        <button
+          id="login-btn"
+          type="button"
+          style="width:100%; padding:16px; background:#f7d618; border:none; border-radius:14px; color:#07090f; font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:0.08em; cursor:pointer; transition:all 0.2s ease;"
+        >
+          Entrer dans l'Admin
+        </button>
+      </div>
+
+      <div style="text-align:center; margin-top:24px;">
+        <a href="/" style="color:rgba(255,255,255,0.35); font-size:13px; text-decoration:none;">← Retour au site</a>
+      </div>
+    </div>
+
+    <script>
+      const btn = document.getElementById('login-btn') as HTMLButtonElement;
+      const input = document.getElementById('password-input') as HTMLInputElement;
+      const errorMsg = document.getElementById('error-msg') as HTMLDivElement;
+
+      const doLogin = async () => {
+        const password = input.value.trim();
+        if (!password) return;
+        btn.textContent = '...';
+        btn.style.opacity = '0.7';
+        errorMsg.style.display = 'none';
+        try {
+          const res = await fetch('/api/admin/auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password }),
+          });
+          if (res.ok) {
+            window.location.href = '/admin/billets';
+          } else {
+            errorMsg.style.display = 'block';
+            btn.textContent = "Entrer dans l'Admin";
+            btn.style.opacity = '1';
+          }
+        } catch {
+          errorMsg.textContent = 'Erreur de connexion. Réessaie.';
+          errorMsg.style.display = 'block';
+          btn.textContent = "Entrer dans l'Admin";
+          btn.style.opacity = '1';
+        }
+      };
+
+      btn.addEventListener('click', doLogin);
+      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
+    </script>
+  </body>
+</html>

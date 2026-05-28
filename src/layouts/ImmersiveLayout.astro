@@ -1,0 +1,21 @@
+---
+import "../styles/global.css";
+import SEO from "../components/SEO.astro";
+
+const { title = "Billets — Bloc Léopards" } = Astro.props;
+---
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <SEO title={title} description="Rejoins le Bloc des Léopards. Demande ta place pour soutenir la RDC." />
+    <link rel="icon" type="image/x-icon" href="/brand/logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
+  </head>
+  <body style="background:#080c1a; color:#fff; overflow-x:hidden; min-height:100vh;">
+    <slot />
+  </body>
+</html>

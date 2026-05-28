@@ -4,6 +4,7 @@ import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import SEO from "../components/SEO.astro";
 import ChatAssistant from "../components/ChatAssistant.astro";
+import { getSetting } from "../lib/settings";
 
 const { title, description, image, url } = Astro.props;
 const siteName = "Bloc Leopards";
@@ -11,6 +12,7 @@ const defaultDescription = "Bloc Leopards rassemble les supporters des Leopards 
 const pageTitle = title ? `${title} | ${siteName}` : siteName;
 const pageDescription = description ?? defaultDescription;
 const pageUrl = url ?? Astro.url?.toString();
+const billeterieActive = (await getSetting("billeterie_active", "true")) !== "false";
 ---
 <!doctype html>
 <html lang="fr">
@@ -21,11 +23,11 @@ const pageUrl = url ?? Astro.url?.toString();
     <link rel="icon" type="image/x-icon" href="/brand/logo.png" />
   </head>
   <body class="bg-white text-slate-900">
-    <Header />
+    <Header billeterieActive={billeterieActive} />
     <main class="min-h-screen">
       <slot />
     </main>
-    <ChatAssistant />
+    <ChatAssistant billeterieActive={billeterieActive} />
     <Footer />
   </body>
 </html>
