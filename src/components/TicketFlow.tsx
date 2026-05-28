@@ -20,22 +20,32 @@ interface FormState {
 
 // ─── Match data ───────────────────────────────────────────────────────────────
 
-const MATCHES: Record<MatchKey, { away: string; awayFlag: string; date: string; venue: string; glow: string }> = {
+const MATCHES: Record<MatchKey, { away: string; awayFlagCode: string; date: string; venue: string; glow: string }> = {
   "rdc-denmark": {
     away: "DANEMARK",
-    awayFlag: "🇩🇰",
+    awayFlagCode: "dk",
     date: "3 JUIN 2026",
     venue: "LIÈGE · BELGIQUE",
     glow: "rgba(0,120,255,0.55)",
   },
   "rdc-chili": {
     away: "CHILI",
-    awayFlag: "🇨🇱",
+    awayFlagCode: "cl",
     date: "9 JUIN 2026",
     venue: "MARBELLA · ESPAGNE",
     glow: "rgba(206,16,33,0.55)",
   },
 };
+
+const FlagImg = ({ code, size = 48 }: { code: string; size?: number }) => (
+  <img
+    src={`https://flagcdn.com/w${size * 2}/${code}.png`}
+    height={size}
+    width="auto"
+    alt={code.toUpperCase()}
+    style={{ display: "block", borderRadius: 4, boxShadow: "0 2px 12px rgba(0,0,0,0.4)" }}
+  />
+);
 
 const STEP_ORDER: Step[] = ["match", "name", "location", "contact", "confirm", "success"];
 const PROGRESS_STEPS: Step[] = ["name", "location", "contact", "confirm"];
@@ -819,7 +829,7 @@ export default function TicketFlow() {
                   letterSpacing: "0.08em",
                 }}
               >
-                🇨🇩 Allez les Léopards ! 🇨🇩
+                <img src="https://flagcdn.com/w40/cd.png" height={28} style={{ verticalAlign: "middle", borderRadius: 3, marginRight: 8 }} alt="RDC" /> Allez les Léopards ! <img src="https://flagcdn.com/w40/cd.png" height={28} style={{ verticalAlign: "middle", borderRadius: 3, marginLeft: 8 }} alt="RDC" />
               </motion.p>
               <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.75 }} style={{ display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center" }}>
                 <a
@@ -912,9 +922,9 @@ function MatchCard({ matchKey, match, index, onSelect }: {
 
         {/* Score board style */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px", gap: "12px" }}>
-          <div style={{ textAlign: "center", flex: 1 }}>
-            <div style={{ fontSize: "42px", marginBottom: "6px" }}>🇨🇩</div>
-            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "22px", letterSpacing: "0.08em", color: "#fff" }}>RDC</div>
+          <div style={{ textAlign: "center", flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <FlagImg code="cd" size={42} />
+            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "22px", letterSpacing: "0.08em", color: "#fff", marginTop: 6 }}>RDC</div>
           </div>
           <div style={{
             background: "rgba(0,0,0,0.4)",
@@ -929,9 +939,9 @@ function MatchCard({ matchKey, match, index, onSelect }: {
           }}>
             VS
           </div>
-          <div style={{ textAlign: "center", flex: 1 }}>
-            <div style={{ fontSize: "42px", marginBottom: "6px" }}>{match.awayFlag}</div>
-            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "22px", letterSpacing: "0.08em", color: "#fff" }}>{match.away}</div>
+          <div style={{ textAlign: "center", flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <FlagImg code={match.awayFlagCode} size={42} />
+            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "22px", letterSpacing: "0.08em", color: "#fff", marginTop: 6 }}>{match.away}</div>
           </div>
         </div>
 

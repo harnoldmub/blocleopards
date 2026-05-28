@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Ticket, Clock, CheckCircle, XCircle, RefreshCw, ExternalLink, Pencil, List } from "lucide-react";
 import ConfirmDialog from "./ConfirmDialog";
+import Flag from "./Flag";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -49,16 +51,16 @@ const STATUS_CONFIG: Record<Status, { label: string; color: string; bg: string; 
   rejected: { label: "Refusé", color: "#f87171", bg: "rgba(248,113,113,0.1)", border: "rgba(248,113,113,0.25)" },
 };
 
-const MATCH_CONFIG: Record<MatchKey, { label: string; flag: string; color: string }> = {
-  "rdc-denmark": { label: "RDC vs Danemark", flag: "🇩🇰", color: "#60a5fa" },
-  "rdc-chili": { label: "RDC vs Chili", flag: "🇨🇱", color: "#f87171" },
+const MATCH_CONFIG: Record<MatchKey, { label: string; flagCode: string; color: string }> = {
+  "rdc-denmark": { label: "RDC vs Danemark", flagCode: "dk", color: "#60a5fa" },
+  "rdc-chili": { label: "RDC vs Chili", flagCode: "cl", color: "#f87171" },
 };
 
 const PAGE_SIZE = 20;
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function StatCard({ icon, value, label, sub, color }: { icon: string; value: string | number; label: string; sub?: string; color?: string }) {
+function StatCard({ icon, value, label, sub, color }: { icon: React.ReactNode; value: string | number; label: string; sub?: string; color?: string }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -139,7 +141,7 @@ function ActionButton({ label, color, onClick, disabled }: { label: string; colo
   );
 }
 
-function FilterChip({ label, active, onClick, count }: { label: string; active: boolean; onClick: () => void; count?: number }) {
+function FilterChip({ label, active, onClick, count }: { label: React.ReactNode; active: boolean; onClick: () => void; count?: number }) {
   return (
     <button
       type="button"
@@ -269,8 +271,8 @@ function RowDrawer({ row, onClose, onUpdate, onDelete }: {
                 <div style={{ color: "#fff", fontSize: 13 }}>{v}</div>
               </div>
             ))}
-            <button onClick={() => setEditing(true)} style={{ marginTop: 4, padding: "9px 16px", background: "transparent", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 10, color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
-              ✏️ Modifier les infos
+            <button onClick={() => setEditing(true)} style={{ marginTop: 4, padding: "9px 16px", background: "transparent", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 10, color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+              <Pencil size={12} /> Modifier les infos
             </button>
           </div>
         ) : (
@@ -433,14 +435,16 @@ export default function AdminBilletsDashboard() {
           <a href="/billets" target="_blank" rel="noopener" style={{
             padding: "9px 16px", background: "rgba(247,214,24,0.1)", border: "1px solid rgba(247,214,24,0.25)",
             borderRadius: "10px", color: "#f7d618", fontSize: "12px", fontWeight: 700, textDecoration: "none",
+            display: "inline-flex", alignItems: "center", gap: 6,
           }}>
-            ↗ Voir la page billets
+            <ExternalLink size={13} /> Voir la page billets
           </a>
           <button onClick={fetchData} type="button" style={{
             padding: "9px 16px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
             borderRadius: "10px", color: "rgba(255,255,255,0.6)", fontSize: "12px", fontWeight: 600, cursor: "pointer",
+            display: "inline-flex", alignItems: "center", gap: 6,
           }}>
-            ↻ Actualiser
+            <RefreshCw size={13} /> Actualiser
           </button>
         </div>
       </div>
@@ -449,13 +453,13 @@ export default function AdminBilletsDashboard() {
 
         {/* Stats */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "14px", marginBottom: "36px" }}>
-          <StatCard icon="📋" value={n(stats?.total)} label="Total inscrits" color="#a78bfa" />
-          <StatCard icon="🇩🇰" value={n(stats?.denmark)} label="RDC vs Danemark" sub="3 juin · Liège" color="#60a5fa" />
-          <StatCard icon="🇨🇱" value={n(stats?.chili)} label="RDC vs Chili" sub="9 juin · Marbella" color="#f87171" />
-          <StatCard icon="⏳" value={n(stats?.pending)} label="En attente" color="#f7d618" />
-          <StatCard icon="✅" value={n(stats?.selected)} label="Sélectionnés" color="#22c55e" />
-          <StatCard icon="🎫" value={n(stats?.ticket_given)} label="Billets donnés" color="#60a5fa" />
-          <StatCard icon="✕" value={n(stats?.rejected)} label="Refusés" color="#f87171" />
+          <StatCard icon={<List size={22} />} value={n(stats?.total)} label="Total inscrits" color="#a78bfa" />
+          <StatCard icon={<Flag code="dk" size={18} />} value={n(stats?.denmark)} label="RDC vs Danemark" sub="3 juin · Liège" color="#60a5fa" />
+          <StatCard icon={<Flag code="cl" size={18} />} value={n(stats?.chili)} label="RDC vs Chili" sub="9 juin · Marbella" color="#f87171" />
+          <StatCard icon={<Clock size={22} />} value={n(stats?.pending)} label="En attente" color="#f7d618" />
+          <StatCard icon={<CheckCircle size={22} />} value={n(stats?.selected)} label="Sélectionnés" color="#22c55e" />
+          <StatCard icon={<Ticket size={22} />} value={n(stats?.ticket_given)} label="Billets donnés" color="#60a5fa" />
+          <StatCard icon={<XCircle size={22} />} value={n(stats?.rejected)} label="Refusés" color="#f87171" />
         </div>
 
         {/* Filters */}
@@ -494,8 +498,8 @@ export default function AdminBilletsDashboard() {
 
           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
             <FilterChip label="Tous les matchs" active={filterMatch === "all"} onClick={() => { setFilterMatch("all"); setPage(1); }} count={n(stats?.total)} />
-            <FilterChip label="🇩🇰 Danemark" active={filterMatch === "rdc-denmark"} onClick={() => { setFilterMatch("rdc-denmark"); setPage(1); }} count={n(stats?.denmark)} />
-            <FilterChip label="🇨🇱 Chili" active={filterMatch === "rdc-chili"} onClick={() => { setFilterMatch("rdc-chili"); setPage(1); }} count={n(stats?.chili)} />
+            <FilterChip label={<span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><Flag code="dk" size={14} /> Danemark</span>} active={filterMatch === "rdc-denmark"} onClick={() => { setFilterMatch("rdc-denmark"); setPage(1); }} count={n(stats?.denmark)} />
+            <FilterChip label={<span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><Flag code="cl" size={14} /> Chili</span>} active={filterMatch === "rdc-chili"} onClick={() => { setFilterMatch("rdc-chili"); setPage(1); }} count={n(stats?.chili)} />
           </div>
 
           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
@@ -584,7 +588,7 @@ export default function AdminBilletsDashboard() {
                             fontWeight: 600,
                             color: MATCH_CONFIG[row.match_key]?.color,
                           }}>
-                            {MATCH_CONFIG[row.match_key]?.flag} {row.match_key === "rdc-denmark" ? "Danemark" : "Chili"}
+                            <Flag code={MATCH_CONFIG[row.match_key]?.flagCode} size={12} /> {row.match_key === "rdc-denmark" ? "Danemark" : "Chili"}
                           </span>
                         </td>
                         <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>

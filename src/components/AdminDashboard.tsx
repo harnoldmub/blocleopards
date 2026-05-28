@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Ticket, Users, Mail, Send, LayoutDashboard } from "lucide-react";
 
 const C = {
   bg: "#07090f",
@@ -12,7 +13,7 @@ const C = {
   green: "#16a34a",
 };
 
-function StatCard({ icon, label, value, sub, color = C.yellow }: { icon: string; label: string; value: string | number; sub?: string; color?: string }) {
+function StatCard({ icon, label, value, sub, color = C.yellow }: { icon: React.ReactNode; label: string; value: string | number; sub?: string; color?: string }) {
   return (
     <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: "20px 24px", display: "flex", flexDirection: "column", gap: 8 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -25,7 +26,7 @@ function StatCard({ icon, label, value, sub, color = C.yellow }: { icon: string;
   );
 }
 
-function SectionCard({ title, icon, href, stats }: { title: string; icon: string; href: string; stats: { label: string; value: string | number; color?: string }[] }) {
+function SectionCard({ title, icon, href, stats }: { title: string; icon: React.ReactNode; href: string; stats: { label: string; value: string | number; color?: string }[] }) {
   const [hovered, setHovered] = useState(false);
   return (
     <a
@@ -161,16 +162,16 @@ export default function AdminDashboard() {
 
       {/* Top stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16, marginBottom: 32 }}>
-        <StatCard icon="🎫" label="Billets total" value={b.total || 0} sub={`${b.pending || 0} en attente`} />
-        <StatCard icon="🤝" label="Adhésions" value={a.total || 0} sub={`${a.pending || 0} en attente`} color="#60a5fa" />
-        <StatCard icon="✉️" label="Messages" value={c.total || 0} sub={`${c.unread || 0} non lus`} color="#f472b6" />
-        <StatCard icon="📮" label="Newsletter" value={n.total || 0} sub="abonnés" color="#34d399" />
+        <StatCard icon={<Ticket size={20} />} label="Billets total" value={b.total || 0} sub={`${b.pending || 0} en attente`} />
+        <StatCard icon={<Users size={20} />} label="Adhésions" value={a.total || 0} sub={`${a.pending || 0} en attente`} color="#60a5fa" />
+        <StatCard icon={<Mail size={20} />} label="Messages" value={c.total || 0} sub={`${c.unread || 0} non lus`} color="#f472b6" />
+        <StatCard icon={<Send size={20} />} label="Newsletter" value={n.total || 0} sub="abonnés" color="#34d399" />
       </div>
 
       {/* Sections */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}>
         <SectionCard
-          title="Billets" icon="🎫" href="/admin/billets"
+          title="Billets" icon={<Ticket size={20} />} href="/admin/billets"
           stats={[
             { label: "Total", value: b.total || 0 },
             { label: "En attente", value: b.pending || 0 },
@@ -179,7 +180,7 @@ export default function AdminDashboard() {
           ]}
         />
         <SectionCard
-          title="Adhésions" icon="🤝" href="/admin/adhesions"
+          title="Adhésions" icon={<Users size={20} />} href="/admin/adhesions"
           stats={[
             { label: "Total", value: a.total || 0, color: "#60a5fa" },
             { label: "En attente", value: a.pending || 0, color: "#60a5fa" },
@@ -187,7 +188,7 @@ export default function AdminDashboard() {
           ]}
         />
         <SectionCard
-          title="Messages" icon="✉️" href="/admin/contacts"
+          title="Messages" icon={<Mail size={20} />} href="/admin/contacts"
           stats={[
             { label: "Total", value: c.total || 0, color: "#f472b6" },
             { label: "Non lus", value: c.unread || 0, color: "#f472b6" },
@@ -195,7 +196,7 @@ export default function AdminDashboard() {
           ]}
         />
         <SectionCard
-          title="Newsletter" icon="📮" href="/admin/newsletter"
+          title="Newsletter" icon={<Send size={20} />} href="/admin/newsletter"
           stats={[
             { label: "Abonnés", value: n.total || 0, color: "#34d399" },
           ]}
