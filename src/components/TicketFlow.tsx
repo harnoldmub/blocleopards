@@ -39,7 +39,7 @@ const MATCHES: Record<MatchKey, { away: string; awayFlagCode: string; date: stri
 
 const FlagImg = ({ code, size = 48 }: { code: string; size?: number }) => (
   <img
-    src={`https://flagcdn.com/w${size * 2}/${code}.png`}
+    src={`/flags/${code}.png`}
     height={size}
     width="auto"
     alt={code.toUpperCase()}
@@ -829,7 +829,7 @@ export default function TicketFlow() {
                   letterSpacing: "0.08em",
                 }}
               >
-                <img src="https://flagcdn.com/w40/cd.png" height={28} style={{ verticalAlign: "middle", borderRadius: 3, marginRight: 8 }} alt="RDC" /> Allez les Léopards ! <img src="https://flagcdn.com/w40/cd.png" height={28} style={{ verticalAlign: "middle", borderRadius: 3, marginLeft: 8 }} alt="RDC" />
+                <img src="/flags/cd.png" height={28} style={{ verticalAlign: "middle", borderRadius: 3, marginRight: 8 }} alt="RDC" /> Allez les Léopards ! <img src="/flags/cd.png" height={28} style={{ verticalAlign: "middle", borderRadius: 3, marginLeft: 8 }} alt="RDC" />
               </motion.p>
               <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.75 }} style={{ display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center" }}>
                 <a

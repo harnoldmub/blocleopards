@@ -8,7 +8,7 @@ interface Props {
 export default function Flag({ code, size = 20, alt = "", style }: Props) {
   return (
     <img
-      src={`https://flagcdn.com/w40/${code.toLowerCase()}.png`}
+      src={`/flags/${code.toLowerCase()}.png`}
       height={size}
       width="auto"
       alt={alt}
