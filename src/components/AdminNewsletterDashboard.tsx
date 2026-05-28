@@ -51,6 +51,15 @@ export default function AdminNewsletterDashboard() {
 
   return (
     <div style={{ fontFamily: "'Sora', sans-serif", color: C.text }}>
+      <style>{`
+        .nl-table-view { display: block; }
+        .nl-cards-view { display: none; flex-direction: column; gap: 8px; }
+        @media (max-width: 700px) {
+          .nl-table-view { display: none !important; }
+          .nl-cards-view { display: flex !important; }
+        }
+        .nl-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+      `}</style>
       <div style={{ marginBottom: 28 }}>
         <div style={{ fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", color: C.muted, fontWeight: 700, marginBottom: 8 }}>Backoffice</div>
         <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "clamp(2rem, 5vw, 3rem)", letterSpacing: "0.04em" }}>Newsletter</h1>
@@ -74,7 +83,25 @@ export default function AdminNewsletterDashboard() {
         </button>
       </div>
 
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, overflow: "hidden" }}>
+      {/* Cards — mobile */}
+      <div className="nl-cards-view">
+        {page_rows.length === 0 ? (
+          <div style={{ padding: 32, textAlign: "center", color: C.muted, fontSize: 13 }}>Aucun abonné</div>
+        ) : page_rows.map((row) => (
+          <div key={row.id} className="nl-card">
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.email}</div>
+              <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>{row.source || "website"} · {new Date(row.created_at).toLocaleDateString("fr-FR")}</div>
+            </div>
+            <button onClick={() => setPendingDeleteId(row.id)} disabled={deleting === row.id} style={{ padding: "5px 10px", borderRadius: 8, border: `1px solid rgba(248,113,113,0.3)`, background: "transparent", color: "#f87171", fontSize: 11, cursor: "pointer", flexShrink: 0 }}>
+              Supprimer
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* Table — desktop */}
+      <div className="nl-table-view" style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: `1px solid ${C.border}` }}>

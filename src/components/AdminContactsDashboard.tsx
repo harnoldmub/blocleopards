@@ -146,6 +146,17 @@ export default function AdminContactsDashboard() {
 
   return (
     <div style={{ fontFamily: "'Sora', sans-serif", color: C.text }}>
+      <style>{`
+        .msg-table-view { display: block; }
+        .msg-cards-view { display: none; flex-direction: column; gap: 10px; }
+        @media (max-width: 700px) {
+          .msg-table-view { display: none !important; }
+          .msg-cards-view { display: flex !important; }
+        }
+        .msg-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; padding: 14px 16px; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+        .msg-card:hover { background: rgba(247,214,24,0.04); border-color: rgba(247,214,24,0.2); }
+        .msg-card.unread { border-left: 3px solid #f472b6; }
+      `}</style>
       <div style={{ marginBottom: 28 }}>
         <div style={{ fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", color: C.muted, fontWeight: 700, marginBottom: 8 }}>Backoffice</div>
         <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "clamp(2rem, 5vw, 3rem)", letterSpacing: "0.04em" }}>Messages Contact</h1>
@@ -167,7 +178,25 @@ export default function AdminContactsDashboard() {
         <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} style={{ marginLeft: "auto", background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: "8px 14px", color: C.text, fontSize: 13, fontFamily: "'Sora', sans-serif", outline: "none", minWidth: 200 }} />
       </div>
 
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, overflow: "hidden" }}>
+      {/* Cards — mobile */}
+      <div className="msg-cards-view">
+        {page_rows.length === 0 ? (
+          <div style={{ padding: 32, textAlign: "center", color: C.muted, fontSize: 13 }}>Aucun message</div>
+        ) : page_rows.map((row) => (
+          <div key={row.id} className={`msg-card${row.status === "unread" ? " unread" : ""}`} onClick={() => setSelected(row)}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+              <div style={{ fontWeight: row.status === "unread" ? 700 : 500, color: C.text, fontSize: 14 }}>{row.nom}</div>
+              <StatusBadge status={row.status} />
+            </div>
+            <div style={{ fontSize: 12, color: C.muted, marginBottom: 4 }}>{row.email}</div>
+            <div style={{ fontSize: 13, color: C.text, fontWeight: 600, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.objet}</div>
+            <div style={{ fontSize: 11, color: C.muted, marginTop: 8 }}>{new Date(row.created_at).toLocaleDateString("fr-FR")}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Table — desktop */}
+      <div className="msg-table-view" style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: `1px solid ${C.border}` }}>

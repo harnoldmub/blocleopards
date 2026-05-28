@@ -219,6 +219,16 @@ export default function AdminAdhesionsDashboard() {
 
   return (
     <div style={{ fontFamily: "'Sora', sans-serif", color: C.text }}>
+      <style>{`
+        .adh-table-view { display: block; }
+        .adh-cards-view { display: none; flex-direction: column; gap: 10px; }
+        @media (max-width: 700px) {
+          .adh-table-view { display: none !important; }
+          .adh-cards-view { display: flex !important; }
+        }
+        .adh-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; padding: 14px 16px; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+        .adh-card:hover { background: rgba(247,214,24,0.04); border-color: rgba(247,214,24,0.2); }
+      `}</style>
       <div style={{ marginBottom: 28 }}>
         <div style={{ fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", color: C.muted, fontWeight: 700, marginBottom: 8 }}>Backoffice</div>
         <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "clamp(2rem, 5vw, 3rem)", letterSpacing: "0.04em", color: C.text }}>Adhésions</h1>
@@ -241,7 +251,29 @@ export default function AdminAdhesionsDashboard() {
         <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} style={{ marginLeft: "auto", background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: "8px 14px", color: C.text, fontSize: 13, fontFamily: "'Sora', sans-serif", outline: "none", minWidth: 200 }} />
       </div>
 
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, overflow: "hidden" }}>
+      {/* Cards — mobile */}
+      <div className="adh-cards-view">
+        {page_rows.length === 0 ? (
+          <div style={{ padding: 32, textAlign: "center", color: C.muted, fontSize: 13 }}>Aucun résultat</div>
+        ) : page_rows.map((row) => (
+          <div key={row.id} className="adh-card" onClick={() => setSelected(row)}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+              <div style={{ fontWeight: 700, color: C.text, fontSize: 15 }}>{row.prenom} {row.nom}</div>
+              <StatusBadge status={row.status} />
+            </div>
+            <div style={{ fontSize: 12, color: C.muted, marginBottom: 2 }}>{row.email}</div>
+            {row.telephone && <div style={{ fontSize: 12, color: C.muted, marginBottom: 2 }}>📱 {row.telephone}</div>}
+            <div style={{ fontSize: 12, color: C.muted, marginBottom: 6 }}>📍 {row.ville}{row.pays ? `, ${row.pays}` : ""}</div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 8, borderTop: `1px solid ${C.border}` }}>
+              <span style={{ fontSize: 11, color: C.muted }}>{ROLES[row.role] || row.role || "—"}</span>
+              <span style={{ fontSize: 11, color: C.muted }}>{new Date(row.created_at).toLocaleDateString("fr-FR")}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Table — desktop */}
+      <div className="adh-table-view" style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: `1px solid ${C.border}` }}>

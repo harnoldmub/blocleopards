@@ -403,6 +403,21 @@ export default function AdminBilletsDashboard() {
         ::-webkit-scrollbar-track { background:transparent; }
         ::-webkit-scrollbar-thumb { background:rgba(247,214,24,0.25); border-radius:4px; }
         * { box-sizing: border-box; }
+        .admin-table-view { display: block; }
+        .admin-cards-view { display: none; flex-direction: column; gap: 10px; }
+        @media (max-width: 700px) {
+          .admin-table-view { display: none !important; }
+          .admin-cards-view { display: flex !important; }
+        }
+        .admin-card {
+          background: rgba(255,255,255,0.03);
+          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 16px;
+          padding: 14px 16px;
+          cursor: pointer;
+          transition: background 0.15s ease, border-color 0.15s ease;
+        }
+        .admin-card:hover { background: rgba(247,214,24,0.04); border-color: rgba(247,214,24,0.2); }
       `}</style>
 
       {/* Top bar */}
@@ -532,7 +547,41 @@ export default function AdminBilletsDashboard() {
           </div>
         ) : (
           <>
-            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "18px", overflow: "hidden" }}>
+            {/* Cards — mobile */}
+            <div className="admin-cards-view">
+              {pageData.map((row) => (
+                <div key={row.id} className="admin-card" onClick={() => setSelected(row)}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                    <div>
+                      <div style={{ fontWeight: 700, color: "#fff", fontSize: 15 }}>{row.first_name} {row.last_name}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 5 }}>
+                        <Flag code={MATCH_CONFIG[row.match_key]?.flagCode} size={13} />
+                        <span style={{ fontSize: 12, color: MATCH_CONFIG[row.match_key]?.color, fontWeight: 600 }}>
+                          {row.match_key === "rdc-denmark" ? "RDC vs Danemark" : "RDC vs Chili"}
+                        </span>
+                      </div>
+                    </div>
+                    <StatusBadge status={row.status} />
+                  </div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 2 }}>{row.email}</div>
+                  {row.phone && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 2 }}>📱 {row.phone}</div>}
+                  {(row.city || row.country) && (
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 2 }}>📍 {[row.city, row.country].filter(Boolean).join(", ")}</div>
+                  )}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>
+                      {new Date(row.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}
+                    </span>
+                    <span style={{ padding: "2px 8px", background: row.source === "chatbot" ? "rgba(167,139,250,0.12)" : "rgba(255,255,255,0.06)", borderRadius: 6, fontSize: 10, color: row.source === "chatbot" ? "#a78bfa" : "rgba(255,255,255,0.4)", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" }}>
+                      {row.source === "chatbot" ? "Bot" : "Form"}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Table — desktop */}
+            <div className="admin-table-view" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "18px", overflow: "hidden" }}>
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "760px" }}>
                   <thead>
