@@ -200,7 +200,7 @@ const quickActions = [
       addTypingReply("Un instant, j'enregistre ta demande... ", 300);
       const d = state.billetData;
       try {
-        const res = await fetch('/api/gagner-ton-billet', {
+        const res = await fetch('/api/gagne-ton-billet', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -288,14 +288,14 @@ const quickActions = [
     };
 
     const showRecruit = () => {
-      const inviteUrl = `${window.location.origin}/gagner-ton-billet`;
+      const inviteUrl = `${window.location.origin}/gagne-ton-billet`;
       const text = encodeURIComponent(`Rejoins le Bloc des Léopards 🇨🇩 Demande ta place pour soutenir la RDC ici : ${inviteUrl}`);
       addActionMessage(`
         <strong>📢 Recruter des supporters</strong>
         <span>Partage et agrandis le Bloc !</span>
         <div class="bloc-chat__choice-grid">
           <a href="https://wa.me/?text=${text}" target="_blank" rel="noopener">💬 Inviter sur WhatsApp</a>
-          <a href="/gagner-ton-billet">🎫 Demander un billet</a>
+          <a href="/gagne-ton-billet">🎫 Demander un billet</a>
         </div>
       `);
     };

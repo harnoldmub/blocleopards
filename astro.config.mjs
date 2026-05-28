@@ -11,7 +11,7 @@ export default defineConfig({
     mode: "standalone"
   }),
   integrations: [
-    react(),
+    react({ include: [/\.(tsx|jsx)$/] }),
     tailwind(),
     sanity({
       projectId: process.env.PUBLIC_SANITY_PROJECT_ID || "blocleopards",

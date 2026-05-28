@@ -20,9 +20,13 @@ const partners = [
 ];
 
 const today = new Date().toISOString().slice(0, 10);
-const allEvents = (await getCollection("events")).sort((a, b) => a.data.date.localeCompare(b.data.date));
-const upcomingEvents = allEvents.filter((event) => event.data.date >= today);
+let allEvents: any[] = [];
+try { allEvents = (await getCollection("events")).sort((a: any, b: any) => a.data.date.localeCompare(b.data.date)); } catch {}
+const upcomingEvents = allEvents.filter((event: any) => event.data.date >= today);
 const events = (upcomingEvents.length ? upcomingEvents : allEvents).slice(0, 3);
+const FR_MONTHS = ["JAN","FEV","MAR","AVR","MAI","JUIN","JUIL","AOUT","SEPT","OCT","NOV","DEC"];
+const getMonth = (d: string) => FR_MONTHS[parseInt(d.split("-")[1]) - 1];
+const getDay = (d: string) => parseInt(d.split("-")[2]);
 const tickerItems = [
   "Un seul bloc. Une seule voix.",
   "Support positif et respectueux",
@@ -66,23 +70,55 @@ const tickerItems = [
   <Marquee items={tickerItems} />
 
   <section class="mx-auto max-w-6xl px-4 py-10">
-    <div class="glass-card flex flex-wrap items-center justify-between gap-6 rounded-3xl px-6 py-5 text-sm">
-      <div class="flex items-center gap-4">
-        <div class="equalizer" aria-hidden="true">
-          <span class="eq-bar"></span>
-          <span class="eq-bar"></span>
-          <span class="eq-bar"></span>
-          <span class="eq-bar"></span>
-          <span class="eq-bar"></span>
+    <div class="mb-6 text-center">
+      <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Nos partenaires</p>
+      <p class="mt-1 text-lg font-bold text-slate-800">Ils soutiennent le Bloc</p>
+    </div>
+    <div class="grid grid-cols-3 gap-4 md:grid-cols-6">
+      {partners.map((p) => (
+        <div class="flex items-center justify-center rounded-2xl border border-slate-200 bg-white p-4 shadow-sm min-h-[80px]">
+          <img src={p.logo} alt={p.name} class="max-h-10 w-auto max-w-[100px] object-contain" />
         </div>
-        <div>
-          <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Chant du jour</p>
-          <p class="font-semibold text-slate-800">Un seul bloc, une seule voix, Leopards en route!</p>
-        </div>
-      </div>
-      <a href="/matchs" class="rounded-full border border-slate-300 px-4 py-2 text-xs uppercase tracking-[0.2em] text-slate-700">Voir tous les chants</a>
+      ))}
     </div>
   </section>
+
+  {upcomingEvents.length > 0 && (
+    <section class="mx-auto max-w-6xl px-4 py-12">
+      <div class="mb-8 text-center">
+        <p class="text-xs font-bold uppercase tracking-[0.18em] text-brand-yellow">Agenda</p>
+        <p class="mt-1 text-2xl font-bold text-slate-900">Prochains evenements</p>
+      </div>
+      <div class="flex flex-col gap-4">
+        {upcomingEvents.slice(0, 2).map((event: any) => (
+          <div class="flex items-center gap-0 overflow-hidden rounded-2xl" style="background:#0d1221;">
+            <!-- Accent stripe -->
+            <div class="w-1.5 self-stretch flex-shrink-0" style="background:linear-gradient(to bottom,#f7d618,#e8502a);"></div>
+            <!-- Date block -->
+            <div class="flex w-28 flex-shrink-0 flex-col items-center justify-center px-5 py-6 text-center">
+              <span class="text-xs font-bold uppercase tracking-widest" style="color:#f7d618;">{getMonth(event.data.date)}</span>
+              <span class="mt-0.5 text-5xl font-black leading-none text-white">{getDay(event.data.date)}</span>
+              <span class="mt-1.5 text-xs text-slate-400">{event.data.time}</span>
+            </div>
+            <!-- Divider -->
+            <div class="w-px self-stretch" style="background:rgba(255,255,255,0.08);"></div>
+            <!-- Info block -->
+            <div class="flex-1 px-6 py-6">
+              <p class="text-xs font-bold uppercase tracking-[0.18em]" style="color:#f7d618;">{event.data.description}</p>
+              <h3 class="mt-1 text-xl font-black uppercase text-white">{event.data.title}</h3>
+              <p class="mt-1.5 text-sm text-slate-400">{event.data.location}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div class="mt-8 text-center">
+        <a href="/gagne-ton-billet" class="inline-flex items-center gap-2 rounded-full px-8 py-3 text-sm font-semibold" style="background:linear-gradient(135deg,#1c2e8f,#0b0f1f);color:#f7d618;border:1px solid rgba(247,214,24,0.3);box-shadow:0 4px 20px rgba(28,46,143,0.35);">
+          <span>🎫</span>
+          <span>Gagne ton billet</span>
+        </a>
+      </div>
+    </section>
+  )}
 
   <section class="mx-auto max-w-6xl px-4 py-16">
     <div class="grid gap-8 md:grid-cols-[0.9fr_1.4fr] md:items-center">
@@ -137,21 +173,6 @@ const tickerItems = [
     <Gallery items={media} />
   </section>
 
-  <section class="bg-slate-50">
-    <div class="mx-auto max-w-6xl px-4 py-16">
-      <SectionHeader eyebrow="Nos partenaires" title="Ils soutiennent le Bloc" description="Les institutions et entreprises qui accompagnent la mobilisation autour des Leopards de la RD Congo." />
-      <div class="mt-10 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
-        {partners.map((p) => (
-          <div class="flex items-center justify-center rounded-2xl border border-slate-200 bg-white p-4 shadow-sm min-h-[90px]">
-            <img src={p.logo} alt={p.name} class="max-h-12 w-auto max-w-[110px] object-contain" />
-          </div>
-        ))}
-      </div>
-      <div class="mt-6 text-center">
-        <a href="/partenaires" class="text-sm text-brand-yellow hover:underline">Voir tous nos partenaires →</a>
-      </div>
-    </div>
-  </section>
 
   <section class="bg-brand-yellow text-brand-dark">
     <div class="mx-auto grid max-w-6xl gap-8 px-4 py-16 md:grid-cols-2">

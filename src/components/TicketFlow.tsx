@@ -486,7 +486,10 @@ export default function TicketFlow() {
                 transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                 style={{ marginBottom: "16px", animation: "float 4s ease-in-out infinite", display: "flex", justifyContent: "center" }}
               >
-                <img src="/brand/logo.png" alt="Bloc Léopards" style={{ height: "72px", width: "auto", filter: "drop-shadow(0 4px 24px rgba(247,214,24,0.4))" }} />
+                <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                  <img src="/brand/logo.png" alt="Bloc Léopards" style={{ height: "72px", width: "auto", filter: "drop-shadow(0 4px 24px rgba(247,214,24,0.4))" }} />
+                  <img src="/brand/logo-min-sport-white.webp" alt="Ministère des Sports" style={{ height: "52px", width: "auto", filter: "brightness(0) invert(1) drop-shadow(0 2px 8px rgba(255,255,255,0.3))" }} />
+                </div>
               </motion.div>
               <motion.h1
                 initial={{ opacity: 1, y: 20 }}
@@ -681,7 +684,7 @@ export default function TicketFlow() {
                   ← Retour à l'accueil
                 </a>
                 <a
-                  href={`https://wa.me/?text=${encodeURIComponent("Je rejoins le Bloc des Léopards pour soutenir la RDC ! 🇨🇩🐆 Tu peux faire ta demande ici : " + (typeof window !== "undefined" ? window.location.origin : "") + "/gagner-ton-billet")}`}
+                  href={`https://wa.me/?text=${encodeURIComponent("Je rejoins le Bloc des Léopards pour soutenir la RDC ! 🇨🇩🐆 Tu peux faire ta demande ici : " + (typeof window !== "undefined" ? window.location.origin : "") + "/gagne-ton-billet")}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
