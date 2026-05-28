@@ -34,6 +34,7 @@ const nav = [
     <!-- Logo (Centered on mobile, Left on desktop) -->
     <a href="/" class="flex items-center gap-3 absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0">
       <img src="/brand/logo.png" alt="Bloc Leopards" class="h-12 md:h-16 w-auto" />
+      <img src="/brand/logo-min-sport-black.webp" alt="Ministère des Sports" class="h-8 md:h-10 w-auto opacity-80" />
     </a>
 
     <!-- Desktop Nav -->
@@ -66,7 +67,7 @@ const nav = [
     <!-- CTA Buttons -->
     <div class="flex items-center gap-2">
       {billeterieActive && (
-        <a href="/billets" class="relative hidden rounded-full px-4 py-2 text-sm font-semibold md:flex items-center gap-1.5" style="background:linear-gradient(135deg,#1c2e8f,#0b0f1f);color:#f7d618;border:1px solid rgba(247,214,24,0.3);box-shadow:0 4px 20px rgba(28,46,143,0.35);">
+        <a href="/gagner-ton-billet" class="relative hidden rounded-full px-4 py-2 text-sm font-semibold md:flex items-center gap-1.5" style="background:linear-gradient(135deg,#1c2e8f,#0b0f1f);color:#f7d618;border:1px solid rgba(247,214,24,0.3);box-shadow:0 4px 20px rgba(28,46,143,0.35);">
           <span>🎫</span>
           <span>Billets</span>
         </a>
@@ -104,7 +105,7 @@ const nav = [
       ))}
       <div class="pt-4 flex flex-col gap-3">
         {billeterieActive && (
-          <a href="/billets" class="block w-full text-center rounded-full px-4 py-3 text-sm font-semibold" style="background:linear-gradient(135deg,#1c2e8f,#0b0f1f);color:#f7d618;border:1px solid rgba(247,214,24,0.3);">
+          <a href="/gagner-ton-billet" class="block w-full text-center rounded-full px-4 py-3 text-sm font-semibold" style="background:linear-gradient(135deg,#1c2e8f,#0b0f1f);color:#f7d618;border:1px solid rgba(247,214,24,0.3);">
             🎫 Demander un billet
           </a>
         )}

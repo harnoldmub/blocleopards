@@ -1,0 +1,25 @@
+---
+import ImmersiveLayout from "../layouts/ImmersiveLayout.astro";
+import TicketFlow from "../components/TicketFlow.tsx";
+import { getSetting } from "../lib/settings";
+
+const billeterieActive = (await getSetting("billeterie_active", "true")) !== "false";
+---
+<ImmersiveLayout title={billeterieActive ? "Gagne ton billet — Bloc Léopards" : "Bientôt disponible — Bloc Léopards"}>
+  {billeterieActive ? (
+    <TicketFlow client:load />
+  ) : (
+    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:40px 20px;font-family:'Sora',sans-serif;">
+      <div>
+        <img src="/brand/logo.png" alt="Bloc Léopards" style="height:80px;width:auto;margin-bottom:20px;opacity:0.9;" />
+        <h1 style="font-family:'Bebas Neue',sans-serif;font-size:clamp(2.5rem,8vw,5rem);letter-spacing:0.05em;color:#f7d618;margin-bottom:12px;">Bientôt disponible</h1>
+        <p style="color:rgba(255,255,255,0.6);font-size:16px;max-width:400px;margin:0 auto 32px;line-height:1.6;">
+          La billetterie du Bloc des Léopards ouvre prochainement.<br/>Restez connectés !
+        </p>
+        <a href="/" style="display:inline-block;padding:14px 32px;background:#f7d618;color:#07090f;border-radius:999px;font-weight:700;text-decoration:none;font-size:15px;">
+          ← Retour à l'accueil
+        </a>
+      </div>
+    </div>
+  )}
+</ImmersiveLayout>

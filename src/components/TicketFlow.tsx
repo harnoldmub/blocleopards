@@ -681,7 +681,7 @@ export default function TicketFlow() {
                   ← Retour à l'accueil
                 </a>
                 <a
-                  href={`https://wa.me/?text=${encodeURIComponent("Je rejoins le Bloc des Léopards pour soutenir la RDC ! 🇨🇩🐆 Tu peux faire ta demande ici : " + (typeof window !== "undefined" ? window.location.origin : "") + "/billets")}`}
+                  href={`https://wa.me/?text=${encodeURIComponent("Je rejoins le Bloc des Léopards pour soutenir la RDC ! 🇨🇩🐆 Tu peux faire ta demande ici : " + (typeof window !== "undefined" ? window.location.origin : "") + "/gagner-ton-billet")}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
@@ -798,7 +798,7 @@ function MatchCard({ matchKey, match, index, onSelect }: {
             boxShadow: hovered ? "0 6px 30px rgba(247,214,24,0.4)" : "none",
           }}
         >
-          Je soutiens les Léopards →
+          Gagne ton billet →
         </motion.button>
       </div>
     </motion.div>

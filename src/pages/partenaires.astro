@@ -2,11 +2,38 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import PageHero from "../components/PageHero.astro";
 import SectionHeader from "../components/SectionHeader.astro";
+
+const partners = [
+  { name: "Ministère des Sports et Loisirs", logo: "/brand/logo-min-sport-black.webp", href: "https://sports.gouv.cd/sports" },
+  { name: "SONAS", logo: "/media/partenaires/LOGO SONAS.png", href: null },
+  { name: "Equity BCDC", logo: "/media/partenaires/Logo_EquityBCDC.png", href: null },
+  { name: "MFS Groupe", logo: "/media/partenaires/MFS GROUPE.png", href: null },
+  { name: "Shalina Healthcare", logo: "/media/partenaires/Shalina-Logo-Blue.png", href: null },
+  { name: "Visa", logo: "/media/partenaires/logo-visa.png", href: null },
+];
 ---
-<BaseLayout title="Partenaires" description="Partenaires institutionnels et sponsors.">
+<BaseLayout title="Partenaires" description="Partenaires institutionnels et sponsors du Bloc Léopards.">
   <PageHero title="Partenaires" subtitle="Institutions, medias et acteurs de la mobilisation" image="/media/web-liesse-kinshasa.jpg" />
+
   <section class="mx-auto max-w-6xl px-4 py-16">
-    <SectionHeader eyebrow="Positionnement" title="Un relais de supporters, pas une source institutionnelle" description="Bloc Leopards accompagne la mobilisation populaire et renvoie les annonces officielles vers les organismes competents." />
+    <SectionHeader eyebrow="Partenaires" title="Ils nous font confiance" description="Les institutions et entreprises qui soutiennent la mobilisation autour des Léopards de la RD Congo." />
+
+    <div class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-3 mt-10">
+      {partners.map((p) => (
+        p.href ? (
+          <a href={p.href} target="_blank" rel="noopener" class="flex items-center justify-center rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition-shadow min-h-[120px]">
+            <img src={p.logo} alt={p.name} class="max-h-16 w-auto max-w-[160px] object-contain" />
+          </a>
+        ) : (
+          <div class="flex items-center justify-center rounded-2xl border border-slate-200 bg-white p-6 shadow-sm min-h-[120px]">
+            <img src={p.logo} alt={p.name} class="max-h-16 w-auto max-w-[160px] object-contain" />
+          </div>
+        )
+      ))}
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-6xl px-4 pb-16">
     <div class="grid gap-6 md:grid-cols-2">
       <div class="rounded-3xl border border-slate-200 bg-white p-6 text-sm text-slate-700">
         <h3 class="text-lg font-semibold text-slate-900">Institutions</h3>
