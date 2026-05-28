@@ -614,42 +614,38 @@ export default function TicketFlow() {
 
       <StadiumBackground />
 
-      {/* Back link */}
-      {step !== "match" && step !== "success" && (
-        <div style={{ position: "fixed", top: 20, left: 20, zIndex: 50 }}>
+      {/* Top bar — back + home */}
+      <div style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", background: "rgba(8,12,26,0.7)", backdropFilter: "blur(12px)" }}>
+        {step !== "match" && step !== "success" ? (
           <button
             type="button"
             onClick={() => goTo(STEP_ORDER[STEP_ORDER.indexOf(step) - 1])}
             style={{
-              display: "flex", alignItems: "center", gap: "8px",
+              display: "flex", alignItems: "center", gap: "6px",
               background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)",
-              borderRadius: "40px", padding: "10px 16px", color: "rgba(255,255,255,0.7)",
+              borderRadius: "40px", padding: "8px 14px", color: "rgba(255,255,255,0.7)",
               fontFamily: "'Sora', sans-serif", fontSize: "13px", cursor: "pointer",
-              backdropFilter: "blur(10px)",
             }}
           >
             ← Retour
           </button>
-        </div>
-      )}
-
-      {/* Home link */}
-      <div style={{ position: "fixed", top: 20, right: 20, zIndex: 50 }}>
+        ) : (
+          <div />
+        )}
         <a
           href="/"
           style={{
-            display: "flex", alignItems: "center",
+            display: "flex", alignItems: "center", gap: 6,
             background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)",
-            borderRadius: "40px", padding: "10px 16px", color: "rgba(255,255,255,0.7)",
+            borderRadius: "40px", padding: "8px 14px", color: "rgba(255,255,255,0.7)",
             fontFamily: "'Sora', sans-serif", fontSize: "13px", textDecoration: "none",
-            backdropFilter: "blur(10px)",
           }}
         >
-          🐆 Bloc Léopards
+          🐆 Accueil
         </a>
       </div>
 
-      <div style={{ position: "relative", zIndex: 10, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "100vh", padding: "80px 20px 40px" }}>
+      <div style={{ position: "relative", zIndex: 10, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "100vh", padding: "100px 16px 48px" }}>
         <AnimatePresence mode="wait">
 
           {/* ── STEP: match selection ── */}
@@ -689,7 +685,7 @@ export default function TicketFlow() {
                 Demande ta place pour pousser la RDC vers la victoire.
               </motion.p>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px", marginTop: "40px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(300px, 100%), 1fr))", gap: "16px", marginTop: "40px" }}>
                 {(Object.entries(MATCHES) as [MatchKey, typeof MATCHES[MatchKey]][]).map(([key, m], i) => (
                   <MatchCard key={key} matchKey={key} match={m} index={i} onSelect={() => selectMatch(key)} />
                 ))}
@@ -902,7 +898,7 @@ function MatchCard({ matchKey, match, index, onSelect }: {
         background: hovered ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.04)",
         border: `1.5px solid ${hovered ? "rgba(247,214,24,0.4)" : "rgba(255,255,255,0.1)"}`,
         borderRadius: "24px",
-        padding: "32px 24px",
+        padding: "clamp(16px, 4vw, 32px) clamp(14px, 3.5vw, 24px)",
         cursor: "pointer",
         boxShadow: hovered ? `0 20px 60px -20px ${match.glow}, 0 0 0 1px rgba(247,214,24,0.15)` : "0 8px 32px rgba(0,0,0,0.3)",
         transition: "background 0.2s ease, border-color 0.2s ease, box-shadow 0.3s ease",

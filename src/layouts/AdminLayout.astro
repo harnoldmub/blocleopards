@@ -58,11 +58,20 @@ const nav = [
       .admin-main { margin-left: 220px; flex: 1; min-height: 100vh; padding: 32px; max-width: calc(100vw - 220px); }
       .admin-main--full { margin-left: 0; max-width: 100vw; }
       @media (max-width: 768px) {
-        .admin-sidebar { width: 64px; }
+        .admin-sidebar { width: 56px; }
         .admin-sidebar__brand-text, .admin-sidebar__link span:last-child { display: none; }
-        .admin-sidebar__brand img { margin: 0 auto; }
-        .admin-main { margin-left: 64px; max-width: calc(100vw - 64px); padding: 20px 16px; }
+        .admin-sidebar__brand img { margin: 0 auto; height: 24px; }
+        .admin-sidebar__link { padding: 10px 8px; justify-content: center; }
+        .admin-sidebar__logout { justify-content: center; }
+        .admin-sidebar__logout span:last-child { display: none; }
+        .admin-main { margin-left: 56px; max-width: calc(100vw - 56px); padding: 16px 12px; overflow-x: hidden; }
         .admin-main--full { margin-left: 0; max-width: 100vw; }
+        table { font-size: 12px !important; }
+        td, th { padding: 10px 10px !important; }
+      }
+      @media (max-width: 480px) {
+        .admin-sidebar { width: 0; border: none; overflow: hidden; }
+        .admin-main { margin-left: 0; max-width: 100vw; padding: 16px; }
       }
     </style>
   </head>
