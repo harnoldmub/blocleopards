@@ -1,4 +1,7 @@
 <form name="newsletter" method="POST" action="/api/newsletter" class="mt-6 grid gap-3 md:grid-cols-[1fr_auto]">
+  <input name="_hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;opacity:0;height:0;width:0;" />
+  <input name="_t" type="hidden" id="newsletter-t" />
+  <script>document.getElementById('newsletter-t').value = Date.now();</script>
   <input
     type="email"
     name="email"

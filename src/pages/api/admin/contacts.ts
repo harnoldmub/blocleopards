@@ -15,7 +15,8 @@ export const GET: APIRoute = async ({ cookies }) => {
       count(*) as total,
       count(*) filter (where status = 'unread') as unread,
       count(*) filter (where status = 'read') as read,
-      count(*) filter (where status = 'replied') as replied
+      count(*) filter (where status = 'replied') as replied,
+      count(*) filter (where status = 'spam') as spam
     from contact_messages`,
   ]);
   return new Response(JSON.stringify({ contacts: rows, stats: stats[0] }), {

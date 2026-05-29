@@ -9,6 +9,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
   unread:  { label: "Non lu",  color: "#f472b6", bg: "rgba(244,114,182,0.12)" },
   read:    { label: "Lu",      color: "#94a3b8", bg: "rgba(148,163,184,0.1)" },
   replied: { label: "Répondu", color: "#34d399", bg: "rgba(52,211,153,0.12)" },
+  spam:    { label: "Spam",    color: "#f97316", bg: "rgba(249,115,22,0.12)" },
 };
 
 function StatusBadge({ status }: { status: string }) {
@@ -45,6 +46,7 @@ function Drawer({ row, onClose, onUpdate }: { row: any; onClose: () => void; onU
     { s: "unread",  label: "Non lu",  color: "#f472b6" },
     { s: "read",    label: "Lu",      color: "#94a3b8" },
     { s: "replied", label: "Répondu", color: "#34d399" },
+    { s: "spam",    label: "Spam",    color: "#f97316" },
   ];
 
   return (
@@ -140,6 +142,7 @@ export default function AdminContactsDashboard() {
     { id: "unread",  label: "Non lus",   count: Number(stats.unread || 0) },
     { id: "read",    label: "Lus",       count: Number(stats.read || 0) },
     { id: "replied", label: "Répondus",  count: Number(stats.replied || 0) },
+    { id: "spam",    label: "Spam",      count: Number(stats.spam || 0) },
   ];
 
   if (loading) return <div style={{ color: C.muted, fontSize: 14, padding: 40 }}>Chargement...</div>;
@@ -167,6 +170,7 @@ export default function AdminContactsDashboard() {
         <StatCard label="Non lus" value={Number(stats.unread || 0)} color="#f472b6" />
         <StatCard label="Lus" value={Number(stats.read || 0)} color="#94a3b8" />
         <StatCard label="Répondus" value={Number(stats.replied || 0)} color="#34d399" />
+        <StatCard label="Spam" value={Number(stats.spam || 0)} color="#f97316" />
       </div>
 
       <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>

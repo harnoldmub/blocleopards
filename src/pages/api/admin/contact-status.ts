@@ -12,7 +12,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   if (!id || !status) {
     return new Response(JSON.stringify({ error: "id et status requis" }), { status: 400 });
   }
-  const valid = ["unread", "read", "replied"];
+  const valid = ["unread", "read", "replied", "spam"];
   if (!valid.includes(status)) {
     return new Response(JSON.stringify({ error: "Statut invalide" }), { status: 400 });
   }

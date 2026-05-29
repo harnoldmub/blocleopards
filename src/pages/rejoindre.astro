@@ -39,6 +39,9 @@ const disponibilites = [
 
     <div class="grid gap-8 lg:grid-cols-[1fr_0.72fr]">
       <form name="adhesion" method="POST" action="/api/adhesion" class="grid gap-6 rounded-3xl border border-slate-200 bg-white p-6 text-sm shadow-deep">
+        <input name="_hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;opacity:0;height:0;width:0;" />
+        <input name="_t" type="hidden" id="adhesion-t" />
+        <script>document.getElementById('adhesion-t').value = Date.now();</script>
         <div>
           <p class="text-xs font-semibold uppercase tracking-[0.28em] text-brand-yellow">Adhesion</p>
           <h2 class="mt-2 text-2xl font-semibold text-slate-950">Dis-nous comment tu veux aider</h2>

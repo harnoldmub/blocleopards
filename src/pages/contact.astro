@@ -17,6 +17,9 @@ import SectionHeader from "../components/SectionHeader.astro";
       </div>
     )}
     <form name="contact" method="POST" action="/api/contact" class="grid gap-4 rounded-3xl border border-slate-200 bg-white p-6 text-sm">
+      <input name="_hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;opacity:0;height:0;width:0;" />
+      <input name="_t" type="hidden" id="contact-t" />
+      <script>document.getElementById('contact-t').value = Date.now();</script>
       <div class="grid gap-3 md:grid-cols-2">
         <input name="nom" placeholder="Nom" required class="rounded-xl border border-slate-300 bg-white px-4 py-3" />
         <input type="email" name="email" placeholder="Email" required class="rounded-xl border border-slate-300 bg-white px-4 py-3" />
