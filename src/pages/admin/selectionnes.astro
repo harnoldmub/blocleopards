@@ -1,0 +1,9 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import AdminSelectionnesDashboard from "../../components/AdminSelectionnesDashboard.tsx";
+import { isAdminAuthed } from "../../lib/auth";
+if (!isAdminAuthed(Astro.cookies)) return Astro.redirect("/admin/login");
+---
+<AdminLayout title="Sélectionnés — Admin Bloc Léopards" section="selectionnes">
+  <AdminSelectionnesDashboard client:load />
+</AdminLayout>
