@@ -1,6 +1,5 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CountryCitySelectDark } from "./CountryCitySelect";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -20,12 +19,11 @@ interface FormState {
 
 // ─── Match data ───────────────────────────────────────────────────────────────
 
-const MATCHES: Record<MatchKey, { away: string; awayFlagCode: string; date: string; dateISO: string; venue: string; glow: string }> = {
+const MATCHES: Record<MatchKey, { away: string; awayFlagCode: string; date: string; venue: string; glow: string }> = {
   "rdc-denmark": {
     away: "DANEMARK",
     awayFlagCode: "dk",
     date: "3 JUIN 2026",
-    dateISO: "2026-06-03",
     venue: "LIÈGE · BELGIQUE",
     glow: "rgba(0,120,255,0.55)",
   },
@@ -33,7 +31,6 @@ const MATCHES: Record<MatchKey, { away: string; awayFlagCode: string; date: stri
     away: "CHILI",
     awayFlagCode: "cl",
     date: "9 JUIN 2026",
-    dateISO: "2026-06-09",
     venue: "MARBELLA · ESPAGNE",
     glow: "rgba(206,16,33,0.55)",
   },
@@ -72,29 +69,58 @@ const cardVariants = {
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function StadiumBackground() {
-  const [stars, setStars] = useState<React.CSSProperties[]>([]);
-
-  useEffect(() => {
-    setStars(
-      Array.from({ length: 40 }, () => ({
-        width: Math.random() * 2 + 1 + "px",
-        height: Math.random() * 2 + 1 + "px",
-        top: Math.random() * 70 + "%",
-        left: Math.random() * 100 + "%",
-        background: "rgba(255,255,255,0.6)",
-        animation: `twinkle ${2 + Math.random() * 3}s ease-in-out infinite`,
-        animationDelay: Math.random() * 3 + "s",
-      }))
-    );
-  }, []);
-
   return (
     <div className="pointer-events-none fixed inset-0 overflow-hidden" style={{ zIndex: 0 }}>
-      <div className="absolute" style={{ top: "-10%", left: "-5%", width: "55%", height: "70%", background: "conic-gradient(from 200deg at 20% 0%, rgba(247,214,24,0.08) 0deg, transparent 40deg)", filter: "blur(2px)" }} />
-      <div className="absolute" style={{ top: "-10%", right: "-5%", width: "55%", height: "70%", background: "conic-gradient(from -20deg at 80% 0%, rgba(0,127,255,0.09) 0deg, transparent 40deg)", filter: "blur(2px)" }} />
-      <div className="absolute" style={{ bottom: "0", left: "50%", transform: "translateX(-50%)", width: "80%", height: "40%", background: "radial-gradient(ellipse at center bottom, rgba(28,46,143,0.18) 0%, transparent 70%)" }} />
-      {stars.map((style, i) => (
-        <div key={i} className="absolute rounded-full" style={style} />
+      {/* Light beams */}
+      <div
+        className="absolute"
+        style={{
+          top: "-10%",
+          left: "-5%",
+          width: "55%",
+          height: "70%",
+          background: "conic-gradient(from 200deg at 20% 0%, rgba(247,214,24,0.08) 0deg, transparent 40deg)",
+          filter: "blur(2px)",
+        }}
+      />
+      <div
+        className="absolute"
+        style={{
+          top: "-10%",
+          right: "-5%",
+          width: "55%",
+          height: "70%",
+          background: "conic-gradient(from -20deg at 80% 0%, rgba(0,127,255,0.09) 0deg, transparent 40deg)",
+          filter: "blur(2px)",
+        }}
+      />
+      {/* Ambient glow pools */}
+      <div
+        className="absolute"
+        style={{
+          bottom: "0",
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: "80%",
+          height: "40%",
+          background: "radial-gradient(ellipse at center bottom, rgba(28,46,143,0.18) 0%, transparent 70%)",
+        }}
+      />
+      {/* Stars */}
+      {Array.from({ length: 40 }).map((_, i) => (
+        <div
+          key={i}
+          className="absolute rounded-full"
+          style={{
+            width: Math.random() * 2 + 1 + "px",
+            height: Math.random() * 2 + 1 + "px",
+            top: Math.random() * 70 + "%",
+            left: Math.random() * 100 + "%",
+            background: "rgba(255,255,255,0.6)",
+            animation: `twinkle ${2 + Math.random() * 3}s ease-in-out infinite`,
+            animationDelay: Math.random() * 3 + "s",
+          }}
+        />
       ))}
     </div>
   );
@@ -226,6 +252,50 @@ function StyledInput({
   );
 }
 
+function LocationInput({
+  label,
+  value,
+  onChange,
+  placeholder,
+  required,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  required?: boolean;
+}) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <div className="mb-4">
+      <label style={{ display: "block", fontSize: "11px", letterSpacing: "0.18em", textTransform: "uppercase", color: focused ? "#f7d618" : "rgba(255,255,255,0.5)", marginBottom: "8px", fontFamily: "'Sora', sans-serif", fontWeight: 700, transition: "color 0.2s" }}>
+        {label} {required && <span style={{ color: "#ce1021" }}>*</span>}
+      </label>
+      <input
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        style={{
+          width: "100%",
+          background: focused ? "rgba(247,214,24,0.06)" : "rgba(255,255,255,0.06)",
+          border: `1.5px solid ${focused ? "#f7d618" : "rgba(255,255,255,0.14)"}`,
+          borderRadius: "14px",
+          padding: "16px 18px",
+          color: "#fff",
+          fontSize: "16px",
+          fontFamily: "'Sora', sans-serif",
+          fontWeight: 500,
+          outline: "none",
+          transition: "all 0.2s ease",
+          boxShadow: focused ? "0 0 0 3px rgba(247,214,24,0.14)" : "0 2px 10px rgba(0,0,0,0.15)",
+          caretColor: "#f7d618",
+        }}
+      />
+    </div>
+  );
+}
 
 function PrimaryButton({ children, onClick, disabled, loading }: {
   children: React.ReactNode;
@@ -298,8 +368,6 @@ export default function TicketFlow() {
   };
 
   const selectMatch = (key: MatchKey) => {
-    const today = new Date().toISOString().slice(0, 10);
-    if (MATCHES[key].dateISO < today) return;
     set("matchKey", key);
     setTimeout(() => goTo("name"), 180);
   };
@@ -450,11 +518,9 @@ export default function TicketFlow() {
               </motion.p>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(300px, 100%), 1fr))", gap: "16px", marginTop: "40px" }}>
-                {(Object.entries(MATCHES) as [MatchKey, typeof MATCHES[MatchKey]][]).map(([key, m], i) => {
-                  const today = new Date().toISOString().slice(0, 10);
-                  const isPast = m.dateISO < today;
-                  return <MatchCard key={key} matchKey={key} match={m} index={i} isPast={isPast} onSelect={() => selectMatch(key)} />;
-                })}
+                {(Object.entries(MATCHES) as [MatchKey, typeof MATCHES[MatchKey]][]).map(([key, m], i) => (
+                  <MatchCard key={key} matchKey={key} match={m} index={i} onSelect={() => selectMatch(key)} />
+                ))}
               </div>
             </motion.div>
           )}
@@ -480,12 +546,19 @@ export default function TicketFlow() {
               <ProgressBar step="location" />
               {match && <MatchBadge match={match} />}
               <StepQuestion text={`Où est basé\nton bloc ?`} />
-              <CountryCitySelectDark
-                countryCode={form.countryCode}
-                countryName={form.country}
-                city={form.city}
-                onCountryChange={(name, code) => { set("country", name); set("countryCode", code); set("city", ""); }}
-                onCityChange={(v) => set("city", v)}
+              <LocationInput
+                label="Pays"
+                value={form.country}
+                onChange={(v) => { set("country", v); set("countryCode", ""); }}
+                placeholder="Ex: RDC, Belgique, France..."
+                required
+              />
+              <LocationInput
+                label="Ville"
+                value={form.city}
+                onChange={(v) => set("city", v)}
+                placeholder="Ex: Kinshasa, Liège, Bruxelles..."
+                required
               />
               {error && <ErrorMsg msg={error} />}
               <div style={{ marginTop: "24px" }}>
@@ -641,53 +714,43 @@ export default function TicketFlow() {
 
 // ─── Helper sub-components ────────────────────────────────────────────────────
 
-function MatchCard({ matchKey, match, index, isPast, onSelect }: {
+function MatchCard({ matchKey, match, index, onSelect }: {
   matchKey: MatchKey;
   match: typeof MATCHES[MatchKey];
   index: number;
-  isPast: boolean;
   onSelect: () => void;
 }) {
   const [hovered, setHovered] = useState(false);
-  const canHover = hovered && !isPast;
   return (
     <motion.div
       custom={index}
       variants={cardVariants}
       initial="initial"
       animate="animate"
-      whileHover={isPast ? {} : { scale: 1.02, y: -4 }}
-      whileTap={isPast ? {} : { scale: 0.98 }}
+      whileHover={{ scale: 1.02, y: -4 }}
+      whileTap={{ scale: 0.98 }}
       onHoverStart={() => setHovered(true)}
       onHoverEnd={() => setHovered(false)}
       style={{
-        background: canHover ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.04)",
-        border: `1.5px solid ${canHover ? "rgba(247,214,24,0.4)" : "rgba(255,255,255,0.1)"}`,
+        background: hovered ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.04)",
+        border: `1.5px solid ${hovered ? "rgba(247,214,24,0.4)" : "rgba(255,255,255,0.1)"}`,
         borderRadius: "24px",
         padding: "clamp(16px, 4vw, 32px) clamp(14px, 3.5vw, 24px)",
-        cursor: isPast ? "not-allowed" : "pointer",
-        boxShadow: canHover ? `0 20px 60px -20px ${match.glow}, 0 0 0 1px rgba(247,214,24,0.15)` : "0 8px 32px rgba(0,0,0,0.3)",
+        cursor: "pointer",
+        boxShadow: hovered ? `0 20px 60px -20px ${match.glow}, 0 0 0 1px rgba(247,214,24,0.15)` : "0 8px 32px rgba(0,0,0,0.3)",
         transition: "background 0.2s ease, border-color 0.2s ease, box-shadow 0.3s ease",
         backdropFilter: "blur(12px)",
         position: "relative",
         overflow: "hidden",
-        opacity: isPast ? 0.55 : 1,
       }}
-      onClick={isPast ? undefined : onSelect}
+      onClick={onSelect}
     >
       {/* glow blob */}
-      <div style={{ position: "absolute", inset: 0, opacity: canHover ? 0.6 : 0.2, background: `radial-gradient(ellipse at 50% 0%, ${match.glow} 0%, transparent 70%)`, transition: "opacity 0.3s ease", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", inset: 0, opacity: hovered ? 0.6 : 0.2, background: `radial-gradient(ellipse at 50% 0%, ${match.glow} 0%, transparent 70%)`, transition: "opacity 0.3s ease", pointerEvents: "none" }} />
 
       <div style={{ position: "relative" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
-          <div style={{ fontSize: "11px", letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>
-            Amical International
-          </div>
-          {isPast && (
-            <div style={{ fontSize: "10px", letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "20px", padding: "4px 10px", fontWeight: 700 }}>
-              Terminé
-            </div>
-          )}
+        <div style={{ fontSize: "11px", letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: "20px", fontWeight: 600 }}>
+          Amical International
         </div>
 
         {/* Score board style */}
@@ -720,43 +783,26 @@ function MatchCard({ matchKey, match, index, isPast, onSelect }: {
           <div style={{ color: "rgba(255,255,255,0.45)", fontSize: "13px", letterSpacing: "0.06em" }}>{match.venue}</div>
         </div>
 
-        {isPast ? (
-          <div style={{
+        <motion.button
+          type="button"
+          whileTap={{ scale: 0.96 }}
+          style={{
             width: "100%",
             padding: "16px",
-            background: "rgba(255,255,255,0.05)",
-            border: "1.5px solid rgba(255,255,255,0.1)",
+            background: hovered ? "#f7d618" : "rgba(247,214,24,0.12)",
+            border: hovered ? "none" : "1.5px solid rgba(247,214,24,0.3)",
             borderRadius: "14px",
-            color: "rgba(255,255,255,0.3)",
+            color: hovered ? "#080c1a" : "#f7d618",
             fontFamily: "'Bebas Neue', sans-serif",
             fontSize: "18px",
             letterSpacing: "0.08em",
-            textAlign: "center",
-          }}>
-            Inscriptions fermées
-          </div>
-        ) : (
-          <motion.button
-            type="button"
-            whileTap={{ scale: 0.96 }}
-            style={{
-              width: "100%",
-              padding: "16px",
-              background: canHover ? "#f7d618" : "rgba(247,214,24,0.12)",
-              border: canHover ? "none" : "1.5px solid rgba(247,214,24,0.3)",
-              borderRadius: "14px",
-              color: canHover ? "#080c1a" : "#f7d618",
-              fontFamily: "'Bebas Neue', sans-serif",
-              fontSize: "18px",
-              letterSpacing: "0.08em",
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-              boxShadow: canHover ? "0 6px 30px rgba(247,214,24,0.4)" : "none",
-            }}
-          >
-            Gagne ton billet →
-          </motion.button>
-        )}
+            cursor: "pointer",
+            transition: "all 0.2s ease",
+            boxShadow: hovered ? "0 6px 30px rgba(247,214,24,0.4)" : "none",
+          }}
+        >
+          Gagne ton billet →
+        </motion.button>
       </div>
     </motion.div>
   );
