@@ -21,6 +21,14 @@ const billeterieActive = (await getSetting("billeterie_active", "true")) !== "fa
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <SEO title={pageTitle} description={pageDescription} image={image} url={pageUrl} />
     <link rel="icon" type="image/x-icon" href="/brand/logo.png" />
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-SL05MNR4EB"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-SL05MNR4EB');
+    </script>
     <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
