@@ -3,6 +3,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import PageHero from "../components/PageHero.astro";
 import SectionHeader from "../components/SectionHeader.astro";
 import faq from "../data/faq.json";
+import CountryCitySelect from "../components/CountryCitySelect.tsx";
 
 const roles = [
   "Ambiance / chants",
@@ -70,16 +71,7 @@ const disponibilites = [
           </label>
         </div>
 
-        <div class="grid gap-4 md:grid-cols-2">
-          <label class="grid gap-2">
-            <span class="font-semibold text-slate-700">Pays</span>
-            <input name="pays" placeholder="RDC, Belgique, France..." autocomplete="country-name" class="rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-brand-yellow focus:ring-4 focus:ring-brand-yellow/20" />
-          </label>
-          <label class="grid gap-2">
-            <span class="font-semibold text-slate-700">Ville *</span>
-            <input name="ville" placeholder="Kinshasa, Liege, Bruxelles..." required autocomplete="address-level2" class="rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-brand-yellow focus:ring-4 focus:ring-brand-yellow/20" />
-          </label>
-        </div>
+        <CountryCitySelect client:load />
 
         <div class="grid gap-4 md:grid-cols-2">
           <label class="grid gap-2">

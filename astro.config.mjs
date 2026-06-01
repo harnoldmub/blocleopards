@@ -5,7 +5,7 @@ import sanity from "@sanity/astro";
 import node from "@astrojs/node";
 
 export default defineConfig({
-  site: "https://bloc-leopards.example",
+  site: "https://blocleopards.com",
   output: "server",
   adapter: node({
     mode: "standalone"
@@ -35,6 +35,8 @@ export default defineConfig({
         "react-dom",
         "react/jsx-dev-runtime",
         "framer-motion",
+        "react-select",
+        "country-state-city",
       ],
     },
   },
