@@ -22,7 +22,7 @@ const today = new Date().toISOString().slice(0, 10);
 let allEvents: any[] = [];
 try { allEvents = (await getCollection("events")).sort((a: any, b: any) => a.data.date.localeCompare(b.data.date)); } catch {}
 const upcomingEvents = allEvents.filter((event: any) => event.data.date >= today);
-const events = upcomingEvents.slice(0, 3);
+const events = (upcomingEvents.length ? upcomingEvents : allEvents).slice(0, 3);
 const FR_MONTHS = ["JAN","FEV","MAR","AVR","MAI","JUIN","JUIL","AOUT","SEPT","OCT","NOV","DEC"];
 const getMonth = (d: string) => FR_MONTHS[parseInt(d.split("-")[1]) - 1];
 const getDay = (d: string) => parseInt(d.split("-")[2]);
@@ -51,7 +51,6 @@ const tickerItems = [
       <div class="animate-fade-in-up">
         <p class="text-xs uppercase tracking-[0.4em] text-brand-yellow font-bold">Bloc Leopards</p>
         <h1 class="section-title mt-4 text-5xl md:text-7xl text-white">Un seul bloc.</h1>
-        <p class="mt-2 text-sm font-semibold text-brand-yellow/80 uppercase tracking-widest">Rejoins des milliers de supporters</p>
         <p class="mt-4 max-w-xl text-lg text-slate-200">La tribune congolaise se rassemble: chants, drapeaux, ferveur et discipline.</p>
         <div class="mt-8 flex flex-wrap gap-4">
           <a href="/rejoindre" class="rounded-full bg-brand-yellow px-6 py-3 text-sm font-semibold text-brand-dark pulse-glow hover:bg-white transition-colors">Rejoindre le Bloc</a>
