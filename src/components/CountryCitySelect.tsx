@@ -128,6 +128,7 @@ const darkStyles = {
   singleValue: (base: any) => ({ ...base, color: "#fff" }),
   placeholder: (base: any) => ({ ...base, color: "rgba(255,255,255,0.35)" }),
   menu: (base: any) => ({ ...base, background: "#0e1628", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.1)", overflow: "hidden", zIndex: 9999 }),
+  menuPortal: (base: any) => ({ ...base, zIndex: 9999 }),
   menuList: (base: any) => ({ ...base, padding: "4px" }),
   option: (base: any, state: any) => ({
     ...base,
@@ -149,6 +150,9 @@ export default function CountryCitySelect() {
   const [countryName, setCountryName] = useState("");
   const [cityOption, setCityOption] = useState<{ value: string; label: string } | null>(null);
   const [cityOptions, setCityOptions] = useState<{ value: string; label: string }[]>([]);
+  const [portal, setPortal] = useState<HTMLElement | null>(null);
+
+  useEffect(() => { setPortal(document.body); }, []);
 
   useEffect(() => {
     if (countryCode) {
@@ -173,10 +177,13 @@ export default function CountryCitySelect() {
       <div className="grid gap-2">
         <span className="font-semibold text-slate-700 text-sm">Pays</span>
         <Select
+          instanceId="rejoindre-pays"
           options={countryOptions}
           placeholder="🔍 Rechercher un pays..."
           noOptionsMessage={() => "Aucun résultat"}
           styles={lightStyles(false)}
+          menuPortalTarget={portal}
+          menuPosition={portal ? "fixed" : "absolute"}
           onChange={(opt: any) => {
             setCountryCode(opt?.value || "");
             setCountryName(opt?.name || "");
@@ -189,11 +196,14 @@ export default function CountryCitySelect() {
         <span className="font-semibold text-slate-700 text-sm">Ville *</span>
         {cityOptions.length > 0 ? (
           <Select
+            instanceId="rejoindre-ville"
             options={cityOptions}
             value={cityOption}
             placeholder="🔍 Rechercher une ville..."
             noOptionsMessage={() => "Aucun résultat"}
             styles={lightStyles(false)}
+            menuPortalTarget={portal}
+            menuPosition={portal ? "fixed" : "absolute"}
             onChange={(opt: any) => setCityOption(opt)}
             isClearable
             isDisabled={!countryCode}
@@ -228,12 +238,15 @@ export function CountryCitySelectDark({
   onCityChange: (v: string) => void;
 }) {
   const [cityOptions, setCityOptions] = useState<{ value: string; label: string }[]>([]);
+  const [portal, setPortal] = useState<HTMLElement | null>(null);
+
+  useEffect(() => { setPortal(document.body); }, []);
 
   useEffect(() => {
     if (countryCode) {
       const list = City.getCitiesOfCountry(countryCode) || [];
       setCityOptions(
-        list.sort((a, b) => a.name.localeCompare(b.name, "fr")).map((c) => ({ value: c.name, label: c.name }))
+        list.sort((a, b) => a.name.localeCompare(b.name, "fr")).map((c) => ({ value: c.name, label: frCity(c.name) }))
       );
     } else {
       setCityOptions([]);
@@ -247,11 +260,14 @@ export function CountryCitySelectDark({
       <div className="mb-4">
         <label style={labelStyle}>Pays <span style={{ color: "#ce1021" }}>*</span></label>
         <Select
+          instanceId="ticketflow-pays"
           options={countryOptions}
           value={countryCode ? { value: countryCode, label: `${Country.getCountryByCode(countryCode)?.flag} ${frName(countryCode, countryName)}`, name: frName(countryCode, countryName) } : null}
           placeholder="🔍 Rechercher un pays..."
           noOptionsMessage={() => "Aucun résultat"}
           styles={darkStyles}
+          menuPortalTarget={portal}
+          menuPosition={portal ? "fixed" : "absolute"}
           onChange={(opt: any) => onCountryChange(opt?.name || "", opt?.value || "")}
           isClearable
         />
@@ -260,11 +276,14 @@ export function CountryCitySelectDark({
         <label style={labelStyle}>Ville <span style={{ color: "#ce1021" }}>*</span></label>
         {cityOptions.length > 0 ? (
           <Select
+            instanceId="ticketflow-ville"
             options={cityOptions}
             value={city ? { value: city, label: frCity(city) } : null}
             placeholder="🔍 Rechercher une ville..."
             noOptionsMessage={() => "Aucun résultat"}
             styles={darkStyles}
+            menuPortalTarget={portal}
+            menuPosition={portal ? "fixed" : "absolute"}
             onChange={(opt: any) => onCityChange(opt?.value || "")}
             isClearable
             isDisabled={!countryCode}
