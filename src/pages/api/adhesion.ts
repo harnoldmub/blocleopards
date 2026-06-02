@@ -13,6 +13,7 @@ export const POST: APIRoute = async ({ request }) => {
     const nom = formValue(formData, "nom");
     const email = formValue(formData, "email").toLowerCase();
     const telephone = formValue(formData, "telephone");
+    const date_naissance = formValue(formData, "date_naissance");
     const pays = formValue(formData, "pays");
     const ville = formValue(formData, "ville");
     const role = formValue(formData, "role");
@@ -33,6 +34,7 @@ export const POST: APIRoute = async ({ request }) => {
         nom,
         email,
         telephone,
+        date_naissance,
         pays,
         ville,
         role,
@@ -47,6 +49,7 @@ export const POST: APIRoute = async ({ request }) => {
         ${nom},
         ${email},
         ${telephone || null},
+        ${date_naissance || null},
         ${pays || null},
         ${ville},
         ${role},

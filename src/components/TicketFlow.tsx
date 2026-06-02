@@ -10,6 +10,7 @@ interface FormState {
   matchKey: MatchKey | "";
   firstName: string;
   lastName: string;
+  dateOfBirth: string;
   country: string;
   countryCode: string;
   city: string;
@@ -347,6 +348,7 @@ export default function TicketFlow() {
     matchKey: "",
     firstName: "",
     lastName: "",
+    dateOfBirth: "",
     country: "",
     countryCode: "",
     city: "",
@@ -375,6 +377,10 @@ export default function TicketFlow() {
   const submitName = () => {
     if (!form.firstName.trim() || !form.lastName.trim()) {
       setError("Renseigne ton prénom et ton nom pour continuer.");
+      return;
+    }
+    if (!form.dateOfBirth) {
+      setError("Renseigne ta date de naissance pour continuer.");
       return;
     }
     goTo("location");
@@ -408,6 +414,7 @@ export default function TicketFlow() {
           match_key: form.matchKey,
           first_name: form.firstName,
           last_name: form.lastName,
+          date_of_birth: form.dateOfBirth || undefined,
           email: form.email,
           phone: form.phone || undefined,
           country: form.country,
@@ -533,6 +540,7 @@ export default function TicketFlow() {
               <StepQuestion text={`Supporter,\nquel est ton nom ?`} />
               <StyledInput label="Prénom" value={form.firstName} onChange={(v) => set("firstName", v)} autoFocus required />
               <StyledInput label="Nom" value={form.lastName} onChange={(v) => set("lastName", v)} required />
+              <StyledInput label="Date de naissance" value={form.dateOfBirth} onChange={(v) => set("dateOfBirth", v)} type="date" required />
               {error && <ErrorMsg msg={error} />}
               <div style={{ marginTop: "24px" }}>
                 <PrimaryButton onClick={submitName}>Continuer →</PrimaryButton>
@@ -605,6 +613,7 @@ export default function TicketFlow() {
                   <SummaryRow icon="⚽" label="Match" value={`RDC vs ${match.away} · ${match.date}`} />
                 )}
                 <SummaryRow icon="🙋" label="Supporter" value={`${form.firstName} ${form.lastName}`} />
+                {form.dateOfBirth && <SummaryRow icon="🎂" label="Naissance" value={new Date(form.dateOfBirth).toLocaleDateString("fr-FR")} />}
                 {form.country && <SummaryRow icon="📍" label="Bloc" value={`${form.city ? form.city + ", " : ""}${form.country}`} />}
                 <SummaryRow icon="📧" label="Contact" value={form.email} />
                 {form.phone && <SummaryRow icon="💬" label="WhatsApp" value={form.phone} />}

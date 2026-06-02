@@ -7,7 +7,7 @@ export const POST: APIRoute = async ({ request }) => {
   const headers = { "Content-Type": "application/json" };
   try {
     const body = await request.json();
-    const { match_key, first_name, last_name, phone, email, country, country_code, city, source } = body;
+    const { match_key, first_name, last_name, date_of_birth, phone, email, country, country_code, city, source } = body;
 
     if (!match_key || !first_name || !last_name || !email) {
       return new Response(JSON.stringify({ error: "Champs requis manquants." }), { status: 400, headers });
@@ -39,12 +39,13 @@ export const POST: APIRoute = async ({ request }) => {
 
     await sql`
       insert into inscriptions_billets (
-        match_key, first_name, last_name, phone, email,
+        match_key, first_name, last_name, date_of_birth, phone, email,
         country, country_code, city, source
       ) values (
         ${match_key},
         ${first_name.trim()},
         ${last_name.trim()},
+        ${date_of_birth || null},
         ${phone?.trim() || null},
         ${email.toLowerCase().trim()},
         ${country?.trim() || null},
