@@ -4,22 +4,33 @@ const { items } = Astro.props;
 <div class="grid gap-4 md:grid-cols-3" data-gallery>
   {items.map((item, idx) => (
     <button
-      class="group overflow-hidden rounded-2xl border border-slate-200 bg-white text-left"
+      class="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white text-left"
       data-gallery-item
       data-gallery-src={item.image}
       data-gallery-title={item.title}
       data-gallery-category={item.category}
+      data-gallery-credit={item.credit ?? ""}
       type="button"
     >
       <img src={item.image} alt={item.title} class="aspect-[3/4] w-full object-cover transition duration-500 group-hover:scale-105 md:aspect-[4/3]" />
+      {item.credit && (
+        <span class="absolute bottom-2 right-2 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-medium text-white/90 backdrop-blur-sm">📸 {item.credit}</span>
+      )}
     </button>
   ))}
 </div>
 
 <dialog class="rounded-3xl border border-slate-200 bg-white p-0 text-slate-900" data-gallery-modal>
   <div class="relative">
-    <button class="absolute right-4 top-4 rounded-full bg-white/10 px-3 py-1 text-xs" data-gallery-close>Fermer</button>
+    <button class="absolute right-4 top-4 z-10 rounded-full bg-black/40 px-3 py-1 text-xs text-white backdrop-blur-sm" data-gallery-close>Fermer</button>
     <img src="" alt="" class="aspect-[3/4] max-h-[78vh] w-full object-cover md:aspect-auto" data-gallery-image />
+    <div class="flex items-center justify-between gap-3 px-4 py-3" data-gallery-footer>
+      <div>
+        <p class="text-sm font-semibold text-slate-900" data-gallery-modal-title></p>
+        <p class="text-xs text-slate-500" data-gallery-modal-category></p>
+      </div>
+      <p class="shrink-0 text-xs text-slate-400" data-gallery-modal-credit></p>
+    </div>
   </div>
 </dialog>
 
@@ -29,18 +40,24 @@ const { items } = Astro.props;
   if (gallery && modal) {
     const image = modal.querySelector('[data-gallery-image]');
     const close = modal.querySelector('[data-gallery-close]');
+    const modalTitle = modal.querySelector('[data-gallery-modal-title]');
+    const modalCategory = modal.querySelector('[data-gallery-modal-category]');
+    const modalCredit = modal.querySelector('[data-gallery-modal-credit]');
 
     gallery.addEventListener('click', (event) => {
-      const button = event.target.closest('[data-gallery-item]');
+      const button = (event.target as Element).closest('[data-gallery-item]') as HTMLElement | null;
       if (!button) return;
-      image.src = button.dataset.gallerySrc;
-      image.alt = button.dataset.galleryTitle;
-      modal.showModal();
+      (image as HTMLImageElement).src = button.dataset.gallerySrc!;
+      (image as HTMLImageElement).alt = button.dataset.galleryTitle!;
+      if (modalTitle) modalTitle.textContent = button.dataset.galleryTitle!;
+      if (modalCategory) modalCategory.textContent = button.dataset.galleryCategory!;
+      if (modalCredit) modalCredit.textContent = button.dataset.galleryCredit ? `📸 ${button.dataset.galleryCredit}` : '';
+      (modal as HTMLDialogElement).showModal();
     });
 
-    close.addEventListener('click', () => modal.close());
+    close?.addEventListener('click', () => (modal as HTMLDialogElement).close());
     modal.addEventListener('click', (event) => {
-      if (event.target === modal) modal.close();
+      if (event.target === modal) (modal as HTMLDialogElement).close();
     });
   }
 </script>
