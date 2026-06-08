@@ -6,6 +6,7 @@ export const ADMIN_SECTIONS = [
   { id: "dashboard", label: "◉ Dashboard" },
   { id: "billets", label: "🎫 Billets" },
   { id: "selectionnes", label: "✅ Sélectionnés" },
+  { id: "mondial", label: "🇺🇸 Mondial USA" },
   { id: "adhesions", label: "🤝 Adhésions" },
   { id: "contacts", label: "✉️ Messages" },
   { id: "newsletter", label: "📮 Newsletter" },
