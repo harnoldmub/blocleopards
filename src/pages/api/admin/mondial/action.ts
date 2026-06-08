@@ -118,6 +118,12 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       await sql`insert into settings (key, value) values ('mondial_winners', ${JSON.stringify(winnerIds)}) on conflict (key) do update set value = ${JSON.stringify(winnerIds)}`;
       await sql`insert into settings (key, value) values ('mondial_tickets_count', ${String(count)}) on conflict (key) do update set value = ${String(count)}`;
 
+      // Log every draw attempt — full audit trail
+      await sql`
+        insert into mondial_tirage_logs (seed, engagement_hash, candidates_count, winners_count, winner_ids, published)
+        values (${activeSeed}, ${engagementHash}, ${candidates.length}, ${winners.length}, ${JSON.stringify(winnerIds)}, false)
+      `;
+
       invalidateSettings();
 
       return new Response(JSON.stringify({ 
@@ -130,12 +136,18 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     if (action === "publish") {
-      // Publish the results publicly
-      await sql`
-        insert into settings (key, value, updated_at) values ('mondial_tirage_publie', 'true', now())
-        on conflict (key) do update set value = 'true', updated_at = now()
-      `;
-      
+      await sql`insert into settings (key, value) values ('mondial_tirage_publie', 'true') on conflict (key) do update set value = 'true'`;
+
+      // Mark the most recent draw log as published
+      const currentSeed = await sql`select value from settings where key = 'mondial_tirage_seed'`;
+      if (currentSeed.length > 0) {
+        await sql`
+          update mondial_tirage_logs set published = true
+          where seed = ${currentSeed[0].value}
+          and id = (select id from mondial_tirage_logs where seed = ${currentSeed[0].value} order by ran_at desc limit 1)
+        `;
+      }
+
       invalidateSettings();
       return new Response(JSON.stringify({ success: true }));
     }

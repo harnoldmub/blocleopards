@@ -38,12 +38,20 @@ export const GET: APIRoute = async () => {
     const hash   = await getSetting("mondial_tirage_hash", "");
     const count  = parseInt(await getSetting("mondial_tickets_count", "0"), 10);
 
+    // Full draw history (public audit trail)
+    const logs = await sql`
+      select id, seed, engagement_hash, candidates_count, winners_count, published, ran_at
+      from mondial_tirage_logs
+      order by ran_at asc
+    `;
+
     return new Response(JSON.stringify({
       candidateIds: candidates.map((c: any) => c.id),
       seed,
       engagementHash: hash,
       winnersCount: count,
       publishedWinnerIds: winners.map((w: any) => w.id),
+      drawHistory: logs,
     }), { status: 200, headers });
   } catch (err) {
     console.error("Verification data error:", err);

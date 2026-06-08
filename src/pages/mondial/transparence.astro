@@ -11,6 +11,7 @@ let tiragePublie = false;
 let tirageSeed = "";
 let tirageHash = "";
 let winners: any[] = [];
+let tirageHistory: any[] = [];
 
 if (hasDatabase) {
   try {
@@ -43,6 +44,16 @@ if (hasDatabase) {
         order by ticket_given_at asc
       `;
     }
+
+    // Always fetch draw history (even before publication)
+    try {
+      tirageHistory = await sql`
+        select id, seed, engagement_hash, candidates_count, winners_count, published, ran_at
+        from mondial_tirage_logs
+        order by ran_at asc
+      `;
+    } catch { /* table may not exist yet */ }
+  } catch (err) {
   } catch (err) {
     console.error("Error fetching transparency stats:", err);
   }
@@ -324,6 +335,64 @@ https.get(DATA_URL, res => {
         <div class="mb-12 text-center py-12 bg-white/5 border border-white/10 rounded-3xl">
           <p class="text-slate-400 text-sm">Le tirage n'a pas encore été publié.</p>
           <p class="text-slate-500 text-xs mt-2">Les résultats apparaîtront ici dès la publication officielle.</p>
+        </div>
+      )}
+
+      <!-- ─── HISTORIQUE DES TIRAGES ─── -->
+      {tirageHistory.length > 0 && (
+        <div class="mb-12">
+          <div class="text-center mb-6">
+            <h2 class="font-bebas text-2xl text-white tracking-wide">HISTORIQUE DES TIRAGES</h2>
+            <p class="text-slate-400 text-xs mt-2">Toutes les tentatives sont enregistrées publiquement. La transparence est totale.</p>
+          </div>
+
+          <div class="space-y-3">
+            {tirageHistory.map((log: any, i: number) => (
+              <div class={`rounded-2xl border p-5 flex flex-wrap items-center gap-4 ${log.published ? "bg-emerald-950/20 border-emerald-500/30" : "bg-white/3 border-white/8"}`}>
+                <!-- Index + statut -->
+                <div class="flex items-center gap-3 min-w-[120px]">
+                  <span class={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bebas flex-shrink-0 ${log.published ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40" : "bg-white/5 text-slate-400 border border-white/10"}`}>
+                    {i + 1}
+                  </span>
+                  <span class={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${log.published ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30" : "bg-white/5 text-slate-500 border-white/10"}`}>
+                    {log.published ? "Publié" : "Non publié"}
+                  </span>
+                </div>
+
+                <!-- Date -->
+                <div class="min-w-[140px]">
+                  <p class="text-[10px] text-slate-500 uppercase tracking-wider">Date</p>
+                  <p class="text-xs text-slate-300 font-mono mt-0.5">
+                    {new Date(log.ran_at).toLocaleString("fr-FR", { day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" })}
+                  </p>
+                </div>
+
+                <!-- Candidats / Gagnants -->
+                <div class="min-w-[120px]">
+                  <p class="text-[10px] text-slate-500 uppercase tracking-wider">Candidats → Gagnants</p>
+                  <p class="text-xs text-white font-semibold mt-0.5">{log.candidates_count} → {log.winners_count}</p>
+                </div>
+
+                <!-- Seed -->
+                <div class="flex-1 min-w-[180px]">
+                  <p class="text-[10px] text-slate-500 uppercase tracking-wider">Seed</p>
+                  <p class="text-xs text-[#f7d618] font-mono mt-0.5 truncate max-w-xs">{log.seed}</p>
+                </div>
+
+                <!-- Hash (truncated) -->
+                <div class="flex-1 min-w-[180px]">
+                  <p class="text-[10px] text-slate-500 uppercase tracking-wider">Hash empreinte</p>
+                  <p class="text-[10px] text-slate-400 font-mono mt-0.5 truncate max-w-xs" title={log.engagement_hash}>
+                    {log.engagement_hash.slice(0, 24)}…
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {tirageHistory.length > 1 && !tirageHistory.some((l: any) => l.published) && (
+            <p class="text-slate-500 text-xs text-center mt-4">Aucun tirage n'a encore été publié.</p>
+          )}
         </div>
       )}
 
