@@ -1,7 +1,7 @@
 ---
 const { billeterieActive = true } = Astro.props;
 const quickActions = [
-  ...(billeterieActive ? ["Demander un billet"] : []),
+  ...(billeterieActive ? ["Demander un billet (Mondial)"] : []),
   "Prochain match",
   "Quiz Léopards",
   "Recruter"
@@ -134,14 +134,12 @@ const quickActions = [
     // ─── Billet flow ──────────────────────────────────────────────────────────
 
     const startBilletFlow = () => {
-      state.billetStep = 'match';
-      state.billetData = { matchKey: '', matchLabel: '', prenom: '', nom: '', pays: '', ville: '', email: '', whatsapp: '' };
       addActionMessage(`
-        <strong>🎫 Demande de billet</strong>
-        <span>Le bloc compte sur toi 🔥 Quel match veux-tu enflammer ?</span>
-        <div class="bloc-chat__choice-grid">
-          <button type="button" data-billet-match="rdc-denmark"><img src="/flags/cd.png" height="12" style="vertical-align:middle;border-radius:2px;margin-right:4px;" alt="RDC" /> RDC vs Danemark · 3 juin · Liège</button>
-          <button type="button" data-billet-match="rdc-chili"><img src="/flags/cd.png" height="12" style="vertical-align:middle;border-radius:2px;margin-right:4px;" alt="RDC" /> RDC vs Chili · 9 juin · Marbella</button>
+        <strong>🎫 Tirage au Sort Mondial 2026</strong>
+        <span>Le tirage au sort des places en tribune pour le Mondial 2026 est ouvert (résidents USA uniquement) !</span>
+        <div class="bloc-chat__choice-grid" style="margin-top:10px;">
+          <a href="/mondial/tirage" style="background:rgba(247,214,24,0.15);border-color:rgba(247,214,24,0.5);color:#f7d618;font-weight:700;text-align:center;padding:10px;border-radius:8px;text-decoration:none;display:block;">🎫 S'inscrire au Tirage au Sort</a>
+          <a href="/mondial" style="text-align:center;padding:10px;border-radius:8px;text-decoration:none;display:block;">🐆 Découvrir le Hub Mondial</a>
         </div>
       `);
     };
@@ -288,14 +286,14 @@ const quickActions = [
     };
 
     const showRecruit = () => {
-      const inviteUrl = `${window.location.origin}/gagne-ton-billet`;
-      const text = encodeURIComponent(`Rejoins le Bloc des Léopards 🇨🇩 Demande ta place pour soutenir la RDC ici : ${inviteUrl}`);
+      const inviteUrl = `${window.location.origin}/mondial`;
+      const text = encodeURIComponent(`Rejoins le Bloc des Léopards 🇨🇩 Participe au tirage au sort Mondial 2026 ici : ${inviteUrl}`);
       addActionMessage(`
         <strong>📢 Recruter des supporters</strong>
         <span>Partage et agrandis le Bloc !</span>
         <div class="bloc-chat__choice-grid">
           <a href="https://wa.me/?text=${text}" target="_blank" rel="noopener">💬 Inviter sur WhatsApp</a>
-          <a href="/gagne-ton-billet">🎫 Demander un billet</a>
+          <a href="/mondial">🐆 Hub Mondial 2026</a>
         </div>
       `);
     };
@@ -308,9 +306,9 @@ const quickActions = [
       const text = normalize(raw);
       if (text.includes('billet') || text.includes('place') || text.includes('ticket') || text.includes('rejoindre')) {
         if (!billeterieEnabled) {
-          return "La billetterie n'est pas encore ouverte  Reviens bientôt !";
+          return "La billetterie n'est pas encore ouverte. Reviens bientôt !";
         }
-        startBilletFlow();
+        window.location.href = "/mondial/tirage";
         return '';
       }
       if (text.includes('match') || text.includes('prochain') || text.includes('quand') || text.includes('evenement')) {
@@ -348,9 +346,10 @@ const quickActions = [
         const norm = normalize(value);
         if (norm.includes('billet') || norm.includes('place') || norm.includes('ticket') || norm.includes('rejoindre')) {
           if (billeterieEnabled) {
-            startBilletFlow();
+            window.location.href = "/mondial/tirage";
+            return;
           } else {
-            addTypingReply("La billetterie n'est pas encore ouverte  Reviens bientôt !");
+            addTypingReply("La billetterie n'est pas encore ouverte. Reviens bientôt !");
           }
         } else {
           const reply = answer(value);

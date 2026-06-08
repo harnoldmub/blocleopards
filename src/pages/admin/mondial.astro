@@ -1,0 +1,12 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import AdminMondialDashboard from "../../components/AdminMondialDashboard.tsx";
+import { isAdminAuthed } from "../../lib/auth";
+
+if (!isAdminAuthed(Astro.cookies)) {
+  return Astro.redirect("/admin/login");
+}
+---
+<AdminLayout title="Mondial USA — Admin Bloc Léopards" section="mondial">
+  <AdminMondialDashboard client:load />
+</AdminLayout>

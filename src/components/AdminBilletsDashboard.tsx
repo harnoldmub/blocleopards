@@ -447,7 +447,7 @@ export default function AdminBilletsDashboard() {
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-          <a href="/gagne-ton-billet" target="_blank" rel="noopener" style={{
+          <a href="/mondial" target="_blank" rel="noopener" style={{
             padding: "9px 16px", background: "rgba(247,214,24,0.1)", border: "1px solid rgba(247,214,24,0.25)",
             borderRadius: "10px", color: "#f7d618", fontSize: "12px", fontWeight: 700, textDecoration: "none",
             display: "inline-flex", alignItems: "center", gap: 6,

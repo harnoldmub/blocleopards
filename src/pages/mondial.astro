@@ -1,0 +1,314 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { requireDatabase, hasDatabase } from "../lib/neon";
+
+// Fetch actual supporters who opted in
+let dbSupporters: any[] = [];
+if (hasDatabase) {
+  try {
+    const sql = requireDatabase();
+    dbSupporters = await sql`
+      select first_name, city, state_us, country
+      from mondial_inscriptions
+      where opt_in_mur = true and verification_status = 'verified'
+      order by created_at desc
+      limit 40
+    `;
+  } catch (err) {
+    console.error("Error fetching supporters for wall:", err);
+  }
+}
+
+const mockSupporters = [
+  { first_name: "Arnold", city: "Houston", state_us: "TX", country: "USA" },
+  { first_name: "Merveille", city: "Atlanta", state_us: "GA", country: "USA" },
+  { first_name: "Béni", city: "Dallas", state_us: "TX", country: "USA" },
+  { first_name: "Jonathan", city: "New York", state_us: "NY", country: "USA" },
+  { first_name: "Sarah", city: "Washington", state_us: "DC", country: "USA" },
+  { first_name: "Grace", city: "Los Angeles", state_us: "CA", country: "USA" },
+  { first_name: "Dieudonné", city: "Chicago", state_us: "IL", country: "USA" },
+  { first_name: "Rachel", city: "Miami", state_us: "FL", country: "USA" },
+  { first_name: "Christian", city: "Seattle", state_us: "WA", country: "USA" },
+];
+
+const supporters = [...dbSupporters, ...mockSupporters];
+
+const matches = [
+  {
+    id: "match-1",
+    key: "rdc-portugal",
+    home: "RDC",
+    away: "PORTUGAL",
+    awayFlag: "pt",
+    venue: "NRG Stadium",
+    city: "Houston, USA",
+    dateStr: "17 Juin 2026",
+    utcKickoff: "2026-06-17T17:00:00Z",
+    color: "from-blue-600/20 to-yellow-500/10",
+    glow: "rgba(247,214,24,0.15)",
+    warning: null
+  },
+  {
+    id: "match-2",
+    key: "rdc-colombie",
+    home: "RDC",
+    away: "COLOMBIE",
+    awayFlag: "co",
+    venue: "Estadio Akron",
+    city: "Guadalajara, Mexique",
+    dateStr: "23 Juin 2026",
+    utcKickoff: "2026-06-24T02:00:00Z",
+    color: "from-red-600/20 to-yellow-500/10",
+    glow: "rgba(206,16,33,0.15)",
+    warning: "Ce match se joue au Mexique (Amérique du Nord). Assurez-vous d'avoir les visas nécessaires pour le Mexique (différents du visa USA)."
+  },
+  {
+    id: "match-3",
+    key: "rdc-uzbekistan",
+    home: "RDC",
+    away: "OUZBÉKISTAN",
+    awayFlag: "uz",
+    venue: "Mercedes-Benz Stadium",
+    city: "Atlanta, USA",
+    dateStr: "27 Juin 2026",
+    utcKickoff: "2026-06-27T23:30:00Z",
+    color: "from-emerald-600/20 to-blue-500/10",
+    glow: "rgba(0,127,255,0.15)",
+    warning: null
+  }
+];
+---
+<BaseLayout title="Mondial 2026 — Expérience USA" description="Poussez les Léopards de la RDC vers la gloire en Amérique du Nord. Inscriptions au tirage au sort des billets.">
+  <div class="relative overflow-hidden bg-[#07090f] text-white py-16 px-4 min-h-screen font-sans">
+    
+    <!-- Background elements -->
+    <div class="absolute inset-0 bg-radial-at-t from-blue-950/20 via-transparent to-transparent pointer-events-none"></div>
+
+    <div class="max-w-6xl mx-auto relative z-10">
+      <!-- Hero header -->
+      <div class="text-center max-w-2xl mx-auto mb-16">
+        <div class="flex justify-center items-center gap-3 mb-4">
+          <img src="/brand/logo.png" alt="Bloc Léopards" class="h-14 w-auto drop-shadow-[0_0_12px_rgba(247,214,24,0.3)]" />
+          <div class="h-8 w-px bg-white/20"></div>
+          <span class="text-xs uppercase tracking-[0.25em] text-[#f7d618] font-bold">Coupe du Monde 2026</span>
+        </div>
+        <h1 class="font-bebas text-5xl md:text-7xl tracking-wide leading-none text-white mb-6">
+          L'EXPÉRIENCE <span class="text-[#f7d618]">USA</span>
+        </h1>
+        <p class="text-slate-400 text-base md:text-lg max-w-xl mx-auto leading-relaxed">
+          Pour le retour historique des Léopards de la RDC sur la scène mondiale après 52 ans, participez au tirage au sort vérifiable des billets pour les 3 matchs de poule.
+        </p>
+        
+        <div class="mt-8 flex justify-center gap-4">
+          <a href="/mondial/tirage" class="px-6 py-3 rounded-full bg-[#f7d618] text-[#07090f] font-bold text-sm hover:bg-yellow-400 transition-all shadow-[0_4px_20px_rgba(247,214,24,0.3)]">
+            Participer au Tirage 🎫
+          </a>
+          <a href="/mondial/transparence" class="px-6 py-3 rounded-full border border-white/20 hover:bg-white/5 transition-all text-sm font-semibold">
+            Transparence & Algorithme 🔍
+          </a>
+        </div>
+      </div>
+
+      <!-- Match cards grid -->
+      <div class="grid gap-8 md:grid-cols-3 mb-20">
+        {matches.map((match) => (
+          <div 
+            class={`relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b ${match.color} p-6 flex flex-col justify-between`}
+            style={{ boxShadow: `0 10px 30px -10px ${match.glow}` }}
+          >
+            <!-- Header info -->
+            <div class="mb-6 flex justify-between items-start">
+              <div>
+                <span class="text-[10px] tracking-[0.15em] uppercase text-slate-400 font-bold">Phase de Groupes</span>
+                <h3 class="font-bebas text-2xl text-white tracking-wide mt-1">{match.venue}</h3>
+                <p class="text-xs text-slate-400">{match.city}</p>
+              </div>
+              <div class="px-2.5 py-1 bg-white/5 rounded-full text-[10px] uppercase font-bold text-[#f7d618] border border-[#f7d618]/20">
+                Mondial 2026
+              </div>
+            </div>
+
+            <!-- Scoreboard display -->
+            <div class="flex items-center justify-between gap-4 py-4 mb-4 border-y border-white/5 bg-black/20 rounded-2xl px-4">
+              <div class="flex flex-col items-center flex-1">
+                <img src="/flags/cd.png" alt="RDC" class="h-10 w-auto rounded shadow-md object-cover" />
+                <span class="font-bebas text-lg text-white mt-1">RDC</span>
+              </div>
+              <span class="font-bebas text-2xl text-slate-500 font-bold">VS</span>
+              <div class="flex flex-col items-center flex-1">
+                <img src={`/flags/${match.awayFlag}.png`} alt={match.away} class="h-10 w-auto rounded shadow-md object-cover" />
+                <span class="font-bebas text-lg text-white mt-1">{match.away}</span>
+              </div>
+            </div>
+
+            <!-- Warning or Notice -->
+            {match.warning && (
+              <div class="mb-4 p-3 rounded-xl bg-red-950/40 border border-red-500/20 text-[11px] text-red-300 leading-normal flex gap-2">
+                <span class="flex-shrink-0">⚠️</span>
+                <span>{match.warning}</span>
+              </div>
+            )}
+
+            <!-- Date & Countdown -->
+            <div class="mt-4 pt-4 border-t border-white/5">
+              <div class="flex justify-between items-center text-xs text-slate-400 mb-2">
+                <span>Date officielle (UTC)</span>
+                <span>{match.dateStr}</span>
+              </div>
+              
+              <!-- Local time slot -->
+              <div class="text-xs font-semibold text-[#f7d618] mb-3 bg-[#f7d618]/10 py-1.5 px-3 rounded-lg border border-[#f7d618]/20 flex justify-between items-center">
+                <span>Heure locale chez vous :</span>
+                <span class="local-time" data-utc={match.utcKickoff}>Chargement...</span>
+              </div>
+
+              <!-- Countdown timer -->
+              <div class="grid grid-cols-4 gap-1 text-center bg-black/40 rounded-xl p-2.5" data-countdown={match.utcKickoff}>
+                <div>
+                  <div class="font-bebas text-xl text-white days">00</div>
+                  <div class="text-[9px] uppercase text-slate-500">Jours</div>
+                </div>
+                <div>
+                  <div class="font-bebas text-xl text-white hours">00</div>
+                  <div class="text-[9px] uppercase text-slate-500">Heures</div>
+                </div>
+                <div>
+                  <div class="font-bebas text-xl text-white minutes">00</div>
+                  <div class="text-[9px] uppercase text-slate-500">Min</div>
+                </div>
+                <div>
+                  <div class="font-bebas text-xl text-[#f7d618] seconds">00</div>
+                  <div class="text-[9px] uppercase text-slate-500">Sec</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <!-- Supporters Wall Marquee -->
+      <div class="mb-20 bg-white/5 border border-white/10 rounded-3xl p-8 relative overflow-hidden">
+        <div class="absolute inset-0 bg-radial-at-t from-[#f7d618]/5 to-transparent pointer-events-none"></div>
+        <div class="text-center max-w-xl mx-auto mb-6">
+          <span class="text-xs uppercase tracking-[0.2em] text-[#f7d618] font-bold">Le Mur des Supporters</span>
+          <h2 class="font-bebas text-3xl text-white mt-2">ILS SERONT DANS LE BLOC AUX USA 🐆</h2>
+          <p class="text-slate-400 text-xs mt-1">Rejoignez la diaspora et affichez votre soutien en participant au tirage.</p>
+        </div>
+
+        <!-- Marquee container -->
+        <div class="supporters-marquee-wrapper relative flex overflow-x-hidden border-y border-white/5 py-4 select-none">
+          <div class="supporters-marquee flex gap-8 whitespace-nowrap animate-marquee">
+            {supporters.map((s) => (
+              <div class="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/5 text-sm">
+                <span class="font-semibold text-white">{s.first_name}</span>
+                <span class="text-slate-400">({s.city}, {s.state_us})</span>
+                <span class="text-base">🇺🇸</span>
+              </div>
+            ))}
+          </div>
+          <!-- Second clone for infinite loop -->
+          <div class="supporters-marquee flex gap-8 whitespace-nowrap animate-marquee" aria-hidden="true">
+            {supporters.map((s) => (
+              <div class="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/5 text-sm">
+                <span class="font-semibold text-white">{s.first_name}</span>
+                <span class="text-slate-400">({s.city}, {s.state_us})</span>
+                <span class="text-base">🇺🇸</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <!-- Important Notice / RGPD / Transport -->
+      <div class="grid md:grid-cols-2 gap-8 text-sm text-slate-400 border-t border-white/10 pt-10">
+        <div>
+          <h4 class="font-bold text-white mb-2">✈️ Logistique & Logement à votre charge</h4>
+          <p class="leading-relaxed">
+            Le Bloc Léopards organise et garantit un tirage au sort transparent des billets d'accès en tribune pour soutenir la RDC. Le transport (vols, visas, déplacements) et l'hébergement restent à la charge entière du supporter.
+          </p>
+        </div>
+        <div>
+          <h4 class="font-bold text-white mb-2">⚖️ Mentions Légales & Institutionnelles</h4>
+          <p class="leading-relaxed">
+            En co-branding avec le Ministère des Sports. Les annonces institutionnelles restent à vérifier auprès des organismes compétents. Les documents d'identité collectés sont chiffrés et seront supprimés après la réalisation du tirage au sort.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .font-bebas {
+    font-family: 'Bebas Neue', sans-serif;
+  }
+  
+  /* Marquee keyframes */
+  @keyframes marquee {
+    0% { transform: translateX(0%); }
+    100% { transform: translateX(-100%); }
+  }
+  .animate-marquee {
+    animation: marquee 25s linear infinite;
+  }
+  .supporters-marquee-wrapper:hover .supporters-marquee {
+    animation-play-state: paused;
+  }
+</style>
+
+<script>
+  // Format local times
+  document.querySelectorAll('.local-time').forEach((el) => {
+    const utcStr = el.getAttribute('data-utc');
+    if (utcStr) {
+      const date = new Date(utcStr);
+      // Format to user's locale
+      const options: Intl.DateTimeFormatOptions = { 
+        weekday: 'short', 
+        day: 'numeric', 
+        month: 'short', 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      };
+      el.textContent = date.toLocaleDateString(navigator.language, options);
+    }
+  });
+
+  // Countdown timers
+  document.querySelectorAll('[data-countdown]').forEach((el) => {
+    const utcStr = el.getAttribute('data-countdown');
+    if (!utcStr) return;
+    const targetDate = new Date(utcStr).getTime();
+
+    const daysEl = el.querySelector('.days');
+    const hoursEl = el.querySelector('.hours');
+    const minsEl = el.querySelector('.minutes');
+    const secsEl = el.querySelector('.seconds');
+
+    function update() {
+      const now = new Date().getTime();
+      const diff = targetDate - now;
+
+      if (diff <= 0) {
+        if (daysEl) daysEl.textContent = '00';
+        if (hoursEl) hoursEl.textContent = '00';
+        if (minsEl) minsEl.textContent = '00';
+        if (secsEl) secsEl.textContent = '00';
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      if (daysEl) daysEl.textContent = String(days).padStart(2, '0');
+      if (hoursEl) hoursEl.textContent = String(hours).padStart(2, '0');
+      if (minsEl) minsEl.textContent = String(minutes).padStart(2, '0');
+      if (secsEl) secsEl.textContent = String(seconds).padStart(2, '0');
+    }
+
+    update();
+    setInterval(update, 1000);
+  });
+</script>

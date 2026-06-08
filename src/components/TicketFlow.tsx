@@ -693,7 +693,7 @@ export default function TicketFlow() {
                   ← Retour à l'accueil
                 </a>
                 <a
-                  href={`https://wa.me/?text=${encodeURIComponent("Je rejoins le Bloc des Léopards pour soutenir la RDC ! 🇨🇩🐆 Tu peux faire ta demande ici : " + (typeof window !== "undefined" ? window.location.origin : "") + "/gagne-ton-billet")}`}
+                  href={`https://wa.me/?text=${encodeURIComponent("Je rejoins le Bloc des Léopards pour soutenir la RDC ! 🇨🇩🐆 Tu peux faire ta demande ici : " + (typeof window !== "undefined" ? window.location.origin : "") + "/mondial")}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
