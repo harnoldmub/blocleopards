@@ -1,7 +1,18 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { UploadCloud, FileText } from "lucide-react";
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
+
+const COUNTRIES = [
+  "États-Unis",
+  "France",
+  "Belgique",
+  "Royaume-Uni",
+  "Canada",
+  "Mexique",
+  "Autre",
+];
 
 const US_STATES = [
   { code: "AL", name: "Alabama" }, { code: "AK", name: "Alaska" }, { code: "AZ", name: "Arizona" },
@@ -34,11 +45,15 @@ type Step = "identity" | "matches" | "engagement" | "success";
 interface FormState {
   firstName: string;
   lastName: string;
+  gender: "Homme" | "Femme" | "";
   dateOfBirth: string;
   email: string;
-  phone: string;
+  telephone: string;
+  whatsapp: string;
+  country: string;
   city: string;
   stateUs: string;
+  isDiasporaRdc: boolean | null;
   matchesVises: string[];
   optInMur: boolean;
   documentType: "PASSPORT" | "DRIVER_LICENSE";
@@ -50,11 +65,15 @@ export default function MondialTicketFlow() {
   const [form, setForm] = useState<FormState>({
     firstName: "",
     lastName: "",
+    gender: "",
     dateOfBirth: "",
     email: "",
-    phone: "",
+    telephone: "",
+    whatsapp: "",
+    country: "États-Unis",
     city: "",
     stateUs: "",
+    isDiasporaRdc: null,
     matchesVises: [],
     optInMur: false,
     documentType: "PASSPORT",
@@ -151,10 +170,13 @@ export default function MondialTicketFlow() {
   const validateIdentity = () => {
     if (!form.firstName.trim() || !form.lastName.trim()) return "Prénom et nom requis.";
     if (!form.dateOfBirth) return "Date de naissance requise.";
+    if (!form.gender) return "Genre requis.";
     if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return "Adresse email valide requise.";
-    if (!form.phone.trim()) return "Numéro de téléphone requis.";
-    if (!form.stateUs) return "État de résidence requis.";
+    if (!form.telephone.trim()) return "Numéro de téléphone requis.";
+    if (!form.country) return "Pays de résidence requis.";
+    if (form.country === "États-Unis" && !form.stateUs) return "État de résidence requis.";
     if (!form.city.trim()) return "Ville de résidence requise.";
+    if (form.isDiasporaRdc === null) return "Veuillez indiquer si vous êtes membre de la diaspora RDC.";
     if (!form.documentFile) return "Pièce d'identité requise.";
     return null;
   };
@@ -189,12 +211,15 @@ export default function MondialTicketFlow() {
     const formData = new FormData();
     formData.append("first_name", form.firstName);
     formData.append("last_name", form.lastName);
+    formData.append("gender", form.gender);
     formData.append("date_of_birth", form.dateOfBirth);
     formData.append("email", form.email);
-    formData.append("phone", form.phone);
-    formData.append("country", "USA");
+    formData.append("telephone", form.telephone);
+    if (form.whatsapp) formData.append("whatsapp", form.whatsapp);
+    formData.append("country", form.country);
     formData.append("city", form.city);
-    formData.append("state_us", form.stateUs);
+    if (form.stateUs) formData.append("state_us", form.stateUs);
+    formData.append("is_diaspora_rdc", String(form.isDiasporaRdc === true));
     formData.append("matchs_vises", JSON.stringify(form.matchesVises));
     formData.append("opt_in_mur", String(form.optInMur));
     formData.append("document_type", form.documentType);
@@ -290,10 +315,26 @@ export default function MondialTicketFlow() {
                 </div>
 
                 <div>
+                  <label className="block text-[10px] uppercase text-slate-400 font-bold mb-2">Genre *</label>
+                  <div className="flex gap-3">
+                    {(["Homme", "Femme"] as const).map(g => (
+                      <button
+                        key={g}
+                        type="button"
+                        onClick={() => handleTextChange("gender", g)}
+                        className={`flex-1 py-3 rounded-xl text-xs font-bold border transition-all ${form.gender === g ? "bg-[#f7d618]/10 border-[#f7d618] text-[#f7d618]" : "bg-white/5 border-white/10 text-slate-400 hover:border-white/20"}`}
+                      >
+                        {g}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
                   <label className="block text-[10px] uppercase text-slate-400 font-bold mb-1.5">Date de naissance *</label>
-                  <input 
-                    type="date" 
-                    value={form.dateOfBirth} 
+                  <input
+                    type="date"
+                    value={form.dateOfBirth}
                     onChange={e => handleTextChange("dateOfBirth", e.target.value)}
                     className="w-full bg-white/5 border border-white/10 focus:border-[#f7d618] rounded-xl px-4 py-3 text-sm outline-none transition-colors text-slate-300"
                   />
@@ -301,47 +342,72 @@ export default function MondialTicketFlow() {
 
                 <div>
                   <label className="block text-[10px] uppercase text-slate-400 font-bold mb-1.5">Email *</label>
-                  <input 
-                    type="email" 
-                    value={form.email} 
+                  <input
+                    type="email"
+                    value={form.email}
                     onChange={e => handleTextChange("email", e.target.value)}
                     className="w-full bg-white/5 border border-white/10 focus:border-[#f7d618] rounded-xl px-4 py-3 text-sm outline-none transition-colors"
-                    placeholder="john.doe@domain.us"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] uppercase text-slate-400 font-bold mb-1.5">Téléphone (US +1) *</label>
-                  <input 
-                    type="tel" 
-                    value={form.phone} 
-                    onChange={e => handleTextChange("phone", e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 focus:border-[#f7d618] rounded-xl px-4 py-3 text-sm outline-none transition-colors"
-                    placeholder="+1 (555) 000-0000"
+                    placeholder="john.doe@email.com"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  {/* Searchable State US Selector */}
-                  <div className="relative">
-                    <label className="block text-[10px] uppercase text-slate-400 font-bold mb-1.5">État de résidence *</label>
-                    <input 
-                      type="text" 
-                      value={form.stateUs || stateSearch}
-                      onChange={e => {
-                        handleTextChange("stateUs", "");
-                        setStateSearch(e.target.value);
-                        setShowStateDropdown(true);
-                      }}
-                      onFocus={() => setShowStateDropdown(true)}
+                  <div>
+                    <label className="block text-[10px] uppercase text-slate-400 font-bold mb-1.5">Téléphone *</label>
+                    <input
+                      type="tel"
+                      value={form.telephone}
+                      onChange={e => handleTextChange("telephone", e.target.value)}
                       className="w-full bg-white/5 border border-white/10 focus:border-[#f7d618] rounded-xl px-4 py-3 text-sm outline-none transition-colors"
-                      placeholder="Ex: Texas"
+                      placeholder="+1 (555) 000-0000"
                     />
-                    
-                    {showStateDropdown && (
-                      <div className="absolute left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-[#0d1221] border border-white/10 rounded-xl z-20 shadow-xl scrollbar-thin">
-                        {filteredStates.length > 0 ? (
-                          filteredStates.map(state => (
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase text-slate-400 font-bold mb-1.5">WhatsApp</label>
+                    <input
+                      type="tel"
+                      value={form.whatsapp}
+                      onChange={e => handleTextChange("whatsapp", e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 focus:border-[#f7d618] rounded-xl px-4 py-3 text-sm outline-none transition-colors"
+                      placeholder="+1 (555) 000-0000"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] uppercase text-slate-400 font-bold mb-1.5">Pays de résidence *</label>
+                  <select
+                    value={form.country}
+                    onChange={e => {
+                      handleTextChange("country", e.target.value);
+                      if (e.target.value !== "États-Unis") handleTextChange("stateUs", "");
+                    }}
+                    className="w-full bg-white/5 border border-white/10 focus:border-[#f7d618] rounded-xl px-4 py-3 text-sm outline-none transition-colors text-white"
+                    style={{ background: "#0d1221" }}
+                  >
+                    {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+
+                <div className={`grid gap-4 ${form.country === "États-Unis" ? "grid-cols-2" : "grid-cols-1"}`}>
+                  {form.country === "États-Unis" && (
+                    <div className="relative">
+                      <label className="block text-[10px] uppercase text-slate-400 font-bold mb-1.5">État *</label>
+                      <input
+                        type="text"
+                        value={form.stateUs || stateSearch}
+                        onChange={e => {
+                          handleTextChange("stateUs", "");
+                          setStateSearch(e.target.value);
+                          setShowStateDropdown(true);
+                        }}
+                        onFocus={() => setShowStateDropdown(true)}
+                        className="w-full bg-white/5 border border-white/10 focus:border-[#f7d618] rounded-xl px-4 py-3 text-sm outline-none transition-colors"
+                        placeholder="Ex: Texas"
+                      />
+                      {showStateDropdown && (
+                        <div className="absolute left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-[#0d1221] border border-white/10 rounded-xl z-20 shadow-xl">
+                          {filteredStates.length > 0 ? filteredStates.map(state => (
                             <button
                               key={state.code}
                               type="button"
@@ -350,23 +416,38 @@ export default function MondialTicketFlow() {
                             >
                               {state.name} ({state.code})
                             </button>
-                          ))
-                        ) : (
-                          <div className="px-4 py-2 text-xs text-slate-500">Aucun État trouvé</div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
+                          )) : (
+                            <div className="px-4 py-2 text-xs text-slate-500">Aucun État trouvé</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <div>
                     <label className="block text-[10px] uppercase text-slate-400 font-bold mb-1.5">Ville *</label>
-                    <input 
-                      type="text" 
-                      value={form.city} 
+                    <input
+                      type="text"
+                      value={form.city}
                       onChange={e => handleTextChange("city", e.target.value)}
                       className="w-full bg-white/5 border border-white/10 focus:border-[#f7d618] rounded-xl px-4 py-3 text-sm outline-none transition-colors"
                       placeholder="Ex: Houston"
                     />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] uppercase text-slate-400 font-bold mb-2">Êtes-vous membre de la diaspora RDC ? *</label>
+                  <div className="flex gap-3">
+                    {[{ val: true, label: "Oui" }, { val: false, label: "Non" }].map(opt => (
+                      <button
+                        key={String(opt.val)}
+                        type="button"
+                        onClick={() => handleTextChange("isDiasporaRdc", opt.val)}
+                        className={`flex-1 py-3 rounded-xl text-xs font-bold border transition-all ${form.isDiasporaRdc === opt.val ? "bg-[#f7d618]/10 border-[#f7d618] text-[#f7d618]" : "bg-white/5 border-white/10 text-slate-400 hover:border-white/20"}`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
@@ -409,14 +490,14 @@ export default function MondialTicketFlow() {
                     
                     {!form.documentFile ? (
                       <div>
-                        <span className="text-3xl block mb-2">📁</span>
+                        <div className="flex justify-center mb-2 text-slate-400"><UploadCloud size={28} /></div>
                         <span className="text-xs font-semibold text-slate-300">Glissez-déposez votre document ou cliquez pour parcourir</span>
                         <span className="text-[9px] text-slate-500 block mt-1">Formats acceptés : JPG, PNG, PDF. Max 5 Mo.</span>
                       </div>
                     ) : (
                       <div className="flex items-center justify-center gap-4 text-left">
                         {filePreview === "pdf" ? (
-                          <span className="text-3xl">📄</span>
+                          <FileText size={28} className="text-slate-300" />
                         ) : filePreview ? (
                           <img src={filePreview} alt="Preview" className="h-12 w-12 object-cover rounded border border-white/10" />
                         ) : null}
@@ -520,38 +601,50 @@ export default function MondialTicketFlow() {
                 <p className="text-slate-400 text-xs mt-1">Veuillez accepter les règles du tirage au sort pour finaliser l'inscription.</p>
               </div>
 
-              <div className="space-y-4 bg-white/5 border border-white/10 rounded-2xl p-5">
+              <div className="space-y-3 bg-white/5 border border-white/10 rounded-2xl p-5">
+                <p className="text-[10px] uppercase tracking-[0.15em] text-slate-400 font-bold mb-4">Confirmations d'éligibilité *</p>
+
+                {[
+                  "Je confirme avoir au moins 18 ans.",
+                  "Je suis membre de la diaspora congolaise (RDC) ou je soutiens les Léopards.",
+                  "Je certifie être autorisé(e) à entrer légalement dans le pays où se joue le match choisi.",
+                  "Je n'ai jamais reçu de billet gratuit via le Bloc Léopards pour un match de la sélection RDC.",
+                  "Je m'engage à ne pas revendre, transférer ou céder le billet à des fins commerciales.",
+                  "J'accepte de fournir un document d'identité valide pour vérification.",
+                ].map((text, i) => (
+                  <label key={i} className="flex items-start gap-3 cursor-pointer select-none group">
+                    <input type="checkbox" required className="mt-0.5 accent-[#f7d618] flex-shrink-0" />
+                    <span className="text-xs text-slate-300 leading-normal">{text}</span>
+                  </label>
+                ))}
+
+                <div className="border-t border-white/10 pt-3 mt-2">
+                  <label className="flex items-start gap-3 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={form.optInMur}
+                      onChange={e => handleTextChange("optInMur", e.target.checked)}
+                      className="mt-0.5 accent-[#f7d618] flex-shrink-0"
+                    />
+                    <span className="text-xs text-slate-400 leading-normal">
+                      <span className="text-slate-300 font-semibold">Optionnel —</span> J'accepte d'apparaître sur le Mur des Supporters avec mon prénom et ma ville.
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-3 bg-white/5 border border-white/10 rounded-2xl p-5">
+                <p className="text-[10px] uppercase tracking-[0.15em] text-slate-400 font-bold mb-3">Conformité</p>
                 <label className="flex items-start gap-3 cursor-pointer select-none">
-                  <input 
-                    type="checkbox" 
-                    required
-                    className="mt-1"
-                  />
+                  <input type="checkbox" required className="mt-0.5 accent-[#f7d618] flex-shrink-0" />
                   <span className="text-xs text-slate-300 leading-normal">
-                    <strong>Une seule inscription autorisée.</strong> Je certifie sur l'honneur que je réside légalement aux USA et que toute fausse déclaration ou tentative de fraude entraînera l'annulation immédiate de ma demande.
+                    Je confirme être en conformité avec les règles d'immigration du pays de destination du match sélectionné.
                   </span>
                 </label>
-
                 <label className="flex items-start gap-3 cursor-pointer select-none">
-                  <input 
-                    type="checkbox" 
-                    required
-                    className="mt-1"
-                  />
+                  <input type="checkbox" required className="mt-0.5 accent-[#f7d618] flex-shrink-0" />
                   <span className="text-xs text-slate-300 leading-normal">
-                    J'accepte la politique de confidentialité (RGPD). Je comprends que mon document d'identité est stocké de manière sécurisée et sera supprimé après le tirage.
-                  </span>
-                </label>
-
-                <label className="flex items-start gap-3 cursor-pointer select-none">
-                  <input 
-                    type="checkbox" 
-                    checked={form.optInMur}
-                    onChange={e => handleTextChange("optInMur", e.target.checked)}
-                    className="mt-1"
-                  />
-                  <span className="text-xs text-slate-300 leading-normal">
-                    (Optionnel) J'accepte d'apparaître sur le <strong>Mur des Supporters</strong> de la RDC en affichant mon prénom, ma ville et mon État.
+                    J'accepte la politique de confidentialité (RGPD). Mon document d'identité sera supprimé définitivement après la publication du tirage.
                   </span>
                 </label>
               </div>
@@ -608,7 +701,9 @@ export default function MondialTicketFlow() {
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-slate-400">Résidence</span>
-                    <span className="font-bold text-white">{form.city}, {form.stateUs} (USA)</span>
+                    <span className="font-bold text-white">
+                      {form.city}{form.stateUs ? `, ${form.stateUs}` : ""} — {form.country}
+                    </span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-slate-400">Matchs visés</span>
