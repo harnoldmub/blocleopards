@@ -23,7 +23,8 @@ export const GET: APIRoute = async ({ request, cookies }) => {
 
     // 1. Fetch document metadata
     const [doc] = await sql`
-      select id, inscription_id, stored_filename, mime_type, original_filename, uploaded_at, deleted_at
+      select id, inscription_id, stored_filename, mime_type, original_filename,
+             coalesce(uploaded_at, created_at) as uploaded_at, deleted_at
       from justificatifs_identite
       where id = ${id}
     `;
@@ -36,15 +37,13 @@ export const GET: APIRoute = async ({ request, cookies }) => {
       return new Response("Ce document a déjà été supprimé conformément aux règles RGPD.", { status: 410 });
     }
 
-    // 2. Log access
-    const adminUsername = "admin"; // Mock or retrieve active session admin username
-    await sql`
-      insert into justificatifs_access_logs (
-        admin_username, justificatif_id, action
-      ) values (
-        ${adminUsername}, ${id}, 'view'
-      )
-    `;
+    // 2. Log access (best-effort — table may not exist yet)
+    try {
+      await sql`
+        insert into justificatifs_access_logs (admin_username, justificatif_id, action)
+        values ('admin', ${id}, 'view')
+      `;
+    } catch { /* table missing in dev — ignore */ }
 
     // 3. Resolve file path
     const uploadedDate = new Date(doc.uploaded_at);

@@ -40,6 +40,7 @@ export default function AdminMondialDashboard() {
 
   const [hoveredState, setHoveredState] = useState<any>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [docPreview, setDocPreview] = useState<{ id: number; filename: string; mimeType: string } | null>(null);
 
   // ─── Fetching ──────────────────────────────────────────────────────────────
 
@@ -262,6 +263,7 @@ export default function AdminMondialDashboard() {
   }
 
   return (
+    <>
     <div style={{ fontFamily: "'Sora', sans-serif", color: C.text, paddingBottom: 60 }}>
       
       {/* Title block */}
@@ -463,14 +465,12 @@ export default function AdminMondialDashboard() {
                         {inc.document_deleted_at ? (
                           <span style={{ color: C.muted, fontSize: 10 }}>Supprimé (RGPD)</span>
                         ) : inc.document_id ? (
-                          <a 
-                            href={`/api/admin/mondial/justificatif?id=${inc.document_id}`} 
-                            target="_blank" 
-                            rel="noopener" 
-                            style={{ color: C.blue, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4 }}
+                          <button
+                            onClick={() => setDocPreview({ id: inc.document_id, filename: inc.original_filename || "document", mimeType: inc.document_mime_type || "image/jpeg" })}
+                            style={{ background: "none", border: "none", cursor: "pointer", color: C.blue, display: "inline-flex", alignItems: "center", gap: 4, fontSize: 13, padding: 0 }}
                           >
-                            Voir {inc.type_document === "PASSPORT" ? "Passeport" : "Permis"} <ExternalLink size={10} />
-                          </a>
+                            Voir {inc.type_document === "PASSPORT" ? "Passeport" : "Permis"}
+                          </button>
                         ) : (
                           <span style={{ color: C.red }}>Manquante</span>
                         )}
@@ -660,5 +660,78 @@ export default function AdminMondialDashboard() {
       )}
 
     </div>
+
+    {/* ── Document preview modal ── */}
+    {docPreview && (
+      <div
+        onClick={() => setDocPreview(null)}
+        style={{
+          position: "fixed", inset: 0, zIndex: 1000,
+          background: "rgba(0,0,0,0.8)", backdropFilter: "blur(6px)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: "24px",
+        }}
+      >
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            background: C.card, border: `1px solid ${C.border}`,
+            borderRadius: 16, overflow: "hidden",
+            width: "100%", maxWidth: 560,
+            display: "flex", flexDirection: "column",
+            maxHeight: "90vh",
+          }}
+        >
+          {/* Header */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", borderBottom: `1px solid ${C.border}` }}>
+            <div>
+              <p style={{ fontSize: 12, fontWeight: 700, color: C.text }}>{docPreview.filename}</p>
+              <p style={{ fontSize: 10, color: C.muted, marginTop: 2 }}>{docPreview.mimeType}</p>
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <a
+                href={`/api/admin/mondial/justificatif?id=${docPreview.id}`}
+                download={docPreview.filename}
+                style={{ padding: "6px 12px", background: "rgba(255,255,255,0.06)", border: `1px solid ${C.border}`, borderRadius: 8, color: C.text, textDecoration: "none", fontSize: 12 }}
+              >
+                Télécharger
+              </a>
+              <button
+                onClick={() => setDocPreview(null)}
+                style={{ width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(206,16,33,0.1)", border: `1px solid rgba(206,16,33,0.2)`, borderRadius: 8, color: "#ff6b7a", cursor: "pointer", fontSize: 16 }}
+              >
+                <X size={14} />
+              </button>
+            </div>
+          </div>
+
+          {/* Preview */}
+          <div style={{ flex: 1, overflow: "auto", background: "#000", minHeight: 200 }}>
+            {docPreview.mimeType.startsWith("image/") ? (
+              <img
+                src={`/api/admin/mondial/justificatif?id=${docPreview.id}`}
+                alt={docPreview.filename}
+                style={{ display: "block", width: "100%", height: "auto", maxHeight: "75vh", objectFit: "contain" }}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = "none";
+                  (e.target as HTMLImageElement).nextElementSibling?.removeAttribute("hidden");
+                }}
+              />
+            ) : (
+              <iframe
+                src={`/api/admin/mondial/justificatif?id=${docPreview.id}`}
+                style={{ width: "100%", height: "75vh", border: "none", display: "block" }}
+                title={docPreview.filename}
+              />
+            )}
+            <div hidden style={{ padding: 32, textAlign: "center", color: C.muted, fontSize: 13 }}>
+              Impossible de charger le document.<br />
+              <a href={`/api/admin/mondial/justificatif?id=${docPreview.id}`} target="_blank" rel="noopener" style={{ color: C.blue, marginTop: 8, display: "inline-block" }}>Ouvrir dans un nouvel onglet</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

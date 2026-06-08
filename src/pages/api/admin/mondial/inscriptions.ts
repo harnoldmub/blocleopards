@@ -31,6 +31,7 @@ export const GET: APIRoute = async ({ cookies }) => {
         m.created_at,
         j.id as document_id,
         j.type_document,
+        j.mime_type as document_mime_type,
         j.original_filename,
         j.status as document_status,
         j.checksum as document_checksum,
