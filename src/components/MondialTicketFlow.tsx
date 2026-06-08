@@ -264,9 +264,9 @@ export default function MondialTicketFlow() {
 
         {/* Logos centered */}
         <div className="flex-1 flex items-center justify-center gap-3">
-          <img src="/brand/logo.png" alt="Bloc Léopards" style={{ height: 36, width: "auto", objectFit: "contain" }} />
-          <div style={{ width: 1, height: 24, background: "rgba(255,255,255,0.2)" }} />
-          <img src="/brand/logo-min-sport-black.webp" alt="Ministère des Sports" style={{ height: 28, width: "auto", objectFit: "contain", opacity: 0.9, filter: "invert(1) brightness(2)" }} />
+          <img src="/brand/logo.png" alt="Bloc Léopards" style={{ height: 44, width: "auto", objectFit: "contain", filter: "drop-shadow(0 0 8px rgba(247,214,24,0.3))" }} />
+          <div style={{ width: 1, height: 28, background: "rgba(255,255,255,0.2)" }} />
+          <img src="/brand/logo-min-sport-white.webp" alt="Ministère des Sports" style={{ height: 36, width: "auto", objectFit: "contain", opacity: 0.95 }} />
         </div>
 
         {/* Hub link */}
