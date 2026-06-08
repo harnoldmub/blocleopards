@@ -4,11 +4,31 @@ interface Props {
   message: string;
   detail?: string;
   confirmLabel?: string;
+  icon?: string;
+  tone?: "danger" | "success" | "warning";
   onConfirm: () => void;
   onCancel: () => void;
 }
 
-export default function ConfirmDialog({ message, detail, confirmLabel = "Supprimer", onConfirm, onCancel }: Props) {
+const toneStyles = {
+  danger: {
+    background: "rgba(248,113,113,0.12)",
+    border: "1.5px solid rgba(248,113,113,0.4)",
+    color: "#f87171"
+  },
+  success: {
+    background: "rgba(34,197,94,0.12)",
+    border: "1.5px solid rgba(34,197,94,0.4)",
+    color: "#4ade80"
+  },
+  warning: {
+    background: "rgba(247,214,24,0.12)",
+    border: "1.5px solid rgba(247,214,24,0.4)",
+    color: "#f7d618"
+  }
+};
+
+export default function ConfirmDialog({ message, detail, confirmLabel = "Supprimer", icon = "🗑", tone = "danger", onConfirm, onCancel }: Props) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onCancel(); };
     document.addEventListener("keydown", onKey);
@@ -38,7 +58,7 @@ export default function ConfirmDialog({ message, detail, confirmLabel = "Supprim
           fontFamily: "'Sora', sans-serif",
         }}
       >
-        <div style={{ fontSize: 32, marginBottom: 16, textAlign: "center" }}>🗑</div>
+        <div style={{ fontSize: 32, marginBottom: 16, textAlign: "center" }}>{icon}</div>
         <h3 style={{
           fontFamily: "'Bebas Neue', sans-serif",
           fontSize: "1.5rem",
@@ -76,10 +96,10 @@ export default function ConfirmDialog({ message, detail, confirmLabel = "Supprim
             onClick={onConfirm}
             style={{
               flex: 1, padding: "13px",
-              background: "rgba(248,113,113,0.12)",
-              border: "1.5px solid rgba(248,113,113,0.4)",
+              background: toneStyles[tone].background,
+              border: toneStyles[tone].border,
               borderRadius: 12,
-              color: "#f87171",
+              color: toneStyles[tone].color,
               fontSize: 13, fontWeight: 700,
               cursor: "pointer",
               fontFamily: "'Sora', sans-serif",

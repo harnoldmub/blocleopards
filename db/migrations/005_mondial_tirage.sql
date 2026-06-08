@@ -45,3 +45,14 @@ create table if not exists justificatifs_access_logs (
 
 create index if not exists mondial_inscriptions_email_idx on mondial_inscriptions (lower(email));
 create index if not exists mondial_inscriptions_status_idx on mondial_inscriptions (verification_status);
+
+create table if not exists mondial_tirage_logs (
+  id serial primary key,
+  seed text not null,
+  engagement_hash text not null,
+  candidates_count integer not null,
+  winners_count integer not null,
+  winner_ids jsonb not null default '[]'::jsonb,
+  published boolean not null default false,
+  ran_at timestamptz default now()
+);

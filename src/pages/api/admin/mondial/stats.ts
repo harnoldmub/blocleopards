@@ -49,6 +49,18 @@ export const GET: APIRoute = async ({ cookies }) => {
     `;
     const tirageHash = settingsHash?.value || "";
 
+    const latestDraws = await sql`
+      select distinct on (match_key)
+        match_key,
+        candidates_count,
+        winners_count,
+        published,
+        ran_at
+      from mondial_tirage_logs
+      where match_key is not null
+      order by match_key, ran_at desc
+    `;
+
     return new Response(
       JSON.stringify({
         total: generalStats?.total || 0,
@@ -61,7 +73,8 @@ export const GET: APIRoute = async ({ cookies }) => {
         ticketsAvailable,
         tiragePublie,
         tirageSeed,
-        tirageHash
+        tirageHash,
+        latestDraws
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );

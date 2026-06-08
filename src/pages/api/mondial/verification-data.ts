@@ -4,7 +4,7 @@ import { getSetting } from "../../../lib/settings";
 
 export const prerender = false;
 
-// Public endpoint — returns only IDs (no PII), seed, hash and winner IDs
+// Public endpoint — returns the published draw summary without identity documents.
 export const GET: APIRoute = async () => {
   const headers = { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" };
 
@@ -20,37 +20,27 @@ export const GET: APIRoute = async () => {
 
     const sql = requireDatabase();
 
-    // All verified candidates in draw order (id asc) — IDs only, no PII
-    const candidates = await sql`
-      select id from mondial_inscriptions
-      where verification_status = 'verified'
-      order by id asc
-    `;
-
-    // Winners (those with ticket_given_at set) — IDs only
     const winners = await sql`
-      select id from mondial_inscriptions
+      select id, selected_match_key
+      from mondial_inscriptions
       where ticket_given_at is not null
-      order by ticket_given_at asc
+      order by selected_match_key asc, ticket_given_at asc
     `;
 
-    const seed   = await getSetting("mondial_tirage_seed", "");
-    const hash   = await getSetting("mondial_tirage_hash", "");
-    const count  = parseInt(await getSetting("mondial_tickets_count", "0"), 10);
-
-    // Full draw history (public audit trail)
     const logs = await sql`
-      select id, seed, engagement_hash, candidates_count, winners_count, published, ran_at
+      select id, match_key, candidates_count, winners_count, published, ran_at
       from mondial_tirage_logs
       order by ran_at asc
     `;
 
     return new Response(JSON.stringify({
-      candidateIds: candidates.map((c: any) => c.id),
-      seed,
-      engagementHash: hash,
-      winnersCount: count,
       publishedWinnerIds: winners.map((w: any) => w.id),
+      winnersByMatch: winners.reduce((groups: Record<string, number[]>, winner: any) => {
+        const key = winner.selected_match_key || "non-renseigne";
+        groups[key] = groups[key] || [];
+        groups[key].push(winner.id);
+        return groups;
+      }, {}),
       drawHistory: logs,
     }), { status: 200, headers });
   } catch (err) {

@@ -8,10 +8,9 @@ let totalInscriptions = 0;
 let totalVerified = 0;
 let totalDuplicates = 0;
 let tiragePublie = false;
-let tirageSeed = "";
-let tirageHash = "";
 let winners: any[] = [];
 let tirageHistory: any[] = [];
+let distribution: any[] = [];
 
 if (hasDatabase) {
   try {
@@ -32,23 +31,93 @@ if (hasDatabase) {
     totalVerified = stats?.verified || 0;
     totalDuplicates = docStats?.duplicates || 0;
 
+    const geoRows = await sql`
+      select
+        case
+          when lower(country) in ('états-unis', 'etats-unis', 'usa', 'united states', 'united states of america')
+            then coalesce(nullif(state_us, ''), 'États-Unis non renseigné')
+          else coalesce(nullif(country, ''), 'Pays non renseigné')
+        end as location,
+        count(*)::integer as count
+      from mondial_inscriptions
+      group by 1
+      order by count desc, location asc
+    `;
+    const geoTotal = geoRows.reduce((sum: number, row: any) => sum + Number(row.count || 0), 0);
+    const palette = ["#f7d618", "#007fff", "#e2e8f0", "#a855f7", "#f97316"];
+    const stateCodes: Record<string, string> = {
+      Alabama: "AL", Alaska: "AK", Arizona: "AZ", Arkansas: "AR", Californie: "CA", California: "CA",
+      Colorado: "CO", Connecticut: "CT", Delaware: "DE", Floride: "FL", Florida: "FL", Géorgie: "GA",
+      Georgia: "GA", Texas: "TX", "New York": "NY", Illinois: "IL", Washington: "WA",
+      "District of Columbia": "DC"
+    };
+    const codeLabels: Record<string, string> = {
+      AL: "Alabama (AL)", AK: "Alaska (AK)", AZ: "Arizona (AZ)", AR: "Arkansas (AR)",
+      CA: "Californie (CA)", CO: "Colorado (CO)", CT: "Connecticut (CT)", DE: "Delaware (DE)",
+      FL: "Floride (FL)", GA: "Géorgie (GA)", TX: "Texas (TX)", NY: "New York (NY)",
+      IL: "Illinois (IL)", WA: "Washington (WA)", DC: "District of Columbia (DC)"
+    };
+    const formatLocation = (location: string) => {
+      if (codeLabels[location]) return codeLabels[location];
+      const code = stateCodes[location];
+      return code ? `${location} (${code})` : location;
+    };
+    if (geoTotal > 0) {
+      const topRows = geoRows.slice(0, 4);
+      const otherCount = geoRows.slice(4).reduce((sum: number, row: any) => sum + Number(row.count || 0), 0);
+      distribution = [
+        ...topRows.map((row: any, index: number) => ({
+          state: formatLocation(row.location),
+          count: Number(row.count || 0),
+          pct: Math.round((Number(row.count || 0) / geoTotal) * 100),
+          value: (Number(row.count || 0) / geoTotal) * 100,
+          color: palette[index]
+        })),
+        ...(otherCount > 0 ? [{
+          state: "Autres",
+          count: otherCount,
+          pct: Math.round((otherCount / geoTotal) * 100),
+          value: (otherCount / geoTotal) * 100,
+          color: palette[4]
+        }] : [])
+      ];
+    }
+
     tiragePublie = (await getSetting("mondial_tirage_publie", "false")) === "true";
-    tirageSeed   = await getSetting("mondial_tirage_seed", "");
-    tirageHash   = await getSetting("mondial_tirage_hash", "");
 
     if (tiragePublie) {
       winners = await sql`
-        select first_name, city, state_us, country, matchs_vises
-        from mondial_inscriptions
-        where ticket_given_at is not null
-        order by ticket_given_at asc
+        with latest_draws as (
+          select distinct on (match_key) match_key, published
+          from mondial_tirage_logs
+          where match_key is not null
+          order by match_key, ran_at desc
+        )
+        select
+          m.first_name,
+          m.city,
+          m.state_us,
+          m.country,
+          m.matchs_vises,
+          m.selected_match_key,
+          p.id as portrait_id
+        from mondial_inscriptions m
+        left join justificatifs_identite p
+          on p.inscription_id = m.id
+          and p.type_document = 'PHOTO'
+          and p.deleted_at is null
+        join latest_draws d
+          on d.match_key = m.selected_match_key
+          and d.published = true
+        where m.ticket_given_at is not null
+        order by m.selected_match_key asc, m.ticket_given_at asc
       `;
     }
 
     // Always fetch draw history (even before publication)
     try {
       tirageHistory = await sql`
-        select id, seed, engagement_hash, candidates_count, winners_count, published, ran_at
+        select id, match_key, candidates_count, winners_count, published, ran_at
         from mondial_tirage_logs
         order by ran_at asc
       `;
@@ -58,22 +127,22 @@ if (hasDatabase) {
   }
 }
 
-// Fallbacks if DB is empty
-if (totalInscriptions === 0) {
-  totalInscriptions = 1248;
-  totalVerified = 1192;
-  totalDuplicates = 56;
-}
+const matchLabels: Record<string, string> = {
+  houston: "RDC vs Portugal",
+  guadalajara: "RDC vs Colombie",
+  atlanta: "RDC vs Ouzbékistan"
+};
 
-const distribution = [
-  { state: "Texas (TX)", pct: 40, color: "#f7d618" },
-  { state: "Géorgie (GA)", pct: 30, color: "#007fff" },
-  { state: "New York (NY)", pct: 15, color: "#e2e8f0" },
-  { state: "Californie (CA)", pct: 10, color: "#a855f7" },
-  { state: "Autres États", pct: 5, color: "#f97316" }
-];
+const groupedWinners = winners.reduce((groups: Record<string, any[]>, winner: any) => {
+  const key = winner.selected_match_key || "non-renseigne";
+  groups[key] = groups[key] || [];
+  groups[key].push(winner);
+  return groups;
+}, {});
+
+let distributionOffset = 0;
 ---
-<BaseLayout title="Transparence du Tirage — Mondial 2026" description="Découvrez comment nous garantissons un tirage au sort 100% équitable, auditable et sans fraude pour le Mondial 2026.">
+<BaseLayout title="Transparence du Tirage — Mondial 2026" description="Découvrez le fonctionnement simple du tirage au sort par match pour les billets des Léopards au Mondial 2026.">
   <div class="bg-[#07090f] text-white py-16 px-4 min-h-screen font-sans relative">
     
     <div class="absolute inset-0 bg-radial-at-t from-blue-950/20 via-transparent to-transparent pointer-events-none"></div>
@@ -82,12 +151,12 @@ const distribution = [
       
       <!-- Page Header -->
       <div class="text-center mb-16">
-        <span class="text-xs uppercase tracking-[0.2em] text-[#f7d618] font-bold">Audit & Équité</span>
+        <span class="text-xs uppercase tracking-[0.2em] text-[#f7d618] font-bold">Équité & clarté</span>
         <h1 class="font-bebas text-5xl md:text-6xl tracking-wide mt-2 text-white">
           TRANSPARENCE <span class="text-[#f7d618]">DU TIRAGE</span>
         </h1>
         <p class="text-slate-400 text-sm md:text-base max-w-xl mx-auto mt-4 leading-relaxed">
-          Le Bloc Léopards s'engage à assurer une répartition équitable et vérifiable de toutes les places de tribune disponibles. Aucun favoritisme, aucun passe-droit.
+          Le Bloc Léopards organise un tirage simple par match : seuls les dossiers vérifiés du match choisi entrent dans le tirage, puis le quota disponible est sélectionné aléatoirement.
         </p>
       </div>
 
@@ -146,26 +215,30 @@ const distribution = [
         <div class="bg-white/5 border border-white/10 rounded-3xl p-8 flex flex-col justify-center">
           <h3 class="font-bebas text-xl text-white mb-6 tracking-wide text-center md:text-left">RÉPARTITION GÉOGRAPHIQUE</h3>
           
+          {distribution.length > 0 ? (
           <div class="flex flex-col sm:flex-row items-center gap-8 justify-center">
             <!-- Donut SVG -->
             <div class="relative w-36 h-36 flex-shrink-0">
               <svg viewBox="0 0 36 36" class="w-full h-full transform -rotate-90">
                 <!-- Outer circle / gaps -->
                 <circle cx="18" cy="18" r="15.915" fill="none" stroke="#1e293b" stroke-width="3"></circle>
-                
-                {/* 
-                  Accumulate percentages to place segments correctly. 
-                  segment 1: 40% (stroke-dasharray="40 60" stroke-dashoffset="0")
-                  segment 2: 30% (stroke-dasharray="30 70" stroke-dashoffset="-40")
-                  segment 3: 15% (stroke-dasharray="15 85" stroke-dashoffset="-70")
-                  segment 4: 10% (stroke-dasharray="10 90" stroke-dashoffset="-85")
-                  segment 5: 5% (stroke-dasharray="5 95" stroke-dashoffset="-95")
-                */}
-                <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f7d618" stroke-width="3.5" stroke-dasharray="40 60" stroke-dashoffset="0" class="transition-all duration-1000"></circle>
-                <circle cx="18" cy="18" r="15.915" fill="none" stroke="#007fff" stroke-width="3.5" stroke-dasharray="30 70" stroke-dashoffset="-40" class="transition-all duration-1000"></circle>
-                <circle cx="18" cy="18" r="15.915" fill="none" stroke="#e2e8f0" stroke-width="3.5" stroke-dasharray="15 85" stroke-dashoffset="-70" class="transition-all duration-1000"></circle>
-                <circle cx="18" cy="18" r="15.915" fill="none" stroke="#a855f7" stroke-width="3.5" stroke-dasharray="10 90" stroke-dashoffset="-85" class="transition-all duration-1000"></circle>
-                <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f97316" stroke-width="3.5" stroke-dasharray="5 95" stroke-dashoffset="-95" class="transition-all duration-1000"></circle>
+                {distribution.map((d) => {
+                  const offset = distributionOffset;
+                  distributionOffset += d.value;
+                  return (
+                    <circle
+                      cx="18"
+                      cy="18"
+                      r="15.915"
+                      fill="none"
+                      stroke={d.color}
+                      stroke-width="3.5"
+                      stroke-dasharray={`${d.value} ${100 - d.value}`}
+                      stroke-dashoffset={-offset}
+                      class="transition-all duration-1000"
+                    />
+                  );
+                })}
               </svg>
               <!-- Center Text -->
               <div class="absolute inset-0 flex flex-col items-center justify-center">
@@ -187,6 +260,12 @@ const distribution = [
               ))}
             </div>
           </div>
+          ) : (
+            <div class="rounded-2xl border border-white/10 bg-black/20 p-6 text-center">
+              <p class="text-sm font-semibold text-slate-300">Aucune donnée géographique disponible</p>
+              <p class="mt-2 text-xs text-slate-500">La répartition apparaîtra dès les premières inscriptions.</p>
+            </div>
+          )}
         </div>
 
         <!-- Fraud Prevention Info -->
@@ -221,111 +300,51 @@ const distribution = [
             </span>
             <h2 class="font-bebas text-3xl text-white tracking-wide">LISTE DES SÉLECTIONNÉS</h2>
             <p class="text-slate-400 text-xs mt-2 max-w-lg mx-auto">
-              Les supporters ci-dessous ont été sélectionnés par tirage au sort déterministe. Chacun sera contacté directement.
+              Les supporters ci-dessous ont été sélectionnés par match. Chacun sera contacté directement.
             </p>
           </div>
 
-          <!-- Winners grid -->
-          <div class="grid gap-3 sm:grid-cols-2 md:grid-cols-3 mb-8">
-            {winners.map((w: any, i: number) => (
-              <div class="bg-white/5 border border-emerald-500/20 rounded-2xl p-4 flex items-center gap-3">
-                <div class="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
-                  <span class="text-emerald-400 font-bebas text-sm">{i + 1}</span>
+          <div class="space-y-6 mb-8">
+            {Object.entries(groupedWinners).map(([matchKey, matchWinners]) => (
+              <div class="bg-black/20 border border-white/10 rounded-3xl p-4 md:p-5">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                  <h3 class="font-bebas text-xl text-white tracking-wide">
+                    {matchLabels[matchKey] || "Match non renseigné"}
+                  </h3>
+                  <span class="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+                    {matchWinners.length} sélectionné{matchWinners.length > 1 ? "s" : ""}
+                  </span>
                 </div>
-                <div class="min-w-0">
-                  <p class="font-semibold text-white text-sm truncate">{w.first_name}</p>
-                  <p class="text-slate-400 text-[10px] truncate">
-                    {w.city}{w.state_us ? `, ${w.state_us}` : ""} — {w.country}
-                  </p>
+
+                <div class="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+                  {matchWinners.map((w: any, i: number) => (
+                    <div class="bg-white/5 border border-emerald-500/20 rounded-2xl p-4 flex items-center gap-3">
+                      {w.portrait_id ? (
+                        <img
+                          src={`/api/mondial/photo?id=${w.portrait_id}`}
+                          alt={`Photo de ${w.first_name}`}
+                          class="h-12 w-12 flex-shrink-0 rounded-2xl border border-emerald-500/30 object-cover"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div class="flex-shrink-0 w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
+                          <span class="text-emerald-400 font-bebas text-sm">{i + 1}</span>
+                        </div>
+                      )}
+                      <div class="min-w-0">
+                        <div class="flex items-center gap-2">
+                          <span class="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400 font-bebas text-[10px]">{i + 1}</span>
+                          <p class="font-semibold text-white text-sm truncate">{w.first_name}</p>
+                        </div>
+                        <p class="text-slate-400 text-[10px] truncate">
+                          {w.city}{w.state_us ? `, ${w.state_us}` : ""} — {w.country}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}
-          </div>
-
-          <!-- Verification block -->
-          {(tirageSeed || tirageHash) && (
-            <div class="bg-black/40 border border-white/10 rounded-2xl p-6 font-mono text-xs mb-6">
-              <p class="text-slate-400 uppercase tracking-wider text-[10px] font-bold mb-4">Données de vérification publique</p>
-              {tirageSeed && (
-                <div class="mb-3">
-                  <span class="text-slate-500">Graine (seed) :</span>
-                  <p class="text-[#f7d618] break-all mt-1">{tirageSeed}</p>
-                </div>
-              )}
-              {tirageHash && (
-                <div>
-                  <span class="text-slate-500">Empreinte liste candidats (SHA-256) :</span>
-                  <p class="text-slate-300 break-all mt-1">{tirageHash}</p>
-                </div>
-              )}
-            </div>
-          )}
-
-          <!-- Interactive verifier -->
-          <div class="bg-white/5 border border-white/10 rounded-2xl p-6">
-            <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
-              <div>
-                <h3 class="font-bebas text-lg text-white tracking-wide">VÉRIFICATION INDÉPENDANTE</h3>
-                <p class="text-slate-400 text-xs mt-1">Recalculez le tirage vous-même — directement dans ce navigateur.</p>
-              </div>
-              <button
-                id="btn-verify"
-                class="px-5 py-2.5 rounded-xl text-sm font-bold transition-all"
-                style="background:rgba(247,214,24,0.1); border:1px solid rgba(247,214,24,0.3); color:#f7d618;"
-              >
-                Lancer la vérification
-              </button>
-            </div>
-
-            <div id="verify-result" class="hidden">
-              <div id="verify-progress" class="text-xs text-slate-400 mb-3">Calcul en cours...</div>
-              <div id="verify-hash-check" class="flex items-center gap-2 text-xs mb-2"></div>
-              <div id="verify-winners-check" class="flex items-center gap-2 text-xs mb-4"></div>
-              <div id="verify-details" class="font-mono text-[10px] text-slate-500 bg-black/30 rounded-xl p-4 leading-5"></div>
-            </div>
-
-            <!-- Node.js script -->
-            <details class="mt-5">
-              <summary class="text-xs text-slate-400 cursor-pointer hover:text-white transition-colors select-none">
-                Script Node.js — vérification hors-ligne
-              </summary>
-              <pre class="mt-3 p-4 bg-black/40 rounded-xl text-[10px] leading-5 overflow-x-auto text-slate-300 whitespace-pre-wrap"><code>{`// Vérification indépendante du tirage Bloc Léopards
-// Requiert Node.js 18+ (crypto intégré)
-const { createHash } = require("crypto");
-const https = require("https");
-
-const DATA_URL = "https://blocleopards.com/api/mondial/verification-data";
-
-https.get(DATA_URL, res => {
-  let body = "";
-  res.on("data", chunk => body += chunk);
-  res.on("end", () => {
-    const { candidateIds, seed, engagementHash, winnersCount, publishedWinnerIds } = JSON.parse(body);
-
-    // 1. Vérifier l'empreinte de la liste
-    const computedHash = createHash("sha256").update(JSON.stringify(candidateIds)).digest("hex");
-    console.log("\\n— Vérification de l'empreinte —");
-    console.log("Publiée  :", engagementHash);
-    console.log("Calculée :", computedHash);
-    console.log(computedHash === engagementHash ? "✓ IDENTIQUE" : "✗ DIFFÉRENTE");
-
-    // 2. Recalculer le tirage
-    const shuffled = candidateIds
-      .map(id => ({ id, h: createHash("sha256").update(String(id) + seed).digest("hex") }))
-      .sort((a, b) => a.h.localeCompare(b.h));
-    const computedWinners = shuffled.slice(0, winnersCount).map(x => x.id);
-
-    console.log("\\n— Vérification des gagnants —");
-    console.log("Publiés  :", JSON.stringify(publishedWinnerIds));
-    console.log("Calculés :", JSON.stringify(computedWinners));
-    console.log(
-      JSON.stringify(computedWinners.sort()) === JSON.stringify([...publishedWinnerIds].sort())
-        ? "✓ GAGNANTS IDENTIQUES"
-        : "✗ GAGNANTS DIFFÉRENTS"
-    );
-  });
-});`}</code></pre>
-            </details>
           </div>
         </div>
       )}
@@ -342,7 +361,7 @@ https.get(DATA_URL, res => {
         <div class="mb-12">
           <div class="text-center mb-6">
             <h2 class="font-bebas text-2xl text-white tracking-wide">HISTORIQUE DES TIRAGES</h2>
-            <p class="text-slate-400 text-xs mt-2">Toutes les tentatives sont enregistrées publiquement. La transparence est totale.</p>
+            <p class="text-slate-400 text-xs mt-2">Chaque tirage lancé par l'équipe est conservé avec son match, son quota et son statut de publication.</p>
           </div>
 
           <div class="space-y-3">
@@ -372,18 +391,10 @@ https.get(DATA_URL, res => {
                   <p class="text-xs text-white font-semibold mt-0.5">{log.candidates_count} → {log.winners_count}</p>
                 </div>
 
-                <!-- Seed -->
+                <!-- Match -->
                 <div class="flex-1 min-w-[180px]">
-                  <p class="text-[10px] text-slate-500 uppercase tracking-wider">Seed</p>
-                  <p class="text-xs text-[#f7d618] font-mono mt-0.5 truncate max-w-xs">{log.seed}</p>
-                </div>
-
-                <!-- Hash (truncated) -->
-                <div class="flex-1 min-w-[180px]">
-                  <p class="text-[10px] text-slate-500 uppercase tracking-wider">Hash empreinte</p>
-                  <p class="text-[10px] text-slate-400 font-mono mt-0.5 truncate max-w-xs" title={log.engagement_hash}>
-                    {log.engagement_hash.slice(0, 24)}…
-                  </p>
+                  <p class="text-[10px] text-slate-500 uppercase tracking-wider">Match</p>
+                  <p class="text-xs text-[#f7d618] font-semibold mt-0.5">{matchLabels[log.match_key] || "Match non renseigné"}</p>
                 </div>
               </div>
             ))}
@@ -397,27 +408,27 @@ https.get(DATA_URL, res => {
 
       <!-- FAQ Section -->
       <div class="bg-white/5 border border-white/10 rounded-3xl p-8">
-        <h2 class="font-bebas text-2xl text-white mb-6 tracking-wide text-center">TIRAGE VÉRIFIABLE (PROVABLY FAIR)</h2>
+        <h2 class="font-bebas text-2xl text-white mb-6 tracking-wide text-center">COMMENT FONCTIONNE LE TIRAGE</h2>
         
         <div class="space-y-6 text-sm">
           <div class="border-b border-white/5 pb-4">
             <h4 class="font-bold text-white mb-2">Comment fonctionne le tirage au sort ?</h4>
             <p class="text-slate-400 text-xs leading-relaxed">
-              Le tirage s'appuie sur un algorithme déterministe transparent. Avant le tirage, nous publions l'empreinte SHA-256 de la liste ordonnée de tous les candidats vérifiés. Ensuite, le tirage utilise une graine publique imprévisible (drand ou hash d'un bloc Bitcoin déterminé à l'avance). Cette graine sert à sélectionner mathématiquement les gagnants. N'importe qui peut recalculer le tirage et vérifier que le résultat est exact et inaltéré.
+              L'équipe choisit un match, indique le quota de billets disponibles, puis lance le tirage. Le système prend uniquement les personnes vérifiées qui se sont inscrites pour ce match et sélectionne aléatoirement le nombre de personnes demandé.
             </p>
           </div>
 
           <div class="border-b border-white/5 pb-4">
-            <h4 class="font-bold text-white mb-2">Comment puis-je vérifier le résultat moi-même ?</h4>
+            <h4 class="font-bold text-white mb-2">Pourquoi le tirage se fait-il par match ?</h4>
             <p class="text-slate-400 text-xs leading-relaxed">
-              Une fois le tirage effectué, nous publions : 1) La liste ordonnée des participants avec un identifiant anonymisé, 2) La graine aléatoire publique utilisée, et 3) Le code de l'algorithme. Vous pourrez coller ces éléments dans notre outil de vérification en ligne (ou exécuter un script localement) pour retrouver exactement la même liste de gagnants.
+              Chaque supporter choisit les matchs qui l'intéressent au moment de l'inscription. Le tirage respecte ce choix : une personne inscrite pour Houston ne sera pas tirée pour Atlanta si elle n'a pas choisi ce match.
             </p>
           </div>
 
           <div>
-            <h4 class="font-bold text-white mb-2">Combien de billets sont mis en jeu ?</h4>
+            <h4 class="font-bold text-white mb-2">Que voit le public après publication ?</h4>
             <p class="text-slate-400 text-xs leading-relaxed">
-              Le quota dépend de chaque match de poule. Notre objectif est de maximiser la présence des Léopards et de leur diaspora dans le stade. Les résultats détaillés par match seront accessibles publiquement.
+              Après publication, la page affiche les personnes sélectionnées par match avec leur prénom, leur ville, leur pays et leur photo portrait lorsqu'elle est disponible. Les documents d'identité restent privés.
             </p>
           </div>
         </div>
@@ -434,77 +445,6 @@ https.get(DATA_URL, res => {
 </style>
 
 <script>
-  // ── In-browser verifier ───────────────────────────────────────────────────
-  const btnVerify = document.getElementById("btn-verify");
-  const verifyResult = document.getElementById("verify-result");
-  const verifyProgress = document.getElementById("verify-progress");
-  const verifyHashCheck = document.getElementById("verify-hash-check");
-  const verifyWinnersCheck = document.getElementById("verify-winners-check");
-  const verifyDetails = document.getElementById("verify-details");
-
-  async function sha256hex(str: string): Promise<string> {
-    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
-    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
-  }
-
-  btnVerify?.addEventListener("click", async () => {
-    if (!verifyResult || !verifyProgress || !verifyHashCheck || !verifyWinnersCheck || !verifyDetails) return;
-    btnVerify.setAttribute("disabled", "true");
-    (btnVerify as HTMLButtonElement).textContent = "Calcul…";
-    verifyResult.classList.remove("hidden");
-    verifyProgress.textContent = "Récupération des données…";
-    verifyHashCheck.innerHTML = "";
-    verifyWinnersCheck.innerHTML = "";
-    verifyDetails.textContent = "";
-
-    try {
-      const res = await fetch("/api/mondial/verification-data");
-      if (!res.ok) throw new Error("Données non disponibles.");
-      const { candidateIds, seed, engagementHash, winnersCount, publishedWinnerIds } = await res.json();
-
-      verifyProgress.textContent = `${candidateIds.length} candidats chargés. Calcul de l'empreinte…`;
-
-      // 1. Verify hash
-      const computedHash = await sha256hex(JSON.stringify(candidateIds));
-      const hashOk = computedHash === engagementHash;
-      verifyHashCheck.innerHTML = `
-        <span style="color:${hashOk ? "#4ade80" : "#f87171"};font-size:16px;">${hashOk ? "✓" : "✗"}</span>
-        <span style="color:${hashOk ? "#4ade80" : "#f87171"};">Empreinte liste : ${hashOk ? "IDENTIQUE" : "DIFFÉRENTE"}</span>
-      `;
-
-      // 2. Deterministic shuffle + pick winners
-      verifyProgress.textContent = `Recalcul du tirage (${candidateIds.length} × SHA-256)…`;
-      const scored = await Promise.all(
-        candidateIds.map(async (id: number) => ({ id, h: await sha256hex(String(id) + seed) }))
-      );
-      scored.sort((a: any, b: any) => a.h.localeCompare(b.h));
-      const computedWinners = scored.slice(0, winnersCount).map((x: any) => x.id);
-
-      const winnersOk = JSON.stringify(computedWinners.slice().sort((a:any,b:any)=>a-b))
-                     === JSON.stringify([...publishedWinnerIds].slice().sort((a:any,b:any)=>a-b));
-      verifyWinnersCheck.innerHTML = `
-        <span style="color:${winnersOk ? "#4ade80" : "#f87171"};font-size:16px;">${winnersOk ? "✓" : "✗"}</span>
-        <span style="color:${winnersOk ? "#4ade80" : "#f87171"};">Gagnants : ${winnersOk ? "IDENTIQUES" : "DIFFÉRENTS"}</span>
-      `;
-
-      verifyProgress.textContent = hashOk && winnersOk ? "Tirage vérifié avec succès." : "Anomalie détectée.";
-      verifyDetails.textContent = [
-        `Candidats vérifiés : ${candidateIds.length}`,
-        `Gagnants tirés     : ${winnersCount}`,
-        `Seed               : ${seed}`,
-        `Hash publié        : ${engagementHash}`,
-        `Hash calculé       : ${computedHash}`,
-        `IDs publiés        : [${publishedWinnerIds.join(", ")}]`,
-        `IDs calculés       : [${computedWinners.join(", ")}]`,
-      ].join("\n");
-    } catch (err: any) {
-      verifyProgress.textContent = err?.message || "Erreur.";
-    } finally {
-      btnVerify.removeAttribute("disabled");
-      (btnVerify as HTMLButtonElement).textContent = "Relancer";
-    }
-  });
-
   // ── Count-up animation ────────────────────────────────────────────────────
   const countUpEls = document.querySelectorAll('.count-up');
   countUpEls.forEach((el) => {

@@ -1,7 +1,142 @@
 ---
 import ImmersiveLayout from "../../layouts/ImmersiveLayout.astro";
 import MondialTicketFlow from "../../components/MondialTicketFlow.tsx";
+import { requireDatabase, hasDatabase } from "../../lib/neon";
+import { getSetting } from "../../lib/settings";
+
+const ticket = Astro.url.searchParams.get("ticket")?.trim() || "";
+let dossier: any = null;
+let lookupError = "";
+let tiragePublie = false;
+let selectedMatchPublished = false;
+
+const matchLabels: Record<string, string> = {
+  houston: "RDC vs Portugal",
+  guadalajara: "RDC vs Colombie",
+  atlanta: "RDC vs Ouzbékistan"
+};
+
+if (ticket) {
+  if (!hasDatabase) {
+    lookupError = "La vérification est temporairement indisponible.";
+  } else {
+    try {
+      const sql = requireDatabase();
+      tiragePublie = (await getSetting("mondial_tirage_publie", "false")) === "true";
+      const [row] = await sql`
+        select
+          first_name,
+          city,
+          country,
+          verification_status,
+          ticket_given_at,
+          selected_match_key,
+          matchs_vises,
+          ticket_number
+        from mondial_inscriptions
+        where ticket_number = ${ticket}
+        limit 1
+      `;
+      dossier = row || null;
+      if (dossier?.selected_match_key) {
+        const [latestDraw] = await sql`
+          select published
+          from mondial_tirage_logs
+          where match_key = ${dossier.selected_match_key}
+          order by ran_at desc
+          limit 1
+        `;
+        selectedMatchPublished = latestDraw?.published === true;
+      }
+    } catch (err) {
+      console.error("Ticket lookup error:", err);
+      lookupError = "Impossible de vérifier ce dossier pour le moment.";
+    }
+  }
+}
+
+const status = (() => {
+  if (!ticket) return null;
+  if (lookupError) return { tone: "warning", title: "Vérification indisponible", message: lookupError };
+  if (!dossier) return { tone: "danger", title: "Dossier introuvable", message: "Vérifiez le numéro de dossier ou refaites une capture de votre confirmation." };
+  if (dossier.verification_status === "rejected") return { tone: "danger", title: "Dossier refusé", message: "Votre dossier n'est pas éligible au tirage. Contactez l'équipe Bloc Léopards si vous pensez qu'il y a une erreur." };
+  if (dossier.verification_status === "pending" || dossier.verification_status === "flagged") return { tone: "warning", title: "Dossier en vérification", message: "L'équipe doit encore vérifier votre identité et votre photo portrait avant le tirage." };
+  if (dossier.ticket_given_at && selectedMatchPublished) return { tone: "success", title: "Vous êtes sélectionné(e)", message: `Félicitations ${dossier.first_name}, vous êtes sélectionné(e) pour ${matchLabels[dossier.selected_match_key] || "un match du Mondial"}. Faites une capture d'écran de cette page.` };
+  if (dossier.ticket_given_at && !selectedMatchPublished) return { tone: "neutral", title: "Résultat en attente de publication", message: "Votre match a été tiré, mais les résultats ne sont pas encore publiés officiellement. Revenez sur ce lien après publication." };
+  if (tiragePublie) return { tone: "neutral", title: "Pas sélectionné(e) pour le moment", message: "Votre dossier était vérifié, mais il n'a pas été tiré dans le quota publié actuellement." };
+  return { tone: "neutral", title: "Dossier validé", message: "Votre dossier est validé. Revenez sur ce lien après la publication du tirage pour connaître le résultat." };
+})();
+
+const statusClasses: Record<string, string> = {
+  success: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
+  warning: "border-yellow-500/30 bg-yellow-500/10 text-yellow-200",
+  danger: "border-red-500/30 bg-red-500/10 text-red-200",
+  neutral: "border-white/10 bg-white/5 text-slate-200"
+};
+
+const dossierMatches = dossier?.matchs_vises && Array.isArray(dossier.matchs_vises)
+  ? dossier.matchs_vises.map((key: string) => matchLabels[key] || key).join(", ")
+  : "Non renseigné";
 ---
 <ImmersiveLayout title="Inscription au Tirage — Mondial 2026">
-  <MondialTicketFlow client:load />
+  {ticket && status ? (
+    <main class="min-h-screen bg-[#080c1a] px-4 py-20 text-white">
+      <div class="mx-auto flex min-h-[70vh] max-w-xl items-center justify-center">
+        <section class="w-full rounded-[2rem] border border-white/10 bg-[#0d1221] p-6 text-center shadow-2xl md:p-8">
+          <img src="/brand/logo.png" alt="Bloc Léopards" class="mx-auto mb-5 h-16 w-auto" />
+          <p class="mb-2 text-[10px] font-bold uppercase tracking-[0.22em] text-[#f7d618]">Résultat du dossier</p>
+          <h1 class="font-bebas text-4xl tracking-wide text-white md:text-5xl">{status.title}</h1>
+
+          <div class={`mt-6 rounded-2xl border p-5 ${statusClasses[status.tone]}`}>
+            <p class="text-sm font-semibold leading-relaxed">{status.message}</p>
+          </div>
+
+          {dossier && (
+            <div class="mt-6 rounded-2xl border border-white/10 bg-black/20 p-5 text-left text-xs">
+              <div class="flex justify-between gap-4 border-b border-white/10 pb-3">
+                <span class="text-slate-400">Numéro</span>
+                <span class="font-bold text-[#f7d618]">{dossier.ticket_number}</span>
+              </div>
+              <div class="flex justify-between gap-4 border-b border-white/10 py-3">
+                <span class="text-slate-400">Prénom</span>
+                <span class="font-bold text-white">{dossier.first_name}</span>
+              </div>
+              <div class="flex justify-between gap-4 border-b border-white/10 py-3">
+                <span class="text-slate-400">Résidence</span>
+                <span class="font-bold text-white">{dossier.city} — {dossier.country}</span>
+              </div>
+              <div class="flex justify-between gap-4 pt-3">
+                <span class="text-slate-400">Matchs inscrits</span>
+                <span class="max-w-[60%] text-right font-bold text-white">{dossierMatches}</span>
+              </div>
+              <div class="mt-3 flex justify-between gap-4 border-t border-white/10 pt-3">
+                <span class="text-slate-400">Match sélectionné</span>
+                <span class="font-bold text-white">{dossier.selected_match_key ? matchLabels[dossier.selected_match_key] : "En attente"}</span>
+              </div>
+            </div>
+          )}
+
+          <p class="mx-auto mt-5 max-w-sm text-xs leading-relaxed text-slate-400">
+            Si vous êtes sélectionné(e), faites une capture d'écran de cette page et gardez-la avec votre pièce d'identité. Vous pouvez aussi partager ce lien sur WhatsApp.
+          </p>
+
+          <div class="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+            <a href="/mondial" class="rounded-full border border-white/20 px-5 py-3 text-xs font-bold text-white transition-colors hover:bg-white/5">
+              Retour au Hub
+            </a>
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(`Voici mon lien pour vérifier ma sélection Bloc Léopards Mondial 2026 : ${Astro.url.href}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="rounded-full bg-[#25d366] px-5 py-3 text-xs font-bold text-white transition-colors hover:bg-[#20ba56]"
+            >
+              Partager sur WhatsApp
+            </a>
+          </div>
+        </section>
+      </div>
+    </main>
+  ) : (
+    <MondialTicketFlow client:load />
+  )}
 </ImmersiveLayout>

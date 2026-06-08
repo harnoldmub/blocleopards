@@ -12,7 +12,7 @@ export const GET: APIRoute = async ({ cookies }) => {
   try {
     const sql = requireDatabase();
 
-    const inscriptions = await sql`
+    const rows = await sql`
       select 
         m.id,
         m.first_name,
@@ -41,6 +41,61 @@ export const GET: APIRoute = async ({ cookies }) => {
       left join justificatifs_identite j on j.inscription_id = m.id
       order by m.created_at desc
     `;
+
+    const grouped = new Map<string, any>();
+    for (const row of rows) {
+      const id = String(row.id);
+      if (!grouped.has(id)) {
+        grouped.set(id, {
+          ...row,
+          documents: [],
+          document_id: null,
+          type_document: null,
+          document_mime_type: null,
+          original_filename: null,
+          document_status: null,
+          document_checksum: null,
+          document_deleted_at: null,
+          portrait_document_id: null,
+          portrait_original_filename: null,
+          portrait_mime_type: null,
+          portrait_status: null,
+          portrait_deleted_at: null
+        });
+      }
+
+      const item = grouped.get(id);
+      if (!row.document_id) continue;
+
+      const document = {
+        id: row.document_id,
+        type_document: row.type_document,
+        mime_type: row.document_mime_type,
+        original_filename: row.original_filename,
+        status: row.document_status,
+        checksum: row.document_checksum,
+        deleted_at: row.document_deleted_at
+      };
+      item.documents.push(document);
+
+      if (row.type_document === "PHOTO") {
+        item.portrait_document_id = row.document_id;
+        item.portrait_original_filename = row.original_filename;
+        item.portrait_mime_type = row.document_mime_type;
+        item.portrait_status = row.document_status;
+        item.portrait_deleted_at = row.document_deleted_at;
+      } else {
+        item.document_id = row.document_id;
+        item.type_document = row.type_document;
+        item.document_mime_type = row.document_mime_type;
+        item.original_filename = row.original_filename;
+        item.document_status = row.document_status;
+        item.document_checksum = row.document_checksum;
+        item.document_deleted_at = row.document_deleted_at;
+      }
+    }
+
+    const inscriptions = Array.from(grouped.values());
 
     return new Response(JSON.stringify({ inscriptions }), { status: 200, headers: { "Content-Type": "application/json" } });
   } catch (err) {

@@ -2,9 +2,9 @@ import type { APIRoute } from "astro";
 import { isAdminAuthed } from "../../../../lib/auth";
 import { requireDatabase } from "../../../../lib/neon";
 import { invalidateSettings } from "../../../../lib/settings";
+import { randomInt } from "crypto";
 import fs from "fs";
 import path from "path";
-import crypto from "crypto";
 
 export const prerender = false;
 
@@ -15,7 +15,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
   try {
     const body = await request.json();
-    const { action, id, status, seed, ticketsCount, groupIds, groupStatus } = body;
+    const { action, id, status, ticketsCount, groupIds, groupStatus, matchKey } = body;
     const sql = requireDatabase();
 
     if (action === "verify") {
@@ -41,7 +41,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     if (action === "delete_documents") {
       // Delete documents for validated or rejected profiles (RGPD minimisation)
       const docs = await sql`
-        select j.id, j.stored_filename, j.uploaded_at
+        select j.id, j.stored_filename, coalesce(j.uploaded_at, j.created_at) as uploaded_at
         from justificatifs_identite j
         join mondial_inscriptions m on m.id = j.inscription_id
         where j.deleted_at is null 
@@ -79,74 +79,90 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     if (action === "run_draw") {
-      // 1. Fetch and sort all eligible candidates (verified)
+      if (!matchKey) {
+        return new Response(JSON.stringify({ error: "Choisissez un match avant de lancer le tirage." }), { status: 400 });
+      }
+
+      const quota = parseInt(ticketsCount, 10);
+      if (!Number.isFinite(quota) || quota <= 0) {
+        return new Response(JSON.stringify({ error: "Indiquez un quota de gagnants valide." }), { status: 400 });
+      }
+
+      // 1. Fetch eligible candidates for the selected match
       const candidates = await sql`
-        select id, email, first_name, last_name, city, state_us
+        select id, email, first_name, last_name, city, state_us, matchs_vises
         from mondial_inscriptions
         where verification_status = 'verified'
+        and matchs_vises @> ${JSON.stringify([matchKey])}::jsonb
         order by id asc
       `;
 
       if (candidates.length === 0) {
-        return new Response(JSON.stringify({ error: "Aucun candidat vérifié n'est éligible pour le tirage." }), { status: 400 });
+        return new Response(JSON.stringify({ error: "Aucun candidat vérifié n'est éligible pour ce match." }), { status: 400 });
       }
 
-      // 2. Generate list engagement hash
-      const hashInput = JSON.stringify(candidates.map(c => c.id));
-      const engagementHash = crypto.createHash("sha256").update(hashInput).digest("hex");
+      // 2. Random shuffle with server-side crypto randomness
+      const shuffled = [...candidates];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = randomInt(i + 1);
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
 
-      // 3. Perform deterministic shuffle using seed
-      const activeSeed = seed || crypto.randomBytes(16).toString("hex");
-      
-      const shuffled = [...candidates].map(c => {
-        const hash = crypto.createHash("sha256").update(c.id + activeSeed).digest("hex");
-        return { ...c, hash };
-      }).sort((a, b) => a.hash.localeCompare(b.hash));
-
-      // 4. Select winners
-      const count = parseInt(ticketsCount) || 500;
+      // 3. Select winners
+      const count = Math.min(quota, shuffled.length);
       const winners = shuffled.slice(0, count);
       const winnerIds = winners.map(w => w.id);
 
-      // 5. Save settings and mark winner tickets
-      await sql`update mondial_inscriptions set ticket_given_at = null`;
+      // 4. Save settings and mark winners for this match only
+      await sql`
+        update mondial_inscriptions
+        set ticket_given_at = null, selected_match_key = null
+        where selected_match_key = ${matchKey}
+      `;
       if (winnerIds.length > 0) {
-        await sql`update mondial_inscriptions set ticket_given_at = now() where id = any(${winnerIds}::int[])`;
+        await sql`
+          update mondial_inscriptions
+          set ticket_given_at = now(), selected_match_key = ${matchKey}
+          where id = any(${winnerIds}::int[])
+        `;
       }
-      await sql`insert into settings (key, value) values ('mondial_tirage_seed', ${activeSeed}) on conflict (key) do update set value = ${activeSeed}`;
-      await sql`insert into settings (key, value) values ('mondial_tirage_hash', ${engagementHash}) on conflict (key) do update set value = ${engagementHash}`;
       await sql`insert into settings (key, value) values ('mondial_winners', ${JSON.stringify(winnerIds)}) on conflict (key) do update set value = ${JSON.stringify(winnerIds)}`;
       await sql`insert into settings (key, value) values ('mondial_tickets_count', ${String(count)}) on conflict (key) do update set value = ${String(count)}`;
 
-      // Log every draw attempt — full audit trail
+      // Log every draw attempt — internal/public history
       await sql`
-        insert into mondial_tirage_logs (seed, engagement_hash, candidates_count, winners_count, winner_ids, published)
-        values (${activeSeed}, ${engagementHash}, ${candidates.length}, ${winners.length}, ${JSON.stringify(winnerIds)}, false)
+        insert into mondial_tirage_logs (match_key, seed, engagement_hash, candidates_count, winners_count, winner_ids, published)
+        values (${matchKey}, 'random', 'simple-random-draw', ${candidates.length}, ${winners.length}, ${JSON.stringify(winnerIds)}, false)
       `;
 
       invalidateSettings();
 
       return new Response(JSON.stringify({ 
         success: true, 
-        engagementHash, 
-        seed: activeSeed, 
+        matchKey,
         totalEligible: candidates.length,
         winnersCount: winners.length 
       }));
     }
 
     if (action === "publish") {
+      if (!matchKey) {
+        return new Response(JSON.stringify({ error: "Choisissez le match à publier." }), { status: 400 });
+      }
+
       await sql`insert into settings (key, value) values ('mondial_tirage_publie', 'true') on conflict (key) do update set value = 'true'`;
 
-      // Mark the most recent draw log as published
-      const currentSeed = await sql`select value from settings where key = 'mondial_tirage_seed'`;
-      if (currentSeed.length > 0) {
-        await sql`
-          update mondial_tirage_logs set published = true
-          where seed = ${currentSeed[0].value}
-          and id = (select id from mondial_tirage_logs where seed = ${currentSeed[0].value} order by ran_at desc limit 1)
-        `;
-      }
+      await sql`
+        update mondial_tirage_logs
+        set published = true
+        where id = (
+          select id
+          from mondial_tirage_logs
+          where match_key = ${matchKey}
+          order by ran_at desc
+          limit 1
+        )
+      `;
 
       invalidateSettings();
       return new Response(JSON.stringify({ success: true }));
