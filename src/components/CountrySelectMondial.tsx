@@ -2,14 +2,21 @@ import { useState, useRef, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 
 const COUNTRIES = [
-  { label: "États-Unis",  flag: "us" },
-  { label: "France",      flag: "fr" },
-  { label: "Belgique",    flag: "be" },
-  { label: "Royaume-Uni", flag: "gb" },
-  { label: "Canada",      flag: "ca" },
-  { label: "Mexique",     flag: "mx" },
-  { label: "RDC",         flag: "cd" },
-  { label: "Autre",       flag: null },
+  { label: "États-Unis",      flag: "us" },
+  { label: "Canada",          flag: "ca" },
+  { label: "RDC",             flag: "cd" },
+  { label: "Congo",           flag: "cg" },
+  { label: "France",          flag: "fr" },
+  { label: "Belgique",        flag: "be" },
+  { label: "Royaume-Uni",     flag: "gb" },
+  { label: "Suisse",          flag: "ch" },
+  { label: "Allemagne",       flag: "de" },
+  { label: "Angola",          flag: "ao" },
+  { label: "Afrique du Sud",  flag: "za" },
+  { label: "Maroc",           flag: "ma" },
+  { label: "Sénégal",         flag: "sn" },
+  { label: "Mexique",         flag: "mx" },
+  { label: "Autre",           flag: null },
 ];
 
 interface Props {

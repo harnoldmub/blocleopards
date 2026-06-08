@@ -31,6 +31,24 @@ const MATCHES = [
   { key: "atlanta", label: "RDC vs Ouzbékistan", details: "Atlanta · 27 Juin 2026", flag: "uz" }
 ];
 
+const COUNTRY_CODES: Record<string, string> = {
+  "États-Unis": "+1",
+  "Canada": "+1",
+  "RDC": "+243",
+  "Congo": "+242",
+  "France": "+33",
+  "Belgique": "+32",
+  "Royaume-Uni": "+44",
+  "Suisse": "+41",
+  "Allemagne": "+49",
+  "Angola": "+244",
+  "Afrique du Sud": "+27",
+  "Maroc": "+212",
+  "Sénégal": "+221",
+  "Mexique": "+52",
+  "Autre": ""
+};
+
 type Step = "identity" | "matches" | "engagement" | "success";
 
 interface FormState {
@@ -60,8 +78,8 @@ export default function MondialTicketFlow() {
     gender: "",
     dateOfBirth: "",
     email: "",
-    telephone: "",
-    whatsapp: "",
+    telephone: "+1",
+    whatsapp: "+1",
     country: "États-Unis",
     city: "",
     stateUs: "",
@@ -570,6 +588,32 @@ export default function MondialTicketFlow() {
                     onChange={v => {
                       handleTextChange("country", v);
                       if (v !== "États-Unis") handleTextChange("stateUs", "");
+                      
+                      const newPrefix = COUNTRY_CODES[v] || "";
+                      if (newPrefix) {
+                        setForm(prev => {
+                          const updated: Partial<FormState> = {};
+                          const oldPrefix = COUNTRY_CODES[prev.country] || "";
+                          
+                          if (!prev.telephone || prev.telephone === oldPrefix || prev.telephone.trim() === "+") {
+                            updated.telephone = newPrefix;
+                          } else if (prev.telephone.startsWith(oldPrefix) && oldPrefix !== "") {
+                            updated.telephone = prev.telephone.replace(oldPrefix, newPrefix);
+                          } else if (!prev.telephone.startsWith("+")) {
+                            updated.telephone = newPrefix + " " + prev.telephone;
+                          }
+                          
+                          if (!prev.whatsapp || prev.whatsapp === oldPrefix || prev.whatsapp.trim() === "+") {
+                            updated.whatsapp = newPrefix;
+                          } else if (prev.whatsapp.startsWith(oldPrefix) && oldPrefix !== "") {
+                            updated.whatsapp = prev.whatsapp.replace(oldPrefix, newPrefix);
+                          } else if (!prev.whatsapp.startsWith("+")) {
+                            updated.whatsapp = newPrefix + " " + prev.whatsapp;
+                          }
+                          
+                          return { ...prev, ...updated };
+                        });
+                      }
                     }}
                   />
                 </div>
