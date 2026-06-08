@@ -278,7 +278,7 @@ export default function MondialTicketFlow() {
               <div className="mb-6">
                 <span className="text-[10px] uppercase tracking-[0.2em] text-[#f7d618] font-bold">Étape 1 de 3</span>
                 <h2 className="font-bebas text-4xl text-white tracking-wide mt-1">VÉRIFICATION DE RÉSIDENCE & IDENTITÉ</h2>
-                <p className="text-slate-400 text-xs mt-1">Le tirage au sort Mondial 2026 est exclusivement réservé aux résidents des USA.</p>
+                <p className="text-slate-400 text-xs mt-1">Ouvert à la diaspora RDC dans le monde entier. Remplis chaque champ avec soin.</p>
               </div>
 
               <div className="space-y-4">
