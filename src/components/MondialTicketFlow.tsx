@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Camera, UploadCloud, FileText, Download } from "lucide-react";
 import CountrySelectMondial from "./CountrySelectMondial";
@@ -49,6 +49,22 @@ const COUNTRY_CODES: Record<string, string> = {
   "Autre": ""
 };
 
+const PREFIXES = [
+  { code: "+1",   flag: "us", name: "USA / Canada" },
+  { code: "+243", flag: "cd", name: "RDC" },
+  { code: "+242", flag: "cg", name: "Congo" },
+  { code: "+33",  flag: "fr", name: "France" },
+  { code: "+32",  flag: "be", name: "Belgique" },
+  { code: "+44",  flag: "gb", name: "Royaume-Uni" },
+  { code: "+41",  flag: "ch", name: "Suisse" },
+  { code: "+49",  flag: "de", name: "Allemagne" },
+  { code: "+244", flag: "ao", name: "Angola" },
+  { code: "+27",  flag: "za", name: "Afrique du Sud" },
+  { code: "+212", flag: "ma", name: "Maroc" },
+  { code: "+221", flag: "sn", name: "Sénégal" },
+  { code: "+52",  flag: "mx", name: "Mexique" },
+];
+
 type Step = "identity" | "matches" | "engagement" | "success";
 
 interface FormState {
@@ -78,8 +94,8 @@ export default function MondialTicketFlow() {
     gender: "",
     dateOfBirth: "",
     email: "",
-    telephone: "+1",
-    whatsapp: "+1",
+    telephone: "",
+    whatsapp: "",
     country: "États-Unis",
     city: "",
     stateUs: "",
@@ -90,6 +106,20 @@ export default function MondialTicketFlow() {
     documentFile: null,
     portraitFile: null
   });
+
+  const [phonePrefix, setPhonePrefix] = useState("+1");
+  const [showPrefixDropdown, setShowPrefixDropdown] = useState(false);
+  const prefixRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (prefixRef.current && !prefixRef.current.contains(e.target as Node)) {
+        setShowPrefixDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const [stateSearch, setStateSearch] = useState("");
   const [showStateDropdown, setShowStateDropdown] = useState(false);
@@ -255,8 +285,15 @@ export default function MondialTicketFlow() {
     formData.append("gender", form.gender);
     formData.append("date_of_birth", form.dateOfBirth);
     formData.append("email", form.email);
-    formData.append("telephone", form.telephone);
-    if (form.whatsapp) formData.append("whatsapp", form.whatsapp);
+
+    const phoneVal = form.telephone.trim();
+    let fullPhone = phoneVal;
+    if (phoneVal && !phoneVal.startsWith("+")) {
+      fullPhone = `${phonePrefix} ${phoneVal}`.trim();
+    }
+    formData.append("telephone", fullPhone);
+    formData.append("whatsapp", fullPhone);
+
     formData.append("country", form.country);
     formData.append("city", form.city);
     if (form.stateUs) formData.append("state_us", form.stateUs);
@@ -558,25 +595,68 @@ export default function MondialTicketFlow() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] uppercase text-slate-400 font-bold mb-1.5">Téléphone *</label>
+                <div>
+                  <label className="block text-[10px] uppercase text-slate-400 font-bold mb-1.5">Téléphone / WhatsApp *</label>
+                  <div className="flex gap-2 relative" ref={prefixRef}>
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setShowPrefixDropdown(o => !o)}
+                        className="h-full flex items-center gap-1.5 bg-white/5 border border-white/10 hover:border-white/20 focus:border-[#f7d618] rounded-xl px-3 outline-none transition-colors text-sm font-semibold"
+                        style={{ minWidth: 90 }}
+                      >
+                        {(() => {
+                          const currentPrefix = PREFIXES.find(p => p.code === phonePrefix) || PREFIXES[0];
+                          return (
+                            <>
+                              <img
+                                src={`/flags/${currentPrefix.flag}.png`}
+                                alt={currentPrefix.name}
+                                className="h-4.5 w-6 object-cover rounded shadow-sm"
+                                style={{ height: 18, width: 24 }}
+                              />
+                              <span className="text-white text-xs">{currentPrefix.code}</span>
+                            </>
+                          );
+                        })()}
+                        <span className="text-[10px] text-slate-400">▼</span>
+                      </button>
+
+                      {showPrefixDropdown && (
+                        <div
+                          className="absolute left-0 mt-1 max-h-60 overflow-y-auto bg-[#0d1221] border border-white/12 rounded-xl z-30 shadow-2xl"
+                          style={{ width: 220 }}
+                        >
+                          {PREFIXES.map(p => (
+                            <button
+                              key={p.code}
+                              type="button"
+                              onClick={() => {
+                                setPhonePrefix(p.code);
+                                setShowPrefixDropdown(false);
+                              }}
+                              className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/5 border-b border-white/5 last:border-0 text-left text-xs transition-colors"
+                            >
+                              <img
+                                src={`/flags/${p.flag}.png`}
+                                alt={p.name}
+                                className="h-4.5 w-6 object-cover rounded shadow-sm"
+                                style={{ height: 18, width: 24 }}
+                              />
+                              <span className="font-bold text-white text-xs w-10">{p.code}</span>
+                              <span className="text-slate-400 text-[11px] truncate">{p.name}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
                     <input
                       type="tel"
                       value={form.telephone}
                       onChange={e => handleTextChange("telephone", e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 focus:border-[#f7d618] rounded-xl px-4 py-3 text-sm outline-none transition-colors"
-                      placeholder="+1 (555) 000-0000"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] uppercase text-slate-400 font-bold mb-1.5">WhatsApp</label>
-                    <input
-                      type="tel"
-                      value={form.whatsapp}
-                      onChange={e => handleTextChange("whatsapp", e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 focus:border-[#f7d618] rounded-xl px-4 py-3 text-sm outline-none transition-colors"
-                      placeholder="+1 (555) 000-0000"
+                      className="flex-1 bg-white/5 border border-white/10 focus:border-[#f7d618] rounded-xl px-4 py-3 text-sm outline-none transition-colors"
+                      placeholder="555-000-0000 ou 812345678"
                     />
                   </div>
                 </div>
@@ -591,28 +671,7 @@ export default function MondialTicketFlow() {
                       
                       const newPrefix = COUNTRY_CODES[v] || "";
                       if (newPrefix) {
-                        setForm(prev => {
-                          const updated: Partial<FormState> = {};
-                          const oldPrefix = COUNTRY_CODES[prev.country] || "";
-                          
-                          if (!prev.telephone || prev.telephone === oldPrefix || prev.telephone.trim() === "+") {
-                            updated.telephone = newPrefix;
-                          } else if (prev.telephone.startsWith(oldPrefix) && oldPrefix !== "") {
-                            updated.telephone = prev.telephone.replace(oldPrefix, newPrefix);
-                          } else if (!prev.telephone.startsWith("+")) {
-                            updated.telephone = newPrefix + " " + prev.telephone;
-                          }
-                          
-                          if (!prev.whatsapp || prev.whatsapp === oldPrefix || prev.whatsapp.trim() === "+") {
-                            updated.whatsapp = newPrefix;
-                          } else if (prev.whatsapp.startsWith(oldPrefix) && oldPrefix !== "") {
-                            updated.whatsapp = prev.whatsapp.replace(oldPrefix, newPrefix);
-                          } else if (!prev.whatsapp.startsWith("+")) {
-                            updated.whatsapp = newPrefix + " " + prev.whatsapp;
-                          }
-                          
-                          return { ...prev, ...updated };
-                        });
+                        setPhonePrefix(newPrefix);
                       }
                     }}
                   />
