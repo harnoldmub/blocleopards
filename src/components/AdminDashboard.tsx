@@ -89,7 +89,7 @@ function BilleterieToggle() {
   return (
     <div style={{ background: C.card, border: `1px solid ${active ? "rgba(52,211,153,0.3)" : C.border}`, borderRadius: 16, padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
       <div>
-        <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 4 }}>🎫 Billetterie</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 4 }}>Billetterie</div>
         <div style={{ fontSize: 12, color: C.muted }}>
           {active ? "Visible sur le site — supporters peuvent s'inscrire" : "Cachée partout sur le site"}
         </div>

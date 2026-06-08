@@ -1,5 +1,6 @@
 ---
 import AdminLayout from "../../layouts/AdminLayout.astro";
+import Icon from "../../components/Icon.astro";
 import { isAdminAuthed, isSuperAdmin, ADMIN_SECTIONS } from "../../lib/auth";
 import { requireDatabase } from "../../lib/neon";
 
@@ -21,7 +22,7 @@ const roles = await sql`SELECT id, role_name, label, permissions, created_at FRO
 
     <!-- Super admin info -->
     <div style="background:rgba(247,214,24,0.06); border:1px solid rgba(247,214,24,0.2); border-radius:14px; padding:16px 20px; margin-bottom:24px; display:flex; align-items:center; gap:14px;">
-      <span style="font-size:20px;">👑</span>
+      <span style="color:#f7d618; display:flex;"><Icon name="crown" size={20} /></span>
       <div>
         <p style="font-size:13px; font-weight:700; color:#f7d618;">Super Admin</p>
         <p style="font-size:12px; color:rgba(255,255,255,0.45); margin-top:2px;">Accès complet · Mot de passe géré via la variable d'environnement <code style="background:rgba(255,255,255,0.08); padding:1px 6px; border-radius:4px;">ADMIN_PASSWORD</code></p>
@@ -46,7 +47,8 @@ const roles = await sql`SELECT id, role_name, label, permissions, created_at FRO
             {(role.permissions as string[]).map((perm: string) => {
               const section = ADMIN_SECTIONS.find(s => s.id === perm);
               return section ? (
-                <span style="padding:3px 10px; background:rgba(247,214,24,0.1); border:1px solid rgba(247,214,24,0.2); border-radius:20px; font-size:11px; color:#f7d618; font-weight:600;">
+                <span style="display:inline-flex; align-items:center; gap:5px; padding:3px 10px; background:rgba(247,214,24,0.1); border:1px solid rgba(247,214,24,0.2); border-radius:20px; font-size:11px; color:#f7d618; font-weight:600;">
+                  <Icon name={section.icon} size={11} />
                   {section.label}
                 </span>
               ) : null;
@@ -92,6 +94,7 @@ const roles = await sql`SELECT id, role_name, label, permissions, created_at FRO
             {ADMIN_SECTIONS.map(s => (
               <label class="perm-label" data-section={s.id} style="display:flex; align-items:center; gap:10px; padding:10px 12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; cursor:pointer; font-size:13px; color:rgba(255,255,255,0.7); transition:all 0.15s;">
                 <input type="checkbox" class="perm-checkbox" value={s.id} style="accent-color:#f7d618; width:14px; height:14px;" />
+                <Icon name={s.icon} size={14} />
                 {s.label}
               </label>
             ))}

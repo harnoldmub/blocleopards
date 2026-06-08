@@ -1,4 +1,5 @@
 ---
+import Icon from "./Icon.astro";
 const { items } = Astro.props;
 ---
 <div class="grid gap-4 md:grid-cols-3" data-gallery>
@@ -14,7 +15,7 @@ const { items } = Astro.props;
     >
       <img src={item.image} alt={item.title} class="aspect-[3/4] w-full object-cover transition duration-500 group-hover:scale-105 md:aspect-[4/3]" />
       {item.credit && (
-        <span class="absolute bottom-2 right-2 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-medium text-white/90 backdrop-blur-sm">📸 {item.credit}</span>
+        <span class="absolute bottom-2 right-2 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-medium text-white/90 backdrop-blur-sm flex items-center gap-1"><Icon name="camera" size={10} />{item.credit}</span>
       )}
     </button>
   ))}
@@ -51,7 +52,7 @@ const { items } = Astro.props;
       (image as HTMLImageElement).alt = button.dataset.galleryTitle!;
       if (modalTitle) modalTitle.textContent = button.dataset.galleryTitle!;
       if (modalCategory) modalCategory.textContent = button.dataset.galleryCategory!;
-      if (modalCredit) modalCredit.textContent = button.dataset.galleryCredit ? `📸 ${button.dataset.galleryCredit}` : '';
+      if (modalCredit) modalCredit.textContent = button.dataset.galleryCredit ? button.dataset.galleryCredit : '';
       (modal as HTMLDialogElement).showModal();
     });
 

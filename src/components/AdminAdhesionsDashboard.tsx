@@ -63,7 +63,7 @@ function Drawer({ row, onClose, onUpdate, onDelete }: { row: any; onClose: () =>
   };
 
   const waPhone = row.telephone ? row.telephone.replace(/\D/g, "") : null;
-  const waText = encodeURIComponent(`Bonjour ${row.prenom}, votre adhésion au Bloc des Léopards a bien été reçue. Bloc Léopards 🐆🇨🇩`);
+  const waText = encodeURIComponent(`Bonjour ${row.prenom}, votre adhésion au Bloc des Léopards a bien été reçue. Bloc Léopards`);
   const waUrl = waPhone ? `https://wa.me/${waPhone}?text=${waText}` : null;
 
   const actions: { s: string; label: string; color: string }[] = [
@@ -91,12 +91,12 @@ function Drawer({ row, onClose, onUpdate, onDelete }: { row: any; onClose: () =>
         <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
           <a href={`mailto:${row.email}?subject=Adhésion Bloc Léopards`}
             style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "10px 14px", background: "#1c2e8f", borderRadius: 12, color: "#fff", fontSize: 13, fontWeight: 700, textDecoration: "none", minWidth: 100 }}>
-            ✉️ Email
+            Email
           </a>
           {waUrl ? (
             <a href={waUrl} target="_blank" rel="noopener"
               style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "10px 14px", background: "#25d366", borderRadius: 12, color: "#fff", fontSize: 13, fontWeight: 700, textDecoration: "none", minWidth: 100 }}>
-              💬 WhatsApp
+              WhatsApp
             </a>
           ) : (
             <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "10px 14px", background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`, borderRadius: 12, color: C.muted, fontSize: 12, minWidth: 100 }}>
@@ -114,7 +114,7 @@ function Drawer({ row, onClose, onUpdate, onDelete }: { row: any; onClose: () =>
             ["Rôle", ROLES[row.role] || row.role || "—"],
             ["Canal", row.canal || "—"],
             ["Disponibilité", row.disponibilite || "—"],
-            ["Newsletter", row.newsletter_opt_in ? "✅ Oui" : "Non"],
+            ["Newsletter", row.newsletter_opt_in ? "Oui" : "Non"],
           ].map(([label, value]) => (
             <div key={label} style={{ borderBottom: `1px solid ${C.border}`, paddingBottom: 12 }}>
               <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: C.muted, fontWeight: 700, marginBottom: 3 }}>{label}</div>
@@ -262,8 +262,8 @@ export default function AdminAdhesionsDashboard() {
               <StatusBadge status={row.status} />
             </div>
             <div style={{ fontSize: 12, color: C.muted, marginBottom: 2 }}>{row.email}</div>
-            {row.telephone && <div style={{ fontSize: 12, color: C.muted, marginBottom: 2 }}>📱 {row.telephone}</div>}
-            <div style={{ fontSize: 12, color: C.muted, marginBottom: 6 }}>📍 {row.ville}{row.pays ? `, ${row.pays}` : ""}</div>
+            {row.telephone && <div style={{ fontSize: 12, color: C.muted, marginBottom: 2 }}>{row.telephone}</div>}
+            <div style={{ fontSize: 12, color: C.muted, marginBottom: 6 }}>{row.ville}{row.pays ? `, ${row.pays}` : ""}</div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 8, borderTop: `1px solid ${C.border}` }}>
               <span style={{ fontSize: 11, color: C.muted }}>{ROLES[row.role] || row.role || "—"}</span>
               <span style={{ fontSize: 11, color: C.muted }}>{new Date(row.created_at).toLocaleDateString("fr-FR")}</span>

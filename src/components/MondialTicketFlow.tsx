@@ -567,7 +567,7 @@ export default function MondialTicketFlow() {
                 {loading ? (
                   <span className="w-5 h-5 border-2 border-[#07090f] border-t-transparent rounded-full animate-spin"></span>
                 ) : (
-                  "🔥 Valider ma Candidature"
+                  "Valider ma Candidature"
                 )}
               </button>
             </motion.div>
@@ -582,7 +582,7 @@ export default function MondialTicketFlow() {
               transition={{ duration: 0.4 }}
               className="text-center"
             >
-              <div className="text-5xl mb-4">🏆</div>
+              <div className="text-5xl mb-4" style={{color:"#f7d618"}}>★</div>
               <h2 className="font-bebas text-4xl text-[#f7d618] tracking-wide mb-2">INSCRIPTION ENREGISTRÉE !</h2>
               <p className="text-xs text-slate-400 max-w-sm mx-auto mb-8 leading-normal">
                 Votre candidature pour le tirage au sort a été reçue. Un email de confirmation a été envoyé à {form.email}.
@@ -638,12 +638,12 @@ export default function MondialTicketFlow() {
                   ← Retour au Hub
                 </a>
                 <a 
-                  href={`https://wa.me/?text=${encodeURIComponent("Je participe au tirage au sort du Bloc des Léopards pour la Coupe du Monde 2026 ! 🇨🇩🐆 Plus d'infos ici : " + (typeof window !== "undefined" ? window.location.origin : "") + "/mondial")}`}
+                  href={`https://wa.me/?text=${encodeURIComponent("Je participe au tirage au sort du Bloc des Léopards pour la Coupe du Monde 2026 ! Plus d'infos ici : " + (typeof window !== "undefined" ? window.location.origin : "") + "/mondial")}`}
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="px-6 py-3 rounded-full bg-[#25d366] text-white text-xs font-bold hover:bg-[#20ba56] transition-colors"
                 >
-                  💬 Partager sur WhatsApp
+                  Partager sur WhatsApp
                 </a>
               </div>
             </motion.div>

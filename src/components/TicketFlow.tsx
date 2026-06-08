@@ -1,5 +1,7 @@
 import { useState, useCallback } from "react";
+import type { ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Trophy, Cake, MapPin, Mail, MessageCircle, Flag, User, Ticket, AlertTriangle } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -584,7 +586,7 @@ export default function TicketFlow() {
               <StyledInput label="Email" value={form.email} onChange={(v) => set("email", v)} type="email" autoFocus required inputMode="email" />
               <StyledInput label="WhatsApp (optionnel)" value={form.phone} onChange={(v) => set("phone", v)} type="tel" inputMode="tel" />
               <div style={{ display: "flex", alignItems: "flex-start", gap: "10px", marginTop: "12px", padding: "12px 14px", background: "rgba(247,214,24,0.07)", borderRadius: "12px", border: "1px solid rgba(247,214,24,0.15)" }}>
-                <span style={{ fontSize: "16px", flexShrink: 0, marginTop: "1px" }}>⚠️</span>
+                <span style={{ flexShrink: 0, marginTop: "2px", color: "#fbbf24" }}><AlertTriangle size={15} /></span>
                 <p style={{ color: "rgba(255,255,255,0.65)", fontSize: "13px", margin: 0, lineHeight: 1.55 }}>
                   <strong style={{ color: "#f7d618" }}>Une seule demande par supporter.</strong> Si tu as déjà envoyé une demande pour ce match, la tienne est enregistrée.
                 </p>
@@ -610,17 +612,17 @@ export default function TicketFlow() {
               }}>
                 <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "11px", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: "16px", fontWeight: 700 }}>Récapitulatif</p>
                 {match && (
-                  <SummaryRow icon="⚽" label="Match" value={`RDC vs ${match.away} · ${match.date}`} />
+                  <SummaryRow icon={<Flag size={15} />} label="Match" value={`RDC vs ${match.away} · ${match.date}`} />
                 )}
-                <SummaryRow icon="🙋" label="Supporter" value={`${form.firstName} ${form.lastName}`} />
-                {form.dateOfBirth && <SummaryRow icon="🎂" label="Naissance" value={new Date(form.dateOfBirth).toLocaleDateString("fr-FR")} />}
-                {form.country && <SummaryRow icon="📍" label="Bloc" value={`${form.city ? form.city + ", " : ""}${form.country}`} />}
-                <SummaryRow icon="📧" label="Contact" value={form.email} />
-                {form.phone && <SummaryRow icon="💬" label="WhatsApp" value={form.phone} />}
+                <SummaryRow icon={<User size={15} />} label="Supporter" value={`${form.firstName} ${form.lastName}`} />
+                {form.dateOfBirth && <SummaryRow icon={<Cake size={15} />} label="Naissance" value={new Date(form.dateOfBirth).toLocaleDateString("fr-FR")} />}
+                {form.country && <SummaryRow icon={<MapPin size={15} />} label="Bloc" value={`${form.city ? form.city + ", " : ""}${form.country}`} />}
+                <SummaryRow icon={<Mail size={15} />} label="Contact" value={form.email} />
+                {form.phone && <SummaryRow icon={<MessageCircle size={15} />} label="WhatsApp" value={form.phone} />}
               </div>
               {error && <ErrorMsg msg={error} />}
               <PrimaryButton onClick={submitRegistration} loading={loading}>
-                🔥 Rejoindre le Bloc
+                Rejoindre le Bloc
               </PrimaryButton>
             </motion.div>
           )}
@@ -632,9 +634,9 @@ export default function TicketFlow() {
                 initial={{ scale: 0.5, rotate: -20 }}
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ delay: 0.1, duration: 0.5, type: "spring", stiffness: 200 }}
-                style={{ fontSize: "80px", marginBottom: "24px", display: "inline-block" }}
+                style={{ marginBottom: "24px", display: "inline-block", color: "#f7d618" }}
               >
-                🏆
+                <Trophy size={80} strokeWidth={1.2} />
               </motion.div>
               <motion.h2
                 initial={{ opacity: 1, y: 20 }}
@@ -693,7 +695,7 @@ export default function TicketFlow() {
                   ← Retour à l'accueil
                 </a>
                 <a
-                  href={`https://wa.me/?text=${encodeURIComponent("Je rejoins le Bloc des Léopards pour soutenir la RDC ! 🇨🇩🐆 Tu peux faire ta demande ici : " + (typeof window !== "undefined" ? window.location.origin : "") + "/mondial")}`}
+                  href={`https://wa.me/?text=${encodeURIComponent("Je rejoins le Bloc des Léopards pour soutenir la RDC ! Tu peux faire ta demande ici : " + (typeof window !== "undefined" ? window.location.origin : "") + "/mondial")}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
@@ -709,7 +711,8 @@ export default function TicketFlow() {
                     textDecoration: "none",
                   }}
                 >
-                  💬 Partager sur WhatsApp
+                  <MessageCircle size={16} style={{ marginRight: 8, verticalAlign: "middle" }} />
+                  Partager sur WhatsApp
                 </a>
               </motion.div>
             </motion.div>
@@ -836,15 +839,15 @@ function MatchBadge({ match }: { match: typeof MATCHES[MatchKey] }) {
         fontWeight: 600,
       }}
     >
-      ⚽ RDC vs {match.away} · {match.date}
+      RDC vs {match.away} · {match.date}
     </motion.div>
   );
 }
 
-function SummaryRow({ icon, label, value }: { icon: string; label: string; value: string }) {
+function SummaryRow({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
     <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-      <span style={{ fontSize: "16px", flexShrink: 0, marginTop: "1px" }}>{icon}</span>
+      <span style={{ flexShrink: 0, marginTop: "2px", color: "rgba(255,255,255,0.5)", display: "flex" }}>{icon}</span>
       <div>
         <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)", letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: 600, marginBottom: "2px" }}>{label}</div>
         <div style={{ color: "#fff", fontSize: "14px", fontWeight: 500, wordBreak: "break-all" }}>{value}</div>

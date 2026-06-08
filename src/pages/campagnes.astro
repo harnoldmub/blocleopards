@@ -48,18 +48,18 @@ const campaigns = await getCollection("campaigns");
 
             <div class="flex gap-3 flex-wrap">
               <a
-                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(campaign.data.hashtag + ' 🇨🇩🐆 Allez les Léopards !')}`}
+                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(campaign.data.hashtag + ' Allez les Léopards !')}`}
                 target="_blank" rel="noopener"
                 class="inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700"
               >
                 𝕏 Partager
               </a>
               <a
-                href={`https://wa.me/?text=${encodeURIComponent(campaign.data.hashtag + ' 🇨🇩 ' + campaign.data.description)}`}
+                href={`https://wa.me/?text=${encodeURIComponent(campaign.data.hashtag + ' ' + campaign.data.description)}`}
                 target="_blank" rel="noopener"
                 class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-400"
               >
-                💬 WhatsApp
+                WhatsApp
               </a>
             </div>
           </div>

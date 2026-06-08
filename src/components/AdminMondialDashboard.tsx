@@ -386,7 +386,7 @@ export default function AdminMondialDashboard() {
                 disabled={actionLoading === "publish"}
                 className="w-full py-2.5 bg-[#f7d618] text-[#07090f] rounded-xl text-xs font-bold hover:bg-yellow-400 transition-all flex items-center justify-center gap-2"
               >
-                📢 Publier les Résultats
+                Publier les Résultats
               </button>
             )}
             <button 

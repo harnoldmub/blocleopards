@@ -183,9 +183,9 @@ export default function AdminSelectionnesDashboard() {
 
                       {/* Contact */}
                       <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-                        <a href={`mailto:${row.email}`} title="Envoyer un email" style={{ padding: "6px 10px", background: "rgba(28,46,143,0.3)", borderRadius: 8, color: "#93c5fd", fontSize: 13, textDecoration: "none" }}>✉️</a>
+                        <a href={`mailto:${row.email}`} title="Envoyer un email" style={{ padding: "6px 10px", background: "rgba(28,46,143,0.3)", borderRadius: 8, color: "#93c5fd", fontSize: 13, textDecoration: "none" }}>@</a>
                         {row.phone && (
-                          <a href={`https://wa.me/${row.phone.replace(/\D/g,"")}?text=${encodeURIComponent(`Bonjour ${row.first_name}, ton billet pour ${cfg.label} est disponible ! Bloc Léopards 🐆🇨🇩`)}`} target="_blank" rel="noopener" title="WhatsApp" style={{ padding: "6px 10px", background: "rgba(37,211,102,0.15)", borderRadius: 8, color: "#4ade80", fontSize: 13, textDecoration: "none" }}>💬</a>
+                          <a href={`https://wa.me/${row.phone.replace(/\D/g,"")}?text=${encodeURIComponent(`Bonjour ${row.first_name}, ton billet pour ${cfg.label} est disponible ! Bloc Léopards`)}`} target="_blank" rel="noopener" title="WhatsApp" style={{ padding: "6px 10px", background: "rgba(37,211,102,0.15)", borderRadius: 8, color: "#4ade80", fontSize: 13, textDecoration: "none" }}>WA</a>
                         )}
                       </div>
                     </div>

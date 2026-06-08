@@ -1,6 +1,7 @@
 ---
 import "../styles/global.css";
 import SEO from "../components/SEO.astro";
+import Icon from "../components/Icon.astro";
 import { getSessionRole, getSessionPermissions } from "../lib/auth";
 
 const { title = "Admin — Bloc Léopards", section = "", noSidebar = false } = Astro.props;
@@ -9,14 +10,14 @@ const permissions = getSessionPermissions(Astro.cookies);
 const isSuper = permissions.includes("*");
 
 const allNav = [
-  { id: "dashboard", label: "Dashboard", icon: "◉", href: "/admin/dashboard" },
-  { id: "billets", label: "Billets", icon: "🎫", href: "/admin/billets" },
-  { id: "mondial", label: "Mondial USA", icon: "🇺🇸", href: "/admin/mondial" },
-  { id: "selectionnes", label: "Sélectionnés", icon: "✅", href: "/admin/selectionnes" },
-  { id: "adhesions", label: "Adhésions", icon: "🤝", href: "/admin/adhesions" },
-  { id: "contacts", label: "Messages", icon: "✉️", href: "/admin/contacts" },
-  { id: "newsletter", label: "Newsletter", icon: "📮", href: "/admin/newsletter" },
-  { id: "articles", label: "Articles", icon: "📰", href: "/admin/articles" },
+  { id: "dashboard",   label: "Dashboard",    icon: "dashboard",     href: "/admin/dashboard" },
+  { id: "billets",     label: "Billets",       icon: "ticket",        href: "/admin/billets" },
+  { id: "mondial",     label: "Mondial USA",   icon: "globe",         href: "/admin/mondial" },
+  { id: "selectionnes",label: "Sélectionnés",  icon: "check-circle",  href: "/admin/selectionnes" },
+  { id: "adhesions",   label: "Adhésions",     icon: "users",         href: "/admin/adhesions" },
+  { id: "contacts",    label: "Messages",      icon: "mail",          href: "/admin/contacts" },
+  { id: "newsletter",  label: "Newsletter",    icon: "send",          href: "/admin/newsletter" },
+  { id: "articles",    label: "Articles",      icon: "newspaper",     href: "/admin/articles" },
 ];
 
 const nav = isSuper ? allNav : allNav.filter(item => item.id === "dashboard" || permissions.includes(item.id));
@@ -46,7 +47,7 @@ const nav = isSuper ? allNav : allNav.filter(item => item.id === "dashboard" || 
       }
       .admin-sidebar__brand img { height: 32px; width: auto; }
       .admin-sidebar__brand-text { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.4); font-weight: 700; }
-      .admin-sidebar__nav { flex: 1; padding: 16px 12px; display: flex; flex-direction: column; gap: 4px; }
+      .admin-sidebar__nav { flex: 1; padding: 16px 12px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
       .admin-sidebar__link {
         display: flex; align-items: center; gap: 10px;
         padding: 10px 12px; border-radius: 10px;
@@ -55,7 +56,7 @@ const nav = isSuper ? allNav : allNav.filter(item => item.id === "dashboard" || 
       }
       .admin-sidebar__link:hover { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.85); }
       .admin-sidebar__link.active { background: rgba(247,214,24,0.12); color: #f7d618; }
-      .admin-sidebar__link-icon { font-size: 15px; width: 20px; text-align: center; flex-shrink: 0; }
+      .admin-sidebar__link-icon { width: 20px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
       .admin-sidebar__footer { padding: 12px; border-top: 1px solid rgba(255,255,255,0.06); }
       .admin-sidebar__logout {
         display: flex; align-items: center; gap: 8px; width: 100%;
@@ -93,11 +94,10 @@ const nav = isSuper ? allNav : allNav.filter(item => item.id === "dashboard" || 
       </div>
       <nav class="admin-sidebar__nav">
         {nav.map((item) => (
-          <a
-            href={item.href}
-            class={`admin-sidebar__link${section === item.id ? ' active' : ''}`}
-          >
-            <span class="admin-sidebar__link-icon">{item.icon}</span>
+          <a href={item.href} class={`admin-sidebar__link${section === item.id ? ' active' : ''}`}>
+            <span class="admin-sidebar__link-icon">
+              <Icon name={item.icon} size={16} />
+            </span>
             <span>{item.label}</span>
           </a>
         ))}
@@ -105,15 +105,15 @@ const nav = isSuper ? allNav : allNav.filter(item => item.id === "dashboard" || 
       <div class="admin-sidebar__footer">
         {isSuper && (
           <a href="/admin/roles" class={`admin-sidebar__link${section === 'roles' ? ' active' : ''}`} style="margin-bottom:8px;">
-            <span class="admin-sidebar__link-icon">🔐</span>
+            <span class="admin-sidebar__link-icon"><Icon name="shield" size={16} /></span>
             <span>Rôles</span>
           </a>
         )}
-        <div style="padding:8px 12px; margin-bottom:8px;">
+        <div style="padding:6px 12px 10px;">
           <span style="display:inline-block; padding:3px 10px; background:rgba(247,214,24,0.1); border:1px solid rgba(247,214,24,0.2); border-radius:20px; font-size:10px; color:#f7d618; font-weight:700; text-transform:uppercase; letter-spacing:0.08em;">{role}</span>
         </div>
         <button class="admin-sidebar__logout" id="admin-logout-btn">
-          <span>⬡</span>
+          <Icon name="log-out" size={15} />
           <span>Déconnexion</span>
         </button>
       </div>

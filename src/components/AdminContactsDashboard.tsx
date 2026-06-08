@@ -94,7 +94,7 @@ function Drawer({ row, onClose, onUpdate }: { row: any; onClose: () => void; onU
         </div>
 
         <a href={`mailto:${row.email}?subject=Re: ${encodeURIComponent(row.objet)}`} style={{ display: "block", width: "100%", padding: "14px", background: "#1c2e8f", border: "none", borderRadius: 12, color: "#fff", fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, letterSpacing: "0.06em", cursor: "pointer", textDecoration: "none", textAlign: "center", marginBottom: 10 }}>
-          ✉️ Répondre par email
+          Répondre par email
         </a>
 
         <button onClick={save} disabled={saving} style={{ width: "100%", padding: "14px", background: C.yellow, border: "none", borderRadius: 12, color: "#07090f", fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, letterSpacing: "0.06em", cursor: "pointer", opacity: saving ? 0.6 : 1 }}>

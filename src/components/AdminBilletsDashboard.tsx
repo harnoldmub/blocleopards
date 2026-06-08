@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Ticket, Clock, CheckCircle, XCircle, RefreshCw, ExternalLink, Pencil, List } from "lucide-react";
+import { Ticket, Clock, CheckCircle, XCircle, RefreshCw, ExternalLink, Pencil, List, MapPin, Phone, MessageCircle, AlertTriangle } from "lucide-react";
 import ConfirmDialog from "./ConfirmDialog";
 import Flag from "./Flag";
 
@@ -217,7 +217,7 @@ function RowDrawer({ row, onClose, onUpdate, onDelete }: {
     onClose();
   };
 
-  const waText = encodeURIComponent(`Bonjour ${row.first_name}, ton inscription au Bloc des Léopards (${MATCH_CONFIG[row.match_key]?.label}) a été ${row.status === "selected" ? "retenue ✅" : "enregistrée 🎫"}. Bloc Léopards 🐆🇨🇩`);
+  const waText = encodeURIComponent(`Bonjour ${row.first_name}, ton inscription au Bloc des Léopards (${MATCH_CONFIG[row.match_key]?.label}) a été ${row.status === "selected" ? "retenue" : "enregistrée"}. Bloc Léopards`);
   const waUrl = row.phone ? `https://wa.me/${row.phone.replace(/\D/g, "")}?text=${waText}` : null;
 
   return (
@@ -248,12 +248,12 @@ function RowDrawer({ row, onClose, onUpdate, onDelete }: {
         <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
           <a href={`mailto:${row.email}?subject=Bloc Léopards – ${MATCH_CONFIG[row.match_key]?.label}`}
             style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "10px 14px", background: "#1c2e8f", border: "none", borderRadius: 12, color: "#fff", fontSize: 13, fontWeight: 700, textDecoration: "none", minWidth: 120 }}>
-            ✉️ Email
+            Email
           </a>
           {waUrl ? (
             <a href={waUrl} target="_blank" rel="noopener"
               style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "10px 14px", background: "#25d366", border: "none", borderRadius: 12, color: "#fff", fontSize: 13, fontWeight: 700, textDecoration: "none", minWidth: 120 }}>
-              💬 WhatsApp
+              WhatsApp
             </a>
           ) : (
             <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "10px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, color: "rgba(255,255,255,0.3)", fontSize: 12, minWidth: 120 }}>
@@ -508,7 +508,7 @@ export default function AdminBilletsDashboard() {
                 caretColor: "#f7d618",
               }}
             />
-            <span style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.3)", fontSize: "14px" }}>🔍</span>
+            <span style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.3)", fontSize: "14px" }}>◎</span>
           </div>
 
           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
@@ -529,12 +529,12 @@ export default function AdminBilletsDashboard() {
         {/* Table */}
         {loading ? (
           <div style={{ textAlign: "center", padding: "80px 0", color: "rgba(255,255,255,0.4)" }}>
-            <div style={{ fontSize: "32px", marginBottom: "12px", animation: "spin 1s linear infinite", display: "inline-block" }}>⚽</div>
+            <div style={{ marginBottom: "12px", animation: "spin 1s linear infinite", display: "inline-block", color: "rgba(255,255,255,0.4)" }}><RefreshCw size={28} /></div>
             <p>Chargement des données...</p>
           </div>
         ) : error ? (
           <div style={{ textAlign: "center", padding: "80px 0", color: "#f87171" }}>
-            <div style={{ fontSize: "32px", marginBottom: "12px" }}>⚠️</div>
+            <div style={{ marginBottom: "12px", color: "#f87171" }}><AlertTriangle size={28} /></div>
             <p>{error}</p>
             <button onClick={fetchData} type="button" style={{ marginTop: "16px", padding: "10px 20px", background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: "10px", color: "#f87171", cursor: "pointer" }}>
               Réessayer
@@ -564,9 +564,9 @@ export default function AdminBilletsDashboard() {
                     <StatusBadge status={row.status} />
                   </div>
                   <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 2 }}>{row.email}</div>
-                  {row.phone && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 2 }}>📱 {row.phone}</div>}
+                  {row.phone && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 2 }}>{row.phone}</div>}
                   {(row.city || row.country) && (
-                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 2 }}>📍 {[row.city, row.country].filter(Boolean).join(", ")}</div>
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 2 }}>{[row.city, row.country].filter(Boolean).join(", ")}</div>
                   )}
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
                     <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>
@@ -651,7 +651,7 @@ export default function AdminBilletsDashboard() {
                           </div>
                           {row.phone && (
                             <div style={{ color: "rgba(255,255,255,0.4)", fontSize: "11px", marginTop: "2px" }}>
-                              💬 {row.phone}
+                              {row.phone}
                             </div>
                           )}
                         </td>
@@ -693,7 +693,7 @@ export default function AdminBilletsDashboard() {
                             )}
                             {row.status !== "ticket_given" && (
                               <ActionButton
-                                label="🎫 Billet"
+                                label="Billet"
                                 color="#60a5fa"
                                 disabled={updatingId === row.id}
                                 onClick={() => updateStatus(row.id, "ticket_given")}

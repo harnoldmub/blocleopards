@@ -101,10 +101,10 @@ const matches = [
         
         <div class="mt-8 flex justify-center gap-4">
           <a href="/mondial/tirage" class="px-6 py-3 rounded-full bg-[#f7d618] text-[#07090f] font-bold text-sm hover:bg-yellow-400 transition-all shadow-[0_4px_20px_rgba(247,214,24,0.3)]">
-            Participer au Tirage 🎫
+            Participer au Tirage
           </a>
           <a href="/mondial/transparence" class="px-6 py-3 rounded-full border border-white/20 hover:bg-white/5 transition-all text-sm font-semibold">
-            Transparence & Algorithme 🔍
+            Transparence & Algorithme
           </a>
         </div>
       </div>
@@ -144,7 +144,7 @@ const matches = [
             <!-- Warning or Notice -->
             {match.warning && (
               <div class="mb-4 p-3 rounded-xl bg-red-950/40 border border-red-500/20 text-[11px] text-red-300 leading-normal flex gap-2">
-                <span class="flex-shrink-0">⚠️</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                 <span>{match.warning}</span>
               </div>
             )}
@@ -191,7 +191,7 @@ const matches = [
         <div class="absolute inset-0 bg-radial-at-t from-[#f7d618]/5 to-transparent pointer-events-none"></div>
         <div class="text-center max-w-xl mx-auto mb-6">
           <span class="text-xs uppercase tracking-[0.2em] text-[#f7d618] font-bold">Le Mur des Supporters</span>
-          <h2 class="font-bebas text-3xl text-white mt-2">ILS SERONT DANS LE BLOC AUX USA 🐆</h2>
+          <h2 class="font-bebas text-3xl text-white mt-2">ILS SERONT DANS LE BLOC AUX USA</h2>
           <p class="text-slate-400 text-xs mt-1">Rejoignez la diaspora et affichez votre soutien en participant au tirage.</p>
         </div>
 
@@ -202,7 +202,7 @@ const matches = [
               <div class="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/5 text-sm">
                 <span class="font-semibold text-white">{s.first_name}</span>
                 <span class="text-slate-400">({s.city}, {s.state_us})</span>
-                <span class="text-base">🇺🇸</span>
+                <img src="/flags/us.png" alt="USA" class="h-4 w-auto rounded" />
               </div>
             ))}
           </div>
@@ -212,7 +212,7 @@ const matches = [
               <div class="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/5 text-sm">
                 <span class="font-semibold text-white">{s.first_name}</span>
                 <span class="text-slate-400">({s.city}, {s.state_us})</span>
-                <span class="text-base">🇺🇸</span>
+                <img src="/flags/us.png" alt="USA" class="h-4 w-auto rounded" />
               </div>
             ))}
           </div>
@@ -222,13 +222,13 @@ const matches = [
       <!-- Important Notice / RGPD / Transport -->
       <div class="grid md:grid-cols-2 gap-8 text-sm text-slate-400 border-t border-white/10 pt-10">
         <div>
-          <h4 class="font-bold text-white mb-2">✈️ Logistique & Logement à votre charge</h4>
+          <h4 class="font-bold text-white mb-2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg> Logistique & Logement à votre charge</h4>
           <p class="leading-relaxed">
             Le Bloc Léopards organise et garantit un tirage au sort transparent des billets d'accès en tribune pour soutenir la RDC. Le transport (vols, visas, déplacements) et l'hébergement restent à la charge entière du supporter.
           </p>
         </div>
         <div>
-          <h4 class="font-bold text-white mb-2">⚖️ Mentions Légales & Institutionnelles</h4>
+          <h4 class="font-bold text-white mb-2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="3" x2="12" y2="21"/><path d="M5 6l7-3 7 3M3 18h18"/><path d="M3 18l3-9 9 3-3 9M21 18l-3-9-9 3 3 9"/></svg> Mentions Légales & Institutionnelles</h4>
           <p class="leading-relaxed">
             En co-branding avec le Ministère des Sports. Les annonces institutionnelles restent à vérifier auprès des organismes compétents. Les documents d'identité collectés sont chiffrés et seront supprimés après la réalisation du tirage au sort.
           </p>
