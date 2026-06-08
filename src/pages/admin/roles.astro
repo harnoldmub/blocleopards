@@ -1,0 +1,223 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { isAdminAuthed, isSuperAdmin, ADMIN_SECTIONS } from "../../lib/auth";
+import { requireDatabase } from "../../lib/neon";
+
+if (!isAdminAuthed(Astro.cookies)) return Astro.redirect("/admin/login");
+if (!isSuperAdmin(Astro.cookies)) return Astro.redirect("/admin/dashboard");
+
+const sql = requireDatabase();
+const roles = await sql`SELECT id, role_name, label, permissions, created_at FROM admin_roles ORDER BY created_at ASC`;
+---
+<AdminLayout title="Rôles — Admin Bloc Léopards" section="roles">
+  <div style="max-width:900px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:12px;">
+      <div>
+        <p style="font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:rgba(255,255,255,0.4); font-weight:700; margin-bottom:6px;">Gestion</p>
+        <h1 style="font-size:1.75rem; font-weight:800; color:#fff;">Rôles &amp; Accès</h1>
+      </div>
+      <button id="btn-add" style="padding:10px 20px; background:#f7d618; border:none; border-radius:10px; color:#07090f; font-size:13px; font-weight:700; cursor:pointer;">+ Nouveau rôle</button>
+    </div>
+
+    <!-- Super admin info -->
+    <div style="background:rgba(247,214,24,0.06); border:1px solid rgba(247,214,24,0.2); border-radius:14px; padding:16px 20px; margin-bottom:24px; display:flex; align-items:center; gap:14px;">
+      <span style="font-size:20px;">👑</span>
+      <div>
+        <p style="font-size:13px; font-weight:700; color:#f7d618;">Super Admin</p>
+        <p style="font-size:12px; color:rgba(255,255,255,0.45); margin-top:2px;">Accès complet · Mot de passe géré via la variable d'environnement <code style="background:rgba(255,255,255,0.08); padding:1px 6px; border-radius:4px;">ADMIN_PASSWORD</code></p>
+      </div>
+    </div>
+
+    <!-- Roles table -->
+    <div id="roles-list" style="display:flex; flex-direction:column; gap:12px;">
+      {roles.length === 0 && (
+        <div style="text-align:center; padding:48px; color:rgba(255,255,255,0.3); font-size:14px; border:1px dashed rgba(255,255,255,0.1); border-radius:14px;">
+          Aucun rôle créé. Crée le premier rôle pour donner accès à un collaborateur.
+        </div>
+      )}
+      {roles.map((role: any) => (
+        <div class="role-card" data-id={role.id} data-name={role.role_name} data-label={role.label} data-permissions={JSON.stringify(role.permissions)}
+          style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:18px 20px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:180px;">
+            <p style="font-size:14px; font-weight:700; color:#fff; margin-bottom:4px;">{role.label}</p>
+            <p style="font-size:11px; color:rgba(255,255,255,0.35); font-family:monospace;">{role.role_name}</p>
+          </div>
+          <div style="flex:2; min-width:240px; display:flex; flex-wrap:wrap; gap:6px;">
+            {(role.permissions as string[]).map((perm: string) => {
+              const section = ADMIN_SECTIONS.find(s => s.id === perm);
+              return section ? (
+                <span style="padding:3px 10px; background:rgba(247,214,24,0.1); border:1px solid rgba(247,214,24,0.2); border-radius:20px; font-size:11px; color:#f7d618; font-weight:600;">
+                  {section.label}
+                </span>
+              ) : null;
+            })}
+            {(role.permissions as string[]).length === 0 && (
+              <span style="font-size:12px; color:rgba(255,255,255,0.3);">Aucune permission</span>
+            )}
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn-edit" data-id={role.id} style="padding:8px 14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:8px; color:rgba(255,255,255,0.7); font-size:12px; font-weight:600; cursor:pointer;">Modifier</button>
+            <button class="btn-delete" data-id={role.id} data-label={role.label} style="padding:8px 14px; background:rgba(206,16,33,0.08); border:1px solid rgba(206,16,33,0.2); border-radius:8px; color:rgba(206,16,33,0.8); font-size:12px; font-weight:600; cursor:pointer;">Supprimer</button>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(4px); z-index:200; align-items:center; justify-content:center; padding:24px;">
+    <div style="background:#0d1117; border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:32px; width:100%; max-width:520px; max-height:90vh; overflow-y:auto;">
+      <h2 id="modal-title" style="font-size:1.25rem; font-weight:800; color:#fff; margin-bottom:24px;">Nouveau rôle</h2>
+
+      <input type="hidden" id="edit-id" value="" />
+
+      <div style="display:grid; gap:16px;">
+        <div>
+          <label style="display:block; font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:rgba(255,255,255,0.4); font-weight:700; margin-bottom:8px;">Nom affiché *</label>
+          <input id="field-label" type="text" placeholder="Ex: Équipe Billets" style="width:100%; padding:12px 14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; color:#fff; font-size:14px; font-family:'Sora',sans-serif; outline:none;" />
+        </div>
+        <div id="role-name-wrap">
+          <label style="display:block; font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:rgba(255,255,255,0.4); font-weight:700; margin-bottom:8px;">Identifiant (slug) *</label>
+          <input id="field-role-name" type="text" placeholder="ex: equipe-billets" style="width:100%; padding:12px 14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; color:#fff; font-size:14px; font-family:monospace; outline:none;" />
+          <p style="font-size:11px; color:rgba(255,255,255,0.3); margin-top:6px;">Minuscules, sans espaces, sans accents.</p>
+        </div>
+        <div>
+          <label style="display:block; font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:rgba(255,255,255,0.4); font-weight:700; margin-bottom:8px;">Mot de passe <span id="pwd-required">*</span></label>
+          <input id="field-password" type="password" autocomplete="new-password" placeholder="Mot de passe du rôle" style="width:100%; padding:12px 14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; color:#fff; font-size:14px; font-family:'Sora',sans-serif; outline:none;" />
+          <p id="pwd-hint" style="display:none; font-size:11px; color:rgba(255,255,255,0.3); margin-top:6px;">Laisser vide pour conserver le mot de passe actuel.</p>
+        </div>
+        <div>
+          <label style="display:block; font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:rgba(255,255,255,0.4); font-weight:700; margin-bottom:12px;">Permissions *</label>
+          <div id="permissions-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            {ADMIN_SECTIONS.map(s => (
+              <label class="perm-label" data-section={s.id} style="display:flex; align-items:center; gap:10px; padding:10px 12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; cursor:pointer; font-size:13px; color:rgba(255,255,255,0.7); transition:all 0.15s;">
+                <input type="checkbox" class="perm-checkbox" value={s.id} style="accent-color:#f7d618; width:14px; height:14px;" />
+                {s.label}
+              </label>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div id="modal-error" style="display:none; margin-top:16px; padding:10px 14px; background:rgba(206,16,33,0.15); border:1px solid rgba(206,16,33,0.3); border-radius:10px; color:#ff6b7a; font-size:13px;"></div>
+
+      <div style="display:flex; gap:10px; margin-top:24px;">
+        <button id="btn-save" style="flex:1; padding:13px; background:#f7d618; border:none; border-radius:10px; color:#07090f; font-size:14px; font-weight:700; cursor:pointer;">Enregistrer</button>
+        <button id="btn-cancel" style="padding:13px 20px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:rgba(255,255,255,0.6); font-size:14px; cursor:pointer;">Annuler</button>
+      </div>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  const overlay = document.getElementById('modal-overlay')!;
+  const modalTitle = document.getElementById('modal-title')!;
+  const editId = document.getElementById('edit-id') as HTMLInputElement;
+  const fieldLabel = document.getElementById('field-label') as HTMLInputElement;
+  const fieldRoleName = document.getElementById('field-role-name') as HTMLInputElement;
+  const fieldPassword = document.getElementById('field-password') as HTMLInputElement;
+  const roleNameWrap = document.getElementById('role-name-wrap')!;
+  const pwdRequired = document.getElementById('pwd-required')!;
+  const pwdHint = document.getElementById('pwd-hint')!;
+  const modalError = document.getElementById('modal-error')!;
+  const checkboxes = document.querySelectorAll<HTMLInputElement>('.perm-checkbox');
+
+  function openModal(mode: 'add' | 'edit', data?: any) {
+    editId.value = '';
+    fieldLabel.value = '';
+    fieldRoleName.value = '';
+    fieldPassword.value = '';
+    modalError.style.display = 'none';
+    checkboxes.forEach(cb => { cb.checked = false; });
+
+    if (mode === 'add') {
+      modalTitle.textContent = 'Nouveau rôle';
+      roleNameWrap.style.display = 'block';
+      pwdRequired.textContent = '*';
+      pwdHint.style.display = 'none';
+    } else {
+      modalTitle.textContent = 'Modifier le rôle';
+      roleNameWrap.style.display = 'none';
+      pwdRequired.textContent = '';
+      pwdHint.style.display = 'block';
+      editId.value = data.id;
+      fieldLabel.value = data.label;
+      const perms: string[] = JSON.parse(data.permissions);
+      checkboxes.forEach(cb => { cb.checked = perms.includes(cb.value); });
+    }
+
+    overlay.style.display = 'flex';
+    fieldLabel.focus();
+  }
+
+  function closeModal() {
+    overlay.style.display = 'none';
+  }
+
+  document.getElementById('btn-add')!.addEventListener('click', () => openModal('add'));
+  document.getElementById('btn-cancel')!.addEventListener('click', closeModal);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+
+  document.querySelectorAll<HTMLButtonElement>('.btn-edit').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const card = btn.closest('.role-card') as HTMLElement;
+      openModal('edit', {
+        id: card.dataset.id,
+        label: card.dataset.label,
+        permissions: card.dataset.permissions,
+      });
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('.btn-delete').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm(`Supprimer le rôle "${btn.dataset.label}" ? Cette action est irréversible.`)) return;
+      const res = await fetch('/api/admin/roles', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: Number(btn.dataset.id) }),
+      });
+      if (res.ok) location.reload();
+      else alert('Erreur lors de la suppression.');
+    });
+  });
+
+  document.getElementById('btn-save')!.addEventListener('click', async () => {
+    modalError.style.display = 'none';
+    const permissions = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+    const isEdit = Boolean(editId.value);
+
+    const body: Record<string, any> = {
+      label: fieldLabel.value.trim(),
+      permissions,
+    };
+
+    if (!isEdit) {
+      body.role_name = fieldRoleName.value.trim().toLowerCase().replace(/\s+/g, '-');
+      body.password = fieldPassword.value;
+    } else {
+      body.id = Number(editId.value);
+      if (fieldPassword.value) body.password = fieldPassword.value;
+    }
+
+    if (!body.label || (!isEdit && (!body.role_name || !body.password))) {
+      modalError.textContent = 'Remplis tous les champs obligatoires.';
+      modalError.style.display = 'block';
+      return;
+    }
+
+    const res = await fetch('/api/admin/roles', {
+      method: isEdit ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (res.ok) {
+      location.reload();
+    } else {
+      const err = await res.json();
+      modalError.textContent = err.error ?? 'Erreur serveur.';
+      modalError.style.display = 'block';
+    }
+  });
+</script>

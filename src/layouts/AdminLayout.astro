@@ -1,9 +1,14 @@
 ---
 import "../styles/global.css";
 import SEO from "../components/SEO.astro";
-const { title = "Admin — Bloc Léopards", section = "", noSidebar = false } = Astro.props;
+import { getSessionRole, getSessionPermissions } from "../lib/auth";
 
-const nav = [
+const { title = "Admin — Bloc Léopards", section = "", noSidebar = false } = Astro.props;
+const role = getSessionRole(Astro.cookies);
+const permissions = getSessionPermissions(Astro.cookies);
+const isSuper = permissions.includes("*");
+
+const allNav = [
   { id: "dashboard", label: "Dashboard", icon: "◉", href: "/admin/dashboard" },
   { id: "billets", label: "Billets", icon: "🎫", href: "/admin/billets" },
   { id: "mondial", label: "Mondial USA", icon: "🇺🇸", href: "/admin/mondial" },
@@ -13,6 +18,8 @@ const nav = [
   { id: "newsletter", label: "Newsletter", icon: "📮", href: "/admin/newsletter" },
   { id: "articles", label: "Articles", icon: "📰", href: "/admin/articles" },
 ];
+
+const nav = isSuper ? allNav : allNav.filter(item => item.id === "dashboard" || permissions.includes(item.id));
 ---
 <!doctype html>
 <html lang="fr">
@@ -96,6 +103,15 @@ const nav = [
         ))}
       </nav>
       <div class="admin-sidebar__footer">
+        {isSuper && (
+          <a href="/admin/roles" class={`admin-sidebar__link${section === 'roles' ? ' active' : ''}`} style="margin-bottom:8px;">
+            <span class="admin-sidebar__link-icon">🔐</span>
+            <span>Rôles</span>
+          </a>
+        )}
+        <div style="padding:8px 12px; margin-bottom:8px;">
+          <span style="display:inline-block; padding:3px 10px; background:rgba(247,214,24,0.1); border:1px solid rgba(247,214,24,0.2); border-radius:20px; font-size:10px; color:#f7d618; font-weight:700; text-transform:uppercase; letter-spacing:0.08em;">{role}</span>
+        </div>
         <button class="admin-sidebar__logout" id="admin-logout-btn">
           <span>⬡</span>
           <span>Déconnexion</span>
