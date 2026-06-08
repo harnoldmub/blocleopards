@@ -84,29 +84,26 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
 
     const verificationStatus = antiFraudFlags.length > 0 ? "flagged" : "pending";
 
-    await sql.begin(async (tx) => {
-      const [inscription] = await tx`
-        insert into mondial_inscriptions (
-          first_name, last_name, gender, date_of_birth, email, phone, whatsapp,
-          country, city, state_us, is_diaspora_rdc, matchs_vises, opt_in_mur,
-          ip_address, user_agent, verification_status, anti_fraud_flags
-        ) values (
-          ${firstName}, ${lastName}, ${gender}, ${dateOfBirth}, ${email}, ${telephone}, ${whatsapp},
-          ${country}, ${city}, ${stateUs}, ${isDiasporaRdc}, ${JSON.stringify(matchesVises)}, ${optInMur},
-          ${clientAddress}, ${request.headers.get("user-agent") || ""}, ${verificationStatus}, ${JSON.stringify(antiFraudFlags)}
-        ) returning id
-      `;
-
-      await tx`
-        insert into justificatifs_identite (
-          inscription_id, type_document, original_filename, stored_filename,
-          mime_type, size, checksum, status
-        ) values (
-          ${inscription.id}, ${documentType}, ${documentFile.name}, ${storedFilename},
-          ${documentFile.type}, ${documentFile.size}, ${checksum}, 'pending'
-        )
-      `;
-    });
+    const [inscription] = await sql`
+      insert into mondial_inscriptions (
+        first_name, last_name, gender, date_of_birth, email, phone, whatsapp,
+        country, city, state_us, is_diaspora_rdc, matchs_vises, opt_in_mur,
+        ip_address, user_agent, verification_status, anti_fraud_flags
+      ) values (
+        ${firstName}, ${lastName}, ${gender}, ${dateOfBirth}, ${email}, ${telephone}, ${whatsapp},
+        ${country}, ${city}, ${stateUs}, ${isDiasporaRdc}, ${JSON.stringify(matchesVises)}, ${optInMur},
+        ${clientAddress}, ${request.headers.get("user-agent") || ""}, ${verificationStatus}, ${JSON.stringify(antiFraudFlags)}
+      ) returning id
+    `;
+    await sql`
+      insert into justificatifs_identite (
+        inscription_id, type_document, original_filename, stored_filename,
+        mime_type, size, checksum, status
+      ) values (
+        ${inscription.id}, ${documentType}, ${documentFile.name}, ${storedFilename},
+        ${documentFile.type}, ${documentFile.size}, ${checksum}, 'pending'
+      )
+    `;
 
     const ticketNumber = `BL-2026-${Math.floor(100000 + Math.random() * 900000)}`;
     return new Response(JSON.stringify({ success: true, ticketNumber }), { status: 200, headers });

@@ -19,50 +19,22 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const sql = requireDatabase();
 
     if (action === "verify") {
-      // Validate/Reject single registration
       if (!id || !status) {
         return new Response(JSON.stringify({ error: "Champs requis manquants." }), { status: 400 });
       }
-
-      await sql.begin(async (tx) => {
-        await tx`
-          update mondial_inscriptions
-          set verification_status = ${status}, updated_at = now()
-          where id = ${id}
-        `;
-        
-        const docStatus = status === "verified" ? "validated" : "refused";
-        await tx`
-          update justificatifs_identite
-          set status = ${docStatus}
-          where inscription_id = ${id}
-        `;
-      });
-
+      await sql`update mondial_inscriptions set verification_status = ${status}, updated_at = now() where id = ${id}`;
+      const docStatus = status === "verified" ? "validated" : "refused";
+      await sql`update justificatifs_identite set status = ${docStatus} where inscription_id = ${id}`;
       return new Response(JSON.stringify({ success: true }));
     }
 
     if (action === "verifyGroup") {
-      // Batch update status for a list of IDs
       if (!Array.isArray(groupIds) || groupIds.length === 0 || !groupStatus) {
         return new Response(JSON.stringify({ error: "Données de groupe invalides." }), { status: 400 });
       }
-
-      await sql.begin(async (tx) => {
-        await tx`
-          update mondial_inscriptions
-          set verification_status = ${groupStatus}, updated_at = now()
-          where id in ${tx(groupIds)}
-        `;
-        
-        const docStatus = groupStatus === "verified" ? "validated" : "refused";
-        await tx`
-          update justificatifs_identite
-          set status = ${docStatus}
-          where inscription_id in ${tx(groupIds)}
-        `;
-      });
-
+      await sql`update mondial_inscriptions set verification_status = ${groupStatus}, updated_at = now() where id = any(${groupIds}::int[])`;
+      const docStatus = groupStatus === "verified" ? "validated" : "refused";
+      await sql`update justificatifs_identite set status = ${docStatus} where inscription_id = any(${groupIds}::int[])`;
       return new Response(JSON.stringify({ success: true }));
     }
 
@@ -137,38 +109,14 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       const winnerIds = winners.map(w => w.id);
 
       // 5. Save settings and mark winner tickets
-      await sql.begin(async (tx) => {
-        // Reset previous winners ticket_given_at
-        await tx`
-          update mondial_inscriptions set ticket_given_at = null
-        `;
-
-        if (winnerIds.length > 0) {
-          await tx`
-            update mondial_inscriptions
-            set ticket_given_at = now()
-            where id in ${tx(winnerIds)}
-          `;
-        }
-
-        // Save draw settings
-        await tx`
-          insert into settings (key, value, updated_at) values ('mondial_tirage_seed', ${activeSeed}, now())
-          on conflict (key) do update set value = ${activeSeed}, updated_at = now()
-        `;
-        await tx`
-          insert into settings (key, value, updated_at) values ('mondial_tirage_hash', ${engagementHash}, now())
-          on conflict (key) do update set value = ${engagementHash}, updated_at = now()
-        `;
-        await tx`
-          insert into settings (key, value, updated_at) values ('mondial_winners', ${JSON.stringify(winnerIds)}, now())
-          on conflict (key) do update set value = ${JSON.stringify(winnerIds)}, updated_at = now()
-        `;
-        await tx`
-          insert into settings (key, value, updated_at) values ('mondial_tickets_count', ${String(count)}, now())
-          on conflict (key) do update set value = ${String(count)}, updated_at = now()
-        `;
-      });
+      await sql`update mondial_inscriptions set ticket_given_at = null`;
+      if (winnerIds.length > 0) {
+        await sql`update mondial_inscriptions set ticket_given_at = now() where id = any(${winnerIds}::int[])`;
+      }
+      await sql`insert into settings (key, value) values ('mondial_tirage_seed', ${activeSeed}) on conflict (key) do update set value = ${activeSeed}`;
+      await sql`insert into settings (key, value) values ('mondial_tirage_hash', ${engagementHash}) on conflict (key) do update set value = ${engagementHash}`;
+      await sql`insert into settings (key, value) values ('mondial_winners', ${JSON.stringify(winnerIds)}) on conflict (key) do update set value = ${JSON.stringify(winnerIds)}`;
+      await sql`insert into settings (key, value) values ('mondial_tickets_count', ${String(count)}) on conflict (key) do update set value = ${String(count)}`;
 
       invalidateSettings();
 

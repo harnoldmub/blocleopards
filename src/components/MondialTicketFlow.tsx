@@ -1,18 +1,9 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { UploadCloud, FileText } from "lucide-react";
+import CountrySelectMondial from "./CountrySelectMondial";
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
-
-const COUNTRIES = [
-  "États-Unis",
-  "France",
-  "Belgique",
-  "Royaume-Uni",
-  "Canada",
-  "Mexique",
-  "Autre",
-];
 
 const US_STATES = [
   { code: "AL", name: "Alabama" }, { code: "AK", name: "Alaska" }, { code: "AZ", name: "Arizona" },
@@ -376,17 +367,13 @@ export default function MondialTicketFlow() {
 
                 <div>
                   <label className="block text-[10px] uppercase text-slate-400 font-bold mb-1.5">Pays de résidence *</label>
-                  <select
+                  <CountrySelectMondial
                     value={form.country}
-                    onChange={e => {
-                      handleTextChange("country", e.target.value);
-                      if (e.target.value !== "États-Unis") handleTextChange("stateUs", "");
+                    onChange={v => {
+                      handleTextChange("country", v);
+                      if (v !== "États-Unis") handleTextChange("stateUs", "");
                     }}
-                    className="w-full bg-white/5 border border-white/10 focus:border-[#f7d618] rounded-xl px-4 py-3 text-sm outline-none transition-colors text-white"
-                    style={{ background: "#0d1221" }}
-                  >
-                    {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
+                  />
                 </div>
 
                 <div className={`grid gap-4 ${form.country === "États-Unis" ? "grid-cols-2" : "grid-cols-1"}`}>
