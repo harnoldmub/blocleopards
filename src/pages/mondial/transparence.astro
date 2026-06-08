@@ -54,7 +54,6 @@ if (hasDatabase) {
       `;
     } catch { /* table may not exist yet */ }
   } catch (err) {
-  } catch (err) {
     console.error("Error fetching transparency stats:", err);
   }
 }
