@@ -248,19 +248,33 @@ export default function MondialTicketFlow() {
     <div className="min-h-screen text-white relative font-sans" style={{ background: "#080c1a" }}>
       
       {/* Top Header Navigation */}
-      <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between p-4 bg-[#080c1a]/80 backdrop-blur-md border-b border-white/5">
-        {currentStep !== "identity" && currentStep !== "success" ? (
-          <button 
-            type="button" 
-            onClick={prevStep}
-            className="px-4 py-2 rounded-full border border-white/10 hover:bg-white/5 text-xs font-semibold"
-          >
-            ← Retour
-          </button>
-        ) : <div />}
-        <a href="/mondial" className="px-4 py-2 rounded-full border border-white/10 hover:bg-white/5 text-xs font-semibold text-[#f7d618]">
-          ← Hub Mondial
-        </a>
+      <div className="fixed top-0 left-0 right-0 z-50 flex items-center bg-[#080c1a]/90 backdrop-blur-md border-b border-white/5" style={{ padding: "10px 16px", minHeight: 60 }}>
+        {/* Back button */}
+        <div style={{ width: 80, flexShrink: 0 }}>
+          {currentStep !== "identity" && currentStep !== "success" && (
+            <button
+              type="button"
+              onClick={prevStep}
+              className="px-3 py-1.5 rounded-full border border-white/10 hover:bg-white/5 text-xs font-semibold"
+            >
+              ← Retour
+            </button>
+          )}
+        </div>
+
+        {/* Logos centered */}
+        <div className="flex-1 flex items-center justify-center gap-3">
+          <img src="/brand/logo.png" alt="Bloc Léopards" style={{ height: 36, width: "auto", objectFit: "contain" }} />
+          <div style={{ width: 1, height: 24, background: "rgba(255,255,255,0.2)" }} />
+          <img src="/brand/logo-min-sport-black.webp" alt="Ministère des Sports" style={{ height: 28, width: "auto", objectFit: "contain", opacity: 0.9, filter: "invert(1) brightness(2)" }} />
+        </div>
+
+        {/* Hub link */}
+        <div style={{ width: 80, flexShrink: 0, textAlign: "right" }}>
+          <a href="/mondial" className="text-[10px] font-semibold text-[#f7d618] hover:underline">
+            Hub →
+          </a>
+        </div>
       </div>
 
       <div className="max-w-xl mx-auto px-4 pt-24 pb-16 flex flex-col justify-center min-h-[90vh]">
