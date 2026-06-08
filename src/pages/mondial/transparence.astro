@@ -234,7 +234,7 @@ const distribution = [
 
           <!-- Verification block -->
           {(tirageSeed || tirageHash) && (
-            <div class="bg-black/40 border border-white/10 rounded-2xl p-6 font-mono text-xs">
+            <div class="bg-black/40 border border-white/10 rounded-2xl p-6 font-mono text-xs mb-6">
               <p class="text-slate-400 uppercase tracking-wider text-[10px] font-bold mb-4">Données de vérification publique</p>
               {tirageSeed && (
                 <div class="mb-3">
@@ -250,6 +250,73 @@ const distribution = [
               )}
             </div>
           )}
+
+          <!-- Interactive verifier -->
+          <div class="bg-white/5 border border-white/10 rounded-2xl p-6">
+            <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+              <div>
+                <h3 class="font-bebas text-lg text-white tracking-wide">VÉRIFICATION INDÉPENDANTE</h3>
+                <p class="text-slate-400 text-xs mt-1">Recalculez le tirage vous-même — directement dans ce navigateur.</p>
+              </div>
+              <button
+                id="btn-verify"
+                class="px-5 py-2.5 rounded-xl text-sm font-bold transition-all"
+                style="background:rgba(247,214,24,0.1); border:1px solid rgba(247,214,24,0.3); color:#f7d618;"
+              >
+                Lancer la vérification
+              </button>
+            </div>
+
+            <div id="verify-result" class="hidden">
+              <div id="verify-progress" class="text-xs text-slate-400 mb-3">Calcul en cours...</div>
+              <div id="verify-hash-check" class="flex items-center gap-2 text-xs mb-2"></div>
+              <div id="verify-winners-check" class="flex items-center gap-2 text-xs mb-4"></div>
+              <div id="verify-details" class="font-mono text-[10px] text-slate-500 bg-black/30 rounded-xl p-4 leading-5"></div>
+            </div>
+
+            <!-- Node.js script -->
+            <details class="mt-5">
+              <summary class="text-xs text-slate-400 cursor-pointer hover:text-white transition-colors select-none">
+                Script Node.js — vérification hors-ligne
+              </summary>
+              <pre class="mt-3 p-4 bg-black/40 rounded-xl text-[10px] leading-5 overflow-x-auto text-slate-300 whitespace-pre-wrap"><code>{`// Vérification indépendante du tirage Bloc Léopards
+// Requiert Node.js 18+ (crypto intégré)
+const { createHash } = require("crypto");
+const https = require("https");
+
+const DATA_URL = "https://blocleopards.com/api/mondial/verification-data";
+
+https.get(DATA_URL, res => {
+  let body = "";
+  res.on("data", chunk => body += chunk);
+  res.on("end", () => {
+    const { candidateIds, seed, engagementHash, winnersCount, publishedWinnerIds } = JSON.parse(body);
+
+    // 1. Vérifier l'empreinte de la liste
+    const computedHash = createHash("sha256").update(JSON.stringify(candidateIds)).digest("hex");
+    console.log("\\n— Vérification de l'empreinte —");
+    console.log("Publiée  :", engagementHash);
+    console.log("Calculée :", computedHash);
+    console.log(computedHash === engagementHash ? "✓ IDENTIQUE" : "✗ DIFFÉRENTE");
+
+    // 2. Recalculer le tirage
+    const shuffled = candidateIds
+      .map(id => ({ id, h: createHash("sha256").update(String(id) + seed).digest("hex") }))
+      .sort((a, b) => a.h.localeCompare(b.h));
+    const computedWinners = shuffled.slice(0, winnersCount).map(x => x.id);
+
+    console.log("\\n— Vérification des gagnants —");
+    console.log("Publiés  :", JSON.stringify(publishedWinnerIds));
+    console.log("Calculés :", JSON.stringify(computedWinners));
+    console.log(
+      JSON.stringify(computedWinners.sort()) === JSON.stringify([...publishedWinnerIds].sort())
+        ? "✓ GAGNANTS IDENTIQUES"
+        : "✗ GAGNANTS DIFFÉRENTS"
+    );
+  });
+});`}</code></pre>
+            </details>
+          </div>
         </div>
       )}
 
@@ -299,7 +366,78 @@ const distribution = [
 </style>
 
 <script>
-  // Simple count-up animation for numbers
+  // ── In-browser verifier ───────────────────────────────────────────────────
+  const btnVerify = document.getElementById("btn-verify");
+  const verifyResult = document.getElementById("verify-result");
+  const verifyProgress = document.getElementById("verify-progress");
+  const verifyHashCheck = document.getElementById("verify-hash-check");
+  const verifyWinnersCheck = document.getElementById("verify-winners-check");
+  const verifyDetails = document.getElementById("verify-details");
+
+  async function sha256hex(str: string): Promise<string> {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  btnVerify?.addEventListener("click", async () => {
+    if (!verifyResult || !verifyProgress || !verifyHashCheck || !verifyWinnersCheck || !verifyDetails) return;
+    btnVerify.setAttribute("disabled", "true");
+    (btnVerify as HTMLButtonElement).textContent = "Calcul…";
+    verifyResult.classList.remove("hidden");
+    verifyProgress.textContent = "Récupération des données…";
+    verifyHashCheck.innerHTML = "";
+    verifyWinnersCheck.innerHTML = "";
+    verifyDetails.textContent = "";
+
+    try {
+      const res = await fetch("/api/mondial/verification-data");
+      if (!res.ok) throw new Error("Données non disponibles.");
+      const { candidateIds, seed, engagementHash, winnersCount, publishedWinnerIds } = await res.json();
+
+      verifyProgress.textContent = `${candidateIds.length} candidats chargés. Calcul de l'empreinte…`;
+
+      // 1. Verify hash
+      const computedHash = await sha256hex(JSON.stringify(candidateIds));
+      const hashOk = computedHash === engagementHash;
+      verifyHashCheck.innerHTML = `
+        <span style="color:${hashOk ? "#4ade80" : "#f87171"};font-size:16px;">${hashOk ? "✓" : "✗"}</span>
+        <span style="color:${hashOk ? "#4ade80" : "#f87171"};">Empreinte liste : ${hashOk ? "IDENTIQUE" : "DIFFÉRENTE"}</span>
+      `;
+
+      // 2. Deterministic shuffle + pick winners
+      verifyProgress.textContent = `Recalcul du tirage (${candidateIds.length} × SHA-256)…`;
+      const scored = await Promise.all(
+        candidateIds.map(async (id: number) => ({ id, h: await sha256hex(String(id) + seed) }))
+      );
+      scored.sort((a: any, b: any) => a.h.localeCompare(b.h));
+      const computedWinners = scored.slice(0, winnersCount).map((x: any) => x.id);
+
+      const winnersOk = JSON.stringify(computedWinners.slice().sort((a:any,b:any)=>a-b))
+                     === JSON.stringify([...publishedWinnerIds].slice().sort((a:any,b:any)=>a-b));
+      verifyWinnersCheck.innerHTML = `
+        <span style="color:${winnersOk ? "#4ade80" : "#f87171"};font-size:16px;">${winnersOk ? "✓" : "✗"}</span>
+        <span style="color:${winnersOk ? "#4ade80" : "#f87171"};">Gagnants : ${winnersOk ? "IDENTIQUES" : "DIFFÉRENTS"}</span>
+      `;
+
+      verifyProgress.textContent = hashOk && winnersOk ? "Tirage vérifié avec succès." : "Anomalie détectée.";
+      verifyDetails.textContent = [
+        `Candidats vérifiés : ${candidateIds.length}`,
+        `Gagnants tirés     : ${winnersCount}`,
+        `Seed               : ${seed}`,
+        `Hash publié        : ${engagementHash}`,
+        `Hash calculé       : ${computedHash}`,
+        `IDs publiés        : [${publishedWinnerIds.join(", ")}]`,
+        `IDs calculés       : [${computedWinners.join(", ")}]`,
+      ].join("\n");
+    } catch (err: any) {
+      verifyProgress.textContent = err?.message || "Erreur.";
+    } finally {
+      btnVerify.removeAttribute("disabled");
+      (btnVerify as HTMLButtonElement).textContent = "Relancer";
+    }
+  });
+
+  // ── Count-up animation ────────────────────────────────────────────────────
   const countUpEls = document.querySelectorAll('.count-up');
   countUpEls.forEach((el) => {
     const target = parseInt(el.getAttribute('data-target') || '0', 10);
