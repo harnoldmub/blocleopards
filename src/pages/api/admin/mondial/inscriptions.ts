@@ -28,6 +28,7 @@ export const GET: APIRoute = async ({ cookies }) => {
         m.ip_address,
         m.verification_status,
         m.anti_fraud_flags,
+        m.ticket_given_at,
         m.created_at,
         j.id as document_id,
         j.type_document,

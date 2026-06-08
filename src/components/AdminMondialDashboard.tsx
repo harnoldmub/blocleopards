@@ -195,14 +195,10 @@ export default function AdminMondialDashboard() {
   // ─── Client CSV Export ──────────────────────────────────────────────────────
 
   const exportCSV = () => {
-    const winners = inscriptions.filter(i => i.verification_status === "verified" && i.id); // Or check ticket_given_at
-    // Filter to only those drawn (since we marked ticket_given_at is not null)
-    const drawn = inscriptions.filter(i => i.verification_status === "verified"); // adjust as needed
-    // Let's filter by matching settings winners if we have them
     const csvRows = [
       ["ID", "Prenom", "Nom", "Email", "Telephone", "Etat", "Ville", "Matchs Vises"],
       ...inscriptions
-        .filter(i => i.verification_status === "verified") // simple mock list of candidates
+        .filter(i => i.ticket_given_at != null)
         .map(i => [i.id, i.first_name, i.last_name, i.email, i.phone, i.state_us, i.city, JSON.stringify(i.matchs_vises)])
     ];
 
