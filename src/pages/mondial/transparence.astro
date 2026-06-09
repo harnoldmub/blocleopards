@@ -11,6 +11,7 @@ let tiragePublie = false;
 let winners: any[] = [];
 let tirageHistory: any[] = [];
 let distribution: any[] = [];
+let matchStats: Record<string, { total: number; verified: number; flagged: number; published: boolean; winners: number }> = {};
 
 if (hasDatabase) {
   try {
@@ -30,6 +31,39 @@ if (hasDatabase) {
     totalInscriptions = stats?.total || 0;
     totalVerified = stats?.verified || 0;
     totalDuplicates = docStats?.duplicates || 0;
+
+    const perMatchRows = await sql`
+      select
+        mk as match_key,
+        count(*)::integer as total,
+        count(*) filter (where verification_status = 'verified')::integer as verified,
+        count(*) filter (where jsonb_array_length(anti_fraud_flags) > 0)::integer as flagged
+      from mondial_inscriptions,
+           jsonb_array_elements_text(matchs_vises) as mk
+      group by mk
+    `;
+    const latestDraws = await sql`
+      select distinct on (match_key)
+        match_key,
+        winners_count,
+        published
+      from mondial_tirage_logs
+      where match_key is not null
+      order by match_key, ran_at desc
+    `.catch(() => [] as any[]);
+    const drawByMatch: Record<string, { published: boolean; winners: number }> = {};
+    for (const d of latestDraws) {
+      drawByMatch[d.match_key] = { published: d.published, winners: d.winners_count };
+    }
+    for (const row of perMatchRows) {
+      matchStats[row.match_key] = {
+        total: row.total,
+        verified: row.verified,
+        flagged: row.flagged,
+        published: drawByMatch[row.match_key]?.published ?? false,
+        winners: drawByMatch[row.match_key]?.winners ?? 0,
+      };
+    }
 
     const geoRows = await sql`
       select
@@ -160,52 +194,68 @@ let distributionOffset = 0;
         </p>
       </div>
 
-      <!-- Live Pipeline Timeline -->
+      <!-- Live Pipeline par match -->
       <div class="bg-white/5 border border-white/10 rounded-3xl p-8 mb-12">
-        <h2 class="font-bebas text-2xl text-white mb-8 tracking-wide">ÉTAT DU PARCOURS D'INSCRIPTION</h2>
-        
-        <div class="grid gap-6 md:grid-cols-5 relative">
-          <!-- Timeline progress steps -->
-          <div class="flex flex-col items-center text-center p-4 bg-black/20 rounded-2xl border border-white/5">
-            <span class="text-2xl mb-2">📥</span>
-            <div class="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">Inscriptions</div>
-            <div class="font-bebas text-3xl text-[#f7d618] count-up" data-target={totalInscriptions}>{totalInscriptions}</div>
-            <p class="text-[10px] text-slate-400 mt-1">Candidatures reçues</p>
-          </div>
-          
-          <div class="flex flex-col items-center text-center p-4 bg-black/20 rounded-2xl border border-white/5">
-            <span class="text-2xl mb-2">🛡️</span>
-            <div class="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">Vérifiées</div>
-            <div class="font-bebas text-3xl text-emerald-400 count-up" data-target={totalVerified}>{totalVerified}</div>
-            <p class="text-[10px] text-slate-400 mt-1">Identités validées</p>
-          </div>
+        <h2 class="font-bebas text-2xl text-white mb-2 tracking-wide">ÉTAT DU PARCOURS D'INSCRIPTION</h2>
+        <p class="text-[10px] text-slate-500 uppercase tracking-wider mb-7">Par match — {totalInscriptions} candidature{totalInscriptions !== 1 ? "s" : ""} au total</p>
 
-          <div class="flex flex-col items-center text-center p-4 bg-black/20 rounded-2xl border border-white/5">
-            <span class="text-2xl mb-2">🚫</span>
-            <div class="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">Doublons</div>
-            <div class="font-bebas text-3xl text-red-400 count-up" data-target={totalDuplicates}>{totalDuplicates}</div>
-            <p class="text-[10px] text-slate-400 mt-1">Éliminés</p>
-          </div>
+        <!-- Header colonnes -->
+        <div class="hidden md:grid grid-cols-[1fr_80px_80px_80px_100px] gap-4 px-4 mb-3">
+          <div class="text-[9px] uppercase tracking-widest text-slate-600 font-bold">Match</div>
+          <div class="text-[9px] uppercase tracking-widest text-slate-600 font-bold text-center">Inscrits</div>
+          <div class="text-[9px] uppercase tracking-widest text-slate-600 font-bold text-center">Vérifiés</div>
+          <div class="text-[9px] uppercase tracking-widest text-slate-600 font-bold text-center">Éliminés</div>
+          <div class="text-[9px] uppercase tracking-widest text-slate-600 font-bold text-center">Résultats</div>
+        </div>
 
-          <div class="flex flex-col items-center text-center p-4 bg-black/20 rounded-2xl border border-white/5">
-            <span class="text-2xl mb-2">🗳️</span>
-            <div class="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">Date Tirage</div>
-            <div class="font-bebas text-xl text-blue-400 mt-1.5 leading-none">15 JUIN 2026</div>
-            <p class="text-[10px] text-slate-400 mt-3">Date de clôture</p>
-          </div>
+        <div class="space-y-3">
+          {[
+            { key: "houston",     label: "RDC vs Portugal",    date: "26 juin 2026",  city: "Houston" },
+            { key: "guadalajara", label: "RDC vs Colombie",    date: "30 juin 2026",  city: "Guadalajara" },
+            { key: "atlanta",     label: "RDC vs Ouzbékistan", date: "4 juil. 2026",  city: "Atlanta" },
+          ].map(({ key, label, date, city }) => {
+            const s = matchStats[key] ?? { total: 0, verified: 0, flagged: 0, published: false, winners: 0 };
+            return (
+              <div class="grid grid-cols-2 md:grid-cols-[1fr_80px_80px_80px_100px] gap-4 items-center bg-black/20 border border-white/5 rounded-2xl px-4 py-4">
+                <!-- Match info -->
+                <div class="col-span-2 md:col-span-1">
+                  <p class="font-bebas text-base text-white tracking-wide leading-none">{label}</p>
+                  <p class="text-[10px] text-slate-500 mt-0.5">{city} · {date}</p>
+                </div>
 
-          <div class={`flex flex-col items-center text-center p-4 bg-black/20 rounded-2xl border ${tiragePublie ? "border-emerald-500/30" : "border-white/5"}`}>
-            <span class="text-2xl mb-2" style="font-size:1.5rem;display:block;">→</span>
-            <div class="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">Résultats</div>
-            {tiragePublie ? (
-              <div class="font-bebas text-sm text-emerald-400 mt-2">Publié</div>
-            ) : (
-              <div class="font-bebas text-sm text-slate-500 mt-2">En attente</div>
-            )}
-            <p class="text-[10px] text-slate-400 mt-3.5">
-              {tiragePublie ? `${winners.length} sélectionnés` : "Publication publique"}
-            </p>
-          </div>
+                <!-- Inscrits -->
+                <div class="flex flex-col items-center">
+                  <span class="text-[9px] uppercase tracking-wider text-slate-600 font-bold md:hidden mb-0.5">Inscrits</span>
+                  <span class="font-bebas text-2xl text-[#f7d618] count-up" data-target={s.total}>{s.total}</span>
+                </div>
+
+                <!-- Vérifiés -->
+                <div class="flex flex-col items-center">
+                  <span class="text-[9px] uppercase tracking-wider text-slate-600 font-bold md:hidden mb-0.5">Vérifiés</span>
+                  <span class="font-bebas text-2xl text-emerald-400 count-up" data-target={s.verified}>{s.verified}</span>
+                </div>
+
+                <!-- Éliminés -->
+                <div class="flex flex-col items-center">
+                  <span class="text-[9px] uppercase tracking-wider text-slate-600 font-bold md:hidden mb-0.5">Éliminés</span>
+                  <span class="font-bebas text-2xl text-red-400 count-up" data-target={s.flagged}>{s.flagged}</span>
+                </div>
+
+                <!-- Résultats -->
+                <div class="flex flex-col items-center col-span-2 md:col-span-1">
+                  {s.published ? (
+                    <span class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-3 py-1 uppercase tracking-wider">
+                      {s.winners} sélectionné{s.winners !== 1 ? "s" : ""}
+                    </span>
+                  ) : (
+                    <span class="text-[10px] font-bold text-slate-500 bg-white/5 border border-white/10 rounded-full px-3 py-1 uppercase tracking-wider">
+                      En attente
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 

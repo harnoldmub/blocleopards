@@ -240,6 +240,9 @@ export default function MondialTicketFlow() {
   const validateIdentity = () => {
     if (!form.firstName.trim() || !form.lastName.trim()) return "Prénom et nom requis.";
     if (!form.dateOfBirth) return "Date de naissance requise.";
+    const dob = new Date(form.dateOfBirth);
+    const age = new Date().getFullYear() - dob.getFullYear() - (new Date() < new Date(new Date().getFullYear(), dob.getMonth(), dob.getDate()) ? 1 : 0);
+    if (age < 18) return "Vous devez avoir au moins 18 ans pour vous inscrire.";
     if (!form.gender) return "Genre requis.";
     if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return "Adresse email valide requise.";
     if (!form.telephone.trim()) return "Numéro de téléphone requis.";
@@ -441,29 +444,33 @@ export default function MondialTicketFlow() {
     ctx.font = "900 34px Arial";
     drawWrappedCentered(selectedMatchLabels, 845, width - 180, 48);
 
+    const qrTop = 940;
+    const qrSize = 360;
+
     try {
-      const qr = await loadImage(`https://api.qrserver.com/v1/create-qr-code/?size=420x420&data=${encodeURIComponent(statusUrl)}`);
-      roundRect(width / 2 - 230, 1010, 460, 460, 32);
+      const qr = await loadImage(`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(statusUrl)}`);
+      roundRect(width / 2 - qrSize / 2 - 20, qrTop, qrSize + 40, qrSize + 40, 28);
       ctx.fillStyle = "#ffffff";
       ctx.fill();
-      ctx.drawImage(qr, width / 2 - 200, 1040, 400, 400);
+      ctx.drawImage(qr, width / 2 - qrSize / 2, qrTop + 20, qrSize, qrSize);
     } catch {
-      roundRect(width / 2 - 230, 1010, 460, 180, 32);
+      roundRect(width / 2 - qrSize / 2 - 20, qrTop, qrSize + 40, 160, 28);
       ctx.fillStyle = "#ffffff";
       ctx.fill();
       ctx.fillStyle = "#07090f";
-      ctx.font = "800 26px Arial";
+      ctx.font = "800 24px Arial";
       ctx.textAlign = "center";
-      drawWrappedCentered(statusUrl, 1075, 360, 34);
+      drawWrappedCentered(statusUrl, qrTop + 60, qrSize, 32);
     }
 
+    const textY = qrTop + qrSize + 40 + 52;
     ctx.fillStyle = "rgba(226,232,240,0.75)";
     ctx.font = "700 26px Arial";
     ctx.textAlign = "center";
-    ctx.fillText("Scanne le QR code ou garde cette carte en capture.", width / 2, 1360);
+    ctx.fillText("Scanne le QR code ou garde cette carte en capture.", width / 2, textY);
     ctx.fillStyle = "rgba(247,214,24,0.9)";
     ctx.font = "800 24px Arial";
-    drawWrappedCentered(statusUrl, 1412, width - 180, 34);
+    drawWrappedCentered(statusUrl, textY + 48, width - 180, 34);
 
     const link = document.createElement("a");
     link.download = `bloc-leopards-${ticketNumber}.png`;
@@ -956,7 +963,6 @@ export default function MondialTicketFlow() {
                   "Je confirme avoir au moins 18 ans.",
                   "Je suis membre de la diaspora congolaise (RDC) ou je soutiens les Léopards.",
                   "Je certifie être autorisé(e) à entrer légalement dans le pays où se joue le match choisi.",
-                  "Je n'ai jamais reçu de billet gratuit via le Bloc Léopards pour un match de la sélection RDC.",
                   "Je m'engage à ne pas revendre, transférer ou céder le billet à des fins commerciales.",
                   "J'accepte de fournir un document d'identité valide pour vérification.",
                 ].map((text, i) => (

@@ -43,6 +43,13 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       return new Response(JSON.stringify({ error: "Au moins un match doit être sélectionné." }), { status: 400, headers });
     }
 
+    const dob = new Date(dateOfBirth);
+    const today = new Date();
+    const age = today.getFullYear() - dob.getFullYear() - (today < new Date(today.getFullYear(), dob.getMonth(), dob.getDate()) ? 1 : 0);
+    if (isNaN(dob.getTime()) || age < 18) {
+      return new Response(JSON.stringify({ error: "Vous devez avoir au moins 18 ans pour vous inscrire." }), { status: 400, headers });
+    }
+
     if (!["PASSPORT", "DRIVER_LICENSE"].includes(documentType)) {
       return new Response(JSON.stringify({ error: "Type de document invalide." }), { status: 400, headers });
     }
