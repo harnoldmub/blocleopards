@@ -40,7 +40,7 @@ const formatMatches = (matches: unknown) => {
     .join(", ");
 };
 
-export default function AdminMondialDashboard() {
+export default function AdminMondialDashboard({ isSuperAdmin = false }: { isSuperAdmin?: boolean }) {
   const [stats, setStats] = useState<any>(null);
   const [inscriptions, setInscriptions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -113,6 +113,21 @@ export default function AdminMondialDashboard() {
     } finally {
       setActionLoading(null);
     }
+  };
+
+  const deleteInscription = async (id: string, name: string) => {
+    if (!confirm(`Supprimer définitivement l'inscription de ${name} ? Ses fichiers identité seront aussi effacés.`)) return;
+    setActionLoading(`del-${id}`);
+    try {
+      const res = await fetch("/api/admin/mondial/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete_inscription", id })
+      });
+      if (res.ok) await loadData();
+      else { const d = await res.json(); alert(d.error ?? "Erreur serveur."); }
+    } catch (e) { console.error(e); }
+    finally { setActionLoading(null); }
   };
 
   const verifyGroup = async (groupIds: string[], groupStatus: string) => {
@@ -568,7 +583,7 @@ export default function AdminMondialDashboard() {
                         <div style={{ display: "inline-flex", gap: 8 }}>
                           <button
                             onClick={() => askStatusChange([inc.id], "verified", `${inc.first_name} ${inc.last_name}`)}
-                            disabled={actionLoading === inc.id}
+                            disabled={!!actionLoading}
                             style={{ padding: 6, background: "rgba(22,163,74,0.1)", border: "1px solid rgba(22,163,74,0.2)", borderRadius: 6, color: C.green, cursor: "pointer" }}
                             title="Valider"
                           >
@@ -576,12 +591,22 @@ export default function AdminMondialDashboard() {
                           </button>
                           <button
                             onClick={() => askStatusChange([inc.id], "rejected", `${inc.first_name} ${inc.last_name}`)}
-                            disabled={actionLoading === inc.id}
+                            disabled={!!actionLoading}
                             style={{ padding: 6, background: "rgba(206,16,33,0.1)", border: "1px solid rgba(206,16,33,0.2)", borderRadius: 6, color: "#ff6b7a", cursor: "pointer" }}
                             title="Rejeter"
                           >
                             <X size={14} />
                           </button>
+                          {isSuperAdmin && (
+                            <button
+                              onClick={() => deleteInscription(inc.id, `${inc.first_name} ${inc.last_name}`)}
+                              disabled={!!actionLoading}
+                              style={{ padding: 6, background: "rgba(206,16,33,0.08)", border: "1px solid rgba(206,16,33,0.25)", borderRadius: 6, color: "#ff6b7a", cursor: "pointer", opacity: actionLoading === `del-${inc.id}` ? 0.5 : 1 }}
+                              title="Supprimer l'inscription (Super Admin)"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

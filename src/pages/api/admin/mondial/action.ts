@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { isAdminAuthed } from "../../../../lib/auth";
+import { isAdminAuthed, isSuperAdmin } from "../../../../lib/auth";
 import { requireDatabase } from "../../../../lib/neon";
 import { invalidateSettings } from "../../../../lib/settings";
 import { randomInt } from "crypto";
@@ -165,6 +165,27 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       `;
 
       invalidateSettings();
+      return new Response(JSON.stringify({ success: true }));
+    }
+
+    if (action === "delete_inscription") {
+      if (!isSuperAdmin(cookies)) {
+        return new Response(JSON.stringify({ error: "Réservé au super admin." }), { status: 403 });
+      }
+      if (!id) {
+        return new Response(JSON.stringify({ error: "ID manquant." }), { status: 400 });
+      }
+      const docs = await sql`
+        select stored_filename, coalesce(uploaded_at, created_at) as uploaded_at
+        from justificatifs_identite
+        where inscription_id = ${id} and deleted_at is null
+      `;
+      for (const doc of docs) {
+        const d = new Date(doc.uploaded_at);
+        const filePath = path.join(process.cwd(), "private/justificatifs", d.getFullYear().toString(), (d.getMonth() + 1).toString().padStart(2, "0"), doc.stored_filename);
+        try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch {}
+      }
+      await sql`delete from mondial_inscriptions where id = ${id}`;
       return new Response(JSON.stringify({ success: true }));
     }
 

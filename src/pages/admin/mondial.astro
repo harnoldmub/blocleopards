@@ -1,11 +1,13 @@
 ---
 import AdminLayout from "../../layouts/AdminLayout.astro";
 import AdminMondialDashboard from "../../components/AdminMondialDashboard.tsx";
-import { isAdminAuthed, hasPermission } from "../../lib/auth";
+import { isAdminAuthed, hasPermission, isSuperAdmin } from "../../lib/auth";
 
 if (!isAdminAuthed(Astro.cookies)) return Astro.redirect("/admin/login");
 if (!hasPermission(Astro.cookies, "mondial")) return Astro.redirect("/admin/dashboard");
+
+const superAdmin = isSuperAdmin(Astro.cookies);
 ---
 <AdminLayout title="Mondial USA — Admin Bloc Léopards" section="mondial">
-  <AdminMondialDashboard client:load />
+  <AdminMondialDashboard isSuperAdmin={superAdmin} client:load />
 </AdminLayout>
