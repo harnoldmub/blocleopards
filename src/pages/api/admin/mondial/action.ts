@@ -1,17 +1,20 @@
 import type { APIRoute } from "astro";
-import { isAdminAuthed, isSuperAdmin } from "../../../../lib/auth";
+import { isAdminAuthed, isSuperAdmin, getSessionUser } from "../../../../lib/auth";
 import { requireDatabase } from "../../../../lib/neon";
 import { invalidateSettings } from "../../../../lib/settings";
+import { logAdminAction } from "../../../../lib/audit";
 import { randomInt } from "crypto";
 import fs from "fs";
 import path from "path";
 
 export const prerender = false;
 
-export const POST: APIRoute = async ({ request, cookies }) => {
+export const POST: APIRoute = async ({ request, cookies, clientAddress }) => {
   if (!isAdminAuthed(cookies)) {
     return new Response(JSON.stringify({ error: "Non autorisé" }), { status: 401, headers: { "Content-Type": "application/json" } });
   }
+
+  const adminUser = getSessionUser(cookies);
 
   try {
     const body = await request.json();
@@ -22,9 +25,15 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       if (!id || !status) {
         return new Response(JSON.stringify({ error: "Champs requis manquants." }), { status: 400 });
       }
+      const [ins] = await sql`select first_name, last_name from mondial_inscriptions where id = ${id}`;
       await sql`update mondial_inscriptions set verification_status = ${status}, updated_at = now() where id = ${id}`;
       const docStatus = status === "verified" ? "validated" : "refused";
       await sql`update justificatifs_identite set status = ${docStatus} where inscription_id = ${id}`;
+      await logAdminAction(adminUser, status === "verified" ? "verify_inscription" : "reject_inscription", {
+        targetType: "inscription", targetId: id,
+        details: { name: ins ? `${ins.first_name} ${ins.last_name}` : id },
+        ipAddress: clientAddress,
+      });
       return new Response(JSON.stringify({ success: true }));
     }
 
@@ -35,6 +44,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       await sql`update mondial_inscriptions set verification_status = ${groupStatus}, updated_at = now() where id = any(${groupIds}::int[])`;
       const docStatus = groupStatus === "verified" ? "validated" : "refused";
       await sql`update justificatifs_identite set status = ${docStatus} where inscription_id = any(${groupIds}::int[])`;
+      await logAdminAction(adminUser, groupStatus === "verified" ? "verify_group" : "reject_group", {
+        details: { count: groupIds.length, ids: groupIds },
+        ipAddress: clientAddress,
+      });
       return new Response(JSON.stringify({ success: true }));
     }
 
@@ -75,6 +88,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         }
       });
 
+      await logAdminAction(adminUser, "delete_documents_rgpd", { details: { deletedCount }, ipAddress: clientAddress });
       return new Response(JSON.stringify({ success: true, deletedCount }));
     }
 
@@ -137,11 +151,15 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
       invalidateSettings();
 
-      return new Response(JSON.stringify({ 
-        success: true, 
+      await logAdminAction(adminUser, "run_draw", {
+        details: { matchKey, totalEligible: candidates.length, winnersCount: winners.length },
+        ipAddress: clientAddress,
+      });
+      return new Response(JSON.stringify({
+        success: true,
         matchKey,
         totalEligible: candidates.length,
-        winnersCount: winners.length 
+        winnersCount: winners.length
       }));
     }
 
@@ -164,6 +182,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         )
       `;
 
+      await logAdminAction(adminUser, "publish_draw", { details: { matchKey }, ipAddress: clientAddress });
       invalidateSettings();
       return new Response(JSON.stringify({ success: true }));
     }
@@ -185,7 +204,13 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         const filePath = path.join(process.cwd(), "private/justificatifs", d.getFullYear().toString(), (d.getMonth() + 1).toString().padStart(2, "0"), doc.stored_filename);
         try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch {}
       }
+      const [ins] = await sql`select first_name, last_name, email from mondial_inscriptions where id = ${id}`;
       await sql`delete from mondial_inscriptions where id = ${id}`;
+      await logAdminAction(adminUser, "delete_inscription", {
+        targetType: "inscription", targetId: id,
+        details: ins ? { name: `${ins.first_name} ${ins.last_name}`, email: ins.email } : {},
+        ipAddress: clientAddress,
+      });
       return new Response(JSON.stringify({ success: true }));
     }
 

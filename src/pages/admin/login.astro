@@ -31,7 +31,23 @@ if (isAdminAuthed(Astro.cookies)) {
 
       <div style="background:rgba(255,255,255,0.04); border:1.5px solid rgba(255,255,255,0.1); border-radius:24px; padding:36px;">
         <div id="error-msg" style="display:none; margin-bottom:20px; padding:12px 14px; background:rgba(206,16,33,0.15); border:1px solid rgba(206,16,33,0.3); border-radius:12px; color:#ff6b7a; font-size:14px;">
-          Mot de passe incorrect. Réessaie.
+          Identifiant ou mot de passe incorrect. Réessaie.
+        </div>
+
+        <div style="margin-bottom:20px;">
+          <label style="display:block; font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:rgba(255,255,255,0.5); margin-bottom:8px; font-weight:700;">
+            Identifiant
+          </label>
+          <input
+            id="username-input"
+            type="text"
+            autocomplete="username"
+            autofocus
+            placeholder="admin"
+            style="width:100%; padding:14px 16px; background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.14); border-radius:12px; color:#fff; font-size:15px; font-family:'Sora',sans-serif; outline:none; transition:all 0.2s ease; caret-color:#f7d618;"
+            onfocus="this.style.borderColor='#f7d618'; this.style.boxShadow='0 0 0 3px rgba(247,214,24,0.12)'"
+            onblur="this.style.borderColor='rgba(255,255,255,0.14)'; this.style.boxShadow='none'"
+          />
         </div>
 
         <div style="margin-bottom:28px;">
@@ -76,12 +92,14 @@ if (isAdminAuthed(Astro.cookies)) {
 
     <script>
       const btn = document.getElementById('login-btn') as HTMLButtonElement;
+      const usernameInput = document.getElementById('username-input') as HTMLInputElement;
       const input = document.getElementById('password-input') as HTMLInputElement;
       const errorMsg = document.getElementById('error-msg') as HTMLDivElement;
 
       const doLogin = async () => {
+        const username = usernameInput.value.trim();
         const password = input.value.trim();
-        if (!password) return;
+        if (!username || !password) return;
         btn.textContent = '...';
         btn.style.opacity = '0.7';
         errorMsg.style.display = 'none';
@@ -89,7 +107,7 @@ if (isAdminAuthed(Astro.cookies)) {
           const res = await fetch('/api/admin/auth', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password }),
+            body: JSON.stringify({ username, password }),
           });
           if (res.ok) {
             window.location.href = '/admin/billets';
@@ -107,6 +125,7 @@ if (isAdminAuthed(Astro.cookies)) {
       };
 
       btn.addEventListener('click', doLogin);
+      usernameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') input.focus(); });
       input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
 
       const toggleBtn = document.getElementById('toggle-pwd')!;

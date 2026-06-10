@@ -85,7 +85,7 @@ export function isSuperAdmin(cookies: Cookies): boolean {
   return getSessionRole(cookies) === "super";
 }
 
-export function setSessionCookies(cookies: WritableCookies, role: string, permissions: string[]): void {
+export function setSessionCookies(cookies: WritableCookies, role: string, permissions: string[], user: string): void {
   const opts = {
     httpOnly: true,
     secure: import.meta.env.PROD,
@@ -96,6 +96,11 @@ export function setSessionCookies(cookies: WritableCookies, role: string, permis
   cookies.set("admin_session", import.meta.env.ADMIN_SESSION_TOKEN, opts);
   cookies.set("admin_role", role, opts);
   cookies.set("admin_permissions", signPermissions(permissions), opts);
+  cookies.set("admin_user", user, opts);
+}
+
+export function getSessionUser(cookies: Cookies): string {
+  return cookies.get("admin_user")?.value ?? getSessionRole(cookies);
 }
 
 export function clearSessionCookies(cookies: DeletableCookies): void {
@@ -103,6 +108,7 @@ export function clearSessionCookies(cookies: DeletableCookies): void {
   cookies.delete("admin_session", opts);
   cookies.delete("admin_role", opts);
   cookies.delete("admin_permissions", opts);
+  cookies.delete("admin_user", opts);
 }
 
 export function checkAdminPassword(password: string): boolean {
