@@ -127,6 +127,7 @@ export default function MondialTicketFlow() {
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const [portraitPreview, setPortraitPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showErrors, setShowErrors] = useState(false);
   const [loading, setLoading] = useState(false);
   const [ticketNumber, setTicketNumber] = useState("");
 
@@ -257,11 +258,13 @@ export default function MondialTicketFlow() {
 
   const nextStep = () => {
     if (currentStep === "identity") {
+      setShowErrors(true);
       const err = validateIdentity();
       if (err) {
         setError(err);
         return;
       }
+      setShowErrors(false);
       setCurrentStep("matches");
     } else if (currentStep === "matches") {
       if (form.matchesVises.length === 0) {
@@ -545,23 +548,23 @@ export default function MondialTicketFlow() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[10px] uppercase text-slate-400 font-bold mb-1.5">Prénom *</label>
-                    <input 
-                      type="text" 
-                      value={form.firstName} 
+                    <input
+                      type="text"
+                      value={form.firstName}
                       onChange={e => handleTextChange("firstName", e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 focus:border-[#f7d618] rounded-xl px-4 py-3 text-sm outline-none transition-colors"
-                      placeholder="John"
+                      className={`w-full bg-white/5 border rounded-xl px-4 py-3 text-sm outline-none transition-colors ${showErrors && !form.firstName.trim() ? "border-red-500/60 focus:border-red-400" : "border-white/10 focus:border-[#f7d618]"}`}
                     />
+                    {showErrors && !form.firstName.trim() && <p className="text-xs text-red-400 mt-1">Prénom requis</p>}
                   </div>
                   <div>
                     <label className="block text-[10px] uppercase text-slate-400 font-bold mb-1.5">Nom *</label>
-                    <input 
-                      type="text" 
-                      value={form.lastName} 
+                    <input
+                      type="text"
+                      value={form.lastName}
                       onChange={e => handleTextChange("lastName", e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 focus:border-[#f7d618] rounded-xl px-4 py-3 text-sm outline-none transition-colors"
-                      placeholder="Doe"
+                      className={`w-full bg-white/5 border rounded-xl px-4 py-3 text-sm outline-none transition-colors ${showErrors && !form.lastName.trim() ? "border-red-500/60 focus:border-red-400" : "border-white/10 focus:border-[#f7d618]"}`}
                     />
+                    {showErrors && !form.lastName.trim() && <p className="text-xs text-red-400 mt-1">Nom requis</p>}
                   </div>
                 </div>
 
@@ -597,9 +600,10 @@ export default function MondialTicketFlow() {
                     type="email"
                     value={form.email}
                     onChange={e => handleTextChange("email", e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 focus:border-[#f7d618] rounded-xl px-4 py-3 text-sm outline-none transition-colors"
-                    placeholder="john.doe@email.com"
+                    className={`w-full bg-white/5 border rounded-xl px-4 py-3 text-sm outline-none transition-colors ${showErrors && (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) ? "border-red-500/60 focus:border-red-400" : "border-white/10 focus:border-[#f7d618]"}`}
                   />
+                  {showErrors && !form.email.trim() && <p className="text-xs text-red-400 mt-1">Email requis</p>}
+                  {showErrors && form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email) && <p className="text-xs text-red-400 mt-1">Adresse email invalide</p>}
                 </div>
 
                 <div>
@@ -662,10 +666,10 @@ export default function MondialTicketFlow() {
                       type="tel"
                       value={form.telephone}
                       onChange={e => handleTextChange("telephone", e.target.value)}
-                      className="flex-1 bg-white/5 border border-white/10 focus:border-[#f7d618] rounded-xl px-4 py-3 text-sm outline-none transition-colors"
-                      placeholder="555-000-0000 ou 812345678"
+                      className={`flex-1 bg-white/5 border rounded-xl px-4 py-3 text-sm outline-none transition-colors ${showErrors && !form.telephone.trim() ? "border-red-500/60 focus:border-red-400" : "border-white/10 focus:border-[#f7d618]"}`}
                     />
                   </div>
+                  {showErrors && !form.telephone.trim() && <p className="text-xs text-red-400 mt-1">Numéro de téléphone requis</p>}
                 </div>
 
                 <div>
@@ -697,8 +701,7 @@ export default function MondialTicketFlow() {
                           setShowStateDropdown(true);
                         }}
                         onFocus={() => setShowStateDropdown(true)}
-                        className="w-full bg-white/5 border border-white/10 focus:border-[#f7d618] rounded-xl px-4 py-3 text-sm outline-none transition-colors"
-                        placeholder="Ex: Texas"
+                        className={`w-full bg-white/5 border rounded-xl px-4 py-3 text-sm outline-none transition-colors ${showErrors && form.country === "États-Unis" && !form.stateUs ? "border-red-500/60 focus:border-red-400" : "border-white/10 focus:border-[#f7d618]"}`}
                       />
                       {showStateDropdown && (
                         <div className="absolute left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-[#0d1221] border border-white/10 rounded-xl z-20 shadow-xl">
@@ -716,6 +719,7 @@ export default function MondialTicketFlow() {
                           )}
                         </div>
                       )}
+                      {showErrors && !form.stateUs && <p className="text-xs text-red-400 mt-1">État requis</p>}
                     </div>
                   )}
                   <div>
@@ -724,9 +728,9 @@ export default function MondialTicketFlow() {
                       type="text"
                       value={form.city}
                       onChange={e => handleTextChange("city", e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 focus:border-[#f7d618] rounded-xl px-4 py-3 text-sm outline-none transition-colors"
-                      placeholder="Ex: Houston"
+                      className={`w-full bg-white/5 border rounded-xl px-4 py-3 text-sm outline-none transition-colors ${showErrors && !form.city.trim() ? "border-red-500/60 focus:border-red-400" : "border-white/10 focus:border-[#f7d618]"}`}
                     />
+                    {showErrors && !form.city.trim() && <p className="text-xs text-red-400 mt-1">Ville requise</p>}
                   </div>
                 </div>
 
