@@ -8,7 +8,12 @@ if (!isAdminAuthed(Astro.cookies)) return Astro.redirect("/admin/login");
 if (!isSuperAdmin(Astro.cookies)) return Astro.redirect("/admin/dashboard");
 
 const sql = requireDatabase();
-const roles = await sql`SELECT id, role_name, label, permissions, created_at FROM admin_roles ORDER BY created_at ASC`;
+let roles: any[] = [];
+try {
+  roles = await sql`SELECT id, role_name, label, permissions, created_at FROM admin_roles ORDER BY created_at ASC`;
+} catch (err) {
+  console.error("admin_roles query error:", err);
+}
 ---
 <AdminLayout title="Rôles — Admin Bloc Léopards" section="roles">
   <div style="max-width:900px;">

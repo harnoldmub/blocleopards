@@ -8,15 +8,37 @@ if (!isSuperAdmin(Astro.cookies)) return Astro.redirect("/admin/dashboard");
 
 const sql = requireDatabase();
 
-const logs = await sql`
-  select id, admin_user, action, target_type, target_id, details, ip_address, created_at
-  from admin_audit_logs
-  order by created_at desc
-  limit 200
-`;
+let logs: any[] = [];
+let users: any[] = [];
+let actions: any[] = [];
 
-const users = await sql`select distinct admin_user from admin_audit_logs order by admin_user`;
-const actions = await sql`select distinct action from admin_audit_logs order by action`;
+try {
+  await sql`
+    create table if not exists admin_audit_logs (
+      id serial primary key,
+      admin_user text not null,
+      action text not null,
+      target_type text,
+      target_id text,
+      details jsonb default '{}',
+      ip_address text,
+      created_at timestamptz default now()
+    )
+  `;
+  await sql`create index if not exists admin_audit_logs_created_at_idx on admin_audit_logs(created_at desc)`;
+  await sql`create index if not exists admin_audit_logs_admin_user_idx on admin_audit_logs(admin_user)`;
+
+  logs = await sql`
+    select id, admin_user, action, target_type, target_id, details, ip_address, created_at
+    from admin_audit_logs
+    order by created_at desc
+    limit 200
+  `;
+  users = await sql`select distinct admin_user from admin_audit_logs order by admin_user`;
+  actions = await sql`select distinct action from admin_audit_logs order by action`;
+} catch (err) {
+  console.error("admin_audit_logs error:", err);
+}
 
 const ACTION_LABELS: Record<string, { label: string; color: string }> = {
   login:                  { label: "Connexion",          color: "#22c55e" },
