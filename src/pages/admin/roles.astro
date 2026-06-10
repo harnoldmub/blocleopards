@@ -78,10 +78,13 @@ const roles = await sql`SELECT id, role_name, label, permissions, created_at FRO
           <label style="display:block; font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:rgba(255,255,255,0.4); font-weight:700; margin-bottom:8px;">Nom affiché *</label>
           <input id="field-label" type="text" placeholder="Ex: Équipe Billets" style="width:100%; padding:12px 14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; color:#fff; font-size:14px; font-family:'Sora',sans-serif; outline:none;" />
         </div>
-        <div id="role-name-wrap">
-          <label style="display:block; font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:rgba(255,255,255,0.4); font-weight:700; margin-bottom:8px;">Identifiant (slug) *</label>
-          <input id="field-role-name" type="text" placeholder="ex: equipe-billets" style="width:100%; padding:12px 14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; color:#fff; font-size:14px; font-family:monospace; outline:none;" />
-          <p style="font-size:11px; color:rgba(255,255,255,0.3); margin-top:6px;">Minuscules, sans espaces, sans accents.</p>
+        <div>
+          <label style="display:block; font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:rgba(255,255,255,0.4); font-weight:700; margin-bottom:8px;">Identifiant de connexion <span id="username-required">*</span></label>
+          <!-- mode création : champ éditable -->
+          <input id="field-role-name" type="text" placeholder="ex: mondial-team" autocomplete="off" style="width:100%; padding:12px 14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; color:#fff; font-size:14px; font-family:monospace; outline:none;" />
+          <!-- mode édition : affichage lecture seule -->
+          <div id="field-role-name-display" style="display:none; padding:12px 14px; background:rgba(247,214,24,0.06); border:1px solid rgba(247,214,24,0.2); border-radius:10px; color:#f7d618; font-size:14px; font-family:monospace; letter-spacing:0.04em;"></div>
+          <p id="username-hint" style="font-size:11px; color:rgba(255,255,255,0.3); margin-top:6px;">C'est le nom utilisé pour se connecter · minuscules, sans espaces.</p>
         </div>
         <div>
           <label style="display:block; font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:rgba(255,255,255,0.4); font-weight:700; margin-bottom:8px;">Mot de passe <span id="pwd-required">*</span></label>
@@ -124,8 +127,10 @@ const roles = await sql`SELECT id, role_name, label, permissions, created_at FRO
   const editId = document.getElementById('edit-id') as HTMLInputElement;
   const fieldLabel = document.getElementById('field-label') as HTMLInputElement;
   const fieldRoleName = document.getElementById('field-role-name') as HTMLInputElement;
+  const fieldRoleNameDisplay = document.getElementById('field-role-name-display')!;
+  const usernameRequired = document.getElementById('username-required')!;
+  const usernameHint = document.getElementById('username-hint')!;
   const fieldPassword = document.getElementById('field-password') as HTMLInputElement;
-  const roleNameWrap = document.getElementById('role-name-wrap')!;
   const pwdRequired = document.getElementById('pwd-required')!;
   const pwdHint = document.getElementById('pwd-hint')!;
   const modalError = document.getElementById('modal-error')!;
@@ -141,12 +146,19 @@ const roles = await sql`SELECT id, role_name, label, permissions, created_at FRO
 
     if (mode === 'add') {
       modalTitle.textContent = 'Nouveau rôle';
-      roleNameWrap.style.display = 'block';
+      fieldRoleName.style.display = 'block';
+      fieldRoleNameDisplay.style.display = 'none';
+      usernameRequired.textContent = '*';
+      usernameHint.textContent = "C'est le nom utilisé pour se connecter · minuscules, sans espaces.";
       pwdRequired.textContent = '*';
       pwdHint.style.display = 'none';
     } else {
       modalTitle.textContent = 'Modifier le rôle';
-      roleNameWrap.style.display = 'none';
+      fieldRoleName.style.display = 'none';
+      fieldRoleNameDisplay.textContent = data.roleName;
+      fieldRoleNameDisplay.style.display = 'block';
+      usernameRequired.textContent = '';
+      usernameHint.textContent = "Identifiant de connexion · non modifiable.";
       pwdRequired.textContent = '';
       pwdHint.style.display = 'block';
       editId.value = data.id;
@@ -184,6 +196,7 @@ const roles = await sql`SELECT id, role_name, label, permissions, created_at FRO
       openModal('edit', {
         id: card.dataset.id,
         label: card.dataset.label,
+        roleName: card.dataset.name,
         permissions: card.dataset.permissions,
       });
     });
