@@ -40,21 +40,26 @@ export const POST: APIRoute = async ({ request, cookies, clientAddress }) => {
 
   const sql = requireDatabase();
   const password_hash = hashPassword(password);
+  let row: any;
   try {
-    const [row] = await sql`
+    [row] = await sql`
       INSERT INTO admin_roles (role_name, label, password_hash, permissions)
       VALUES (${role_name.toLowerCase().trim()}, ${label.trim()}, ${password_hash}, ${permissions})
       RETURNING id, role_name, label, permissions
     `;
-    await logAdminAction(getSessionUser(cookies), "create_role", {
-      targetType: "role", targetId: row.id,
-      details: { role_name: row.role_name, label: row.label, permissions },
-      ipAddress: clientAddress,
-    });
-    return new Response(JSON.stringify(row), { status: 201, headers });
-  } catch {
-    return new Response(JSON.stringify({ error: "Ce nom de rôle existe déjà." }), { status: 409, headers });
+  } catch (err: any) {
+    const isDuplicate = err?.message?.includes("unique") || err?.code === "23505";
+    return new Response(
+      JSON.stringify({ error: isDuplicate ? "Cet identifiant de connexion est déjà utilisé." : `Erreur lors de la création : ${err?.message ?? "inconnue"}` }),
+      { status: isDuplicate ? 409 : 500, headers }
+    );
   }
+  await logAdminAction(getSessionUser(cookies), "create_role", {
+    targetType: "role", targetId: row.id,
+    details: { role_name: row.role_name, label: row.label, permissions },
+    ipAddress: clientAddress,
+  });
+  return new Response(JSON.stringify(row), { status: 201, headers });
 };
 
 export const PUT: APIRoute = async ({ request, cookies, clientAddress }) => {
