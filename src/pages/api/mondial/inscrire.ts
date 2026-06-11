@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { requireDatabase } from "../../../lib/neon";
+import { sendInscriptionConfirmation } from "../../../lib/email";
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
@@ -146,6 +147,15 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
         ${portraitFile.type}, ${portraitFile.size}, ${portraitUpload.checksum}, 'pending'
       )
     `;
+
+    // Envoi email de confirmation (non-bloquant)
+    sendInscriptionConfirmation({
+      to: email,
+      firstName,
+      lastName,
+      ticketNumber,
+      matchesVises,
+    });
 
     return new Response(JSON.stringify({ success: true, ticketNumber }), { status: 200, headers });
   } catch (err) {
