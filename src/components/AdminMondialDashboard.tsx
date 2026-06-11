@@ -28,7 +28,6 @@ const MAP_STATES = [
 
 const MATCHES = [
   { key: "houston", label: "RDC vs Portugal", details: "Houston · 17 juin 2026" },
-  { key: "guadalajara", label: "RDC vs Colombie", details: "Guadalajara · 23 juin 2026" },
   { key: "atlanta", label: "RDC vs Ouzbékistan", details: "Atlanta · 27 juin 2026" }
 ];
 

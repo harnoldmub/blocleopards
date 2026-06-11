@@ -27,7 +27,6 @@ const US_STATES = [
 
 const MATCHES = [
   { key: "houston", label: "RDC vs Portugal", details: "Houston · 17 Juin 2026", flag: "pt" },
-  { key: "guadalajara", label: "RDC vs Colombie", details: "Guadalajara (Mexique) · 23 Juin 2026", flag: "co", notice: "Attention: Match au Mexique (visa Mexique requis)" },
   { key: "atlanta", label: "RDC vs Ouzbékistan", details: "Atlanta · 27 Juin 2026", flag: "uz" }
 ];
 

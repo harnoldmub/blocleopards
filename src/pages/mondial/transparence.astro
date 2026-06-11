@@ -1,4 +1,7 @@
 ---
+// PAGE DÉSACTIVÉE — réactiver en supprimant cette ligne et le return ci-dessous
+return Astro.redirect("/mondial", 302);
+
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { requireDatabase, hasDatabase } from "../../lib/neon";
 import { getSetting } from "../../lib/settings";
@@ -163,7 +166,6 @@ if (hasDatabase) {
 
 const matchLabels: Record<string, string> = {
   houston: "RDC vs Portugal",
-  guadalajara: "RDC vs Colombie",
   atlanta: "RDC vs Ouzbékistan"
 };
 
@@ -210,9 +212,8 @@ let distributionOffset = 0;
 
         <div class="space-y-3">
           {[
-            { key: "houston",     label: "RDC vs Portugal",    date: "26 juin 2026",  city: "Houston" },
-            { key: "guadalajara", label: "RDC vs Colombie",    date: "30 juin 2026",  city: "Guadalajara" },
-            { key: "atlanta",     label: "RDC vs Ouzbékistan", date: "4 juil. 2026",  city: "Atlanta" },
+            { key: "houston",     label: "RDC vs Portugal",    date: "17 juin 2026",  city: "Houston" },
+            { key: "atlanta",     label: "RDC vs Ouzbékistan", date: "27 juin 2026",  city: "Atlanta" },
           ].map(({ key, label, date, city }) => {
             const s = matchStats[key] ?? { total: 0, verified: 0, flagged: 0, published: false, winners: 0 };
             return (
