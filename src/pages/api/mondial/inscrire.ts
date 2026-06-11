@@ -28,7 +28,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     const documentFile = formData.get("document") as File | null;
     const portraitFile = formData.get("portrait") as File | null;
 
-    if (!firstName || !lastName || !dateOfBirth || !email || !telephone || !city || !matchesVisesRaw || !documentType || !documentFile || !portraitFile) {
+    if (!firstName || !lastName || !dateOfBirth || !email || !city || !matchesVisesRaw || !documentType || !documentFile || !portraitFile) {
       return new Response(JSON.stringify({ error: "Tous les champs requis doivent être remplis." }), { status: 400, headers });
     }
 

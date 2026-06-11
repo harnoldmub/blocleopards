@@ -27,6 +27,7 @@ const US_STATES = [
 
 const MATCHES = [
   { key: "houston", label: "RDC vs Portugal", details: "Houston · 17 Juin 2026", flag: "pt" },
+  { key: "guadalajara", label: "RDC vs Colombie", details: "Guadalajara (Mexique) · 23 Juin 2026", flag: "co", notice: "Attention: Match au Mexique (visa Mexique requis)" },
   { key: "atlanta", label: "RDC vs Ouzbékistan", details: "Atlanta · 27 Juin 2026", flag: "uz" }
 ];
 
@@ -245,8 +246,6 @@ export default function MondialTicketFlow() {
     if (age < 18) return "Vous devez avoir au moins 18 ans pour vous inscrire.";
     if (!form.gender) return "Genre requis.";
     if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return "Adresse email valide requise.";
-    if (!form.telephone.trim()) return "Numéro de téléphone requis.";
-    if (!form.country) return "Pays de résidence requis.";
     if (form.country === "États-Unis" && !form.stateUs) return "État de résidence requis.";
     if (!form.city.trim()) return "Ville de résidence requise.";
     if (form.isDiasporaRdc === null) return "Veuillez indiquer si vous êtes membre de la diaspora RDC.";
@@ -665,26 +664,16 @@ export default function MondialTicketFlow() {
                       type="tel"
                       value={form.telephone}
                       onChange={e => handleTextChange("telephone", e.target.value)}
-                      className={`flex-1 bg-white/5 border rounded-xl px-4 py-3 text-sm outline-none transition-colors ${showErrors && !form.telephone.trim() ? "border-red-500/60 focus:border-red-400" : "border-white/10 focus:border-[#f7d618]"}`}
+                      className="flex-1 bg-white/5 border border-white/10 focus:border-[#f7d618] rounded-xl px-4 py-3 text-sm outline-none transition-colors"
                     />
                   </div>
-                  {showErrors && !form.telephone.trim() && <p className="text-xs text-red-400 mt-1">Numéro de téléphone requis</p>}
                 </div>
 
                 <div>
-                  <label className="block text-[10px] uppercase text-slate-400 font-bold mb-1.5">Pays de résidence *</label>
-                  <CountrySelectMondial
-                    value={form.country}
-                    onChange={v => {
-                      handleTextChange("country", v);
-                      if (v !== "États-Unis") handleTextChange("stateUs", "");
-                      
-                      const newPrefix = COUNTRY_CODES[v] || "";
-                      if (newPrefix) {
-                        setPhonePrefix(newPrefix);
-                      }
-                    }}
-                  />
+                  <label className="block text-[10px] uppercase text-slate-400 font-bold mb-1.5">Pays de résidence</label>
+                  <div className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-400 cursor-not-allowed select-none">
+                    🇺🇸 États-Unis
+                  </div>
                 </div>
 
                 <div className={`grid gap-4 ${form.country === "États-Unis" ? "grid-cols-2" : "grid-cols-1"}`}>

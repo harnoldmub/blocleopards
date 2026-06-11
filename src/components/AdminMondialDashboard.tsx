@@ -28,6 +28,7 @@ const MAP_STATES = [
 
 const MATCHES = [
   { key: "houston", label: "RDC vs Portugal", details: "Houston · 17 juin 2026" },
+  { key: "guadalajara", label: "RDC vs Colombie", details: "Guadalajara · 23 juin 2026" },
   { key: "atlanta", label: "RDC vs Ouzbékistan", details: "Atlanta · 27 juin 2026" }
 ];
 
@@ -255,20 +256,9 @@ export default function AdminMondialDashboard({ isSuperAdmin = false }: { isSupe
   // ─── Client CSV Export ──────────────────────────────────────────────────────
 
   const exportCSV = () => {
-    const csvRows = [
-      ["ID", "Prenom", "Nom", "Email", "Telephone", "Etat", "Ville", "Matchs Vises"],
-      ...inscriptions
-        .filter(i => i.ticket_given_at != null)
-        .map(i => [i.id, i.first_name, i.last_name, i.email, i.phone, i.state_us, i.city, JSON.stringify(i.matchs_vises)])
-    ];
-
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + csvRows.map(e => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(",")).join("\n");
-    
-    const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `tirage_mondial_bloc_leopards_${new Date().toISOString().slice(0,10)}.csv`);
+    link.href = "/api/admin/mondial/export";
+    link.download = `inscriptions-mondial-${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
