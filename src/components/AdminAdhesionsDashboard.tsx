@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import ConfirmDialog from "./ConfirmDialog";
 
 const C = {
@@ -13,21 +13,40 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
   rejected:  { label: "Rejeté",     color: "#f87171", bg: "rgba(248,113,113,0.12)" },
 };
 
-const ROLES: Record<string, string> = {
-  supporter: "Supporter",
-  benevole: "Bénévole",
-  animateur: "Animateur",
-  photographe: "Photo/Vidéo",
-  communication: "Communication",
-  logistique: "Logistique",
-  autre: "Autre",
-};
+// Palette of distinct colors for role badges
+const ROLE_PALETTE = [
+  { color: "#60a5fa", bg: "rgba(96,165,250,0.12)" },   // blue
+  { color: "#a78bfa", bg: "rgba(167,139,250,0.12)" },  // purple
+  { color: "#fb923c", bg: "rgba(251,146,60,0.12)" },   // orange
+  { color: "#34d399", bg: "rgba(52,211,153,0.12)" },   // green
+  { color: "#f472b6", bg: "rgba(244,114,182,0.12)" },  // pink
+  { color: "#38bdf8", bg: "rgba(56,189,248,0.12)" },   // sky
+  { color: "#fbbf24", bg: "rgba(251,191,36,0.12)" },   // amber
+  { color: "#4ade80", bg: "rgba(74,222,128,0.12)" },   // lime
+];
+
+function getRoleStyle(role: string) {
+  if (!role) return { color: C.muted, bg: "rgba(255,255,255,0.05)" };
+  let hash = 0;
+  for (let i = 0; i < role.length; i++) hash = (hash * 31 + role.charCodeAt(i)) & 0xffff;
+  return ROLE_PALETTE[hash % ROLE_PALETTE.length];
+}
 
 function StatusBadge({ status }: { status: string }) {
   const s = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: s.color, background: s.bg }}>
+    <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: s.color, background: s.bg, whiteSpace: "nowrap" }}>
       {s.label}
+    </span>
+  );
+}
+
+function RoleBadge({ role }: { role: string }) {
+  if (!role || role === "—") return <span style={{ fontSize: 12, color: C.muted }}>—</span>;
+  const s = getRoleStyle(role);
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, color: s.color, background: s.bg, whiteSpace: "nowrap" }}>
+      {role}
     </span>
   );
 }
@@ -81,13 +100,15 @@ function Drawer({ row, onClose, onUpdate, onDelete }: { row: any; onClose: () =>
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
           <div>
-            <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "1.8rem", color: C.yellow, letterSpacing: "0.04em", marginBottom: 2 }}>{row.prenom} {row.nom}</h2>
-            <StatusBadge status={row.status} />
+            <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "1.8rem", color: C.yellow, letterSpacing: "0.04em", marginBottom: 6 }}>{row.prenom} {row.nom}</h2>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <StatusBadge status={row.status} />
+              {row.role && <RoleBadge role={row.role} />}
+            </div>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", color: C.muted, fontSize: 22, cursor: "pointer" }}>×</button>
         </div>
 
-        {/* Contact buttons */}
         <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
           <a href={`mailto:${row.email}?subject=Adhésion Bloc Léopards`}
             style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "10px 14px", background: "#1c2e8f", borderRadius: 12, color: "#fff", fontSize: 13, fontWeight: 700, textDecoration: "none", minWidth: 100 }}>
@@ -111,7 +132,6 @@ function Drawer({ row, onClose, onUpdate, onDelete }: { row: any; onClose: () =>
             ["Email", row.email],
             ["Téléphone", row.telephone || "—"],
             ["Ville", `${row.ville}${row.pays ? `, ${row.pays}` : ""}`],
-            ["Rôle", ROLES[row.role] || row.role || "—"],
             ["Canal", row.canal || "—"],
             ["Disponibilité", row.disponibilite || "—"],
             ["Newsletter", row.newsletter_opt_in ? "Oui" : "Non"],
@@ -151,7 +171,7 @@ function Drawer({ row, onClose, onUpdate, onDelete }: { row: any; onClose: () =>
         </button>
 
         <button onClick={() => setConfirmOpen(true)} disabled={deleting} style={{ width: "100%", marginTop: 10, padding: "12px", background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.25)", borderRadius: 12, color: "#f87171", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-          {deleting ? "Suppression..." : "🗑 Supprimer cette adhésion"}
+          {deleting ? "Suppression..." : "Supprimer cette adhésion"}
         </button>
       </div>
       {confirmOpen && (
@@ -167,11 +187,31 @@ function Drawer({ row, onClose, onUpdate, onDelete }: { row: any; onClose: () =>
   );
 }
 
+const selectStyle: React.CSSProperties = {
+  background: "#0d1117",
+  border: "1px solid rgba(255,255,255,0.07)",
+  borderRadius: 10,
+  padding: "8px 12px",
+  color: "#e2e8f0",
+  fontSize: 12,
+  fontFamily: "'Sora', sans-serif",
+  outline: "none",
+  cursor: "pointer",
+  appearance: "none" as any,
+  WebkitAppearance: "none" as any,
+  paddingRight: 28,
+  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.4)' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+  backgroundRepeat: "no-repeat",
+  backgroundPosition: "right 10px center",
+};
+
 export default function AdminAdhesionsDashboard() {
   const [adhesions, setAdhesions] = useState<any[]>([]);
   const [stats, setStats] = useState<any>({});
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterCity, setFilterCity] = useState<string>("all");
+  const [filterRole, setFilterRole] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<any>(null);
   const [page, setPage] = useState(0);
@@ -197,23 +237,39 @@ export default function AdminAdhesionsDashboard() {
     await load();
   };
 
-  const filtered = adhesions
-    .filter((r) => filter === "all" || r.status === filter)
+  const cities = useMemo(() => {
+    const set = new Set<string>();
+    adhesions.forEach(r => { if (r.ville) set.add(r.ville); });
+    return Array.from(set).sort();
+  }, [adhesions]);
+
+  const roles = useMemo(() => {
+    const set = new Set<string>();
+    adhesions.forEach(r => { if (r.role) set.add(r.role); });
+    return Array.from(set).sort();
+  }, [adhesions]);
+
+  const filtered = useMemo(() => adhesions
+    .filter((r) => filterStatus === "all" || r.status === filterStatus)
+    .filter((r) => filterCity === "all" || r.ville === filterCity)
+    .filter((r) => filterRole === "all" || r.role === filterRole)
     .filter((r) => {
       if (!search) return true;
       const q = search.toLowerCase();
       return `${r.prenom} ${r.nom} ${r.email} ${r.ville}`.toLowerCase().includes(q);
-    });
+    }), [adhesions, filterStatus, filterCity, filterRole, search]);
 
   const page_rows = filtered.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
   const total_pages = Math.ceil(filtered.length / PER_PAGE);
 
-  const filters = [
-    { id: "all", label: "Tous", count: adhesions.length },
-    { id: "pending", label: "En attente", count: Number(stats.pending || 0) },
-    { id: "validated", label: "Validés", count: Number(stats.validated || 0) },
-    { id: "rejected", label: "Rejetés", count: Number(stats.rejected || 0) },
+  const statusFilters = [
+    { id: "all",       label: "Tous",       count: adhesions.length },
+    { id: "pending",   label: "En attente", count: Number(stats.pending   || 0) },
+    { id: "validated", label: "Validés",    count: Number(stats.validated || 0) },
+    { id: "rejected",  label: "Rejetés",    count: Number(stats.rejected  || 0) },
   ];
+
+  const resetPage = () => setPage(0);
 
   if (loading) return <div style={{ color: C.muted, fontSize: 14, padding: 40 }}>Chargement...</div>;
 
@@ -228,30 +284,66 @@ export default function AdminAdhesionsDashboard() {
         }
         .adh-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; padding: 14px 16px; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
         .adh-card:hover { background: rgba(247,214,24,0.04); border-color: rgba(247,214,24,0.2); }
+        .adh-select:focus { border-color: rgba(247,214,24,0.4); }
       `}</style>
+
       <div style={{ marginBottom: 28 }}>
         <div style={{ fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", color: C.muted, fontWeight: 700, marginBottom: 8 }}>Backoffice</div>
         <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "clamp(2rem, 5vw, 3rem)", letterSpacing: "0.04em", color: C.text }}>Adhésions</h1>
       </div>
 
+      {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12, marginBottom: 24 }}>
-        <StatCard label="Total" value={Number(stats.total || 0)} />
-        <StatCard label="En attente" value={Number(stats.pending || 0)} />
-        <StatCard label="Validés" value={Number(stats.validated || 0)} color="#34d399" />
-        <StatCard label="Rejetés" value={Number(stats.rejected || 0)} color="#f87171" />
+        <StatCard label="Total"      value={Number(stats.total      || 0)} />
+        <StatCard label="En attente" value={Number(stats.pending    || 0)} />
+        <StatCard label="Validés"    value={Number(stats.validated  || 0)} color="#34d399" />
+        <StatCard label="Rejetés"    value={Number(stats.rejected   || 0)} color="#f87171" />
         <StatCard label="Newsletter" value={Number(stats.newsletter || 0)} color={C.blue} />
       </div>
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
-        {filters.map((f) => (
-          <button key={f.id} onClick={() => { setFilter(f.id); setPage(0); }} style={{ padding: "7px 14px", borderRadius: 20, border: `1.5px solid ${filter === f.id ? C.yellow : C.border}`, background: filter === f.id ? "rgba(247,214,24,0.1)" : "transparent", color: filter === f.id ? C.yellow : C.muted, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+      {/* Status filter pills */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+        {statusFilters.map((f) => (
+          <button key={f.id} onClick={() => { setFilterStatus(f.id); resetPage(); }}
+            style={{ padding: "7px 14px", borderRadius: 20, border: `1.5px solid ${filterStatus === f.id ? C.yellow : C.border}`, background: filterStatus === f.id ? "rgba(247,214,24,0.1)" : "transparent", color: filterStatus === f.id ? C.yellow : C.muted, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
             {f.label} <span style={{ opacity: 0.7 }}>({f.count})</span>
           </button>
         ))}
-        <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} style={{ marginLeft: "auto", background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: "8px 14px", color: C.text, fontSize: 13, fontFamily: "'Sora', sans-serif", outline: "none", minWidth: 200 }} />
       </div>
 
-      {/* Cards — mobile */}
+      {/* Secondary filters row */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
+        {/* City filter */}
+        <div style={{ position: "relative" }}>
+          <select className="adh-select" value={filterCity} onChange={e => { setFilterCity(e.target.value); resetPage(); }} style={selectStyle}>
+            <option value="all">Toutes les villes</option>
+            {cities.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+
+        {/* Role filter */}
+        <div style={{ position: "relative" }}>
+          <select className="adh-select" value={filterRole} onChange={e => { setFilterRole(e.target.value); resetPage(); }} style={selectStyle}>
+            <option value="all">Tous les rôles</option>
+            {roles.map(r => <option key={r} value={r}>{r}</option>)}
+          </select>
+        </div>
+
+        {/* Search */}
+        <input
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); resetPage(); }}
+          placeholder="Rechercher nom, email..."
+          style={{ marginLeft: "auto", background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: "8px 14px", color: C.text, fontSize: 13, fontFamily: "'Sora', sans-serif", outline: "none", minWidth: 200 }}
+        />
+
+        {/* Active filter count */}
+        {filtered.length !== adhesions.length && (
+          <span style={{ fontSize: 12, color: C.muted }}>{filtered.length} résultat{filtered.length > 1 ? "s" : ""}</span>
+        )}
+      </div>
+
+      {/* Mobile cards */}
       <div className="adh-cards-view">
         {page_rows.length === 0 ? (
           <div style={{ padding: 32, textAlign: "center", color: C.muted, fontSize: 13 }}>Aucun résultat</div>
@@ -263,16 +355,16 @@ export default function AdminAdhesionsDashboard() {
             </div>
             <div style={{ fontSize: 12, color: C.muted, marginBottom: 2 }}>{row.email}</div>
             {row.telephone && <div style={{ fontSize: 12, color: C.muted, marginBottom: 2 }}>{row.telephone}</div>}
-            <div style={{ fontSize: 12, color: C.muted, marginBottom: 6 }}>{row.ville}{row.pays ? `, ${row.pays}` : ""}</div>
+            <div style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>{row.ville}{row.pays ? `, ${row.pays}` : ""}</div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 8, borderTop: `1px solid ${C.border}` }}>
-              <span style={{ fontSize: 11, color: C.muted }}>{ROLES[row.role] || row.role || "—"}</span>
+              <RoleBadge role={row.role || "—"} />
               <span style={{ fontSize: 11, color: C.muted }}>{new Date(row.created_at).toLocaleDateString("fr-FR")}</span>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Table — desktop */}
+      {/* Desktop table */}
       <div className="adh-table-view" style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
@@ -286,13 +378,14 @@ export default function AdminAdhesionsDashboard() {
             {page_rows.length === 0 ? (
               <tr><td colSpan={6} style={{ padding: 32, textAlign: "center", color: C.muted, fontSize: 13 }}>Aucun résultat</td></tr>
             ) : page_rows.map((row) => (
-              <tr key={row.id} onClick={() => setSelected(row)} style={{ borderBottom: `1px solid ${C.border}`, cursor: "pointer", transition: "background 0.1s" }}
+              <tr key={row.id} onClick={() => setSelected(row)}
+                style={{ borderBottom: `1px solid ${C.border}`, cursor: "pointer", transition: "background 0.1s" }}
                 onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.03)")}
                 onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
                 <td style={{ padding: "12px 16px", fontSize: 13, fontWeight: 600 }}>{row.prenom} {row.nom}</td>
                 <td style={{ padding: "12px 16px", fontSize: 12, color: C.muted }}>{row.email}</td>
                 <td style={{ padding: "12px 16px", fontSize: 12, color: C.muted }}>{row.ville}{row.pays ? `, ${row.pays}` : ""}</td>
-                <td style={{ padding: "12px 16px", fontSize: 12, color: C.muted }}>{ROLES[row.role] || row.role || "—"}</td>
+                <td style={{ padding: "12px 16px" }}><RoleBadge role={row.role || "—"} /></td>
                 <td style={{ padding: "12px 16px" }}><StatusBadge status={row.status} /></td>
                 <td style={{ padding: "12px 16px", fontSize: 11, color: C.muted }}>{new Date(row.created_at).toLocaleDateString("fr-FR")}</td>
               </tr>
@@ -304,7 +397,10 @@ export default function AdminAdhesionsDashboard() {
       {total_pages > 1 && (
         <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 16 }}>
           {Array.from({ length: total_pages }).map((_, i) => (
-            <button key={i} onClick={() => setPage(i)} style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${page === i ? C.yellow : C.border}`, background: page === i ? "rgba(247,214,24,0.12)" : "transparent", color: page === i ? C.yellow : C.muted, fontSize: 12, cursor: "pointer" }}>{i + 1}</button>
+            <button key={i} onClick={() => setPage(i)}
+              style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${page === i ? C.yellow : C.border}`, background: page === i ? "rgba(247,214,24,0.12)" : "transparent", color: page === i ? C.yellow : C.muted, fontSize: 12, cursor: "pointer" }}>
+              {i + 1}
+            </button>
           ))}
         </div>
       )}
