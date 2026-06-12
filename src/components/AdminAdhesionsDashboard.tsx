@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import ConfirmDialog from "./ConfirmDialog";
+import SearchableSelect from "./SearchableSelect";
 
 const C = {
   card: "#0d1117", border: "rgba(255,255,255,0.07)", text: "#e2e8f0",
@@ -187,24 +188,6 @@ function Drawer({ row, onClose, onUpdate, onDelete }: { row: any; onClose: () =>
   );
 }
 
-const selectStyle: React.CSSProperties = {
-  background: "#0d1117",
-  border: "1px solid rgba(255,255,255,0.07)",
-  borderRadius: 10,
-  padding: "8px 12px",
-  color: "#e2e8f0",
-  fontSize: 12,
-  fontFamily: "'Sora', sans-serif",
-  outline: "none",
-  cursor: "pointer",
-  appearance: "none" as any,
-  WebkitAppearance: "none" as any,
-  paddingRight: 28,
-  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.4)' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
-  backgroundRepeat: "no-repeat",
-  backgroundPosition: "right 10px center",
-};
-
 export default function AdminAdhesionsDashboard() {
   const [adhesions, setAdhesions] = useState<any[]>([]);
   const [stats, setStats] = useState<any>({});
@@ -237,17 +220,16 @@ export default function AdminAdhesionsDashboard() {
     await load();
   };
 
-  const cities = useMemo(() => {
-    const set = new Set<string>();
-    adhesions.forEach(r => { if (r.ville) set.add(r.ville); });
-    return Array.from(set).sort();
-  }, [adhesions]);
+  const countOptions = (values: string[], labelFn?: (v: string) => string) => {
+    const counts = new Map<string, number>();
+    values.forEach(v => counts.set(v, (counts.get(v) || 0) + 1));
+    return Array.from(counts.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([value, count]) => ({ value, label: labelFn ? labelFn(value) : value, count }));
+  };
 
-  const roles = useMemo(() => {
-    const set = new Set<string>();
-    adhesions.forEach(r => { if (r.role) set.add(r.role); });
-    return Array.from(set).sort();
-  }, [adhesions]);
+  const cities = useMemo(() => countOptions(adhesions.map(r => r.ville).filter(Boolean)), [adhesions]);
+  const roles = useMemo(() => countOptions(adhesions.map(r => r.role).filter(Boolean), v => ROLES[v] || v), [adhesions]);
 
   const filtered = useMemo(() => adhesions
     .filter((r) => filterStatus === "all" || r.status === filterStatus)
@@ -271,6 +253,29 @@ export default function AdminAdhesionsDashboard() {
 
   const resetPage = () => setPage(0);
 
+  const exportCsv = () => {
+    const esc = (v: any) => {
+      const s = v == null ? "" : String(v);
+      return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const statusLabel = (s: string) => STATUS_CONFIG[s]?.label || s;
+    const header = ["Prénom", "Nom", "Email", "Téléphone", "Ville", "Pays", "Rôle", "Canal", "Disponibilité", "Newsletter", "Statut", "Notes admin", "Date"];
+    const lines = filtered.map(r => [
+      r.prenom, r.nom, r.email, r.telephone || "", r.ville, r.pays || "",
+      r.role || "", r.canal || "", r.disponibilite || "",
+      r.newsletter_opt_in ? "Oui" : "Non", statusLabel(r.status),
+      r.admin_notes || "", new Date(r.created_at).toLocaleDateString("fr-FR"),
+    ].map(esc).join(","));
+    const csv = "﻿" + [header.join(","), ...lines].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `adhesions-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (loading) return <div style={{ color: C.muted, fontSize: 14, padding: 40 }}>Chargement...</div>;
 
   return (
@@ -284,7 +289,6 @@ export default function AdminAdhesionsDashboard() {
         }
         .adh-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; padding: 14px 16px; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
         .adh-card:hover { background: rgba(247,214,24,0.04); border-color: rgba(247,214,24,0.2); }
-        .adh-select:focus { border-color: rgba(247,214,24,0.4); }
       `}</style>
 
       <div style={{ marginBottom: 28 }}>
@@ -313,21 +317,10 @@ export default function AdminAdhesionsDashboard() {
 
       {/* Secondary filters row */}
       <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
-        {/* City filter */}
-        <div style={{ position: "relative" }}>
-          <select className="adh-select" value={filterCity} onChange={e => { setFilterCity(e.target.value); resetPage(); }} style={selectStyle}>
-            <option value="all">Toutes les villes</option>
-            {cities.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-        </div>
-
-        {/* Role filter */}
-        <div style={{ position: "relative" }}>
-          <select className="adh-select" value={filterRole} onChange={e => { setFilterRole(e.target.value); resetPage(); }} style={selectStyle}>
-            <option value="all">Tous les rôles</option>
-            {roles.map(r => <option key={r} value={r}>{r}</option>)}
-          </select>
-        </div>
+        <SearchableSelect value={filterCity} onChange={v => { setFilterCity(v); resetPage(); }}
+          options={cities} placeholder="Toutes les villes" searchPlaceholder="Chercher une ville..." />
+        <SearchableSelect value={filterRole} onChange={v => { setFilterRole(v); resetPage(); }}
+          options={roles} placeholder="Tous les rôles" searchPlaceholder="Chercher un rôle..." />
 
         {/* Search */}
         <input
@@ -341,6 +334,13 @@ export default function AdminAdhesionsDashboard() {
         {filtered.length !== adhesions.length && (
           <span style={{ fontSize: 12, color: C.muted }}>{filtered.length} résultat{filtered.length > 1 ? "s" : ""}</span>
         )}
+
+        {/* Export CSV */}
+        <button onClick={exportCsv} disabled={filtered.length === 0}
+          style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 10, border: `1.5px solid rgba(52,211,153,0.3)`, background: "rgba(52,211,153,0.08)", color: "#34d399", fontSize: 12, fontWeight: 700, cursor: filtered.length === 0 ? "not-allowed" : "pointer", opacity: filtered.length === 0 ? 0.5 : 1 }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export CSV ({filtered.length})
+        </button>
       </div>
 
       {/* Mobile cards */}

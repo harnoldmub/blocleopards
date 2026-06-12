@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 
-const resend = new Resend(import.meta.env.RESEND_API_KEY ?? "re_EDUC3Xbr_5YYgyWwyd5w2iWxT8UKzpZuX");
+const apiKey = import.meta.env.RESEND_API_KEY;
+const resend = apiKey ? new Resend(apiKey) : null;
 
 const FROM = import.meta.env.EMAIL_FROM ?? "Bloc Léopards <onboarding@resend.dev>";
 const BASE_URL = import.meta.env.PUBLIC_SITE_URL ?? "https://blocleopards.com";
@@ -20,7 +21,7 @@ export async function sendInscriptionConfirmation(opts: {
 
   const matchList = opts.matchesVises
     .map(k => MATCH_LABELS[k] || k)
-    .map(m => `<li style="margin-bottom:6px;">⚽ ${m}</li>`)
+    .map(m => `<li style="margin-bottom:6px;padding-left:14px;border-left:3px solid #f7d618;">${m}</li>`)
     .join("");
 
   const statusUrl = `${BASE_URL}/mondial/tirage?ticket=${encodeURIComponent(opts.ticketNumber)}`;
@@ -38,7 +39,7 @@ export async function sendInscriptionConfirmation(opts: {
         <tr>
           <td style="background:linear-gradient(135deg,#1c2e8f,#07090f);padding:36px 40px;text-align:center;border-bottom:2px solid #f7d618;">
             <p style="margin:0 0 8px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#f7d618;font-weight:700;">Bloc Léopards · Mondial 2026</p>
-            <h1 style="margin:0;font-size:28px;font-weight:800;color:#ffffff;">Inscription confirmée ✅</h1>
+            <h1 style="margin:0;font-size:28px;font-weight:800;color:#ffffff;">Inscription confirmée</h1>
           </td>
         </tr>
 
@@ -91,11 +92,16 @@ export async function sendInscriptionConfirmation(opts: {
 </body>
 </html>`;
 
+  if (!resend) {
+    console.warn("RESEND_API_KEY non configurée — email de confirmation non envoyé.");
+    return;
+  }
+
   try {
     await resend.emails.send({
       from: FROM,
       to: opts.to,
-      subject: `✅ Candidature reçue — ${opts.ticketNumber} | Bloc Léopards Mondial 2026`,
+      subject: `Candidature reçue — ${opts.ticketNumber} | Bloc Léopards Mondial 2026`,
       html,
     });
   } catch (err) {

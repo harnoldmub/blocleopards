@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { requireDatabase } from "../../lib/neon";
+import { upsertSupporter } from "../../lib/supporters";
 
 export const prerender = false;
 
@@ -54,6 +55,17 @@ export const POST: APIRoute = async ({ request }) => {
         ${source || "formulaire"}
       )
     `;
+
+    await upsertSupporter({
+      firstName: first_name,
+      lastName: last_name,
+      email: email.toLowerCase().trim(),
+      phone: phone?.trim() || null,
+      city: city?.trim() || null,
+      country: country?.trim() || null,
+      tags: [match_key === "rdc-denmark" ? "billet-danemark" : "billet-chili"],
+      note: `Demande de billet ${match_key === "rdc-denmark" ? "RDC vs Danemark" : "RDC vs Chili"}`,
+    });
 
     return new Response(JSON.stringify({ success: true }), { status: 200, headers });
   } catch (err) {

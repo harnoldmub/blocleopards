@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { formValue, redirectTo } from "../../lib/forms";
 import { requireDatabase } from "../../lib/neon";
 import { isSpam } from "../../lib/spam";
+import { upsertSupporter } from "../../lib/supporters";
 
 export const prerender = false;
 
@@ -60,6 +61,17 @@ export const POST: APIRoute = async ({ request }) => {
         ${newsletterOptIn}
       )
     `;
+
+    // "Rejoindre le Bloc" ajoute la personne dans la base supporters (non-bloquant)
+    await upsertSupporter({
+      firstName: prenom,
+      lastName: nom,
+      email,
+      phone: telephone || null,
+      city: ville,
+      country: pays || null,
+      tags: ["adhesion"],
+    });
 
     return redirectTo("/rejoindre", "success");
   } catch (error) {

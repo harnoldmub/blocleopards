@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { requireDatabase } from "../../../lib/neon";
 import { sendInscriptionConfirmation } from "../../../lib/email";
+import { upsertSupporter } from "../../../lib/supporters";
 import crypto from "crypto";
 
 export const prerender = false;
@@ -140,6 +141,19 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
         ${portraitUpload.buffer}, 'pending'
       )
     `;
+
+    // "Gagne ton billet" crée une demande de billet dans la base supporters,
+    // avec un tag par match visé (liste de participants par match)
+    await upsertSupporter({
+      firstName,
+      lastName,
+      email,
+      phone: telephone || null,
+      city,
+      country,
+      tags: ["mondial-2026", ...matchesVises.map((m) => `billet-${m}`)],
+      note: `Demande de billet Mondial 2026 — dossier ${ticketNumber}`,
+    });
 
     // Envoi email de confirmation (non-bloquant)
     sendInscriptionConfirmation({

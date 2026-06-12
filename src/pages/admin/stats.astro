@@ -1,0 +1,11 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import AdminStatsDashboard from "../../components/AdminStatsDashboard.tsx";
+import { isAdminAuthed, hasPermission } from "../../lib/auth";
+
+if (!isAdminAuthed(Astro.cookies)) return Astro.redirect("/admin/login");
+if (!hasPermission(Astro.cookies, "stats")) return Astro.redirect("/admin/dashboard");
+---
+<AdminLayout title="Statistiques — Admin Bloc Léopards" section="stats">
+  <AdminStatsDashboard client:load />
+</AdminLayout>

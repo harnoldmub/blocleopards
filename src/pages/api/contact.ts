@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { formValue, redirectTo } from "../../lib/forms";
 import { requireDatabase } from "../../lib/neon";
 import { isSpam } from "../../lib/spam";
+import { upsertSupporter } from "../../lib/supporters";
 
 export const prerender = false;
 
@@ -23,6 +24,16 @@ export const POST: APIRoute = async ({ request }) => {
       insert into contact_messages (nom, email, objet, message)
       values (${nom}, ${email}, ${objet}, ${message || null})
     `;
+
+    // "Contact" crée ou enrichit une fiche supporter avec une note (non-bloquant)
+    const [firstName, ...rest] = nom.split(/\s+/);
+    await upsertSupporter({
+      firstName,
+      lastName: rest.join(" "),
+      email,
+      tags: ["contact"],
+      note: `Contact — ${objet}${message ? ` : ${message.slice(0, 200)}` : ""}`,
+    });
 
     return redirectTo("/contact", "success");
   } catch (error) {

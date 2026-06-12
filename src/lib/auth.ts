@@ -4,10 +4,12 @@ const PBKDF2_ITERATIONS = 10_000;
 
 export const ADMIN_SECTIONS = [
   { id: "dashboard",    label: "Dashboard",   icon: "dashboard"    },
+  { id: "stats",        label: "Statistiques", icon: "bar-chart"   },
   { id: "billets",      label: "Billets",      icon: "ticket"       },
   { id: "selectionnes", label: "Sélectionnés", icon: "check-circle" },
   { id: "mondial",      label: "Mondial USA",  icon: "globe"        },
   { id: "adhesions",    label: "Adhésions",    icon: "users"        },
+  { id: "supporters",   label: "Supporters",   icon: "list"         },
   { id: "contacts",     label: "Messages",     icon: "mail"         },
   { id: "newsletter",   label: "Newsletter",   icon: "send"         },
   { id: "articles",     label: "Articles",     icon: "newspaper"    },

@@ -1,0 +1,11 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import AdminSupportersDashboard from "../../components/AdminSupportersDashboard.tsx";
+import { isAdminAuthed, hasPermission } from "../../lib/auth";
+
+if (!isAdminAuthed(Astro.cookies)) return Astro.redirect("/admin/login");
+if (!hasPermission(Astro.cookies, "supporters")) return Astro.redirect("/admin/dashboard");
+---
+<AdminLayout title="Supporters — Admin Bloc Léopards" section="supporters">
+  <AdminSupportersDashboard client:load />
+</AdminLayout>
