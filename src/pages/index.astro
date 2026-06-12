@@ -9,6 +9,7 @@ import media from "../data/media.json";
 import Gallery from "../components/Gallery.astro";
 import site from "../data/site.json";
 import { getCollection } from "astro:content";
+import { getSetting } from "../lib/settings";
 
 const partners = [
   { name: "SONAS", logo: "/media/partenaires/LOGO SONAS.png" },
@@ -26,6 +27,8 @@ const events = (upcomingEvents.length ? upcomingEvents : allEvents).slice(0, 3);
 const FR_MONTHS = ["JAN","FEV","MAR","AVR","MAI","JUIN","JUIL","AOUT","SEPT","OCT","NOV","DEC"];
 const getMonth = (d: string) => FR_MONTHS[parseInt(d.split("-")[1]) - 1];
 const getDay = (d: string) => parseInt(d.split("-")[2]);
+const billeterieActive = (await getSetting("billeterie_active", "true")) !== "false";
+
 const tickerItems = [
   "Tous en bleu et jaune.",
   "Tous en maillot Leopards.",
@@ -54,7 +57,7 @@ const tickerItems = [
         <p class="mt-4 max-w-xl text-lg text-slate-200">La tribune congolaise se rassemble: chants, drapeaux, ferveur et discipline.</p>
         <div class="mt-8 flex flex-wrap gap-4">
           <a href="/rejoindre" class="rounded-full bg-brand-yellow px-6 py-3 text-sm font-semibold text-brand-dark pulse-glow hover:bg-white transition-colors">Rejoindre le Bloc</a>
-          <a href="/mondial" class="rounded-full border border-white/30 bg-white/10 backdrop-blur-sm px-6 py-3 text-sm font-semibold text-white hover:bg-white/20 transition-colors">Gagne ton billet</a>
+          {billeterieActive && <a href="/mondial" class="rounded-full border border-white/30 bg-white/10 backdrop-blur-sm px-6 py-3 text-sm font-semibold text-white hover:bg-white/20 transition-colors">Gagne ton billet</a>}
         </div>
       </div>
       <div class="hidden flex-col items-center gap-6 animate-fade-in-up md:flex" style="animation-delay: 0.3s">
@@ -116,10 +119,12 @@ const tickerItems = [
         <p class="text-xs font-bold uppercase tracking-[0.2em] text-brand-yellow">Bloc Leopards</p>
         <p class="mt-2 text-2xl font-bold text-slate-900">Rejoins le Bloc en tribune</p>
         <p class="mt-2 text-sm text-slate-500 max-w-sm mx-auto">Participe et tente de gagner ta place en tribune pour les prochains matchs des Leopards.</p>
-        <a href="/mondial" class="mt-6 inline-flex items-center gap-2 rounded-full px-8 py-3 text-sm font-semibold" style="background:linear-gradient(135deg,#1c2e8f,#0b0f1f);color:#f7d618;border:1px solid rgba(247,214,24,0.3);box-shadow:0 4px 20px rgba(28,46,143,0.35);">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9a3 3 0 0 1 0 6V19a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-4a3 3 0 0 1 0-6V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/><line x1="9" y1="12" x2="15" y2="12"/></svg>
-          <span>Gagne ton billet</span>
-        </a>
+        {billeterieActive && (
+          <a href="/mondial" class="mt-6 inline-flex items-center gap-2 rounded-full px-8 py-3 text-sm font-semibold" style="background:linear-gradient(135deg,#1c2e8f,#0b0f1f);color:#f7d618;border:1px solid rgba(247,214,24,0.3);box-shadow:0 4px 20px rgba(28,46,143,0.35);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9a3 3 0 0 1 0 6V19a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-4a3 3 0 0 1 0-6V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/><line x1="9" y1="12" x2="15" y2="12"/></svg>
+            <span>Gagne ton billet</span>
+          </a>
+        )}
       </div>
     </section>
   )}

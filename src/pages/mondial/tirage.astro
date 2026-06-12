@@ -5,6 +5,7 @@ import { requireDatabase, hasDatabase } from "../../lib/neon";
 import { getSetting } from "../../lib/settings";
 
 const ticket = Astro.url.searchParams.get("ticket")?.trim() || "";
+const billeterieActive = (await getSetting("billeterie_active", "true")) !== "false";
 let dossier: any = null;
 let lookupError = "";
 let tiragePublie = false;
@@ -136,7 +137,21 @@ const dossierMatches = dossier?.matchs_vises && Array.isArray(dossier.matchs_vis
         </section>
       </div>
     </main>
-  ) : (
+  ) : billeterieActive ? (
     <MondialTicketFlow client:load />
+  ) : (
+    <main class="min-h-screen bg-[#080c1a] px-4 py-20 text-white flex items-center justify-center">
+      <div class="mx-auto max-w-md text-center">
+        <img src="/brand/logo.png" alt="Bloc Léopards" class="mx-auto mb-8 h-16 w-auto" />
+        <p class="mb-2 text-[10px] font-bold uppercase tracking-[0.22em] text-[#f7d618]">Mondial 2026</p>
+        <h1 class="font-bebas text-5xl tracking-wide text-white mb-6">INSCRIPTIONS CLOSES</h1>
+        <div class="rounded-2xl border border-white/10 bg-white/5 p-6 mb-8">
+          <p class="text-sm text-slate-300 leading-relaxed">Les inscriptions au tirage au sort sont actuellement fermées. Suivez nos réseaux sociaux pour être informé de la réouverture.</p>
+        </div>
+        <a href="/mondial" class="rounded-full border border-white/20 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-white/5">
+          Retour au Hub Mondial
+        </a>
+      </div>
+    </main>
   )}
 </ImmersiveLayout>

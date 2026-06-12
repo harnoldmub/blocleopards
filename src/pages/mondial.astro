@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { requireDatabase, hasDatabase } from "../lib/neon";
+import { getSetting } from "../lib/settings";
 
 // Fetch actual supporters who opted in
 let dbSupporters: any[] = [];
@@ -32,6 +33,8 @@ const mockSupporters = [
 ];
 
 const supporters = [...dbSupporters, ...mockSupporters];
+
+const billeterieActive = (await getSetting("billeterie_active", "true")) !== "false";
 
 const matches = [
   {
@@ -107,11 +110,19 @@ const matches = [
           <p class="mx-auto text-slate-300 text-base md:text-lg max-w-2xl leading-relaxed mb-10">
             Pour le retour historique des Léopards de la RDC sur la scène mondiale après 52 ans, participez au tirage au sort vérifiable des billets pour les 3 matchs de poule.
           </p>
-          <div class="flex flex-wrap justify-center gap-4">
-            <a href="/mondial/tirage" class="px-7 py-3.5 rounded-full bg-[#f7d618] text-[#07090f] font-bold text-sm hover:bg-yellow-400 transition-all shadow-[0_4px_24px_rgba(247,214,24,0.4)]">
-              Participer au Tirage
-            </a>
-          </div>
+          {billeterieActive ? (
+            <div class="flex flex-wrap justify-center gap-4">
+              <a href="/mondial/tirage" class="px-7 py-3.5 rounded-full bg-[#f7d618] text-[#07090f] font-bold text-sm hover:bg-yellow-400 transition-all shadow-[0_4px_24px_rgba(247,214,24,0.4)]">
+                Participer au Tirage
+              </a>
+            </div>
+          ) : (
+            <div class="flex flex-wrap justify-center gap-4">
+              <span class="px-6 py-3 rounded-full border border-white/20 text-sm font-semibold text-slate-400 cursor-default">
+                Inscriptions closes
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </div>
