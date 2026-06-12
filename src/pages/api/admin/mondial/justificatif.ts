@@ -1,8 +1,6 @@
 import type { APIRoute } from "astro";
 import { isAdminAuthed } from "../../../../lib/auth";
 import { requireDatabase } from "../../../../lib/neon";
-import fs from "fs";
-import path from "path";
 
 export const prerender = false;
 
@@ -21,10 +19,8 @@ export const GET: APIRoute = async ({ request, cookies }) => {
   try {
     const sql = requireDatabase();
 
-    // 1. Fetch document metadata
     const [doc] = await sql`
-      select id, inscription_id, stored_filename, mime_type, original_filename,
-             coalesce(uploaded_at, created_at) as uploaded_at, deleted_at
+      select id, inscription_id, original_filename, mime_type, file_data, deleted_at
       from justificatifs_identite
       where id = ${id}
     `;
@@ -37,28 +33,19 @@ export const GET: APIRoute = async ({ request, cookies }) => {
       return new Response("Ce document a déjà été supprimé conformément aux règles RGPD.", { status: 410 });
     }
 
-    // 2. Log access (best-effort — table may not exist yet)
+    if (!doc.file_data) {
+      return new Response("Fichier non disponible (stockage migré vers DB requis)", { status: 404 });
+    }
+
+    // Log access (best-effort)
     try {
       await sql`
         insert into justificatifs_access_logs (admin_username, justificatif_id, action)
         values ('admin', ${id}, 'view')
       `;
-    } catch { /* table missing in dev — ignore */ }
+    } catch { /* table missing — ignore */ }
 
-    // 3. Resolve file path
-    const uploadedDate = new Date(doc.uploaded_at);
-    const year = uploadedDate.getFullYear().toString();
-    const month = (uploadedDate.getMonth() + 1).toString().padStart(2, "0");
-    const filePath = path.join(process.cwd(), "private/justificatifs", year, month, doc.stored_filename);
-
-    if (!fs.existsSync(filePath)) {
-      console.error(`File path not found: ${filePath}`);
-      return new Response("Fichier physique introuvable sur le serveur", { status: 404 });
-    }
-
-    // 4. Return file contents
-    const fileBuffer = fs.readFileSync(filePath);
-    return new Response(fileBuffer, {
+    return new Response(doc.file_data, {
       status: 200,
       headers: {
         "Content-Type": doc.mime_type,

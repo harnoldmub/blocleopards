@@ -1,8 +1,6 @@
 import type { APIRoute } from "astro";
 import { requireDatabase } from "../../../lib/neon";
 import { sendInscriptionConfirmation } from "../../../lib/email";
-import fs from "fs";
-import path from "path";
 import crypto from "crypto";
 
 export const prerender = false;
@@ -75,14 +73,10 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
 
     const sql = requireDatabase();
 
-    const now = new Date();
-    const privateDir = path.join(process.cwd(), "private/justificatifs", now.getFullYear().toString(), (now.getMonth() + 1).toString().padStart(2, "0"));
-    fs.mkdirSync(privateDir, { recursive: true });
-
     const prepareUpload = async (file: File) => {
       const buffer = Buffer.from(await file.arrayBuffer());
       const checksum = crypto.createHash("sha256").update(buffer).digest("hex");
-      const ext = path.extname(file.name) || (file.type === "application/pdf" ? ".pdf" : ".jpg");
+      const ext = file.name.includes(".") ? file.name.slice(file.name.lastIndexOf(".")) : (file.type === "application/pdf" ? ".pdf" : ".jpg");
       const storedFilename = `${crypto.randomUUID()}${ext}`;
       return { buffer, checksum, storedFilename };
     };
@@ -125,26 +119,25 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       ) returning id
     `;
 
-    fs.writeFileSync(path.join(privateDir, documentUpload.storedFilename), documentUpload.buffer);
-    fs.writeFileSync(path.join(privateDir, portraitUpload.storedFilename), portraitUpload.buffer);
-
     await sql`
       insert into justificatifs_identite (
         inscription_id, type_document, original_filename, stored_filename,
-        mime_type, size, checksum, status
+        mime_type, size, checksum, file_data, status
       ) values (
         ${inscription.id}, ${documentType}, ${documentFile.name}, ${documentUpload.storedFilename},
-        ${documentFile.type}, ${documentFile.size}, ${documentUpload.checksum}, 'pending'
+        ${documentFile.type}, ${documentFile.size}, ${documentUpload.checksum},
+        ${documentUpload.buffer}, 'pending'
       )
     `;
 
     await sql`
       insert into justificatifs_identite (
         inscription_id, type_document, original_filename, stored_filename,
-        mime_type, size, checksum, status
+        mime_type, size, checksum, file_data, status
       ) values (
         ${inscription.id}, 'PHOTO', ${portraitFile.name}, ${portraitUpload.storedFilename},
-        ${portraitFile.type}, ${portraitFile.size}, ${portraitUpload.checksum}, 'pending'
+        ${portraitFile.type}, ${portraitFile.size}, ${portraitUpload.checksum},
+        ${portraitUpload.buffer}, 'pending'
       )
     `;
 
