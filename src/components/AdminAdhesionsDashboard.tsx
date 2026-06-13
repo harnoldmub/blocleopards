@@ -14,6 +14,16 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
   rejected:  { label: "Rejeté",     color: "#f87171", bg: "rgba(248,113,113,0.12)" },
 };
 
+const ROLES: Record<string, string> = {
+  supporter: "Supporter",
+  benevole: "Bénévole",
+  animateur: "Animateur",
+  photographe: "Photo/Vidéo",
+  communication: "Communication",
+  logistique: "Logistique",
+  autre: "Autre",
+};
+
 // Palette of distinct colors for role badges
 const ROLE_PALETTE = [
   { color: "#60a5fa", bg: "rgba(96,165,250,0.12)" },   // blue
