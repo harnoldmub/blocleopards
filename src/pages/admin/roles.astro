@@ -124,6 +124,21 @@ try {
       </div>
     </div>
   </div>
+
+  <!-- Confirm de suppression (stylé) -->
+  <div id="confirm-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(4px); z-index:210; align-items:center; justify-content:center; padding:24px;">
+    <div style="background:#0d1117; border:1px solid rgba(255,255,255,0.1); border-radius:18px; padding:28px; max-width:400px; width:100%; text-align:center;">
+      <div style="width:48px; height:48px; margin:0 auto 16px; border-radius:50%; background:rgba(248,113,113,0.12); border:1.5px solid rgba(248,113,113,0.4); display:flex; align-items:center; justify-content:center;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </div>
+      <h3 id="confirm-title" style="font-size:1.1rem; font-weight:800; color:#fff; margin-bottom:8px;"></h3>
+      <p style="font-size:13px; color:rgba(255,255,255,0.55); margin-bottom:24px;">Cette action est irréversible.</p>
+      <div style="display:flex; gap:10px;">
+        <button id="confirm-cancel" style="flex:1; padding:12px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:rgba(255,255,255,0.6); font-size:14px; font-weight:600; cursor:pointer;">Annuler</button>
+        <button id="confirm-ok" style="flex:1; padding:12px; background:#f87171; border:none; border-radius:10px; color:#0d1117; font-size:14px; font-weight:700; cursor:pointer;">Supprimer</button>
+      </div>
+    </div>
+  </div>
 </AdminLayout>
 
 <script>
@@ -207,16 +222,31 @@ try {
     });
   });
 
+  const confirmOverlay = document.getElementById('confirm-overlay')!;
+  const confirmTitle = document.getElementById('confirm-title')!;
+  const confirmOk = document.getElementById('confirm-ok')!;
+  const confirmCancel = document.getElementById('confirm-cancel')!;
+  let pendingDeleteId: number | null = null;
+
+  const closeConfirm = () => { confirmOverlay.style.display = 'none'; pendingDeleteId = null; };
+  confirmCancel.addEventListener('click', closeConfirm);
+  confirmOverlay.addEventListener('click', (e) => { if (e.target === confirmOverlay) closeConfirm(); });
+  confirmOk.addEventListener('click', async () => {
+    if (pendingDeleteId === null) return;
+    const res = await fetch('/api/admin/roles', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: pendingDeleteId }),
+    });
+    if (res.ok) location.reload();
+    else { alert('Erreur lors de la suppression.'); closeConfirm(); }
+  });
+
   document.querySelectorAll<HTMLButtonElement>('.btn-delete').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      if (!confirm(`Supprimer le rôle "${btn.dataset.label}" ? Cette action est irréversible.`)) return;
-      const res = await fetch('/api/admin/roles', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: Number(btn.dataset.id) }),
-      });
-      if (res.ok) location.reload();
-      else alert('Erreur lors de la suppression.');
+    btn.addEventListener('click', () => {
+      pendingDeleteId = Number(btn.dataset.id);
+      confirmTitle.textContent = `Supprimer le rôle "${btn.dataset.label}" ?`;
+      confirmOverlay.style.display = 'flex';
     });
   });
 

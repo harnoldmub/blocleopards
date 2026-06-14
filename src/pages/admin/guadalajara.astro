@@ -1,0 +1,11 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import AdminGuadalajaraDashboard from "../../components/AdminGuadalajaraDashboard.tsx";
+import { isAdminAuthed, hasPermission } from "../../lib/auth";
+
+if (!isAdminAuthed(Astro.cookies)) return Astro.redirect("/admin/login");
+if (!hasPermission(Astro.cookies, "guadalajara")) return Astro.redirect("/admin/dashboard");
+---
+<AdminLayout title="Bloc de Guadalajara — Admin Bloc Léopards" section="guadalajara">
+  <AdminGuadalajaraDashboard client:load />
+</AdminLayout>

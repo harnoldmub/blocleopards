@@ -35,6 +35,7 @@ const mockSupporters = [
 const supporters = [...dbSupporters, ...mockSupporters];
 
 const billeterieActive = (await getSetting("billeterie_active", "true")) !== "false";
+const guadalajaraActive = (await getSetting("guadalajara_active", "true")) !== "false";
 
 const matches = [
   {
@@ -85,7 +86,7 @@ const matches = [
   <div class="relative overflow-hidden bg-[#07090f] text-white font-sans">
 
     <!-- Hero avec photo de fond -->
-    <div class="relative min-h-[90vh] flex items-center">
+    <div class="relative min-h-[42vh] flex items-center">
       <!-- Background photo -->
       <div class="absolute inset-0 overflow-hidden">
         <img
@@ -97,115 +98,46 @@ const matches = [
         <div class="absolute inset-0" style="background:linear-gradient(to bottom, rgba(7,9,15,0.5) 0%, rgba(7,9,15,0.2) 40%, rgba(7,9,15,0.85) 100%);"></div>
       </div>
 
-      <div class="relative z-10 w-full max-w-6xl mx-auto px-4 pb-28 pt-12 text-center md:pb-36 md:pt-8 lg:pb-44 lg:pt-4">
+      <div class="relative z-10 w-full max-w-6xl mx-auto px-4 pb-20 pt-12 text-center md:pb-28 md:pt-8 lg:pb-32 lg:pt-4">
         <div class="mx-auto max-w-4xl">
-          <div class="mb-8 flex items-center justify-center gap-5">
-            <img src="/brand/logo.png" alt="Bloc Léopards" class="h-12 w-auto drop-shadow-[0_0_16px_rgba(247,214,24,0.4)]" />
-            <div class="h-8 w-px bg-white/25"></div>
+          <div class="flex items-center justify-center gap-5">
+            <img src="/brand/logo.png" alt="Bloc Léopards" class="h-14 w-auto drop-shadow-[0_0_16px_rgba(247,214,24,0.4)]" />
+            <div class="h-9 w-px bg-white/25"></div>
             <p class="text-xs uppercase tracking-[0.45em] text-[#f7d618] font-bold">Coupe du Monde 2026</p>
           </div>
-          <h1 class="font-bebas text-6xl md:text-8xl tracking-wide leading-none text-white mb-8">
-            L'EXPÉRIENCE <span class="text-[#f7d618]">USA</span>
-          </h1>
-          <p class="mx-auto text-slate-300 text-base md:text-lg max-w-2xl leading-relaxed mb-10">
-            Pour le retour historique des Léopards de la RDC sur la scène mondiale après 52 ans, participez au tirage au sort vérifiable des billets pour les 3 matchs de poule.
-          </p>
-          {billeterieActive ? (
-            <div class="flex flex-wrap justify-center gap-4">
-              <a href="/mondial/tirage" class="px-7 py-3.5 rounded-full bg-[#f7d618] text-[#07090f] font-bold text-sm hover:bg-yellow-400 transition-all shadow-[0_4px_24px_rgba(247,214,24,0.4)]">
-                Participer au Tirage
-              </a>
-            </div>
-          ) : (
-            <div class="flex flex-wrap justify-center gap-4">
-              <span class="px-6 py-3 rounded-full border border-white/20 text-sm font-semibold text-slate-400 cursor-default">
-                Inscriptions closes
-              </span>
-            </div>
-          )}
         </div>
       </div>
     </div>
 
-    <div class="relative z-20 -mt-28 px-4 pb-16 md:-mt-40 lg:-mt-48">
+    <div class="relative z-20 -mt-16 px-4 pb-16 md:-mt-20">
     <div class="max-w-6xl mx-auto relative z-10">
 
-      <!-- Match cards grid -->
-      <div class="grid gap-8 md:grid-cols-3 mb-20">
-        {matches.map((match) => (
-          <div 
-            class={`relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b ${match.color} p-6 flex flex-col justify-between`}
-            style={{ boxShadow: `0 10px 30px -10px ${match.glow}` }}
-          >
-            <!-- Header info -->
-            <div class="mb-6 flex justify-between items-start">
-              <div>
-                <span class="text-[10px] tracking-[0.15em] uppercase text-slate-400 font-bold">Phase de Groupes</span>
-                <h3 class="font-bebas text-2xl text-white tracking-wide mt-1">{match.venue}</h3>
-                <p class="text-xs text-slate-400">{match.city}</p>
+      {guadalajaraActive && (
+        <div class="mb-20 relative overflow-hidden rounded-3xl border border-[#f7d618]/20" style="background:linear-gradient(135deg,#1c2e8f 0%,#0a1230 60%,#07090f 100%);">
+          <div class="absolute inset-0 opacity-20" style="background:radial-gradient(circle at top right, rgba(247,214,24,0.3), transparent 60%);"></div>
+          <div class="relative z-10 p-8 md:p-10 flex flex-col md:flex-row md:items-center gap-8">
+            <div class="flex-1">
+              <div class="flex items-center gap-3 mb-4">
+                <img src="/brand/logo-min-sport-white.webp" alt="Ministère des Sports" class="h-9 w-auto opacity-95" />
+                <span class="text-[10px] uppercase tracking-[0.2em] text-[#f7d618] font-bold">Programme officiel diaspora</span>
               </div>
-              <div class="px-2.5 py-1 bg-white/5 rounded-full text-[10px] uppercase font-bold text-[#f7d618] border border-[#f7d618]/20">
-                Mondial 2026
-              </div>
+              <h2 class="font-bebas text-4xl md:text-5xl text-white tracking-wide mb-3">LE BLOC DE GUADALAJARA</h2>
+              <p class="text-slate-300 text-sm leading-relaxed max-w-xl mb-3">
+                Pour le match <span class="text-white font-semibold">RDC – Colombie</span> du 23 juin 2026 à Guadalajara (Mexique), le Ministère des Sports met à disposition des supporters sélectionnés un <span class="text-[#f7d618] font-semibold">billet gratuit</span> et jusqu'à <span class="text-[#f7d618] font-semibold">2 nuitées d'hébergement</span>.
+              </p>
+              <p class="text-slate-400 text-xs leading-relaxed max-w-xl">
+                Dossier requis : pièce d'identité valide, preuve de réservation de transport vers Guadalajara, email et numéro WhatsApp.
+              </p>
             </div>
-
-            <!-- Scoreboard display -->
-            <div class="flex items-center justify-between gap-4 py-4 mb-4 border-y border-white/5 bg-black/20 rounded-2xl px-4">
-              <div class="flex flex-col items-center flex-1">
-                <img src="/flags/cd.png" alt="RDC" class="h-10 w-auto rounded shadow-md object-cover" />
-                <span class="font-bebas text-lg text-white mt-1">RDC</span>
-              </div>
-              <span class="font-bebas text-2xl text-slate-500 font-bold">VS</span>
-              <div class="flex flex-col items-center flex-1">
-                <img src={`/flags/${match.awayFlag}.png`} alt={match.away} class="h-10 w-auto rounded shadow-md object-cover" />
-                <span class="font-bebas text-lg text-white mt-1">{match.away}</span>
-              </div>
-            </div>
-
-            <!-- Warning or Notice -->
-            {match.warning && (
-              <div class="mb-4 p-3 rounded-xl bg-red-950/40 border border-red-500/20 text-[11px] text-red-300 leading-normal flex gap-2">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                <span>{match.warning}</span>
-              </div>
-            )}
-
-            <!-- Date & Countdown -->
-            <div class="mt-4 pt-4 border-t border-white/5">
-              <div class="flex justify-between items-center text-xs text-slate-400 mb-2">
-                <span>Date officielle (UTC)</span>
-                <span>{match.dateStr}</span>
-              </div>
-              
-              <!-- Local time slot -->
-              <div class="text-xs font-semibold text-[#f7d618] mb-3 bg-[#f7d618]/10 py-1.5 px-3 rounded-lg border border-[#f7d618]/20 flex justify-between items-center">
-                <span>Heure locale chez vous :</span>
-                <span class="local-time" data-utc={match.utcKickoff}>Chargement...</span>
-              </div>
-
-              <!-- Countdown timer -->
-              <div class="grid grid-cols-4 gap-1 text-center bg-black/40 rounded-xl p-2.5" data-countdown={match.utcKickoff}>
-                <div>
-                  <div class="font-bebas text-xl text-white days">00</div>
-                  <div class="text-[9px] uppercase text-slate-500">Jours</div>
-                </div>
-                <div>
-                  <div class="font-bebas text-xl text-white hours">00</div>
-                  <div class="text-[9px] uppercase text-slate-500">Heures</div>
-                </div>
-                <div>
-                  <div class="font-bebas text-xl text-white minutes">00</div>
-                  <div class="text-[9px] uppercase text-slate-500">Min</div>
-                </div>
-                <div>
-                  <div class="font-bebas text-xl text-[#f7d618] seconds">00</div>
-                  <div class="text-[9px] uppercase text-slate-500">Sec</div>
-                </div>
-              </div>
+            <div class="flex-shrink-0">
+              <a href="/mondial/guadalajara" class="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-[#f7d618] text-[#07090f] font-bold text-sm hover:bg-yellow-400 transition-all shadow-[0_4px_24px_rgba(247,214,24,0.4)] whitespace-nowrap">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
+                Soumettre ma demande
+              </a>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
 
       <!-- Supporters Wall Marquee -->
       <div class="mb-20 bg-white/5 border border-white/10 rounded-3xl p-8 relative overflow-hidden">
@@ -213,7 +145,7 @@ const matches = [
         <div class="text-center max-w-xl mx-auto mb-6">
           <span class="text-xs uppercase tracking-[0.2em] text-[#f7d618] font-bold">Le Mur des Supporters</span>
           <h2 class="font-bebas text-3xl text-white mt-2">ILS SERONT DANS LE BLOC AUX USA</h2>
-          <p class="text-slate-400 text-xs mt-1">Rejoignez la diaspora et affichez votre soutien en participant au tirage.</p>
+          <p class="text-slate-400 text-xs mt-1">Rejoignez la diaspora et affichez votre soutien aux Léopards.</p>
         </div>
 
         <!-- Marquee container -->
@@ -238,6 +170,68 @@ const matches = [
             ))}
           </div>
         </div>
+      </div>
+
+      <!-- Programme des matchs -->
+      <div class="mb-8 text-center">
+        <span class="text-xs uppercase tracking-[0.2em] text-[#f7d618] font-bold">Programme des matchs</span>
+        <h2 class="font-bebas text-3xl md:text-4xl text-white mt-2">LES 3 MATCHS DE POULE</h2>
+        <p class="text-slate-400 text-xs mt-1">Phase de groupes — Coupe du Monde 2026. Ces dates sont aussi dans le calendrier du Bloc.</p>
+      </div>
+      <div class="grid gap-8 md:grid-cols-3 mb-20">
+        {matches.map((match) => (
+          <div
+            class={`relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b ${match.color} p-6 flex flex-col justify-between`}
+            style={{ boxShadow: `0 10px 30px -10px ${match.glow}` }}
+          >
+            <div class="mb-6 flex justify-between items-start">
+              <div>
+                <span class="text-[10px] tracking-[0.15em] uppercase text-slate-400 font-bold">Phase de Groupes</span>
+                <h3 class="font-bebas text-2xl text-white tracking-wide mt-1">{match.venue}</h3>
+                <p class="text-xs text-slate-400">{match.city}</p>
+              </div>
+              <div class="px-2.5 py-1 bg-white/5 rounded-full text-[10px] uppercase font-bold text-[#f7d618] border border-[#f7d618]/20">
+                Mondial 2026
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between gap-4 py-4 mb-4 border-y border-white/5 bg-black/20 rounded-2xl px-4">
+              <div class="flex flex-col items-center flex-1">
+                <img src="/flags/cd.png" alt="RDC" class="h-10 w-auto rounded shadow-md object-cover" />
+                <span class="font-bebas text-lg text-white mt-1">RDC</span>
+              </div>
+              <span class="font-bebas text-2xl text-slate-500 font-bold">VS</span>
+              <div class="flex flex-col items-center flex-1">
+                <img src={`/flags/${match.awayFlag}.png`} alt={match.away} class="h-10 w-auto rounded shadow-md object-cover" />
+                <span class="font-bebas text-lg text-white mt-1">{match.away}</span>
+              </div>
+            </div>
+
+            {match.warning && (
+              <div class="mb-4 p-3 rounded-xl bg-red-950/40 border border-red-500/20 text-[11px] text-red-300 leading-normal flex gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <span>{match.warning}</span>
+              </div>
+            )}
+
+            <div class="mt-4 pt-4 border-t border-white/5">
+              <div class="flex justify-between items-center text-xs text-slate-400 mb-2">
+                <span>Date officielle (UTC)</span>
+                <span>{match.dateStr}</span>
+              </div>
+              <div class="text-xs font-semibold text-[#f7d618] mb-3 bg-[#f7d618]/10 py-1.5 px-3 rounded-lg border border-[#f7d618]/20 flex justify-between items-center">
+                <span>Heure locale chez vous :</span>
+                <span class="local-time" data-utc={match.utcKickoff}>Chargement...</span>
+              </div>
+              <div class="grid grid-cols-4 gap-1 text-center bg-black/40 rounded-xl p-2.5" data-countdown={match.utcKickoff}>
+                <div><div class="font-bebas text-xl text-white days">00</div><div class="text-[9px] uppercase text-slate-500">Jours</div></div>
+                <div><div class="font-bebas text-xl text-white hours">00</div><div class="text-[9px] uppercase text-slate-500">Heures</div></div>
+                <div><div class="font-bebas text-xl text-white minutes">00</div><div class="text-[9px] uppercase text-slate-500">Min</div></div>
+                <div><div class="font-bebas text-xl text-[#f7d618] seconds">00</div><div class="text-[9px] uppercase text-slate-500">Sec</div></div>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       <!-- Important Notice / RGPD / Transport -->

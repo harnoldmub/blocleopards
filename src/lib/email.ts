@@ -108,3 +108,67 @@ export async function sendInscriptionConfirmation(opts: {
     console.error("Email send error:", err);
   }
 }
+
+export async function sendGuadalajaraConfirmation(opts: {
+  to: string;
+  firstName: string;
+  lastName: string;
+  reference: string;
+}) {
+  const html = `
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="utf-8"/></head>
+<body style="margin:0;padding:0;background:#07090f;font-family:'Sora',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#07090f;padding:40px 16px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#0d1117;border-radius:20px;border:1px solid rgba(247,214,24,0.25);overflow:hidden;">
+        <tr>
+          <td style="background:linear-gradient(135deg,#1c2e8f,#07090f);padding:36px 40px;text-align:center;border-bottom:2px solid #f7d618;">
+            <p style="margin:0 0 8px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#f7d618;font-weight:700;">Le Bloc de Guadalajara</p>
+            <h1 style="margin:0;font-size:26px;font-weight:800;color:#ffffff;">Demande reçue</h1>
+            <p style="margin:10px 0 0;font-size:13px;color:#cbd5e1;">RDC vs Colombie — 23 juin 2026, Guadalajara</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:36px 40px;">
+            <p style="margin:0 0 20px;font-size:16px;color:#e2e8f0;">Bonjour <strong>${opts.firstName} ${opts.lastName}</strong>,</p>
+            <p style="margin:0 0 24px;font-size:14px;color:#94a3b8;line-height:1.7;">
+              Votre demande d'assistance pour le match RDC – Colombie a bien été reçue. Votre dossier (pièce d'identité et preuve de transport) sera examiné par le Ministère des Sports et Loisirs. Le nombre de places étant limité, une liste finale des bénéficiaires sera arrêtée après vérification.
+            </p>
+            <div style="background:rgba(247,214,24,0.08);border:1px solid rgba(247,214,24,0.25);border-radius:12px;padding:20px 24px;margin-bottom:24px;text-align:center;">
+              <p style="margin:0 0 6px;font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:#f7d618;font-weight:700;">Votre numéro de demande</p>
+              <p style="margin:0;font-size:22px;font-weight:800;color:#ffffff;font-family:monospace;letter-spacing:0.05em;">${opts.reference}</p>
+            </div>
+            <p style="margin:0;font-size:12px;color:#475569;line-height:1.7;">
+              Conservez ce numéro. Toute communication officielle (y compris le billet électronique si vous êtes retenu) se fera à cette adresse email.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:20px 40px;border-top:1px solid rgba(255,255,255,0.06);text-align:center;">
+            <p style="margin:0;font-size:11px;color:#475569;">Tous derrière les Léopards — © 2026 Bloc Léopards · <a href="${BASE_URL}" style="color:#f7d618;text-decoration:none;">blocleopards.com</a></p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  if (!resend) {
+    console.warn("RESEND_API_KEY non configurée — email Guadalajara non envoyé.");
+    return;
+  }
+
+  try {
+    await resend.emails.send({
+      from: FROM,
+      to: opts.to,
+      subject: `Demande reçue — ${opts.reference} | Bloc de Guadalajara`,
+      html,
+    });
+  } catch (err) {
+    console.error("Email Guadalajara send error:", err);
+  }
+}

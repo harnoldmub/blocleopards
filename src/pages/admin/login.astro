@@ -2,7 +2,7 @@
 import { isAdminAuthed } from "../../lib/auth";
 
 if (isAdminAuthed(Astro.cookies)) {
-  return Astro.redirect("/admin/billets");
+  return Astro.redirect("/admin/dashboard");
 }
 ---
 <!doctype html>
@@ -109,7 +109,7 @@ if (isAdminAuthed(Astro.cookies)) {
             body: JSON.stringify({ username, password }),
           });
           if (res.ok) {
-            window.location.href = '/admin/billets';
+            window.location.href = '/admin/dashboard';
           } else {
             errorMsg.style.display = 'block';
             btn.textContent = "Entrer dans l'Admin";

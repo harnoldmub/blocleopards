@@ -48,6 +48,7 @@ export const GET: APIRoute = async ({ cookies }) => {
       m.anti_fraud_flags,
       m.created_at
     from mondial_inscriptions m
+    where m.programme = 'tirage_usa'
     order by m.created_at desc
   `;
 

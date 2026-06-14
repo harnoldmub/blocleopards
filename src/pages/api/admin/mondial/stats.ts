@@ -20,11 +20,13 @@ export const GET: APIRoute = async ({ cookies }) => {
         count(*) filter (where verification_status = 'flagged')::integer as flagged,
         count(*) filter (where verification_status = 'rejected')::integer as rejected
       from mondial_inscriptions
+      where programme = 'tirage_usa'
     `;
 
     const stateStats = await sql`
       select state_us, count(*)::integer as count
       from mondial_inscriptions
+      where programme = 'tirage_usa'
       group by state_us
       order by count desc
     `;

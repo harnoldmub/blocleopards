@@ -39,6 +39,7 @@ export const GET: APIRoute = async ({ cookies }) => {
         j.deleted_at as document_deleted_at
       from mondial_inscriptions m
       left join justificatifs_identite j on j.inscription_id = m.id
+      where m.programme = 'tirage_usa'
       order by m.created_at desc
     `;
 

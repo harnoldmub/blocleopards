@@ -21,11 +21,23 @@ import SectionHeader from "../components/SectionHeader.astro";
       <input name="_t" type="hidden" id="contact-t" />
       <script>document.getElementById('contact-t').value = Date.now();</script>
       <div class="grid gap-3 md:grid-cols-2">
-        <input name="nom" placeholder="Nom" required class="rounded-xl border border-slate-300 bg-white px-4 py-3" />
-        <input type="email" name="email" placeholder="Email" required class="rounded-xl border border-slate-300 bg-white px-4 py-3" />
+        <label class="grid gap-1.5">
+          <span class="text-xs font-semibold text-slate-600">Nom</span>
+          <input name="nom" required class="rounded-xl border border-slate-300 bg-white px-4 py-3" />
+        </label>
+        <label class="grid gap-1.5">
+          <span class="text-xs font-semibold text-slate-600">Email</span>
+          <input type="email" name="email" required class="rounded-xl border border-slate-300 bg-white px-4 py-3" />
+        </label>
       </div>
-      <input name="objet" placeholder="Objet" required class="rounded-xl border border-slate-300 bg-white px-4 py-3" />
-      <textarea name="message" rows="5" placeholder="Votre message" class="rounded-xl border border-slate-300 bg-white px-4 py-3"></textarea>
+      <label class="grid gap-1.5">
+        <span class="text-xs font-semibold text-slate-600">Objet</span>
+        <input name="objet" required class="rounded-xl border border-slate-300 bg-white px-4 py-3" />
+      </label>
+      <label class="grid gap-1.5">
+        <span class="text-xs font-semibold text-slate-600">Message</span>
+        <textarea name="message" rows="5" class="rounded-xl border border-slate-300 bg-white px-4 py-3"></textarea>
+      </label>
       <button type="submit" class="rounded-full bg-brand-yellow px-6 py-3 text-sm font-semibold text-brand-dark">Envoyer</button>
     </form>
 

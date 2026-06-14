@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { requireDatabase } from "../../../lib/neon";
 import { sendInscriptionConfirmation } from "../../../lib/email";
 import { upsertSupporter } from "../../../lib/supporters";
+import { hasObjectStorage, putObject, buildStorageKey } from "../../../lib/storage";
 import crypto from "crypto";
 
 export const prerender = false;
@@ -85,6 +86,22 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     const documentUpload = await prepareUpload(documentFile);
     const portraitUpload = await prepareUpload(portraitFile);
 
+    // Téléverse vers le bucket S3 si configuré ; sinon fallback bytea en DB.
+    const storeFile = async (up: { buffer: Buffer; storedFilename: string }, mime: string) => {
+      if (!hasObjectStorage) return { storageKey: null as string | null, fileData: up.buffer as Buffer | null };
+      try {
+        const key = buildStorageKey("mondial", up.storedFilename);
+        await putObject(key, up.buffer, mime);
+        return { storageKey: key, fileData: null as Buffer | null };
+      } catch (err) {
+        console.error("Upload S3 échoué, fallback DB:", err);
+        return { storageKey: null as string | null, fileData: up.buffer as Buffer | null };
+      }
+    };
+
+    const documentStored = await storeFile(documentUpload, documentFile.type);
+    const portraitStored = await storeFile(portraitUpload, portraitFile.type);
+
     // Anti-fraud checks
     const antiFraudFlags: string[] = [];
 
@@ -123,22 +140,22 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     await sql`
       insert into justificatifs_identite (
         inscription_id, type_document, original_filename, stored_filename,
-        mime_type, size, checksum, file_data, status
+        mime_type, size, checksum, storage_key, file_data, status
       ) values (
         ${inscription.id}, ${documentType}, ${documentFile.name}, ${documentUpload.storedFilename},
         ${documentFile.type}, ${documentFile.size}, ${documentUpload.checksum},
-        ${documentUpload.buffer}, 'pending'
+        ${documentStored.storageKey}, ${documentStored.fileData}, 'pending'
       )
     `;
 
     await sql`
       insert into justificatifs_identite (
         inscription_id, type_document, original_filename, stored_filename,
-        mime_type, size, checksum, file_data, status
+        mime_type, size, checksum, storage_key, file_data, status
       ) values (
         ${inscription.id}, 'PHOTO', ${portraitFile.name}, ${portraitUpload.storedFilename},
         ${portraitFile.type}, ${portraitFile.size}, ${portraitUpload.checksum},
-        ${portraitUpload.buffer}, 'pending'
+        ${portraitStored.storageKey}, ${portraitStored.fileData}, 'pending'
       )
     `;
 

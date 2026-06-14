@@ -1,0 +1,41 @@
+import type { APIRoute } from "astro";
+import { isAdminAuthed } from "../../../../lib/auth";
+import { requireDatabase } from "../../../../lib/neon";
+import { getObject } from "../../../../lib/storage";
+
+export const prerender = false;
+
+export const GET: APIRoute = async ({ request, cookies }) => {
+  if (!isAdminAuthed(cookies)) return new Response("Non autorisé", { status: 401 });
+
+  const id = new URL(request.url).searchParams.get("id");
+  if (!id) return new Response("ID manquant", { status: 400 });
+
+  try {
+    const sql = requireDatabase();
+    const [doc] = await sql`
+      select original_filename, mime_type, file_data, storage_key, deleted_at
+      from justificatifs_identite where id = ${id}
+    `;
+    if (!doc) return new Response("Document introuvable", { status: 404 });
+    if (doc.deleted_at) return new Response("Document supprimé (RGPD).", { status: 410 });
+
+    const headers = {
+      "Content-Type": doc.mime_type,
+      "Content-Disposition": `inline; filename="${doc.original_filename}"`,
+      "Cache-Control": "private, max-age=3600",
+    };
+
+    // Priorité au stockage objet (S3), fallback bytea
+    if (doc.storage_key) {
+      const obj = await getObject(doc.storage_key);
+      if (obj) return new Response(obj.body, { status: 200, headers });
+    }
+    if (doc.file_data) return new Response(doc.file_data, { status: 200, headers });
+
+    return new Response("Fichier non disponible", { status: 404 });
+  } catch (err) {
+    console.error("Guadalajara justificatif error:", err);
+    return new Response("Erreur interne", { status: 500 });
+  }
+};

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Ticket, Users, Mail, Send, Globe, CheckCircle, Clock, AlertTriangle, Trophy } from "lucide-react";
+import { Plane, Users, Mail, Send, Globe, CheckCircle, Clock, AlertTriangle, Trophy } from "lucide-react";
 
 const C = {
   bg: "#07090f",
@@ -114,11 +114,11 @@ export default function AdminDashboard() {
     </div>
   );
 
-  const b = data?.billets  || {};
   const a = data?.adhesions || {};
   const c = data?.contacts  || {};
   const n = data?.newsletter || {};
   const m = data?.mondial   || {};
+  const g = data?.guadalajara || {};
 
   return (
     <div style={{ fontFamily: "'Sora', sans-serif", color: C.text }}>
@@ -136,8 +136,8 @@ export default function AdminDashboard() {
 
       {/* Top stats row */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16, marginBottom: 24 }}>
-        <StatCard icon={<Ticket size={18} />}       label="Billets"      value={b.total || 0}   sub={`${b.pending || 0} en attente`}   color={C.yellow} href="/admin/billets" />
         <StatCard icon={<Globe size={18} />}         label="Mondial USA"  value={m.total || 0}   sub={`${m.verified || 0} vérifiés`}    color={C.purple} href="/admin/mondial" />
+        <StatCard icon={<Plane size={18} />}         label="Guadalajara"  value={g.total || 0}   sub={`${g.pending || 0} en attente`}   color={C.orange} href="/admin/guadalajara" />
         <StatCard icon={<Users size={18} />}         label="Adhésions"    value={a.total || 0}   sub={`${a.pending || 0} en attente`}   color={C.blue}   href="/admin/adhesions" />
         <StatCard icon={<Mail size={18} />}          label="Messages"     value={c.total || 0}   sub={`${c.unread || 0} non lus`}       color="#f472b6"  href="/admin/contacts" />
         <StatCard icon={<Send size={18} />}          label="Newsletter"   value={n.total || 0}   sub="abonnés"                          color={C.green}  href="/admin/newsletter" />
@@ -182,12 +182,12 @@ export default function AdminDashboard() {
 
       {/* Other sections */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
-        <SectionCard title="Billets (matchs amicaux)" icon={<Ticket size={18} />} href="/admin/billets" color={C.yellow}
+        <SectionCard title="Bloc de Guadalajara" icon={<Plane size={18} />} href="/admin/guadalajara" color={C.orange}
           stats={[
-            { label: "Total",        value: b.total        || 0 },
-            { label: "En attente",   value: b.pending      || 0 },
-            { label: "Sélectionnés", value: b.selected     || 0 },
-            { label: "Remis",        value: b.ticket_given || 0 },
+            { label: "Total",        value: g.total    || 0, color: C.orange },
+            { label: "En attente",   value: g.pending  || 0, color: C.yellow },
+            { label: "Sélectionnés", value: g.selected || 0, color: C.green },
+            { label: "Hébergement",  value: g.lodging  || 0, color: C.orange },
           ]}
         />
         <SectionCard title="Adhésions" icon={<Users size={18} />} href="/admin/adhesions" color={C.blue}

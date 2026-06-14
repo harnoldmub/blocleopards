@@ -107,6 +107,7 @@ export const POST: APIRoute = async ({ request, cookies, clientAddress }) => {
         select id, email, first_name, last_name, city, state_us, matchs_vises
         from mondial_inscriptions
         where verification_status = 'verified'
+        and programme = 'tirage_usa'
         and matchs_vises @> ${JSON.stringify([matchKey])}::jsonb
         order by id asc
       `;

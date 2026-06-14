@@ -66,6 +66,12 @@ export default function AdminMondialDashboard({ isSuperAdmin = false }: { isSupe
     status: "verified" | "rejected";
     label: string;
   } | null>(null);
+  const [confirmDanger, setConfirmDanger] = useState<{
+    message: string;
+    detail: string;
+    confirmLabel: string;
+    onConfirm: () => void;
+  } | null>(null);
 
   // ─── Fetching ──────────────────────────────────────────────────────────────
 
@@ -115,19 +121,26 @@ export default function AdminMondialDashboard({ isSuperAdmin = false }: { isSupe
     }
   };
 
-  const deleteInscription = async (id: string, name: string) => {
-    if (!confirm(`Supprimer définitivement l'inscription de ${name} ? Ses fichiers identité seront aussi effacés.`)) return;
-    setActionLoading(`del-${id}`);
-    try {
-      const res = await fetch("/api/admin/mondial/action", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "delete_inscription", id })
-      });
-      if (res.ok) await loadData();
-      else { const d = await res.json(); alert(d.error ?? "Erreur serveur."); }
-    } catch (e) { console.error(e); }
-    finally { setActionLoading(null); }
+  const deleteInscription = (id: string, name: string) => {
+    setConfirmDanger({
+      message: `Supprimer l'inscription de ${name} ?`,
+      detail: "Cette action est irréversible. Ses fichiers d'identité seront aussi effacés.",
+      confirmLabel: "Supprimer",
+      onConfirm: async () => {
+        setConfirmDanger(null);
+        setActionLoading(`del-${id}`);
+        try {
+          const res = await fetch("/api/admin/mondial/action", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "delete_inscription", id })
+          });
+          if (res.ok) await loadData();
+          else { const d = await res.json(); alert(d.error ?? "Erreur serveur."); }
+        } catch (e) { console.error(e); }
+        finally { setActionLoading(null); }
+      },
+    });
   };
 
   const verifyGroup = async (groupIds: string[], groupStatus: string) => {
@@ -159,27 +172,32 @@ export default function AdminMondialDashboard({ isSuperAdmin = false }: { isSupe
     }
   };
 
-  const purgeDocuments = async () => {
-    if (!confirm("Voulez-vous supprimer physiquement TOUTES les pièces d'identité des dossiers vérifiés et rejetés ? Cette opération est irréversible (conformité RGPD).")) {
-      return;
-    }
-    setActionLoading("purge");
-    try {
-      const res = await fetch("/api/admin/mondial/action", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "delete_documents" })
-      });
-      const d = await res.json();
-      if (res.ok) {
-        alert(`${d.deletedCount} documents d'identité supprimés en toute sécurité.`);
-        await loadData();
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setActionLoading(null);
-    }
+  const purgeDocuments = () => {
+    setConfirmDanger({
+      message: "Purger toutes les pièces d'identité ?",
+      detail: "Toutes les pièces d'identité des dossiers vérifiés et rejetés seront supprimées physiquement. Opération irréversible (conformité RGPD).",
+      confirmLabel: "Purger les documents",
+      onConfirm: async () => {
+        setConfirmDanger(null);
+        setActionLoading("purge");
+        try {
+          const res = await fetch("/api/admin/mondial/action", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "delete_documents" })
+          });
+          const d = await res.json();
+          if (res.ok) {
+            alert(`${d.deletedCount} documents d'identité supprimés en toute sécurité.`);
+            await loadData();
+          }
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setActionLoading(null);
+        }
+      },
+    });
   };
 
   const startDraw = async () => {
@@ -812,6 +830,17 @@ export default function AdminMondialDashboard({ isSuperAdmin = false }: { isSupe
         confirmLabel={confirmAction.status === "verified" ? "Oui, vérifier" : "Oui, refuser"}
         onConfirm={confirmStatusChange}
         onCancel={() => setConfirmAction(null)}
+      />
+    )}
+
+    {confirmDanger && (
+      <ConfirmDialog
+        tone="danger"
+        message={confirmDanger.message}
+        detail={confirmDanger.detail}
+        confirmLabel={confirmDanger.confirmLabel}
+        onConfirm={confirmDanger.onConfirm}
+        onCancel={() => setConfirmDanger(null)}
       />
     )}
 

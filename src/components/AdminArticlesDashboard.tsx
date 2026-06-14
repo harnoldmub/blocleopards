@@ -66,13 +66,13 @@ function ArticleDrawer({ article, onClose, onSave }: {
         </div>
 
         <Field label="Titre *"><input style={inputStyle} value={form.title} onChange={e => set("title", e.target.value)} /></Field>
-        <Field label="Slug *">
-          <input style={inputStyle} value={form.slug} onChange={e => set("slug", e.target.value)} placeholder="ex: 2026-06-03-naza-liege" />
+        <Field label="Slug * (format : 2026-06-03-naza-liege)">
+          <input style={inputStyle} value={form.slug} onChange={e => set("slug", e.target.value)} />
         </Field>
         <Field label="Date *"><input style={inputStyle} type="date" value={form.date} onChange={e => set("date", e.target.value)} /></Field>
         <Field label="Description *"><textarea style={{ ...inputStyle, resize: "vertical" }} rows={2} value={form.description} onChange={e => set("description", e.target.value)} /></Field>
-        <Field label="Corps de l'article *">
-          <textarea style={{ ...inputStyle, resize: "vertical", minHeight: 180 }} rows={8} value={form.body} onChange={e => set("body", e.target.value)} placeholder="Séparer les paragraphes par une ligne vide." />
+        <Field label="Corps de l'article * (séparer les paragraphes par une ligne vide)">
+          <textarea style={{ ...inputStyle, resize: "vertical", minHeight: 180 }} rows={8} value={form.body} onChange={e => set("body", e.target.value)} />
         </Field>
         <Field label="Tags (séparés par virgule)"><input style={inputStyle} value={tagsStr} onChange={e => setTagsStr(e.target.value)} /></Field>
         <Field label="Image (chemin /media/...)"><input style={inputStyle} value={form.image ?? ""} onChange={e => set("image", e.target.value)} /></Field>

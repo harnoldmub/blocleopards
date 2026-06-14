@@ -1,6 +1,6 @@
 ---
 import Icon from "./Icon.astro";
-const { billeterieActive = true } = Astro.props;
+const { billeterieActive = true, guadalajaraActive = true } = Astro.props;
 const nav = [
   { label: "Accueil", href: "/" },
   { 
@@ -67,10 +67,10 @@ const nav = [
 
     <!-- CTA Buttons -->
     <div class="flex items-center gap-2">
-      {billeterieActive && (
+      {guadalajaraActive && (
         <a href="/mondial" class="relative hidden rounded-full px-4 py-2 text-sm font-semibold md:flex items-center gap-1.5" style="background:linear-gradient(135deg,#1c2e8f,#0b0f1f);color:#f7d618;border:1px solid rgba(247,214,24,0.3);box-shadow:0 4px 20px rgba(28,46,143,0.35);">
           <Icon name="ticket" size={14} />
-          <span>Gagne ton billet</span>
+          <span>Demande ton billet</span>
         </a>
       )}
       <a href="/rejoindre" class="gradient-border relative rounded-full px-4 py-2 text-sm font-semibold">
@@ -105,10 +105,10 @@ const nav = [
         )
       ))}
       <div class="pt-4 flex flex-col gap-3">
-        {billeterieActive && (
+        {guadalajaraActive && (
           <a href="/mondial" class="w-full text-center rounded-full px-4 py-3 text-sm font-semibold flex items-center justify-center gap-2" style="background:linear-gradient(135deg,#1c2e8f,#0b0f1f);color:#f7d618;border:1px solid rgba(247,214,24,0.3);">
             <Icon name="ticket" size={14} />
-            Gagne ton billet
+            Demande ton billet
           </a>
         )}
         <a href="/rejoindre" class="block w-full text-center rounded-full bg-brand-blue text-white px-4 py-3 text-sm font-semibold">
