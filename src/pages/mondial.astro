@@ -20,19 +20,39 @@ if (hasDatabase) {
   }
 }
 
+const COUNTRY_FLAGS: Record<string, string> = {
+  "USA": "us", "États-Unis": "us", "Etats-Unis": "us",
+  "Canada": "ca", "Mexique": "mx", "France": "fr", "Belgique": "be",
+  "RDC": "cd", "Congo": "cg", "Royaume-Uni": "gb", "Allemagne": "de",
+  "Suisse": "ch", "Italie": "it", "Irlande": "ie",
+};
+const flagFor = (country: string) => COUNTRY_FLAGS[(country || "").trim()] || "cd";
+
 const mockSupporters = [
-  { first_name: "Arnold", city: "Houston", state_us: "TX", country: "USA" },
-  { first_name: "Merveille", city: "Atlanta", state_us: "GA", country: "USA" },
-  { first_name: "Béni", city: "Dallas", state_us: "TX", country: "USA" },
-  { first_name: "Jonathan", city: "New York", state_us: "NY", country: "USA" },
-  { first_name: "Sarah", city: "Washington", state_us: "DC", country: "USA" },
-  { first_name: "Grace", city: "Los Angeles", state_us: "CA", country: "USA" },
-  { first_name: "Dieudonné", city: "Chicago", state_us: "IL", country: "USA" },
-  { first_name: "Rachel", city: "Miami", state_us: "FL", country: "USA" },
-  { first_name: "Christian", city: "Seattle", state_us: "WA", country: "USA" },
+  { first_name: "Patrick",   place: "Montréal",     flag: "ca" },
+  { first_name: "Grace",     place: "Guadalajara",  flag: "mx" },
+  { first_name: "Sarah",     place: "Paris",        flag: "fr" },
+  { first_name: "Olivier",   place: "Bruxelles",    flag: "be" },
+  { first_name: "Merveille", place: "Kinshasa",     flag: "cd" },
+  { first_name: "Jonathan",  place: "Toronto",      flag: "ca" },
+  { first_name: "Christelle",place: "Mexico",       flag: "mx" },
+  { first_name: "David",     place: "Lyon",         flag: "fr" },
+  { first_name: "Rachel",    place: "Liège",        flag: "be" },
+  { first_name: "Dieudonné", place: "Lubumbashi",   flag: "cd" },
+  { first_name: "Béni",      place: "Ottawa",       flag: "ca" },
+  { first_name: "Nadia",     place: "Marseille",    flag: "fr" },
+  { first_name: "Christian", place: "Anvers",       flag: "be" },
+  { first_name: "Gloire",    place: "Goma",         flag: "cd" },
 ];
 
-const supporters = [...dbSupporters, ...mockSupporters];
+// Normalise les supporters vérifiés de la base avec leur drapeau
+const dbList = dbSupporters.map((s: any) => ({
+  first_name: s.first_name,
+  place: [s.city, (s.country === "USA" || s.country === "États-Unis") ? s.state_us : null].filter(Boolean).join(", ") || s.country || "RDC",
+  flag: flagFor(s.country),
+}));
+
+const supporters = [...dbList, ...mockSupporters];
 
 const billeterieActive = (await getSetting("billeterie_active", "true")) !== "false";
 const guadalajaraActive = (await getSetting("guadalajara_active", "true")) !== "false";
@@ -144,7 +164,7 @@ const matches = [
         <div class="absolute inset-0 bg-radial-at-t from-[#f7d618]/5 to-transparent pointer-events-none"></div>
         <div class="text-center max-w-xl mx-auto mb-6">
           <span class="text-xs uppercase tracking-[0.2em] text-[#f7d618] font-bold">Le Mur des Supporters</span>
-          <h2 class="font-bebas text-3xl text-white mt-2">ILS SERONT DANS LE BLOC AUX USA</h2>
+          <h2 class="font-bebas text-3xl text-white mt-2">ILS SERONT DANS LE BLOC</h2>
           <p class="text-slate-400 text-xs mt-1">Rejoignez la diaspora et affichez votre soutien aux Léopards.</p>
         </div>
 
@@ -154,8 +174,8 @@ const matches = [
             {supporters.map((s) => (
               <div class="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/5 text-sm">
                 <span class="font-semibold text-white">{s.first_name}</span>
-                <span class="text-slate-400">({s.city}, {s.state_us})</span>
-                <img src="/flags/us.png" alt="USA" class="h-4 w-auto rounded" />
+                <span class="text-slate-400">({s.place})</span>
+                <img src={`/flags/${s.flag}.png`} alt={s.flag} class="h-4 w-auto rounded" />
               </div>
             ))}
           </div>
@@ -164,8 +184,8 @@ const matches = [
             {supporters.map((s) => (
               <div class="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/5 text-sm">
                 <span class="font-semibold text-white">{s.first_name}</span>
-                <span class="text-slate-400">({s.city}, {s.state_us})</span>
-                <img src="/flags/us.png" alt="USA" class="h-4 w-auto rounded" />
+                <span class="text-slate-400">({s.place})</span>
+                <img src={`/flags/${s.flag}.png`} alt={s.flag} class="h-4 w-auto rounded" />
               </div>
             ))}
           </div>
