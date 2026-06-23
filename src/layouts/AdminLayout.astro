@@ -82,8 +82,13 @@ const nav = isSuper ? allNav : allNav.filter(item => item.id === "dashboard" || 
         td, th { padding: 10px 10px !important; }
       }
       @media (max-width: 480px) {
-        .admin-sidebar { width: 0; border: none; overflow: hidden; }
-        .admin-main { margin-left: 0; max-width: 100vw; padding: 16px; }
+        .admin-sidebar { width: 52px; }
+        .admin-sidebar__brand-text, .admin-sidebar__link span:last-child { display: none; }
+        .admin-sidebar__brand img { margin: 0 auto; height: 22px; }
+        .admin-sidebar__link { padding: 10px 6px; justify-content: center; }
+        .admin-sidebar__logout { justify-content: center; }
+        .admin-sidebar__logout span:last-child { display: none; }
+        .admin-main { margin-left: 52px; max-width: calc(100vw - 52px); padding: 16px 12px; }
       }
     </style>
   </head>

@@ -30,16 +30,67 @@ function StatCard({ label, value, color = C.yellow }: { label: string; value: nu
   );
 }
 
-function Drawer({ row, onClose, onUpdate }: { row: any; onClose: () => void; onUpdate: (id: string, status: string, notes: string) => Promise<void> }) {
+function Drawer({ row, onClose, onUpdate, onReload }: { row: any; onClose: () => void; onUpdate: (id: string, status: string, notes: string) => Promise<void>; onReload: () => Promise<void> }) {
   const [status, setStatus] = useState(row.status);
   const [notes, setNotes] = useState(row.admin_notes || "");
   const [saving, setSaving] = useState(false);
+  const [reply, setReply] = useState("");
+  const [consigne, setConsigne] = useState("");
+  const [drafting, setDrafting] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [feedback, setFeedback] = useState<{ type: "ok" | "err" | "info"; text: string } | null>(null);
 
   const save = async () => {
     setSaving(true);
     await onUpdate(row.id, status, notes);
     setSaving(false);
     onClose();
+  };
+
+  const generateDraft = async () => {
+    setDrafting(true);
+    setFeedback(null);
+    try {
+      const r = await fetch("/api/admin/contact-ai-draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nom: row.nom, objet: row.objet, message: row.message, consigne }),
+      });
+      const d = await r.json();
+      if (r.ok && d.draft) {
+        setReply(d.draft);
+        if (d.source === "fallback") setFeedback({ type: "info", text: "Modèle de base utilisé (IA non configurée — ajoutez GEMINI_API_KEY)." });
+      } else {
+        setFeedback({ type: "err", text: d.error || "Impossible de générer le brouillon." });
+      }
+    } catch {
+      setFeedback({ type: "err", text: "Erreur réseau lors de la génération." });
+    }
+    setDrafting(false);
+  };
+
+  const sendReply = async () => {
+    if (!reply.trim()) { setFeedback({ type: "err", text: "Le message est vide." }); return; }
+    setSending(true);
+    setFeedback(null);
+    try {
+      const r = await fetch("/api/admin/contact-reply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: row.id, to: row.email, objet: row.objet, body: reply, notes }),
+      });
+      const d = await r.json();
+      if (r.ok && d.success) {
+        setFeedback({ type: "ok", text: "Réponse envoyée et message marqué « Répondu »." });
+        await onReload();
+        setTimeout(onClose, 900);
+      } else {
+        setFeedback({ type: "err", text: d.error || "Échec de l'envoi." });
+      }
+    } catch {
+      setFeedback({ type: "err", text: "Erreur réseau lors de l'envoi." });
+    }
+    setSending(false);
   };
 
   const actions = [
@@ -93,12 +144,40 @@ function Drawer({ row, onClose, onUpdate }: { row: any; onClose: () => void; onU
           <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: `1.5px solid ${C.border}`, borderRadius: 10, padding: "10px 12px", color: C.text, fontSize: 13, fontFamily: "'Sora', sans-serif", resize: "vertical", outline: "none" }} />
         </div>
 
-        <a href={`mailto:${row.email}?subject=Re: ${encodeURIComponent(row.objet)}`} style={{ display: "block", width: "100%", padding: "14px", background: "#1c2e8f", border: "none", borderRadius: 12, color: "#fff", fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, letterSpacing: "0.06em", cursor: "pointer", textDecoration: "none", textAlign: "center", marginBottom: 10 }}>
-          Répondre par email
-        </a>
+        {/* Réponse directe + IA */}
+        <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 18, marginBottom: 14 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, gap: 10 }}>
+            <div style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: C.muted, fontWeight: 700 }}>Répondre à {row.email}</div>
+            <button onClick={generateDraft} disabled={drafting} title="Générer un brouillon avec l'IA"
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 10, border: `1.5px solid rgba(167,139,250,0.4)`, background: "rgba(167,139,250,0.1)", color: "#a78bfa", fontSize: 12, fontWeight: 700, cursor: drafting ? "wait" : "pointer", whiteSpace: "nowrap" }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3L12 3z"/></svg>
+              {drafting ? "Rédaction…" : "Brouillon IA"}
+            </button>
+          </div>
 
-        <button onClick={save} disabled={saving} style={{ width: "100%", padding: "14px", background: C.yellow, border: "none", borderRadius: 12, color: "#07090f", fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, letterSpacing: "0.06em", cursor: "pointer", opacity: saving ? 0.6 : 1 }}>
-          {saving ? "Enregistrement..." : "Enregistrer le statut"}
+          <input value={consigne} onChange={(e) => setConsigne(e.target.value)} aria-label="Consigne pour l'IA"
+            style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 12px", color: C.text, fontSize: 12, fontFamily: "'Sora', sans-serif", outline: "none", marginBottom: 10 }} />
+          <div style={{ fontSize: 10, color: C.muted, marginTop: -6, marginBottom: 10 }}>Consigne optionnelle pour l'IA (ton, infos à inclure…)</div>
+
+          <textarea value={reply} onChange={(e) => setReply(e.target.value)} rows={8} aria-label="Message de réponse"
+            style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: `1.5px solid ${C.border}`, borderRadius: 10, padding: "12px 14px", color: C.text, fontSize: 14, lineHeight: 1.6, fontFamily: "'Sora', sans-serif", resize: "vertical", outline: "none" }} />
+        </div>
+
+        {feedback && (
+          <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 10, fontSize: 13,
+            background: feedback.type === "ok" ? "rgba(52,211,153,0.1)" : feedback.type === "err" ? "rgba(248,113,113,0.1)" : "rgba(96,165,250,0.1)",
+            border: `1px solid ${feedback.type === "ok" ? "rgba(52,211,153,0.3)" : feedback.type === "err" ? "rgba(248,113,113,0.3)" : "rgba(96,165,250,0.3)"}`,
+            color: feedback.type === "ok" ? "#34d399" : feedback.type === "err" ? "#f87171" : "#60a5fa" }}>
+            {feedback.text}
+          </div>
+        )}
+
+        <button onClick={sendReply} disabled={sending || !reply.trim()} style={{ width: "100%", padding: "14px", background: C.yellow, border: "none", borderRadius: 12, color: "#07090f", fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, letterSpacing: "0.06em", cursor: sending || !reply.trim() ? "not-allowed" : "pointer", opacity: sending || !reply.trim() ? 0.5 : 1, marginBottom: 10 }}>
+          {sending ? "Envoi…" : "Envoyer la réponse"}
+        </button>
+
+        <button onClick={save} disabled={saving} style={{ width: "100%", padding: "12px", background: "transparent", border: `1.5px solid ${C.border}`, borderRadius: 12, color: C.muted, fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: saving ? 0.6 : 1 }}>
+          {saving ? "Enregistrement…" : "Enregistrer le statut sans envoyer"}
         </button>
       </div>
     </div>
@@ -235,7 +314,7 @@ export default function AdminContactsDashboard() {
         </div>
       )}
 
-      {selected && <Drawer row={selected} onClose={() => setSelected(null)} onUpdate={updateStatus} />}
+      {selected && <Drawer row={selected} onClose={() => setSelected(null)} onUpdate={updateStatus} onReload={load} />}
     </div>
   );
 }
