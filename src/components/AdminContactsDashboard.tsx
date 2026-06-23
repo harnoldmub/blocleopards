@@ -59,7 +59,6 @@ function Drawer({ row, onClose, onUpdate, onReload }: { row: any; onClose: () =>
       const d = await r.json();
       if (r.ok && d.draft) {
         setReply(d.draft);
-        if (d.source === "fallback") setFeedback({ type: "info", text: "Modèle de base utilisé (IA non configurée — ajoutez GEMINI_API_KEY)." });
       } else {
         setFeedback({ type: "err", text: d.error || "Impossible de générer le brouillon." });
       }
