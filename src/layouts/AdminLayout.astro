@@ -116,6 +116,12 @@ const nav = isSuper ? allNav : allNav.filter(item => item.id === "dashboard" || 
           </a>
         )}
         {isSuper && (
+          <a href="/admin/donnees" class={`admin-sidebar__link${section === 'donnees' ? ' active' : ''}`} style="margin-bottom:4px;">
+            <span class="admin-sidebar__link-icon"><Icon name="trash" size={16} /></span>
+            <span>Données</span>
+          </a>
+        )}
+        {isSuper && (
           <a href="/admin/logs" class={`admin-sidebar__link${section === 'logs' ? ' active' : ''}`} style="margin-bottom:8px;">
             <span class="admin-sidebar__link-icon"><Icon name="activity" size={16} /></span>
             <span>Logs</span>

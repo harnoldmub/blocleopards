@@ -1,0 +1,11 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import AdminMatchDataManager from "../../components/AdminMatchDataManager.tsx";
+import { isAdminAuthed, isSuperAdmin } from "../../lib/auth";
+
+if (!isAdminAuthed(Astro.cookies)) return Astro.redirect("/admin/login");
+if (!isSuperAdmin(Astro.cookies)) return Astro.redirect("/admin/dashboard");
+---
+<AdminLayout title="Données des matchs — Admin Bloc Léopards" section="donnees">
+  <AdminMatchDataManager client:load />
+</AdminLayout>
