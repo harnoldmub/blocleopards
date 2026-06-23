@@ -4,6 +4,7 @@ const apiKey = import.meta.env.RESEND_API_KEY;
 const resend = apiKey ? new Resend(apiKey) : null;
 
 const FROM = import.meta.env.EMAIL_FROM ?? "Bloc Léopards <onboarding@resend.dev>";
+const REPLY_TO = import.meta.env.EMAIL_REPLY_TO; // inbox équipe pour recevoir les réponses
 const BASE_URL = import.meta.env.PUBLIC_SITE_URL ?? "https://blocleopards.com";
 
 /**
@@ -56,6 +57,7 @@ export async function sendContactReply(opts: {
     await resend.emails.send({
       from: FROM,
       to: opts.to,
+      ...(REPLY_TO ? { replyTo: REPLY_TO } : {}),
       subject: `Re: ${opts.objet} — Bloc Léopards`,
       html,
       text: opts.body.trim(),
@@ -162,6 +164,7 @@ export async function sendInscriptionConfirmation(opts: {
     await resend.emails.send({
       from: FROM,
       to: opts.to,
+      ...(REPLY_TO ? { replyTo: REPLY_TO } : {}),
       subject: `Candidature reçue — ${opts.ticketNumber} | Bloc Léopards Mondial 2026`,
       html,
     });
@@ -226,6 +229,7 @@ export async function sendGuadalajaraConfirmation(opts: {
     await resend.emails.send({
       from: FROM,
       to: opts.to,
+      ...(REPLY_TO ? { replyTo: REPLY_TO } : {}),
       subject: `Demande reçue — ${opts.reference} | Bloc de Guadalajara`,
       html,
     });
