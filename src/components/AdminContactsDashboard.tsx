@@ -138,19 +138,14 @@ function Drawer({ row, onClose, onUpdate, onReload }: { row: any; onClose: () =>
           </div>
         </div>
 
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: C.muted, fontWeight: 700, marginBottom: 8 }}>Notes admin</div>
-          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: `1.5px solid ${C.border}`, borderRadius: 10, padding: "10px 12px", color: C.text, fontSize: 13, fontFamily: "'Sora', sans-serif", resize: "vertical", outline: "none" }} />
-        </div>
-
         {/* Réponse directe + IA */}
         <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 18, marginBottom: 14 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, gap: 10 }}>
             <div style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: C.muted, fontWeight: 700 }}>Répondre à {row.email}</div>
-            <button onClick={generateDraft} disabled={drafting} title="Générer un brouillon avec l'IA"
+            <button onClick={generateDraft} disabled={drafting} title="Rédiger la réponse avec l'IA"
               style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 10, border: `1.5px solid rgba(167,139,250,0.4)`, background: "rgba(167,139,250,0.1)", color: "#a78bfa", fontSize: 12, fontWeight: 700, cursor: drafting ? "wait" : "pointer", whiteSpace: "nowrap" }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3L12 3z"/></svg>
-              {drafting ? "Rédaction…" : "Brouillon IA"}
+              {drafting ? "Rédaction…" : "Répondre avec l'IA"}
             </button>
           </div>
 
@@ -178,6 +173,13 @@ function Drawer({ row, onClose, onUpdate, onReload }: { row: any; onClose: () =>
         <button onClick={save} disabled={saving} style={{ width: "100%", padding: "12px", background: "transparent", border: `1.5px solid ${C.border}`, borderRadius: 12, color: C.muted, fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: saving ? 0.6 : 1 }}>
           {saving ? "Enregistrement…" : "Enregistrer le statut sans envoyer"}
         </button>
+
+        {/* Notes admin — tout en bas */}
+        <div style={{ marginTop: 24, borderTop: `1px solid ${C.border}`, paddingTop: 18 }}>
+          <div style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: C.muted, fontWeight: 700, marginBottom: 8 }}>Notes admin (privées)</div>
+          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} aria-label="Notes admin privées" style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: `1.5px solid ${C.border}`, borderRadius: 10, padding: "10px 12px", color: C.text, fontSize: 13, fontFamily: "'Sora', sans-serif", resize: "vertical", outline: "none" }} />
+          <div style={{ fontSize: 10, color: C.muted, marginTop: 6 }}>Enregistrées via « Envoyer la réponse » ou « Enregistrer le statut ».</div>
+        </div>
       </div>
     </div>
   );
