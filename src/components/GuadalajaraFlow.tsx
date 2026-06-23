@@ -94,6 +94,8 @@ export default function GuadalajaraFlow() {
   const [loading, setLoading] = useState(false);
   const [reference, setReference] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [hp, setHp] = useState(""); // honeypot anti-bot (doit rester vide)
+  const mountedAt = useRef(Date.now());
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -150,6 +152,8 @@ export default function GuadalajaraFlow() {
     fd.append("needs_lodging", String(form.needsLodging));
     if (form.identityFile) fd.append("identity", form.identityFile);
     if (form.transportFile) fd.append("transport_proof", form.transportFile);
+    fd.append("_hp", hp);
+    fd.append("_t", String(mountedAt.current));
 
     try {
       const res = await fetch("/api/mondial/guadalajara", { method: "POST", body: fd });
@@ -309,6 +313,10 @@ export default function GuadalajaraFlow() {
                   </label>
                 </div>
               </div>
+
+              {/* Honeypot anti-bot — invisible aux humains */}
+              <input type="text" name="_hp" value={hp} onChange={(e) => setHp(e.target.value)} tabIndex={-1} autoComplete="off" aria-hidden="true"
+                style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }} />
 
               {error && <div className="mt-4 p-3 rounded-xl bg-red-950/40 border border-red-500/20 text-xs text-red-300">{error}</div>}
 

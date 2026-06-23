@@ -1,34 +1,9 @@
 import type { APIRoute } from "astro";
 import { isAdminAuthed } from "../../../lib/auth";
 import { requireDatabase } from "../../../lib/neon";
-import { deleteObject } from "../../../lib/storage";
+import { MATCHES, findMatch, isPast, purgeMatchDocuments, type MatchDef } from "../../../lib/matches";
 
 export const prerender = false;
-
-type Source = "mondial_usa" | "guadalajara" | "billets";
-
-interface MatchDef {
-  key: string;
-  label: string;
-  venue: string;
-  date: string; // YYYY-MM-DD
-  source: Source;
-}
-
-const MATCHES: MatchDef[] = [
-  { key: "rdc-denmark", label: "RDC vs Danemark",    venue: "Liège (amical)",            date: "2026-06-03", source: "billets" },
-  { key: "rdc-chili",   label: "RDC vs Chili",       venue: "Marbella (amical)",         date: "2026-06-09", source: "billets" },
-  { key: "houston",     label: "RDC vs Portugal",    venue: "NRG Stadium, Houston",      date: "2026-06-17", source: "mondial_usa" },
-  { key: "guadalajara", label: "RDC vs Colombie",    venue: "Estadio Akron, Guadalajara",date: "2026-06-23", source: "guadalajara" },
-  { key: "atlanta",     label: "RDC vs Ouzbékistan", venue: "Mercedes-Benz, Atlanta",    date: "2026-06-27", source: "mondial_usa" },
-];
-
-const isPast = (date: string) => {
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  return new Date(date + "T00:00:00") < today;
-};
-
-const findMatch = (key: string) => MATCHES.find((m) => m.key === key);
 
 /** Demandes liées à un match selon sa source. */
 async function countDemandes(sql: any, m: MatchDef): Promise<number> {
@@ -100,28 +75,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     const sql = requireDatabase();
 
-    // Condition SQL de ciblage des inscriptions du match
-    const matchInscriptions = m.source === "guadalajara"
-      ? sql`m.programme = 'ministere_guadalajara'`
-      : sql`m.matchs_vises @> ${JSON.stringify([m.key])}::jsonb`;
-
     // 1. Purge des pièces justificatives (S3 + bytea), commune aux deux portées
-    let purgedDocs = 0;
-    if (m.source !== "billets") {
-      const docs = await sql`
-        select j.id, j.storage_key from justificatifs_identite j
-        join mondial_inscriptions m on m.id = j.inscription_id
-        where ${matchInscriptions} and j.deleted_at is null`;
-      for (const d of docs) {
-        if (d.storage_key) await deleteObject(d.storage_key);
-      }
-      if (docs.length > 0) {
-        await sql`
-          update justificatifs_identite set deleted_at = now(), file_data = null, storage_key = null
-          where id = any(${docs.map((d: any) => d.id)})`;
-      }
-      purgedDocs = docs.length;
-    }
+    const purgedDocs = await purgeMatchDocuments(sql, m);
 
     if (scope === "documents") {
       return new Response(JSON.stringify({ success: true, purgedDocuments: purgedDocs }), { status: 200, headers });

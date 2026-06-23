@@ -1,6 +1,12 @@
 ---
 const { title, description, image, url } = Astro.props;
-const canonical = url ?? "https://bloc-leopards.example";
+const SITE = "https://blocleopards.com";
+const canonical = url ?? SITE;
+// Image de partage par défaut (foule des supporters) ; absolue pour les réseaux
+const rawImage = image ?? "/media/ivanor-foule-tribune.jpg";
+const ogImage = rawImage.startsWith("http")
+  ? rawImage
+  : `${SITE}${rawImage.startsWith("/") ? "" : "/"}${rawImage}`;
 ---
 <title>{title}</title>
 <meta name="description" content={description} />
@@ -9,6 +15,9 @@ const canonical = url ?? "https://bloc-leopards.example";
 <meta property="og:description" content={description} />
 <meta property="og:type" content="website" />
 <meta property="og:url" content={canonical} />
-<meta name="twitter:card" content="summary" />
+<meta property="og:image" content={ogImage} />
+<meta property="og:site_name" content="Bloc Léopards" />
+<meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content={title} />
 <meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={ogImage} />

@@ -3,6 +3,7 @@ import { requireDatabase } from "../../../lib/neon";
 import { upsertSupporter } from "../../../lib/supporters";
 import { sendGuadalajaraConfirmation } from "../../../lib/email";
 import { hasObjectStorage, putObject, buildStorageKey } from "../../../lib/storage";
+import { isSpam } from "../../../lib/spam";
 import crypto from "crypto";
 
 export const prerender = false;
@@ -11,6 +12,11 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
   const headers = { "Content-Type": "application/json" };
   try {
     const formData = await request.formData();
+
+    // Honeypot anti-bot : on accepte silencieusement pour ne pas révéler le piège
+    if (isSpam(formData)) {
+      return new Response(JSON.stringify({ success: true, reference: "GUAD-2026-000000" }), { status: 200, headers });
+    }
 
     const firstName = formData.get("first_name")?.toString().trim();
     const lastName = formData.get("last_name")?.toString().trim();
@@ -43,6 +49,17 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     }
 
     const sql = requireDatabase();
+
+    // Rate-limit par IP : max 3 demandes / 24h (rejet avant traitement des fichiers)
+    if (clientAddress) {
+      const [rl] = await sql`
+        select count(*)::int as n from mondial_inscriptions
+        where programme = 'ministere_guadalajara' and ip_address = ${clientAddress}
+          and created_at > now() - interval '24 hours'`;
+      if ((rl?.n ?? 0) >= 3) {
+        return new Response(JSON.stringify({ error: "Trop de demandes depuis cette connexion. Réessayez plus tard." }), { status: 429, headers });
+      }
+    }
 
     const prepareUpload = async (file: File) => {
       const buffer = Buffer.from(await file.arrayBuffer());
