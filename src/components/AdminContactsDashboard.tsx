@@ -59,6 +59,7 @@ function Drawer({ row, onClose, onUpdate, onReload }: { row: any; onClose: () =>
       const d = await r.json();
       if (r.ok && d.draft) {
         setReply(d.draft);
+        if (d.source === "fallback") setFeedback({ type: "err", text: "L'IA n'a pas répondu (clé ou quota Gemini ?). Brouillon de secours affiché — à compléter." });
       } else {
         setFeedback({ type: "err", text: d.error || "Impossible de générer le brouillon." });
       }

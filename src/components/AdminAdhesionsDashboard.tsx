@@ -100,8 +100,12 @@ function Drawer({ row, onClose, onUpdate, onDelete }: { row: any; onClose: () =>
         body: JSON.stringify({ prenom: row.prenom, nom: row.nom, role: row.role, ville: row.ville, motivation: row.motivation, consigne }),
       });
       const d = await r.json();
-      if (r.ok && d.draft) setReply(d.draft);
-      else setFeedback({ type: "err", text: d.error || "Impossible de générer le brouillon." });
+      if (r.ok && d.draft) {
+        setReply(d.draft);
+        if (d.source === "fallback") setFeedback({ type: "err", text: "L'IA n'a pas répondu (clé ou quota Gemini ?). Brouillon de secours affiché — à compléter." });
+      } else {
+        setFeedback({ type: "err", text: d.error || "Impossible de générer le brouillon." });
+      }
     } catch {
       setFeedback({ type: "err", text: "Erreur réseau lors de la génération." });
     }
