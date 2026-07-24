@@ -43,6 +43,39 @@ function getRoleStyle(role: string) {
   return ROLE_PALETTE[hash % ROLE_PALETTE.length];
 }
 
+// Rend un texte de portfolio en liens cliquables (URLs) + @pseudos
+function PortfolioLinks({ text }: { text: string }) {
+  const tokens = text.split(/[\s,;]+/).filter(Boolean);
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+      {tokens.map((tok, i) => {
+        const isUrl = /^(https?:\/\/|www\.)/i.test(tok);
+        const href = isUrl ? (tok.startsWith("http") ? tok : `https://${tok}`) : null;
+        const label = tok.replace(/^https?:\/\//i, "").replace(/\/$/, "");
+        if (href) {
+          return (
+            <a key={i} href={href} target="_blank" rel="noopener"
+              style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 8, background: "rgba(96,165,250,0.12)", color: "#60a5fa", fontSize: 12, fontWeight: 600, textDecoration: "none", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              🔗 {label}
+            </a>
+          );
+        }
+        return (
+          <span key={i} style={{ padding: "4px 10px", borderRadius: 8, background: "rgba(255,255,255,0.05)", color: C.text, fontSize: 12 }}>{tok}</span>
+        );
+      })}
+    </div>
+  );
+}
+
+function ConditionChip({ ok, label }: { ok: boolean; label: string }) {
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, color: ok ? "#34d399" : C.muted, background: ok ? "rgba(52,211,153,0.12)" : "rgba(255,255,255,0.05)", whiteSpace: "nowrap" }}>
+      {ok ? "✓" : "○"} {label}
+    </span>
+  );
+}
+
 function StatusBadge({ status }: { status: string }) {
   const s = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
   return (
@@ -165,6 +198,8 @@ function Drawer({ row, onClose, onUpdate, onDelete }: { row: any; onClose: () =>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <StatusBadge status={row.status} />
               {row.role && <RoleBadge role={row.role} />}
+              <ConditionChip ok={!!row.is_adult} label="18+" />
+              <ConditionChip ok={!!row.has_passport} label="Passeport" />
             </div>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", color: C.muted, fontSize: 22, cursor: "pointer" }}>×</button>
@@ -198,6 +233,12 @@ function Drawer({ row, onClose, onUpdate, onDelete }: { row: any; onClose: () =>
               <div style={{ fontSize: 14, color: C.text }}>{value}</div>
             </div>
           ))}
+          {row.portfolio && (
+            <div style={{ borderBottom: `1px solid ${C.border}`, paddingBottom: 12 }}>
+              <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: C.muted, fontWeight: 700, marginBottom: 6 }}>🎨 Réseaux / Portfolio</div>
+              <PortfolioLinks text={row.portfolio} />
+            </div>
+          )}
           {row.motivation && (
             <div style={{ borderBottom: `1px solid ${C.border}`, paddingBottom: 12 }}>
               <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: C.muted, fontWeight: 700, marginBottom: 3 }}>Motivation</div>
@@ -285,6 +326,7 @@ export default function AdminAdhesionsDashboard() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterCity, setFilterCity] = useState<string>("all");
   const [filterRole, setFilterRole] = useState<string>("all");
+  const [filterCreators, setFilterCreators] = useState(false);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<any>(null);
   const [page, setPage] = useState(0);
@@ -321,15 +363,18 @@ export default function AdminAdhesionsDashboard() {
   const cities = useMemo(() => countOptions(adhesions.map(r => r.ville).filter(Boolean)), [adhesions]);
   const roles = useMemo(() => countOptions(adhesions.map(r => r.role).filter(Boolean), v => ROLES[v] || v), [adhesions]);
 
+  const creatorsCount = useMemo(() => adhesions.filter(r => r.portfolio && String(r.portfolio).trim()).length, [adhesions]);
+
   const filtered = useMemo(() => adhesions
     .filter((r) => filterStatus === "all" || r.status === filterStatus)
     .filter((r) => filterCity === "all" || r.ville === filterCity)
     .filter((r) => filterRole === "all" || r.role === filterRole)
+    .filter((r) => !filterCreators || (r.portfolio && String(r.portfolio).trim()))
     .filter((r) => {
       if (!search) return true;
       const q = search.toLowerCase();
       return `${r.prenom} ${r.nom} ${r.email} ${r.ville}`.toLowerCase().includes(q);
-    }), [adhesions, filterStatus, filterCity, filterRole, search]);
+    }), [adhesions, filterStatus, filterCity, filterRole, filterCreators, search]);
 
   const page_rows = filtered.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
   const total_pages = Math.ceil(filtered.length / PER_PAGE);
@@ -349,10 +394,11 @@ export default function AdminAdhesionsDashboard() {
       return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
     const statusLabel = (s: string) => STATUS_CONFIG[s]?.label || s;
-    const header = ["Prénom", "Nom", "Email", "Téléphone", "Ville", "Pays", "Rôle", "Canal", "Disponibilité", "Newsletter", "Statut", "Notes admin", "Date"];
+    const header = ["Prénom", "Nom", "Email", "Téléphone", "Ville", "Pays", "Rôle", "Réseaux/Portfolio", "18+", "Passeport", "Canal", "Disponibilité", "Newsletter", "Statut", "Notes admin", "Date"];
     const lines = filtered.map(r => [
       r.prenom, r.nom, r.email, r.telephone || "", r.ville, r.pays || "",
-      r.role || "", r.canal || "", r.disponibilite || "",
+      r.role || "", r.portfolio || "", r.is_adult ? "Oui" : "Non", r.has_passport ? "Oui" : "Non",
+      r.canal || "", r.disponibilite || "",
       r.newsletter_opt_in ? "Oui" : "Non", statusLabel(r.status),
       r.admin_notes || "", new Date(r.created_at).toLocaleDateString("fr-FR"),
     ].map(esc).join(","));
@@ -392,6 +438,7 @@ export default function AdminAdhesionsDashboard() {
         <StatCard label="En attente" value={Number(stats.pending    || 0)} />
         <StatCard label="Validés"    value={Number(stats.validated  || 0)} color="#34d399" />
         <StatCard label="Rejetés"    value={Number(stats.rejected   || 0)} color="#f87171" />
+        <StatCard label="Créateurs"  value={creatorsCount} color="#a78bfa" />
         <StatCard label="Newsletter" value={Number(stats.newsletter || 0)} color={C.blue} />
       </div>
 
@@ -403,6 +450,10 @@ export default function AdminAdhesionsDashboard() {
             {f.label} <span style={{ opacity: 0.7 }}>({f.count})</span>
           </button>
         ))}
+        <button onClick={() => { setFilterCreators(v => !v); resetPage(); }}
+          style={{ padding: "7px 14px", borderRadius: 20, border: `1.5px solid ${filterCreators ? "#a78bfa" : C.border}`, background: filterCreators ? "rgba(167,139,250,0.12)" : "transparent", color: filterCreators ? "#a78bfa" : C.muted, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+          🎨 Créateurs <span style={{ opacity: 0.7 }}>({creatorsCount})</span>
+        </button>
       </div>
 
       {/* Secondary filters row */}
@@ -440,7 +491,10 @@ export default function AdminAdhesionsDashboard() {
         ) : page_rows.map((row) => (
           <div key={row.id} className="adh-card" onClick={() => setSelected(row)}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-              <div style={{ fontWeight: 700, color: C.text, fontSize: 15 }}>{row.prenom} {row.nom}</div>
+              <div style={{ fontWeight: 700, color: C.text, fontSize: 15 }}>
+                {row.prenom} {row.nom}
+                {row.portfolio && String(row.portfolio).trim() && <span title="Réseaux / portfolio fourni" style={{ marginLeft: 6 }}>🎨</span>}
+              </div>
               <StatusBadge status={row.status} />
             </div>
             <div style={{ fontSize: 12, color: C.muted, marginBottom: 2 }}>{row.email}</div>
@@ -472,7 +526,10 @@ export default function AdminAdhesionsDashboard() {
                 style={{ borderBottom: `1px solid ${C.border}`, cursor: "pointer", transition: "background 0.1s" }}
                 onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.03)")}
                 onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
-                <td style={{ padding: "12px 16px", fontSize: 13, fontWeight: 600 }}>{row.prenom} {row.nom}</td>
+                <td style={{ padding: "12px 16px", fontSize: 13, fontWeight: 600 }}>
+                  {row.prenom} {row.nom}
+                  {row.portfolio && String(row.portfolio).trim() && <span title="Réseaux / portfolio fourni" style={{ marginLeft: 6 }}>🎨</span>}
+                </td>
                 <td style={{ padding: "12px 16px", fontSize: 12, color: C.muted }}>{row.email}</td>
                 <td style={{ padding: "12px 16px", fontSize: 12, color: C.muted }}>{row.ville}{row.pays ? `, ${row.pays}` : ""}</td>
                 <td style={{ padding: "12px 16px" }}><RoleBadge role={row.role || "—"} /></td>

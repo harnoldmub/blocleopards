@@ -21,8 +21,11 @@ export const POST: APIRoute = async ({ request }) => {
     const canal = formValue(formData, "canal");
     const disponibilite = formValue(formData, "disponibilite");
     const motivation = formValue(formData, "motivation");
+    const portfolio = formValue(formData, "portfolio");
     const charteAccepted = formData.get("charte") === "on";
     const newsletterOptIn = formData.get("newsletter") === "on";
+    const isAdult = formData.get("is_adult") === "on";
+    const hasPassport = formData.get("has_passport") === "on";
 
     if (!prenom || !nom || !email || !ville || !role || !charteAccepted) {
       return redirectTo("/rejoindre", "missing");
@@ -42,8 +45,11 @@ export const POST: APIRoute = async ({ request }) => {
         canal,
         disponibilite,
         motivation,
+        portfolio,
         charte_accepted,
-        newsletter_opt_in
+        newsletter_opt_in,
+        is_adult,
+        has_passport
       )
       values (
         ${prenom},
@@ -57,8 +63,11 @@ export const POST: APIRoute = async ({ request }) => {
         ${canal || null},
         ${disponibilite || null},
         ${motivation || null},
+        ${portfolio || null},
         ${charteAccepted},
-        ${newsletterOptIn}
+        ${newsletterOptIn},
+        ${isAdult},
+        ${hasPassport}
       )
     `;
 

@@ -4,17 +4,34 @@ import PageHero from "../components/PageHero.astro";
 import SectionHeader from "../components/SectionHeader.astro";
 import faq from "../data/faq.json";
 
-const roles = [
-  "Ambiance / chants",
-  "Photo & video",
-  "Photographe",
-  "Graphiste",
-  "Monteur vidéo",
-  "Organisation fan zone",
-  "Relais diaspora",
-  "Moderation digitale",
-  "Partenariat local"
+// Rôles groupés — les rôles « créatifs » et « média » déclenchent le champ portfolio
+const roleGroups = [
+  {
+    label: "Création de contenu",
+    roles: ["Créateur de contenu", "Graphiste", "Monteur vidéo", "Photographe", "Vidéaste"],
+  },
+  {
+    label: "Média",
+    roles: ["Journaliste", "Radio", "TV"],
+  },
+  {
+    label: "Ambiance & terrain",
+    roles: ["Ambiance / chants", "Organisation fan zone", "Relais diaspora", "Modération digitale"],
+  },
+  {
+    label: "Partenaires",
+    roles: ["Sponsor", "Équipementier", "Imprimeur"],
+  },
 ];
+
+// Rôles pour lesquels on demande réseaux sociaux / portfolio
+const creativeRoles = [
+  "Créateur de contenu", "Graphiste", "Monteur vidéo", "Photographe", "Vidéaste",
+  "Journaliste", "Radio", "TV",
+];
+
+// Liste à plat (pour les puces récapitulatives)
+const roles = roleGroups.flatMap((g) => g.roles);
 
 const canals = ["WhatsApp", "Email", "Telephone", "Instagram"];
 
@@ -25,9 +42,31 @@ const disponibilites = [
   "Disponible pour organiser"
 ];
 ---
-<BaseLayout title="Rejoindre" description="Formulaire d'adhesion Bloc Leopards.">
+<BaseLayout title="Rejoindre" description="Appel a inscription Bloc Leopards : createurs de contenu, graphistes, monteurs, photographes et videastes.">
   <PageHero title="Rejoindre" subtitle="Engage-toi pour un support positif" image="/media/atelier-1.svg" />
   <section class="mx-auto max-w-5xl px-4 py-16">
+
+    <!-- Bannière campagne -->
+    <div class="mb-10 overflow-hidden rounded-3xl border border-brand-yellow/30 bg-brand-blue text-white shadow-deep">
+      <div class="grid gap-6 p-7 md:grid-cols-[1fr_auto] md:items-center md:p-9">
+        <div>
+          <p class="inline-flex items-center gap-2 rounded-full bg-brand-yellow px-4 py-1.5 text-xs font-bold uppercase tracking-[0.22em] text-brand-dark">📢 Appel à inscription</p>
+          <h2 class="mt-4 text-2xl font-semibold leading-tight md:text-3xl">Tu es créateur de contenu, graphiste, monteur vidéo, photographe ou vidéaste&nbsp;? 🐆</h2>
+          <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-100">
+            Rejoins <span class="font-semibold text-brand-yellow">Bloc Léopard</span>. Les candidats retenus apprendront à couvrir de grands
+            événements sportifs, développeront leurs compétences et feront rayonner leur talent sous Bloc Léopard.
+          </p>
+          <div class="mt-5 flex flex-wrap gap-2 text-xs font-semibold">
+            <span class="rounded-full border border-white/20 bg-white/10 px-3 py-1.5">✅ Être âgé d'au moins 18 ans</span>
+            <span class="rounded-full border border-white/20 bg-white/10 px-3 py-1.5">🛂 Avoir un passeport valide</span>
+            <span class="rounded-full border border-brand-yellow/40 bg-brand-yellow/15 px-3 py-1.5 text-brand-yellow">Inscriptions ouvertes</span>
+          </div>
+        </div>
+        <a href="#formulaire" class="hidden shrink-0 rounded-full bg-brand-yellow px-6 py-4 text-center text-sm font-bold text-brand-dark transition hover:bg-white md:inline-block">
+          Je m'inscris →
+        </a>
+      </div>
+    </div>
 
     {Astro.url.searchParams.get("status") === "success" && (
       <div class="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
@@ -39,8 +78,13 @@ const disponibilites = [
         Impossible d'enregistrer l'adhesion pour le moment. Verifie la connexion Neon.
       </div>
     )}
+    {Astro.url.searchParams.get("status") === "missing" && (
+      <div class="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+        Merci de remplir les champs obligatoires (*) et d'accepter la charte.
+      </div>
+    )}
 
-    <div class="grid gap-8 lg:grid-cols-[1fr_0.72fr]">
+    <div id="formulaire" class="grid gap-8 lg:grid-cols-[1fr_0.72fr]">
       <form name="adhesion" method="POST" action="/api/adhesion" class="grid gap-6 rounded-3xl border border-slate-200 bg-white p-6 text-sm shadow-deep">
         <input name="_hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;opacity:0;height:0;width:0;" />
         <input name="_t" type="hidden" id="adhesion-t" />
@@ -94,9 +138,15 @@ const disponibilites = [
         <div class="grid gap-4 md:grid-cols-2">
           <label class="grid gap-2">
             <span class="font-semibold text-slate-700">Role souhaite *</span>
-            <select name="role" required class="rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-brand-yellow focus:ring-4 focus:ring-brand-yellow/20">
+            <select id="role-select" name="role" required class="rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-brand-yellow focus:ring-4 focus:ring-brand-yellow/20">
               <option value="">Choisir un role</option>
-              {roles.map((role) => <option value={role}>{role}</option>)}
+              {roleGroups.map((group) => (
+                <optgroup label={group.label}>
+                  {group.roles.map((role) => (
+                    <option value={role} data-creative={creativeRoles.includes(role) ? "1" : "0"}>{role}</option>
+                  ))}
+                </optgroup>
+              ))}
             </select>
           </label>
           <label class="grid gap-2">
@@ -105,6 +155,18 @@ const disponibilites = [
               <option value="">Choisir</option>
               {canals.map((canal) => <option value={canal}>{canal}</option>)}
             </select>
+          </label>
+        </div>
+
+        <!-- Réseaux sociaux / portfolio — mis en avant pour les profils créatifs & média -->
+        <div id="portfolio-block" class="rounded-2xl border border-brand-yellow/40 bg-brand-yellow/5 p-4">
+          <label class="grid gap-2">
+            <span class="flex items-center gap-2 font-semibold text-slate-800">
+              🎨 Réseaux sociaux &amp; exemples de tes travaux
+              <span id="portfolio-required" class="hidden rounded-full bg-brand-yellow px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-dark">Recommandé</span>
+            </span>
+            <textarea id="portfolio-input" name="portfolio" rows="3" placeholder="Instagram, TikTok, YouTube, Behance, Drive… colle tes liens ou @pseudos. Montre-nous ce que tu sais faire !" class="rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-brand-yellow focus:ring-4 focus:ring-brand-yellow/20"></textarea>
+            <span class="text-xs text-slate-500">Pour les créateurs, graphistes, monteurs, photographes, vidéastes et médias : partage tes liens ou quelques exemples.</span>
           </label>
         </div>
 
@@ -124,6 +186,18 @@ const disponibilites = [
           <span class="font-semibold text-slate-700">Motivation</span>
           <textarea name="motivation" rows="5" class="rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-brand-yellow focus:ring-4 focus:ring-brand-yellow/20"></textarea>
         </label>
+
+        <div class="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Conditions campagne créateurs</p>
+          <label class="flex items-start gap-3 text-sm text-slate-700">
+            <input type="checkbox" name="is_adult" class="mt-1 h-4 w-4 accent-brand-yellow" />
+            <span>Je confirme être âgé·e d'au moins <span class="font-semibold">18 ans</span>.</span>
+          </label>
+          <label class="flex items-start gap-3 text-sm text-slate-700">
+            <input type="checkbox" name="has_passport" class="mt-1 h-4 w-4 accent-brand-yellow" />
+            <span>Je dispose d'un <span class="font-semibold">passeport valide</span>.</span>
+          </label>
+        </div>
 
         <div class="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <label class="flex items-start gap-3 text-sm text-slate-700">
@@ -183,4 +257,28 @@ const disponibilites = [
       </div>
     </div>
   </section>
+
+  <script is:inline>
+    (function () {
+      const select = document.getElementById("role-select");
+      const block = document.getElementById("portfolio-block");
+      const badge = document.getElementById("portfolio-required");
+      const input = document.getElementById("portfolio-input");
+      if (!select || !block) return;
+      function sync() {
+        const opt = select.options[select.selectedIndex];
+        const creative = opt && opt.getAttribute("data-creative") === "1";
+        block.style.display = "";
+        block.style.order = creative ? "-1" : "";
+        block.classList.toggle("ring-2", !!creative);
+        block.classList.toggle("ring-brand-yellow/40", !!creative);
+        if (badge) badge.classList.toggle("hidden", !creative);
+        if (input) input.setAttribute("placeholder", creative
+          ? "Colle tes liens : Instagram, TikTok, YouTube, Behance, Drive… Montre-nous ton meilleur travail !"
+          : "Instagram, TikTok, YouTube, Behance, Drive… (optionnel)");
+      }
+      select.addEventListener("change", sync);
+      sync();
+    })();
+  </script>
 </BaseLayout>
