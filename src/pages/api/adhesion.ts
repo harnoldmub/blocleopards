@@ -30,7 +30,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     const isAdult = formData.get("is_adult") === "on";
     const hasPassport = formData.get("has_passport") === "on";
 
-    if (!prenom || !nom || !email || !ville || !role || !charteAccepted) {
+    if (!prenom || !nom || !email || !ville || !role || !charteAccepted || !isAdult || !hasPassport) {
       return redirectTo("/rejoindre", "missing");
     }
 

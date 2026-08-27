@@ -10,15 +10,27 @@ import faq from "../data/faq.json";
 const roleGroups = [
   {
     label: "Création de contenu",
-    roles: ["Créateur de contenu", "Graphiste", "Monteur vidéo", "Photographe", "Vidéaste"],
+    roles: [
+      "Créateur de contenu",
+      "Créateur de contenus chaîne WhatsApp",
+      "Influenceur",
+      "Graphiste",
+      "Monteur vidéo",
+      "Photographe",
+      "Vidéaste",
+    ],
   },
   {
     label: "Média",
-    roles: ["Journaliste", "Radio", "TV"],
+    roles: ["Journaliste", "Animateur", "Radio", "TV"],
+  },
+  {
+    label: "Scène & animation",
+    roles: ["Humoriste", "Danseur", "Ambiance / chants"],
   },
   {
     label: "Ambiance & terrain",
-    roles: ["Ambiance / chants", "Organisation fan zone", "Relais diaspora", "Modération digitale"],
+    roles: ["Organisation fan zone", "Relais diaspora", "Modération digitale"],
   },
   {
     label: "Partenaires",
@@ -28,8 +40,9 @@ const roleGroups = [
 
 // Rôles pour lesquels on demande réseaux sociaux / portfolio
 const creativeRoles = [
-  "Créateur de contenu", "Graphiste", "Monteur vidéo", "Photographe", "Vidéaste",
-  "Journaliste", "Radio", "TV",
+  "Créateur de contenu", "Créateur de contenus chaîne WhatsApp", "Influenceur",
+  "Graphiste", "Monteur vidéo", "Photographe", "Vidéaste",
+  "Journaliste", "Animateur", "Radio", "TV", "Humoriste", "Danseur",
 ];
 
 // Liste à plat (pour les puces récapitulatives)
@@ -44,18 +57,31 @@ const disponibilites = [
   "Disponible pour organiser"
 ];
 ---
-<BaseLayout title="Rejoindre" description="Appel à inscription Bloc Léopards : créateurs de contenu, graphistes, monteurs, photographes et vidéastes.">
-  <PageHero title="Rejoindre" subtitle="Engage-toi pour un support positif" image="/media/atelier-1.svg" />
+<BaseLayout title="Rejoindre" description="Appel à inscription Bloc Léopards : journalistes, humoristes, animateurs, danseurs, influenceurs, créateurs de contenu, graphistes, monteurs, photographes et vidéastes.">
+  <PageHero title="Rejoindre" subtitle="Talents médias, créateurs et terrain : entre dans le Bloc" image="/media/atelier-1.svg" />
   <section class="mx-auto max-w-5xl px-4 py-16">
 
     <!-- Bannière campagne -->
-    <div class="mb-10 overflow-hidden rounded-[6px] border border-or/30 bg-congo text-white shadow-deep">
+    <div class="mb-10 overflow-hidden rounded-[6px] border border-or/30 bg-congo-night text-white shadow-deep">
+      <div class="grid h-2 grid-cols-3" aria-hidden="true">
+        <div class="bg-flag-blue"></div>
+        <div class="bg-flag-yellow"></div>
+        <div class="bg-flag-red"></div>
+      </div>
       <div class="grid gap-6 p-7 md:grid-cols-[1fr_auto] md:items-center md:p-9">
         <div>
           <p class="inline-flex items-center gap-2 rounded-full bg-or px-4 py-1.5 text-xs font-bold uppercase tracking-[0.22em] text-congo-night">
             <Icon name="send" size={13} />Appel à inscription
           </p>
-          <h2 class="mt-4 font-display uppercase leading-[0.95] [font-size:clamp(1.6rem,3.6vw,2.4rem)]">Créateur de contenu, graphiste, monteur, photographe ou vidéaste&nbsp;?</h2>
+          <h2 class="mt-4 font-display uppercase leading-[0.95] [font-size:clamp(1.7rem,4vw,3rem)]">Fais rayonner ton talent avec Bloc Léopard</h2>
+          <p class="mt-4 max-w-3xl text-sm leading-6 text-white/75">
+            Journaliste, humoriste, animateur, danseur, influenceur, créateur de contenu, graphiste, monteur vidéo, photographe, vidéaste ou créateur sur chaîne WhatsApp : rejoins l'équipe.
+          </p>
+          <div class="mt-5 flex flex-wrap gap-2">
+            <span class="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/85">18 ans minimum</span>
+            <span class="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/85">Passeport valide</span>
+            <span class="rounded-full border border-or/40 bg-or/10 px-3 py-1.5 text-xs font-semibold text-or">Inscriptions ouvertes</span>
+          </div>
         </div>
         <a href="#formulaire" class="hidden shrink-0 rounded-full bg-or px-6 py-4 text-center text-[0.78rem] font-bold uppercase tracking-[0.1em] text-congo-night transition-transform hover:-translate-y-0.5 md:inline-block">
           Je m'inscris →
@@ -75,7 +101,7 @@ const disponibilites = [
     )}
     {Astro.url.searchParams.get("status") === "missing" && (
       <div class="mb-6 rounded-[6px] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-        Merci de remplir les champs obligatoires (*) et d'accepter la charte.
+        Merci de remplir les champs obligatoires (*), de choisir un métier, de confirmer les conditions et d'accepter la charte.
       </div>
     )}
     {Astro.url.searchParams.get("status") === "captcha" && (
@@ -136,9 +162,9 @@ const disponibilites = [
         </div>
 
         <div class="grid gap-4 md:grid-cols-2">
-          <label class="grid gap-2">
+          <div class="grid gap-2" data-role-combobox>
             <span class="font-semibold text-slate-700">Rôle souhaité *</span>
-            <select id="role-select" name="role" required class="rounded-[4px] border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-congo focus:ring-4 focus:ring-congo/15">
+            <select id="role-select" name="role" required class="sr-only" aria-label="Rôle souhaité">
               <option value="">Choisir un rôle</option>
               {roleGroups.map((group) => (
                 <optgroup label={group.label}>
@@ -148,7 +174,58 @@ const disponibilites = [
                 </optgroup>
               ))}
             </select>
-          </label>
+            <button
+              id="role-trigger"
+              type="button"
+              role="combobox"
+              aria-haspopup="listbox"
+              aria-expanded="false"
+              aria-controls="role-listbox"
+              class="flex min-h-[3.25rem] w-full items-center justify-between gap-3 rounded-[4px] border border-slate-300 bg-white px-4 py-3 text-left outline-none transition hover:border-congo focus:border-congo focus:ring-4 focus:ring-congo/15"
+            >
+              <span data-role-label class="truncate text-slate-400">Choisir un métier</span>
+              <span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-congo/10 text-congo">
+                <Icon name="search" size={15} />
+              </span>
+            </button>
+            <div id="role-panel" class="role-panel hidden rounded-[6px] border border-slate-200 bg-white p-3 shadow-deep" data-lenis-prevent>
+              <label class="relative block">
+                <Icon name="search" size={15} class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  id="role-search"
+                  type="search"
+                  autocomplete="off"
+                  placeholder="Rechercher un métier..."
+                  class="w-full rounded-[4px] border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 outline-none transition focus:border-congo focus:bg-white focus:ring-4 focus:ring-congo/15"
+                />
+              </label>
+              <div id="role-listbox" role="listbox" class="mt-3 max-h-72 overflow-y-auto pr-1">
+                {roleGroups.map((group) => (
+                  <div class="role-group" data-role-group>
+                    <p class="px-3 py-2 text-[0.66rem] font-bold uppercase tracking-[0.2em] text-congo">{group.label}</p>
+                    <div class="grid gap-1">
+                      {group.roles.map((role) => (
+                        <button
+                          type="button"
+                          role="option"
+                          class="role-option flex w-full items-center justify-between rounded-[4px] px-3 py-2.5 text-left text-sm font-semibold text-slate-700 transition hover:bg-congo/5 hover:text-congo"
+                          data-role-option
+                          data-role-value={role}
+                          data-role-creative={creativeRoles.includes(role) ? "1" : "0"}
+                          aria-selected="false"
+                        >
+                          <span>{role}</span>
+                          <Icon name="check" size={14} class="hidden text-congo" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                <p class="hidden px-3 py-4 text-sm text-slate-500" data-role-empty>Aucun métier trouvé.</p>
+              </div>
+            </div>
+            <span class="text-xs text-slate-500">Tape quelques lettres pour retrouver vite ton métier.</span>
+          </div>
           <label class="grid gap-2">
             <span class="font-semibold text-slate-700">Canal préféré</span>
             <select name="canal" class="rounded-[4px] border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-congo focus:ring-4 focus:ring-congo/15">
@@ -190,11 +267,11 @@ const disponibilites = [
         <div class="grid gap-3 rounded-[6px] border border-slate-200 bg-slate-50 p-4">
           <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Conditions campagne créateurs</p>
           <label class="flex items-start gap-3 text-sm text-slate-700">
-            <input type="checkbox" name="is_adult" class="mt-1 h-4 w-4 accent-congo" />
+            <input type="checkbox" name="is_adult" required class="mt-1 h-4 w-4 accent-congo" />
             <span>Je confirme être âgé·e d'au moins <span class="font-semibold">18 ans</span>.</span>
           </label>
           <label class="flex items-start gap-3 text-sm text-slate-700">
-            <input type="checkbox" name="has_passport" class="mt-1 h-4 w-4 accent-congo" />
+            <input type="checkbox" name="has_passport" required class="mt-1 h-4 w-4 accent-congo" />
             <span>Je dispose d'un <span class="font-semibold">passeport valide</span>.</span>
           </label>
         </div>
@@ -263,13 +340,78 @@ const disponibilites = [
   <script is:inline>
     (function () {
       const select = document.getElementById("role-select");
+      const form = select && select.closest("form");
+      const trigger = document.getElementById("role-trigger");
+      const panel = document.getElementById("role-panel");
+      const search = document.getElementById("role-search");
+      const label = document.querySelector("[data-role-label]");
+      const options = Array.from(document.querySelectorAll("[data-role-option]"));
+      const groups = Array.from(document.querySelectorAll("[data-role-group]"));
+      const empty = document.querySelector("[data-role-empty]");
       const block = document.getElementById("portfolio-block");
       const badge = document.getElementById("portfolio-required");
       const input = document.getElementById("portfolio-input");
-      if (!select || !block) return;
+      if (!select || !trigger || !panel || !search || !label || !block) return;
+
+      function normalize(value) {
+        return String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      }
+
+      function openPanel() {
+        panel.classList.remove("hidden");
+        trigger.setAttribute("aria-expanded", "true");
+        window.setTimeout(function () { search.focus(); }, 20);
+      }
+
+      function closePanel() {
+        panel.classList.add("hidden");
+        trigger.setAttribute("aria-expanded", "false");
+        search.value = "";
+        filterOptions("");
+      }
+
+      function filterOptions(query) {
+        const q = normalize(query);
+        let visibleCount = 0;
+        options.forEach(function (option) {
+          const visible = !q || normalize(option.dataset.roleValue).includes(q);
+          option.classList.toggle("hidden", !visible);
+          if (visible) visibleCount += 1;
+        });
+        groups.forEach(function (group) {
+          const hasVisibleOption = !!group.querySelector("[data-role-option]:not(.hidden)");
+          group.classList.toggle("hidden", !hasVisibleOption);
+        });
+        if (empty) empty.classList.toggle("hidden", visibleCount > 0);
+      }
+
+      function syncSelectedOption() {
+        const selectedValue = select.value;
+        label.textContent = selectedValue || "Choisir un métier";
+        label.classList.toggle("text-slate-400", !selectedValue);
+        label.classList.toggle("text-slate-900", !!selectedValue);
+        options.forEach(function (option) {
+          const active = option.dataset.roleValue === selectedValue;
+          option.setAttribute("aria-selected", String(active));
+          option.classList.toggle("bg-congo/10", active);
+          option.classList.toggle("text-congo", active);
+          const check = option.querySelector("svg");
+          if (check) check.classList.toggle("hidden", !active);
+        });
+      }
+
+      function chooseRole(value) {
+        select.value = value;
+        select.setCustomValidity("");
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+        closePanel();
+        trigger.focus();
+      }
+
       function sync() {
         const opt = select.options[select.selectedIndex];
         const creative = opt && opt.getAttribute("data-creative") === "1";
+        syncSelectedOption();
         block.style.display = "";
         block.style.order = creative ? "-1" : "";
         block.classList.toggle("ring-2", !!creative);
@@ -279,6 +421,40 @@ const disponibilites = [
           ? "Colle tes liens : Instagram, TikTok, YouTube, Behance, Drive… Montre-nous ton meilleur travail !"
           : "Instagram, TikTok, YouTube, Behance, Drive… (optionnel)");
       }
+
+      trigger.addEventListener("click", function () {
+        if (panel.classList.contains("hidden")) openPanel();
+        else closePanel();
+      });
+
+      search.addEventListener("input", function () {
+        filterOptions(search.value);
+      });
+
+      options.forEach(function (option) {
+        option.addEventListener("click", function () {
+          chooseRole(option.dataset.roleValue);
+        });
+      });
+
+      document.addEventListener("click", function (event) {
+        const root = trigger.closest("[data-role-combobox]");
+        if (root && !root.contains(event.target)) closePanel();
+      });
+
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" && !panel.classList.contains("hidden")) closePanel();
+      });
+
+      form && form.addEventListener("submit", function (event) {
+        if (!select.value) {
+          event.preventDefault();
+          select.setCustomValidity("Choisis un métier.");
+          openPanel();
+          trigger.focus();
+        }
+      });
+
       select.addEventListener("change", sync);
       sync();
     })();
