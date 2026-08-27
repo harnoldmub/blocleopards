@@ -111,7 +111,7 @@ const disponibilites = [
     )}
 
     <div id="formulaire" class="grid gap-8 lg:grid-cols-[1fr_0.72fr]">
-      <form name="adhesion" method="POST" action="/api/adhesion" class="grid gap-6 rounded-[6px] border border-slate-200 bg-white p-6 text-sm shadow-deep">
+      <form name="adhesion" method="POST" action="/api/adhesion" class="bloc-panel grid gap-6 p-6 text-sm">
         <input name="_hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;opacity:0;height:0;width:0;" />
         <input name="_t" type="hidden" id="adhesion-t" />
         <script>document.getElementById('adhesion-t').value = Date.now();</script>
@@ -122,48 +122,48 @@ const disponibilites = [
         </div>
 
         <div class="grid gap-4 md:grid-cols-2">
-          <label class="grid gap-2">
-            <span class="font-semibold text-slate-700">Prénom *</span>
-            <input name="prenom" required autocomplete="given-name" class="rounded-[4px] border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-congo focus:ring-4 focus:ring-congo/15" />
+          <label class="bloc-field">
+            <span class="bloc-label">Prénom *</span>
+            <input name="prenom" required autocomplete="given-name" class="bloc-control" />
           </label>
-          <label class="grid gap-2">
-            <span class="font-semibold text-slate-700">Nom *</span>
-            <input name="nom" required autocomplete="family-name" class="rounded-[4px] border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-congo focus:ring-4 focus:ring-congo/15" />
-          </label>
-        </div>
-
-        <div class="grid gap-4 md:grid-cols-2">
-          <label class="grid gap-2">
-            <span class="font-semibold text-slate-700">Email *</span>
-            <input type="email" name="email" required autocomplete="email" class="rounded-[4px] border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-congo focus:ring-4 focus:ring-congo/15" />
-          </label>
-          <label class="grid gap-2">
-            <span class="font-semibold text-slate-700">Téléphone</span>
-            <input type="tel" name="telephone" autocomplete="tel" class="rounded-[4px] border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-congo focus:ring-4 focus:ring-congo/15" />
+          <label class="bloc-field">
+            <span class="bloc-label">Nom *</span>
+            <input name="nom" required autocomplete="family-name" class="bloc-control" />
           </label>
         </div>
 
         <div class="grid gap-4 md:grid-cols-2">
-          <label class="grid gap-2">
-            <span class="font-semibold text-slate-700">Date de naissance</span>
-            <input type="date" name="date_naissance" autocomplete="bday" class="rounded-[4px] border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-congo focus:ring-4 focus:ring-congo/15" />
+          <label class="bloc-field">
+            <span class="bloc-label">Email *</span>
+            <input type="email" name="email" required autocomplete="email" class="bloc-control" />
+          </label>
+          <label class="bloc-field">
+            <span class="bloc-label">Téléphone</span>
+            <input type="tel" name="telephone" autocomplete="tel" class="bloc-control" />
           </label>
         </div>
 
         <div class="grid gap-4 md:grid-cols-2">
-          <label class="grid gap-2">
-            <span class="font-semibold text-slate-700">Pays</span>
-            <input name="pays" autocomplete="country-name" class="rounded-[4px] border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-congo focus:ring-4 focus:ring-congo/15" />
-          </label>
-          <label class="grid gap-2">
-            <span class="font-semibold text-slate-700">Ville *</span>
-            <input name="ville" required autocomplete="address-level2" class="rounded-[4px] border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-congo focus:ring-4 focus:ring-congo/15" />
+          <label class="bloc-field">
+            <span class="bloc-label">Date de naissance</span>
+            <input type="date" name="date_naissance" autocomplete="bday" class="bloc-control" />
           </label>
         </div>
 
         <div class="grid gap-4 md:grid-cols-2">
-          <div class="grid gap-2" data-role-combobox>
-            <span class="font-semibold text-slate-700">Rôle souhaité *</span>
+          <label class="bloc-field">
+            <span class="bloc-label">Pays</span>
+            <input name="pays" autocomplete="country-name" class="bloc-control" />
+          </label>
+          <label class="bloc-field">
+            <span class="bloc-label">Ville *</span>
+            <input name="ville" required autocomplete="address-level2" class="bloc-control" />
+          </label>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2">
+          <div class="bloc-field relative" data-role-combobox>
+            <span class="bloc-label">Rôle souhaité *</span>
             <select id="role-select" name="role" required class="sr-only" aria-label="Rôle souhaité">
               <option value="">Choisir un rôle</option>
               {roleGroups.map((group) => (
@@ -181,14 +181,14 @@ const disponibilites = [
               aria-haspopup="listbox"
               aria-expanded="false"
               aria-controls="role-listbox"
-              class="flex min-h-[3.25rem] w-full items-center justify-between gap-3 rounded-[4px] border border-slate-300 bg-white px-4 py-3 text-left outline-none transition hover:border-congo focus:border-congo focus:ring-4 focus:ring-congo/15"
+              class="bloc-control flex items-center justify-between gap-3 text-left"
             >
               <span data-role-label class="truncate text-slate-400">Choisir un métier</span>
               <span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-congo/10 text-congo">
                 <Icon name="search" size={15} />
               </span>
             </button>
-            <div id="role-panel" class="role-panel hidden rounded-[6px] border border-slate-200 bg-white p-3 shadow-deep" data-lenis-prevent>
+            <div id="role-panel" class="role-panel absolute left-0 right-0 top-full z-30 mt-2 hidden rounded-[8px] border border-congo/15 bg-white p-3 shadow-deep" data-lenis-prevent>
               <label class="relative block">
                 <Icon name="search" size={15} class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
@@ -196,7 +196,7 @@ const disponibilites = [
                   type="search"
                   autocomplete="off"
                   placeholder="Rechercher un métier..."
-                  class="w-full rounded-[4px] border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 outline-none transition focus:border-congo focus:bg-white focus:ring-4 focus:ring-congo/15"
+                  class="bloc-control min-h-0 py-3 pl-10 pr-4"
                 />
               </label>
               <div id="role-listbox" role="listbox" class="mt-3 max-h-72 overflow-y-auto pr-1">
@@ -226,9 +226,9 @@ const disponibilites = [
             </div>
             <span class="text-xs text-slate-500">Tape quelques lettres pour retrouver vite ton métier.</span>
           </div>
-          <label class="grid gap-2">
-            <span class="font-semibold text-slate-700">Canal préféré</span>
-            <select name="canal" class="rounded-[4px] border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-congo focus:ring-4 focus:ring-congo/15">
+          <label class="bloc-field">
+            <span class="bloc-label">Canal préféré</span>
+            <select name="canal" class="bloc-control bloc-select">
               <option value="">Choisir</option>
               {canals.map((canal) => <option value={canal}>{canal}</option>)}
             </select>
@@ -236,60 +236,60 @@ const disponibilites = [
         </div>
 
         <!-- Réseaux sociaux / portfolio — mis en avant pour les profils créatifs & média -->
-        <div id="portfolio-block" class="rounded-[6px] border border-or/40 bg-or/5 p-4">
-          <label class="grid gap-2">
+        <div id="portfolio-block" class="rounded-[8px] border border-or/40 bg-or/5 p-4">
+          <label class="bloc-field">
             <span class="flex items-center gap-2 font-semibold text-slate-800">
               <Icon name="camera" size={16} class="text-congo" />Réseaux sociaux &amp; exemples de tes travaux
               <span id="portfolio-required" class="hidden rounded-full bg-or px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-congo-night">Recommandé</span>
             </span>
-            <textarea id="portfolio-input" name="portfolio" rows="3" placeholder="Instagram, TikTok, YouTube, Behance, Drive… colle tes liens ou @pseudos. Montre-nous ce que tu sais faire !" class="rounded-[4px] border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-congo focus:ring-4 focus:ring-congo/15"></textarea>
+            <textarea id="portfolio-input" name="portfolio" rows="3" placeholder="Instagram, TikTok, YouTube, Behance, Drive… colle tes liens ou @pseudos. Montre-nous ce que tu sais faire !" class="bloc-control"></textarea>
             <span class="text-xs text-slate-500">Pour les créateurs, graphistes, monteurs, photographes, vidéastes et médias : partage tes liens ou quelques exemples.</span>
           </label>
         </div>
 
-        <fieldset class="rounded-[6px] border border-slate-200 bg-slate-50 p-4">
+        <fieldset class="rounded-[8px] border border-congo/10 bg-slate-50 p-4">
           <legend class="px-2 text-sm font-semibold text-slate-800">Disponibilité</legend>
           <div class="mt-3 grid gap-3 sm:grid-cols-2">
             {disponibilites.map((item) => (
-              <label class="flex items-center gap-3 rounded-[4px] border border-slate-200 bg-white p-3 text-sm text-slate-700">
-                <input type="radio" name="disponibilite" value={item} class="h-4 w-4 accent-congo" />
+              <label class="bloc-choice text-sm">
+                <input type="radio" name="disponibilite" value={item} />
                 {item}
               </label>
             ))}
           </div>
         </fieldset>
 
-        <label class="grid gap-2">
-          <span class="font-semibold text-slate-700">Motivation</span>
-          <textarea name="motivation" rows="5" class="rounded-[4px] border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-congo focus:ring-4 focus:ring-congo/15"></textarea>
+        <label class="bloc-field">
+          <span class="bloc-label">Motivation</span>
+          <textarea name="motivation" rows="5" class="bloc-control"></textarea>
         </label>
 
-        <div class="grid gap-3 rounded-[6px] border border-slate-200 bg-slate-50 p-4">
+        <div class="grid gap-3 rounded-[8px] border border-congo/10 bg-slate-50 p-4">
           <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Conditions campagne créateurs</p>
-          <label class="flex items-start gap-3 text-sm text-slate-700">
-            <input type="checkbox" name="is_adult" required class="mt-1 h-4 w-4 accent-congo" />
+          <label class="bloc-choice text-sm">
+            <input type="checkbox" name="is_adult" required />
             <span>Je confirme être âgé·e d'au moins <span class="font-semibold">18 ans</span>.</span>
           </label>
-          <label class="flex items-start gap-3 text-sm text-slate-700">
-            <input type="checkbox" name="has_passport" required class="mt-1 h-4 w-4 accent-congo" />
+          <label class="bloc-choice text-sm">
+            <input type="checkbox" name="has_passport" required />
             <span>Je dispose d'un <span class="font-semibold">passeport valide</span>.</span>
           </label>
         </div>
 
-        <div class="grid gap-3 rounded-[6px] border border-slate-200 bg-slate-50 p-4">
-          <label class="flex items-start gap-3 text-sm text-slate-700">
-            <input type="checkbox" name="charte" required class="mt-1 h-4 w-4 accent-congo" />
+        <div class="grid gap-3 rounded-[8px] border border-congo/10 bg-slate-50 p-4">
+          <label class="bloc-choice text-sm">
+            <input type="checkbox" name="charte" required />
             <span>J'ai lu et j'accepte la <a href="/charte" class="font-semibold text-congo">Charte du Supporter</a>. *</span>
           </label>
-          <label class="flex items-start gap-3 text-sm text-slate-700">
-            <input type="checkbox" name="newsletter" class="mt-1 h-4 w-4 accent-congo" />
+          <label class="bloc-choice text-sm">
+            <input type="checkbox" name="newsletter" />
             <span>Je veux recevoir les mobilisations confirmées, fan zones et infos du Bloc.</span>
           </label>
         </div>
 
         <Turnstile />
 
-        <button type="submit" class="rounded-full bg-congo px-6 py-4 text-[0.8rem] font-bold uppercase tracking-[0.1em] text-white transition-transform hover:-translate-y-0.5">Envoyer ma demande</button>
+        <button type="submit" class="bloc-submit px-6 py-4">Envoyer ma demande</button>
       </form>
 
       <aside class="grid content-start gap-5">

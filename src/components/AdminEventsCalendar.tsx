@@ -49,14 +49,26 @@ const empty = (date = today): EventDraft => ({
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
-  background: "rgba(255,255,255,0.04)",
-  border: `1px solid ${C.border}`,
+  background: "linear-gradient(180deg, rgba(255,255,255,0.065), rgba(255,255,255,0.035))",
+  border: "1px solid rgba(96,165,250,0.18)",
   borderRadius: 10,
-  padding: "9px 12px",
+  padding: "10px 12px",
   color: C.text,
   fontSize: 13,
   fontFamily: "'Sora', sans-serif",
   outline: "none",
+  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), 0 14px 28px -26px rgba(0,0,0,0.8)",
+};
+
+const selectStyle: React.CSSProperties = {
+  ...inputStyle,
+  appearance: "none",
+  paddingRight: 40,
+  backgroundImage:
+    "linear-gradient(45deg, transparent 50%, #f7d618 50%), linear-gradient(135deg, #f7d618 50%, transparent 50%), linear-gradient(180deg, rgba(247,214,24,0.12), rgba(247,214,24,0.04))",
+  backgroundPosition: "calc(100% - 18px) 50%, calc(100% - 13px) 50%, calc(100% - 34px) 50%",
+  backgroundSize: "5px 5px, 5px 5px, 1px 24px",
+  backgroundRepeat: "no-repeat",
 };
 
 function asDateOnly(value: string | Date) {
@@ -139,7 +151,7 @@ function Drawer({ event, onClose, onSave, onDelete }: {
         <Field label="Carte"><input style={inputStyle} value={form.map ?? ""} onChange={(e) => set("map", e.target.value)} /></Field>
         <Field label="Image"><input style={inputStyle} value={form.image ?? ""} onChange={(e) => set("image", e.target.value)} /></Field>
         <Field label="Categorie">
-          <select style={inputStyle} value={form.category ?? "event"} onChange={(e) => set("category", e.target.value)}>
+          <select style={selectStyle} value={form.category ?? "event"} onChange={(e) => set("category", e.target.value)}>
             <option value="event">Evenement</option>
             <option value="match">Match</option>
             <option value="meeting">Rassemblement</option>

@@ -21,32 +21,32 @@ import Turnstile from "../components/Turnstile.astro";
         Merci de valider le contrôle anti-robot avant d'envoyer le formulaire.
       </div>
     )}
-    <form name="contact" method="POST" action="/api/contact" class="grid gap-4 rounded-[6px] border border-slate-200 bg-white p-6 text-sm shadow-deep">
+    <form name="contact" method="POST" action="/api/contact" class="bloc-panel grid gap-4 p-6 text-sm">
       <input name="_hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;opacity:0;height:0;width:0;" />
       <input name="_t" type="hidden" id="contact-t" />
       <script>document.getElementById('contact-t').value = Date.now();</script>
       <div class="grid gap-3 md:grid-cols-2">
-        <label class="grid gap-1.5">
-          <span class="text-xs font-semibold text-slate-600">Nom</span>
-          <input name="nom" required class="rounded-[4px] border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-congo focus:ring-4 focus:ring-congo/15" />
+        <label class="bloc-field">
+          <span class="bloc-label">Nom</span>
+          <input name="nom" required class="bloc-control" />
         </label>
-        <label class="grid gap-1.5">
-          <span class="text-xs font-semibold text-slate-600">Email</span>
-          <input type="email" name="email" required class="rounded-[4px] border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-congo focus:ring-4 focus:ring-congo/15" />
+        <label class="bloc-field">
+          <span class="bloc-label">Email</span>
+          <input type="email" name="email" required class="bloc-control" />
         </label>
       </div>
-      <label class="grid gap-1.5">
-        <span class="text-xs font-semibold text-slate-600">Objet</span>
-        <input name="objet" required class="rounded-[4px] border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-congo focus:ring-4 focus:ring-congo/15" />
+      <label class="bloc-field">
+        <span class="bloc-label">Objet</span>
+        <input name="objet" required class="bloc-control" />
       </label>
-      <label class="grid gap-1.5">
-        <span class="text-xs font-semibold text-slate-600">Message</span>
-        <textarea name="message" rows="5" class="rounded-[4px] border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-congo focus:ring-4 focus:ring-congo/15"></textarea>
+      <label class="bloc-field">
+        <span class="bloc-label">Message</span>
+        <textarea name="message" rows="5" class="bloc-control"></textarea>
       </label>
 
       <Turnstile />
 
-      <button type="submit" class="rounded-full bg-congo px-6 py-3.5 text-[0.78rem] font-bold uppercase tracking-[0.1em] text-white transition-transform hover:-translate-y-0.5">Envoyer</button>
+      <button type="submit" class="bloc-submit px-6 py-3.5">Envoyer</button>
     </form>
 
     <div class="mt-8 rounded-[6px] border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">

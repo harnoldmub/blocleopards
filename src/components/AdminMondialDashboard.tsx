@@ -32,6 +32,24 @@ const MATCHES = [
   { key: "atlanta", label: "RDC vs Ouzbékistan", details: "Atlanta · 27 juin 2026" }
 ];
 
+const adminSelectStyle: React.CSSProperties = {
+  width: "100%",
+  appearance: "none",
+  backgroundColor: "rgba(255,255,255,0.05)",
+  backgroundImage:
+    "linear-gradient(45deg, transparent 50%, #f7d618 50%), linear-gradient(135deg, #f7d618 50%, transparent 50%), linear-gradient(180deg, rgba(247,214,24,0.12), rgba(247,214,24,0.04))",
+  backgroundPosition: "calc(100% - 18px) 50%, calc(100% - 13px) 50%, calc(100% - 34px) 50%",
+  backgroundSize: "5px 5px, 5px 5px, 1px 24px",
+  backgroundRepeat: "no-repeat",
+  border: "1px solid rgba(96,165,250,0.18)",
+  borderRadius: 10,
+  padding: "12px 42px 12px 12px",
+  color: "#fff",
+  fontSize: 12,
+  outline: "none",
+  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), 0 14px 28px -26px rgba(0,0,0,0.8)",
+};
+
 const formatMatches = (matches: unknown) => {
   const keys = Array.isArray(matches) ? matches : [];
   if (keys.length === 0) return "Aucun match";
@@ -716,7 +734,7 @@ export default function AdminMondialDashboard({ isSuperAdmin = false }: { isSupe
               <select
                 value={selectedMatch}
                 onChange={(e) => setSelectedMatch(e.target.value)}
-                style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: `1px solid ${C.border}`, borderRadius: 10, padding: 12, color: "#fff", fontSize: 12, outline: "none" }}
+                style={adminSelectStyle}
               >
                 {MATCHES.map((match) => (
                   <option key={match.key} value={match.key} style={{ background: "#0d1117", color: "#fff" }}>
