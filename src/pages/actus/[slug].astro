@@ -12,23 +12,40 @@ if (!item) return Astro.redirect("/actus");
 const shareUrl = Astro.url?.toString() ?? "";
 ---
 <BaseLayout title={item.title} description={item.description} image={item.image}>
-  <article class="mx-auto max-w-4xl px-4 py-16">
-    <p class="text-xs uppercase tracking-[0.3em] text-brand-yellow">Actualite</p>
-    <h1 class="section-title mt-2 text-4xl md:text-5xl">{item.title}</h1>
-    <p class="mt-3 text-sm text-slate-600">{item.date}</p>
-    <p class="mt-5 text-lg leading-8 text-slate-700">{item.description}</p>
+  <!-- ================= HERO ARTICLE ================= -->
+  <section class="relative flex min-h-[46vh] items-end overflow-hidden bg-congo-night text-white">
+    <div class="absolute inset-0 -z-10">
+      {item.image
+        ? <img src={item.image} alt="" aria-hidden="true" class="h-full w-full object-cover opacity-40" />
+        : <div class="h-full w-full bg-congo-night"></div>}
+    </div>
+    <div class="absolute inset-0 -z-10 bg-gradient-to-t from-congo-night via-congo-night/70 to-congo-night/40"></div>
+
+    <div class="relative mx-auto w-full max-w-[48rem] px-4 pb-14 pt-28 lg:px-8">
+      <span class="inline-flex items-center gap-3 text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-or before:h-px before:w-9 before:bg-or/70">Actualité</span>
+      <h1 class="mt-5 font-display uppercase leading-[0.92] [font-size:clamp(2.2rem,5.5vw,3.6rem)]">{item.title}</h1>
+      <p class="mt-4 text-sm text-white/60">{item.date}</p>
+    </div>
+
+    <div class="absolute bottom-0 left-0 right-0 grid h-[3px] grid-cols-3" aria-hidden="true">
+      <div class="bg-flag-blue"></div>
+      <div class="bg-flag-yellow"></div>
+      <div class="bg-flag-red"></div>
+    </div>
+  </section>
+
+  <article class="mx-auto max-w-[48rem] px-4 py-16">
+    <p class="text-lg leading-8 text-slate-700">{item.description}</p>
     {item.video ? (
       <div class="mx-auto mt-8 max-w-sm">
-        <video class="aspect-[9/16] w-full rounded-3xl border border-slate-200 bg-slate-950 object-cover shadow-deep" controls poster={item.image}>
+        <video class="aspect-[9/16] w-full rounded-[6px] border border-slate-200 bg-congo-night object-cover shadow-deep" controls poster={item.image}>
           <source src={item.video} type="video/mp4" />
         </video>
       </div>
-    ) : (
-      item.image && <img src={item.image} alt={item.title} class="mt-8 aspect-[3/4] w-full rounded-3xl border border-slate-200 object-cover shadow-deep md:aspect-[16/10]" />
-    )}
+    ) : null}
     {item.audio && (
-      <div class="mt-6 rounded-2xl border border-slate-200 bg-white p-4">
-        <p class="text-xs uppercase tracking-[0.3em] text-brand-yellow">Audio</p>
+      <div class="mt-6 rounded-[6px] border border-slate-200 bg-white p-4">
+        <p class="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-congo">Audio</p>
         <audio class="mt-3 w-full" controls src={item.audio}></audio>
       </div>
     )}
@@ -37,14 +54,14 @@ const shareUrl = Astro.url?.toString() ?? "";
         <p class="leading-7">{para}</p>
       ))}
       {item.tags?.length > 0 && (
-        <div class="rounded-2xl border border-slate-200 bg-white p-4 text-sm">
-          <p class="text-xs uppercase tracking-[0.3em] text-brand-yellow">Tags</p>
+        <div class="rounded-[6px] border border-slate-200 bg-white p-4 text-sm">
+          <p class="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-congo">Tags</p>
           <p class="mt-2">{item.tags.join(", ")}</p>
         </div>
       )}
       {item.source_url && (
-        <a class="inline-flex rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700" href={item.source_url} target="_blank" rel="noopener">
-          Source: {item.source_title ?? item.source_url}
+        <a class="inline-flex rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:border-congo hover:text-congo" href={item.source_url} target="_blank" rel="noopener">
+          Source : {item.source_title ?? item.source_url}
         </a>
       )}
       <ShareLinks title={item.title} url={shareUrl} />

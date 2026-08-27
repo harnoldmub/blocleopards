@@ -1,30 +1,88 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { getCollection } from "astro:content";
+import Icon from "../../components/Icon.astro";
+import { requireDatabase } from "../../lib/neon";
 
-export const prerender = true;
+export const prerender = false;
 
-export async function getStaticPaths() {
-  const events = await getCollection("events");
-  return events.map((event) => ({ params: { slug: event.slug }, props: { event } }));
+const { slug } = Astro.params;
+let event = null;
+try {
+  const sql = requireDatabase();
+  [event] = await sql`
+    SELECT slug, title, description, body, date::text as date, time, location, cta, map, image, category
+    FROM events
+    WHERE slug = ${slug} AND published = true
+  `;
+} catch (err) {
+  console.error("[evenements/detail] chargement event echoue (table absente ?)", err);
 }
 
-const { event } = Astro.props;
-const { Content } = await event.render();
+if (!event) return Astro.redirect("/evenements");
+
+const FR_MONTHS = ["JAN","FEV","MAR","AVR","MAI","JUIN","JUIL","AOUT","SEPT","OCT","NOV","DEC"];
+const month = FR_MONTHS[parseInt(event.date.split("-")[1]) - 1];
+const day = String(parseInt(event.date.split("-")[2])).padStart(2, "0");
 ---
-<BaseLayout title={event.data.title} description={event.data.description}>
-  <section class="mx-auto max-w-4xl px-4 py-16">
-    <p class="text-xs uppercase tracking-[0.3em] text-brand-yellow">Evenement</p>
-    <h1 class="section-title mt-2 text-4xl md:text-5xl">{event.data.title}</h1>
-    <p class="mt-3 text-sm text-slate-600">{event.data.date} • {event.data.time} • {event.data.location}</p>
-    {event.data.image && <img src={event.data.image} alt={event.data.title} class="mt-6 aspect-[3/4] w-full rounded-3xl border border-slate-200 object-cover md:aspect-[16/10]" />}
-    <div class="article-content mt-6 space-y-4 text-sm text-slate-700">
-      <p>{event.data.description}</p>
-      <Content />
-      <p class="rounded-2xl border border-slate-200 bg-white p-4">CTA: {event.data.cta}</p>
-      {event.data.map && (
-        <a class="text-brand-yellow" href={event.data.map} target="_blank" rel="noopener">Voir la carte</a>
+<BaseLayout title={event.title} description={event.description} image={event.image}>
+  <!-- ================= GRANDE AFFICHE ================= -->
+  <section class="relative flex min-h-[60vh] items-end overflow-hidden bg-congo-night text-white">
+    <div class="absolute inset-0 -z-10">
+      {event.image
+        ? <img src={event.image} alt="" aria-hidden="true" class="h-full w-full object-cover opacity-45" />
+        : <div class="h-full w-full bg-congo-night"></div>}
+    </div>
+    <div class="absolute inset-0 -z-10 bg-gradient-to-t from-congo-night via-congo-night/75 to-congo-night/40"></div>
+
+    <div class="relative mx-auto flex w-full max-w-[64rem] flex-col gap-8 px-4 pb-14 pt-28 lg:flex-row lg:items-end lg:px-8">
+      <div class="shrink-0">
+        <div class="rounded-[6px] border border-or/30 bg-white/5 px-5 py-4 text-center backdrop-blur-sm">
+          <span class="text-[0.68rem] font-bold uppercase tracking-[0.2em] text-or">{month}</span>
+          <div class="font-mega text-6xl leading-none">{day}</div>
+        </div>
+      </div>
+      <div>
+        <span class="inline-flex items-center gap-3 text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-or before:h-px before:w-9 before:bg-or/70">{event.description || "Événement"}</span>
+        <h1 class="mt-4 font-display uppercase leading-[0.9] [font-size:clamp(2.4rem,6vw,4.5rem)]">{event.title}</h1>
+        <div class="mt-5 flex flex-wrap items-center gap-5 text-sm text-white/75">
+          {event.time && (
+            <span class="inline-flex items-center gap-2"><Icon name="calendar" size={16} class="text-or" />{event.time}</span>
+          )}
+          {event.location && (
+            <span class="inline-flex items-center gap-2"><Icon name="map-pin" size={16} class="text-or" />{event.location}</span>
+          )}
+        </div>
+      </div>
+    </div>
+
+    <div class="absolute bottom-0 left-0 right-0 grid h-[3px] grid-cols-3" aria-hidden="true">
+      <div class="bg-flag-blue"></div>
+      <div class="bg-flag-yellow"></div>
+      <div class="bg-flag-red"></div>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-[48rem] px-4 py-16">
+    <div class="article-content space-y-4 text-slate-700">
+      {event.body && event.body.split("\n\n").map((paragraph) => <p>{paragraph}</p>)}
+    </div>
+
+    {event.cta && (
+      <div class="mt-8 rounded-[6px] border border-congo/20 bg-congo/5 p-5">
+        <p class="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-congo">À savoir</p>
+        <p class="mt-2 text-sm text-slate-700">{event.cta}</p>
+      </div>
+    )}
+
+    <div class="mt-8 flex flex-wrap items-center gap-4">
+      {event.map && (
+        <a href={event.map} target="_blank" rel="noopener" class="inline-flex items-center gap-2 rounded-full bg-congo px-6 py-3.5 text-[0.78rem] font-bold uppercase tracking-[0.1em] text-white transition-transform hover:-translate-y-0.5">
+          <Icon name="map-pin" size={15} />Voir la carte
+        </a>
       )}
+      <a href="/evenements" class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-6 py-3.5 text-[0.78rem] font-bold uppercase tracking-[0.1em] text-slate-700 transition-colors hover:border-congo hover:text-congo">
+        ← Calendrier complet
+      </a>
     </div>
   </section>
 </BaseLayout>

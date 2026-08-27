@@ -1,10 +1,8 @@
 ---
-import Icon from "./Icon.astro";
-const { billeterieActive = true, guadalajaraActive = true } = Astro.props;
 const nav = [
   { label: "Accueil", href: "/" },
-  { 
-    label: "Mouvement", 
+  {
+    label: "Mouvement",
     href: "/mouvement",
     children: [
       { label: "Qui sommes-nous ?", href: "/mouvement" },
@@ -24,118 +22,120 @@ const nav = [
   { label: "Media", href: "/media" }
 ];
 ---
-<header class="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-slate-200">
-  <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 relative">
-    
-    <!-- Mobile Menu Button -->
-    <button id="mobile-menu-btn" class="md:hidden p-2 text-slate-700" aria-label="Menu">
+<header data-site-header class="sticky top-0 z-50 bg-white/85 backdrop-blur-xl transition-shadow duration-500">
+  <div class="mx-auto flex max-w-[84rem] items-center justify-between px-4 py-3 lg:px-8">
+    <!-- Bouton menu mobile -->
+    <button id="mobile-menu-btn" class="p-2 text-congo-nuit md:hidden" aria-label="Menu">
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
     </button>
 
-    <!-- Logo (Centered on mobile, Left on desktop) -->
-    <a href="/" class="flex items-center gap-3 absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0">
-      <img src="/brand/logo.png" alt="Bloc Leopards" class="h-12 md:h-16 w-auto" />
-      <img src="/brand/logo-min-sport-black.webp" alt="Ministère des Sports" class="h-8 md:h-10 w-auto opacity-80" />
+    <!-- Logos (centrés mobile, à gauche desktop) — logos institutionnels préservés -->
+    <a href="/" class="absolute left-1/2 flex -translate-x-1/2 items-center gap-3 md:static md:translate-x-0" aria-label="Accueil Bloc Léopards">
+      <img src="/brand/logo.png" alt="Bloc Leopards" class="h-12 w-auto md:h-16" />
+      <span class="hidden h-9 w-px bg-slate-200 md:block"></span>
+      <img src="/brand/logo-min-sport-black.webp" alt="Ministère des Sports et Loisirs" class="h-8 w-auto opacity-80 md:h-10" />
     </a>
 
-    <!-- Desktop Nav -->
-    <nav class="hidden items-center gap-6 text-sm md:flex">
+    <!-- Nav desktop -->
+    <nav class="hidden items-center gap-1 md:flex">
       {nav.map((item) => (
         item.children ? (
-          <div class="relative group">
-            <a href={item.href} class="flex items-center gap-1 text-slate-700 transition hover:text-brand-yellow py-2">
+          <div class="group relative">
+            <a href={item.href} class="flex items-center gap-1.5 px-4 py-6 text-[0.82rem] font-semibold uppercase tracking-[0.12em] text-congo-nuit/80 transition-colors hover:text-congo">
               {item.label}
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-50 group-hover:rotate-180 transition-transform"><path d="m6 9 6 6 6-6"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-congo transition-transform group-hover:rotate-180"><path d="m6 9 6 6 6-6"/></svg>
             </a>
-            <div class="absolute left-0 top-full hidden pt-2 group-hover:block w-56">
-              <div class="rounded-xl border border-slate-100 bg-white p-2 shadow-xl flex flex-col gap-1 ring-1 ring-black/5">
+            <div class="invisible absolute left-1/2 top-full w-60 -translate-x-1/2 translate-y-1 opacity-0 transition-all duration-300 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100">
+              <div class="flex flex-col border border-slate-100 bg-white p-2 shadow-2xl ring-1 ring-black/5">
                 {item.children.map(child => (
-                   <a href={child.href} class="block rounded-lg px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-brand-yellow transition-colors">
-                     {child.label}
-                   </a>
+                  <a href={child.href} class="rounded-[2px] px-4 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-congo/5 hover:text-congo">
+                    {child.label}
+                  </a>
                 ))}
               </div>
             </div>
           </div>
         ) : (
-          <a href={item.href} class="text-slate-700 transition hover:text-brand-yellow">
+          <a href={item.href} class="px-4 py-6 text-[0.82rem] font-semibold uppercase tracking-[0.12em] text-congo-nuit/80 transition-colors hover:text-congo">
             {item.label}
           </a>
         )
       ))}
     </nav>
 
-    <!-- CTA Buttons -->
+    <!-- CTA -->
     <div class="flex items-center gap-2">
-      {guadalajaraActive && (
-        <a href="/mondial" class="relative hidden rounded-full px-4 py-2 text-sm font-semibold md:flex items-center gap-1.5" style="background:linear-gradient(135deg,#1c2e8f,#0b0f1f);color:#f7d618;border:1px solid rgba(247,214,24,0.3);box-shadow:0 4px 20px rgba(28,46,143,0.35);">
-          <Icon name="ticket" size={14} />
-          <span>Demande ton billet</span>
-        </a>
-      )}
-      <a href="/rejoindre" class="gradient-border relative rounded-full px-4 py-2 text-sm font-semibold">
-        <span class="relative z-10 hidden md:inline">Rejoindre le Bloc</span>
-        <span class="relative z-10 md:hidden">Rejoindre</span>
+      <a href="/rejoindre" class="rounded-full bg-congo px-5 py-2.5 text-[0.72rem] font-bold uppercase tracking-[0.1em] text-white shadow-[0_10px_30px_-12px_rgba(20,102,224,0.7)] transition-all hover:-translate-y-0.5 hover:bg-congo-deep">
+        <span class="hidden md:inline">Rejoindre le Bloc</span>
+        <span class="md:hidden">Rejoindre</span>
       </a>
     </div>
   </div>
 
-  <!-- Mobile Menu Overlay -->
-  <div id="mobile-menu" class="hidden md:hidden border-t border-slate-100 bg-white absolute top-full left-0 right-0 shadow-xl max-h-[calc(100vh-80px)] overflow-y-auto">
-    <div class="flex flex-col p-4 space-y-2">
+  <!-- Barre RDC (identité visuelle — bleu / jaune / rouge) -->
+  <div class="grid h-[3px] w-full grid-cols-3" aria-hidden="true">
+    <div class="bg-flag-blue"></div>
+    <div class="bg-flag-yellow"></div>
+    <div class="bg-flag-red"></div>
+  </div>
+
+  <!-- Menu mobile -->
+  <div id="mobile-menu" class="absolute left-0 right-0 top-full hidden max-h-[calc(100vh-80px)] overflow-y-auto border-t border-slate-100 bg-white shadow-xl md:hidden" data-lenis-prevent>
+    <div class="flex flex-col space-y-1 p-4">
       {nav.map((item) => (
         item.children ? (
           <div class="border-b border-slate-100 pb-2 last:border-0">
-            <button class="w-full flex items-center justify-between py-2 text-slate-800 font-medium mobile-dropdown-btn">
+            <button class="mobile-dropdown-btn flex w-full items-center justify-between py-3 text-sm font-bold uppercase tracking-[0.1em] text-congo-nuit">
               {item.label}
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-200"><path d="m6 9 6 6 6-6"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-congo transition-transform duration-200"><path d="m6 9 6 6 6-6"/></svg>
             </button>
-            <div class="hidden pl-4 space-y-2 mt-1 mobile-dropdown-content">
+            <div class="mobile-dropdown-content mt-1 hidden space-y-1 pl-4">
               {item.children.map(child => (
-                <a href={child.href} class="block py-2 text-sm text-slate-600 hover:text-brand-yellow">
+                <a href={child.href} class="block py-2 text-sm text-slate-600 hover:text-congo">
                   {child.label}
                 </a>
               ))}
             </div>
           </div>
         ) : (
-          <a href={item.href} class="block py-3 text-slate-800 font-medium border-b border-slate-100 last:border-0 hover:text-brand-yellow">
+          <a href={item.href} class="block border-b border-slate-100 py-3 text-sm font-bold uppercase tracking-[0.1em] text-congo-nuit last:border-0 hover:text-congo">
             {item.label}
           </a>
         )
       ))}
-      <div class="pt-4 flex flex-col gap-3">
-        {guadalajaraActive && (
-          <a href="/mondial" class="w-full text-center rounded-full px-4 py-3 text-sm font-semibold flex items-center justify-center gap-2" style="background:linear-gradient(135deg,#1c2e8f,#0b0f1f);color:#f7d618;border:1px solid rgba(247,214,24,0.3);">
-            <Icon name="ticket" size={14} />
-            Demande ton billet
-          </a>
-        )}
-        <a href="/rejoindre" class="block w-full text-center rounded-full bg-brand-blue text-white px-4 py-3 text-sm font-semibold">
+      <div class="flex flex-col gap-3 pt-4">
+        <a href="/rejoindre" class="block w-full rounded-full bg-congo px-4 py-3 text-center text-xs font-bold uppercase tracking-[0.1em] text-white">
           Rejoindre le Bloc
         </a>
       </div>
     </div>
   </div>
 </header>
+
 <script>
-  // Mobile menu toggle
+  const header = document.querySelector('[data-site-header]');
   const menuBtn = document.getElementById('mobile-menu-btn');
   const mobileMenu = document.getElementById('mobile-menu');
-  
-  menuBtn?.addEventListener('click', () => {
-    mobileMenu?.classList.toggle('hidden');
-  });
 
-  // Mobile dropdown toggles
-  const dropdownBtns = document.querySelectorAll('.mobile-dropdown-btn');
-  dropdownBtns.forEach(btn => {
+  menuBtn?.addEventListener('click', () => mobileMenu?.classList.toggle('hidden'));
+
+  document.querySelectorAll('.mobile-dropdown-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
-      const content = btn.nextElementSibling;
-      const arrow = btn.querySelector('svg');
-      
-      content?.classList.toggle('hidden');
-      arrow?.classList.toggle('rotate-180');
+      btn.nextElementSibling?.classList.toggle('hidden');
+      btn.querySelector('svg')?.classList.toggle('rotate-180');
     });
   });
+
+  // Ombre du header au scroll (compatible Lenis)
+  const onScroll = (y: number) => header?.classList.toggle('is-scrolled', y > 12);
+  const lenis = (window as any).lenis;
+  if (lenis) lenis.on('scroll', (e: any) => onScroll(e.scroll));
+  else window.addEventListener('scroll', () => onScroll(window.scrollY), { passive: true });
+  onScroll(window.scrollY);
 </script>
+
+<style>
+  [data-site-header].is-scrolled {
+    box-shadow: 0 10px 30px -24px rgba(5, 11, 24, 0.5);
+  }
+</style>

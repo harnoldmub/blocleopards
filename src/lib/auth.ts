@@ -11,6 +11,7 @@ export const ADMIN_SECTIONS = [
   { id: "supporters",   label: "Supporters",   icon: "list"         },
   { id: "contacts",     label: "Messages",     icon: "mail"         },
   { id: "newsletter",   label: "Newsletter",   icon: "send"         },
+  { id: "events",       label: "Calendrier",   icon: "calendar"     },
   { id: "articles",     label: "Articles",     icon: "newspaper"    },
 ];
 

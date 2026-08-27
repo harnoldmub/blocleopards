@@ -1,20 +1,23 @@
 ---
-const { title, subtitle, image } = Astro.props;
+const { title, subtitle, image, eyebrow } = Astro.props;
 ---
+<section class="relative flex min-h-[52vh] items-end overflow-hidden bg-congo-night text-white">
+  <div class="absolute inset-0 -z-10">
+    {image
+      ? <img src={image} alt="" aria-hidden="true" class="h-full w-full object-cover opacity-40" />
+      : <div class="h-full w-full bg-congo-night"></div>}
+  </div>
+  <div class="absolute inset-0 -z-10 bg-gradient-to-t from-congo-night via-congo-night/70 to-congo-night/40"></div>
 
-<section class="relative flex items-center justify-center min-h-[40vh] overflow-hidden bg-brand-dark">
-  <!-- Background Image -->
-  <div class="absolute inset-0 z-0">
-    {image && <img src={image} alt={title} class="hidden h-full w-full object-cover opacity-40 md:block" />}
-    {!image && <div class="h-full w-full bg-stadium opacity-20"></div>}
+  <div class="relative mx-auto w-full max-w-[84rem] px-4 pb-14 pt-28 lg:px-8">
+    {eyebrow && <span data-reveal class="inline-flex items-center gap-3 text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-or before:h-px before:w-9 before:bg-or/70">{eyebrow}</span>}
+    <h1 data-reveal class="mt-5 font-display uppercase leading-[0.9] [font-size:clamp(2.6rem,7vw,6.5rem)]">{title}</h1>
+    {subtitle && <p data-reveal data-reveal-delay="120" class="mt-5 max-w-2xl text-lg leading-relaxed text-white/75">{subtitle}</p>}
   </div>
 
-  <!-- Overlay Gradient -->
-  <div class="absolute inset-0 z-10 bg-gradient-to-t from-brand-dark via-brand-dark/60 to-transparent"></div>
-
-  <!-- Content -->
-  <div class="relative z-20 mx-auto max-w-6xl px-4 text-center">
-    <h1 class="font-display text-5xl md:text-7xl text-white uppercase tracking-wide">{title}</h1>
-    {subtitle && <p class="mt-4 text-lg md:text-xl text-brand-yellow font-light max-w-2xl mx-auto">{subtitle}</p>}
+  <div class="absolute bottom-0 left-0 right-0 grid h-[3px] grid-cols-3" aria-hidden="true">
+    <div class="bg-flag-blue"></div>
+    <div class="bg-flag-yellow"></div>
+    <div class="bg-flag-red"></div>
   </div>
 </section>

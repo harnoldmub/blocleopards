@@ -1,15 +1,11 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import SectionHeader from "../components/SectionHeader.astro";
-import Card from "../components/Card.astro";
 import NewsletterForm from "../components/NewsletterForm.astro";
 import MatchBanner from "../components/MatchBanner.astro";
 import Marquee from "../components/Marquee.astro";
-import media from "../data/media.json";
-import Gallery from "../components/Gallery.astro";
 import site from "../data/site.json";
-import { getCollection } from "astro:content";
 import { getSetting } from "../lib/settings";
+import { requireDatabase } from "../lib/neon";
 
 const partners = [
   { name: "SONAS", logo: "/media/partenaires/LOGO SONAS.png" },
@@ -17,190 +13,291 @@ const partners = [
   { name: "MFS Groupe", logo: "/media/partenaires/MFS GROUPE.png" },
   { name: "Shalina Healthcare", logo: "/media/partenaires/Shalina-Logo-Blue.png" },
   { name: "Fonarev", logo: "/media/partenaires/logo-fonarev.webp" },
-  { name: "Visa", logo: "/media/partenaires/logo-visa.png" },
+  { name: "Visa", logo: "/media/partenaires/logo-visa.png" }
 ];
 
 const today = new Date().toISOString().slice(0, 10);
-let allEvents: any[] = [];
-try { allEvents = (await getCollection("events")).sort((a: any, b: any) => a.data.date.localeCompare(b.data.date)); } catch {}
-const upcomingEvents = allEvents.filter((event: any) => event.data.date >= today);
-const events = (upcomingEvents.length ? upcomingEvents : allEvents).slice(0, 3);
+// Résilient : la home ne doit pas crasher si la table events n'est pas encore migrée.
+let allEvents = [];
+try {
+  const sql = requireDatabase();
+  allEvents = await sql`
+    SELECT slug, title, description, date::text as date, time, location
+    FROM events
+    WHERE published = true
+    ORDER BY date ASC, created_at ASC
+  `;
+} catch (err) {
+  console.error("[index] chargement events échoué (table absente ?)", err);
+  allEvents = [];
+}
+const upcomingEvents = allEvents.filter((event) => event.date >= today);
+const events = upcomingEvents.slice(0, 4);
 const FR_MONTHS = ["JAN","FEV","MAR","AVR","MAI","JUIN","JUIL","AOUT","SEPT","OCT","NOV","DEC"];
-const getMonth = (d: string) => FR_MONTHS[parseInt(d.split("-")[1]) - 1];
-const getDay = (d: string) => parseInt(d.split("-")[2]);
-const billeterieActive = (await getSetting("billeterie_active", "true")) !== "false";
+const getMonth = (d) => FR_MONTHS[parseInt(d.split("-")[1]) - 1];
+const getDay = (d) => String(parseInt(d.split("-")[2])).padStart(2, "0");
+
 const guadalajaraActive = (await getSetting("guadalajara_active", "true")) !== "false";
 
 const tickerItems = [
-  "Tous en bleu et jaune.",
-  "Tous en maillot Leopards.",
   "Un seul bloc. Une seule voix.",
-  "Support positif et respectueux",
-  "Bleu & jaune partout",
-  "Energie partagee",
-  "Toko bloque bango tiii na tiii"
+  "Tous en bleu et jaune.",
+  "Tous en maillot Léopards.",
+  "Support positif et respectueux.",
+  "Toko bloque bango tii na tii.",
+  "Toza bomoko."
+];
+
+const homeGallery = [
+  { title: "Tribune debout", label: "01 · Ferveur", image: "/media/ivanor-tribune-drapeaux.jpg" },
+  { title: "Un seul bloc", label: "02 · Voix", image: "/media/ivanor-foule-tribune.jpg" },
+  { title: "Joie en tribune", label: "03 · Moment", image: "/media/ivanor-joie-tribune.jpg" },
+  { title: "Couleurs en mouvement", label: "04 · Diaspora", image: "/media/supporters-diaspora-03.jpg" },
+  { title: "La nuit du bloc", label: "05 · Après match", image: "/media/ivanor-supporters-nuit.jpg" }
 ];
 ---
-<BaseLayout title="Accueil" description="Supporters des Leopards. Mobilisation positive, informations verifiees et fan experience.">
+<BaseLayout title="Accueil" description="Bloc Léopards — supporters des Léopards de la RDC. Un seul bloc, une seule voix. Mobilisation positive, informée et respectueuse.">
   {site.matchDay && <MatchBanner label={site.matchDayLabel} href={site.matchDayCTA} ctaLabel={site.matchDayCTALabel} />}
-  <section class="relative min-h-[80vh] flex items-center overflow-hidden">
-    <!-- Video Background -->
-    <video autoplay muted loop playsinline class="absolute inset-0 w-full h-full object-cover -z-20">
+
+  <!-- ================= HERO ================= -->
+  <section class="relative flex min-h-[92vh] items-end overflow-hidden bg-congo-night text-white">
+    <video autoplay muted loop playsinline preload="auto" poster="/videos/hero-poster.jpg" data-hero-media class="absolute inset-0 z-0 h-full w-full object-cover">
       <source src="/videos/hero.mp4" type="video/mp4" />
     </video>
-    
-    <!-- Overlay -->
-    <div class="absolute inset-0 bg-gradient-to-r from-brand-dark/90 to-brand-dark/40 -z-10"></div>
-    
-    <div class="mx-auto grid max-w-6xl gap-12 px-4 py-16 md:grid-cols-[1fr_0.9fr] relative z-10">
-      <div class="animate-fade-in-up">
-        <p class="text-xs uppercase tracking-[0.4em] text-brand-yellow font-bold">Bloc Leopards</p>
-        <h1 class="section-title mt-4 text-5xl md:text-7xl text-white">Un seul bloc.</h1>
-        <p class="mt-4 max-w-xl text-lg text-slate-200">La tribune congolaise se rassemble: chants, drapeaux, ferveur et discipline.</p>
-        <div class="mt-8 flex flex-wrap gap-4">
-          <a href="/rejoindre" class="rounded-full bg-brand-yellow px-6 py-3 text-sm font-semibold text-brand-dark pulse-glow hover:bg-white transition-colors">Rejoindre le Bloc</a>
-          {guadalajaraActive && <a href="/mondial" class="rounded-full border border-white/30 bg-white/10 backdrop-blur-sm px-6 py-3 text-sm font-semibold text-white hover:bg-white/20 transition-colors">Demande ton billet</a>}
-        </div>
+    <div class="absolute inset-0 z-0 bg-gradient-to-t from-congo-night via-congo-night/35 to-transparent"></div>
+    <div class="absolute inset-0 z-0 bg-gradient-to-r from-congo-night/70 via-congo-night/15 to-transparent"></div>
+
+    <div class="relative z-10 mx-auto w-full max-w-[84rem] px-4 pb-20 pt-28 lg:px-8">
+      <span data-reveal class="inline-flex items-center gap-3 text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-or before:h-px before:w-9 before:bg-or/70">Bloc Léopards · RDC</span>
+      <h1 class="mt-6 font-mega uppercase leading-[0.82] [font-size:clamp(3.6rem,11vw,11.5rem)]">
+        <span class="lux-line-mask"><span data-reveal="mask" class="text-transparent [-webkit-text-stroke:2px_#ffffff]">Un seul bloc.</span></span>
+        <span class="lux-line-mask"><span data-reveal="mask" data-reveal-delay="120" class="text-transparent [-webkit-text-stroke:2px_#F4C400]">Une seule voix.</span></span>
+      </h1>
+      <p data-reveal data-reveal-delay="220" class="mt-7 max-w-xl text-lg leading-relaxed text-white/80">
+        La tribune congolaise se rassemble : chants, drapeaux, ferveur et discipline. Derrière les Léopards, partout où ils jouent.
+      </p>
+      <div data-reveal data-reveal-delay="300" class="mt-9 flex flex-wrap gap-4">
+        <a href="/rejoindre" class="rounded-full bg-or px-8 py-4 text-[0.8rem] font-bold uppercase tracking-[0.1em] text-congo-night transition-transform hover:-translate-y-0.5">Rejoindre le Bloc</a>
+        <a href="#manifeste" class="rounded-full border border-white/30 px-8 py-4 text-[0.8rem] font-bold uppercase tracking-[0.1em] text-white backdrop-blur-sm transition-colors hover:border-or hover:text-or">Découvrir le mouvement</a>
       </div>
-      <div class="hidden flex-col items-center gap-6 animate-fade-in-up md:flex" style="animation-delay: 0.3s">
-        <div class="grid w-full max-w-md grid-cols-2 gap-3 float-slow">
-          <img src="/media/ivanor-joie-tribune.jpg" alt="Supporter des Leopards" class="h-64 w-full rounded-3xl border border-white/10 object-cover shadow-2xl" />
-          <img src="/media/ivanor-supporter-joie.jpg" alt="Supporter RDC" class="mt-10 h-64 w-full rounded-3xl border border-white/10 object-cover shadow-2xl" />
-          <img src="/media/liste-officielle-leopards-2026.jpg" alt="Liste officielle des Leopards" class="col-span-2 h-48 w-full rounded-3xl border border-white/10 object-cover object-top shadow-2xl" />
-        </div>
-        <div class="rounded-full border border-white/20 bg-white/10 backdrop-blur px-5 py-2 text-xs uppercase tracking-[0.3em] text-white">Ambiance live</div>
-      </div>
+    </div>
+
+    <div class="absolute bottom-6 right-5 hidden items-center gap-3 text-[0.62rem] uppercase tracking-[0.28em] text-white/50 lg:flex lg:right-8">
+      Scroll
+      <span class="h-8 w-px animate-[float_2.4s_ease-in-out_infinite] bg-gradient-to-b from-or to-transparent"></span>
     </div>
   </section>
 
   <Marquee items={tickerItems} />
 
-  <section class="mx-auto max-w-6xl px-4 py-10">
-    <div class="mb-6 text-center">
-      <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Nos partenaires</p>
-      <p class="mt-1 text-lg font-bold text-slate-800">Ils soutiennent le Bloc</p>
-    </div>
-    <div class="grid grid-cols-3 gap-4 md:grid-cols-6">
-      {partners.map((p) => (
-        <div class="flex items-center justify-center rounded-2xl border border-slate-200 bg-white p-4 shadow-sm min-h-[80px]">
-          <img src={p.logo} alt={p.name} class="max-h-10 w-auto max-w-[100px] object-contain" />
-        </div>
-      ))}
+  <!-- ================= MANIFESTE ================= -->
+  <section id="manifeste" class="scroll-mt-24 bg-congo py-24 text-white lg:py-32">
+    <div class="mx-auto max-w-[84rem] px-4 lg:px-8">
+      <span data-reveal class="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-congo-night">Le manifeste</span>
+      <div class="mt-6 font-mega uppercase leading-[0.86] [font-size:clamp(2.8rem,8vw,8rem)]">
+        <div class="lux-line-mask"><span data-reveal="mask">Toza bo moko</span></div>
+        <div class="lux-line-mask"><span data-reveal="mask" data-reveal-delay="100" class="text-congo-night">Bloc moko</span></div>
+        <div class="lux-line-mask"><span data-reveal="mask" data-reveal-delay="200">Ekolo moko</span></div>
+      </div>
+      <p data-reveal data-reveal-delay="280" class="mt-8 font-display text-2xl uppercase tracking-[0.06em] text-white/90 md:text-3xl">Tous derrière les Léopards.</p>
     </div>
   </section>
 
-  {upcomingEvents.length > 0 && (
-    <section class="mx-auto max-w-6xl px-4 py-12">
-      <div class="mb-8 text-center">
-        <p class="text-xs font-bold uppercase tracking-[0.18em] text-brand-yellow">Agenda</p>
-        <p class="mt-1 text-2xl font-bold text-slate-900">Prochains evenements</p>
+  <!-- ================= GALERIE (bandeau photos horizontal) ================= -->
+  <section class="bg-congo-night py-20 text-white lg:py-24" aria-label="Galerie du bloc">
+    <div class="mx-auto max-w-[84rem] px-4 lg:px-8">
+      <div class="mb-10 flex flex-wrap items-end justify-between gap-6">
+        <div>
+          <span data-reveal class="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-or">Ambiance</span>
+          <h2 data-reveal class="mt-3 font-display text-4xl uppercase leading-[0.95] md:text-6xl">La galerie</h2>
+        </div>
+        <a data-reveal href="/media" class="text-[0.74rem] font-bold uppercase tracking-[0.14em] text-or transition-colors hover:text-white">Voir toutes les photos →</a>
       </div>
-      <div class="flex flex-col gap-4">
-        {upcomingEvents.slice(0, 2).map((event: any) => (
-          <div class="flex items-center gap-0 overflow-hidden rounded-2xl" style="background:#0d1221;">
-            <!-- Accent stripe -->
-            <div class="w-1.5 self-stretch flex-shrink-0" style="background:linear-gradient(to bottom,#f7d618,#e8502a);"></div>
-            <!-- Date block -->
-            <div class="flex w-28 flex-shrink-0 flex-col items-center justify-center px-5 py-6 text-center">
-              <span class="text-xs font-bold uppercase tracking-widest" style="color:#f7d618;">{getMonth(event.data.date)}</span>
-              <span class="mt-0.5 text-5xl font-black leading-none text-white">{getDay(event.data.date)}</span>
-              <span class="mt-1.5 text-xs text-slate-400">{event.data.time}</span>
-            </div>
-            <!-- Divider -->
-            <div class="w-px self-stretch" style="background:rgba(255,255,255,0.08);"></div>
-            <!-- Info block -->
-            <div class="flex-1 px-6 py-6">
-              <p class="text-xs font-bold uppercase tracking-[0.18em]" style="color:#f7d618;">{event.data.description}</p>
-              <h3 class="mt-1 text-xl font-black uppercase text-white">{event.data.title}</h3>
-              <p class="mt-1.5 text-sm text-slate-400">{event.data.location}</p>
-            </div>
+    </div>
+    <div class="photo-strip" data-reveal="fade">
+      <div class="photo-strip__track">
+        <div class="photo-strip__set">
+          {homeGallery.map((item, i) => (
+            <figure class="photo-strip__item">
+              <img src={item.image} alt={item.title} loading={i === 0 ? "eager" : "lazy"} />
+              <figcaption>{item.title}</figcaption>
+            </figure>
+          ))}
+        </div>
+        <div class="photo-strip__set" aria-hidden="true">
+          {homeGallery.map((item) => (
+            <figure class="photo-strip__item">
+              <img src={item.image} alt="" loading="lazy" />
+              <figcaption>{item.title}</figcaption>
+            </figure>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 52 ANS / RETOUR ================= -->
+  <section class="bg-white py-20 lg:py-28">
+    <div class="mx-auto grid max-w-[84rem] items-center gap-12 px-4 lg:grid-cols-[0.85fr_1.15fr] lg:px-8">
+      <div>
+        <span data-reveal class="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-feu">52 ans après</span>
+        <h2 data-reveal class="mt-3 font-display text-4xl uppercase leading-[0.95] text-congo-night md:text-6xl">Les Léopards<br />sont de retour</h2>
+        <p data-reveal class="mt-5 max-w-md leading-relaxed text-slate-600">Première nation d'Afrique subsaharienne à avoir joué une Coupe du monde, la RDC retrouve la scène mondiale avec ambition.</p>
+        <a data-reveal href="/actus/2026-05-25-retour-mondial-52-ans" class="mt-7 inline-flex rounded-full bg-congo px-7 py-3.5 text-[0.78rem] font-bold uppercase tracking-[0.1em] text-white transition-transform hover:-translate-y-0.5">Lire le contexte</a>
+      </div>
+      <div data-reveal="fade" class="overflow-hidden rounded-[6px] border border-slate-200 shadow-deep">
+        <video class="aspect-video w-full bg-congo-night object-cover" autoplay muted controls playsinline preload="metadata">
+          <source src="/videos/retour-mondial-52-ans.mp4" type="video/mp4" />
+        </video>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ÉVÉNEMENTS (affiches) ================= -->
+  {events.length > 0 && (
+    <section class="bg-congo-night py-20 text-white lg:py-28">
+      <div class="mx-auto max-w-[84rem] px-4 lg:px-8">
+        <div class="mb-12 flex flex-wrap items-end justify-between gap-6">
+          <div>
+            <span data-reveal class="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-or">Mobilisation</span>
+            <h2 data-reveal class="mt-3 font-display text-4xl uppercase leading-[0.95] md:text-6xl">Prochains rendez-vous</h2>
           </div>
-        ))}
-      </div>
-      <div class="mt-10 text-center">
-        <p class="text-xs font-bold uppercase tracking-[0.2em] text-brand-yellow">Bloc Leopards</p>
-        <p class="mt-2 text-2xl font-bold text-slate-900">Rejoins le Bloc en tribune</p>
-        <p class="mt-2 text-sm text-slate-500 max-w-sm mx-auto">Soutiens les Léopards en tribune. Programme diaspora pour le Mondial 2026.</p>
+          <a data-reveal href="/evenements" class="text-[0.74rem] font-bold uppercase tracking-[0.14em] text-or transition-colors hover:text-white">Calendrier complet →</a>
+        </div>
+        <div class="grid gap-4">
+          {events.map((event, i) => (
+            <a href={`/evenements/${event.slug}`} data-reveal data-reveal-delay={(i % 2) * 90} class="group flex items-stretch gap-0 overflow-hidden rounded-[4px] border border-white/10 bg-white/[0.03] transition-colors hover:border-or/40">
+              <div class="w-1.5 shrink-0 bg-gradient-to-b from-flag-yellow to-feu"></div>
+              <div class="flex w-24 shrink-0 flex-col items-center justify-center px-4 py-6 text-center md:w-32">
+                <span class="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-or">{getMonth(event.date)}</span>
+                <span class="font-mega text-5xl leading-none md:text-6xl">{getDay(event.date)}</span>
+                <span class="mt-1 text-[0.7rem] text-white/50">{event.time}</span>
+              </div>
+              <div class="w-px self-stretch bg-white/10"></div>
+              <div class="flex flex-1 flex-col justify-center px-5 py-6 md:px-8">
+                <p class="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-or/90">{event.description}</p>
+                <h3 class="mt-1.5 font-display text-2xl uppercase leading-none md:text-4xl">{event.title}</h3>
+                <p class="mt-2 text-sm text-white/55">{event.location}</p>
+              </div>
+              <div class="hidden items-center pr-8 text-or opacity-0 transition-opacity group-hover:opacity-100 md:flex">→</div>
+            </a>
+          ))}
+        </div>
         {guadalajaraActive && (
-          <a href="/mondial" class="mt-6 inline-flex items-center gap-2 rounded-full px-8 py-3 text-sm font-semibold" style="background:linear-gradient(135deg,#1c2e8f,#0b0f1f);color:#f7d618;border:1px solid rgba(247,214,24,0.3);box-shadow:0 4px 20px rgba(28,46,143,0.35);">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9a3 3 0 0 1 0 6V19a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-4a3 3 0 0 1 0-6V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/><line x1="9" y1="12" x2="15" y2="12"/></svg>
-            <span>Demande ton billet</span>
-          </a>
+          <div data-reveal class="mt-10">
+            <a href="/mondial" class="inline-flex items-center gap-2 rounded-full border border-or/40 bg-or/10 px-8 py-4 text-[0.78rem] font-bold uppercase tracking-[0.1em] text-or transition-colors hover:bg-or hover:text-congo-night">
+              Programme diaspora · Mondial 2026 →
+            </a>
+          </div>
         )}
       </div>
     </section>
   )}
 
-  <section class="mx-auto max-w-6xl px-4 py-16">
-    <div class="grid gap-8 md:grid-cols-[0.9fr_1.4fr] md:items-center">
-      <div>
-        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-brand-yellow">52 ans apres</p>
-        <h2 class="section-title mt-3 text-4xl text-slate-950">Les Leopards sont de retour</h2>
-        <p class="mt-4 text-sm leading-6 text-slate-600">Premiere nation d'Afrique subsaharienne a avoir joue une Coupe du monde, la RDC retrouve la scene mondiale avec ambition.</p>
-        <a href="/actus/2026-05-25-retour-mondial-52-ans" class="mt-6 inline-flex rounded-full bg-brand-yellow px-5 py-3 text-sm font-semibold text-brand-dark">Lire le contexte</a>
+  <!-- ================= PARTENAIRES ================= -->
+  <section class="bg-white py-20 lg:py-24">
+    <div class="mx-auto max-w-[84rem] px-4 lg:px-8">
+      <div data-reveal class="mb-10 text-center">
+        <span class="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-slate-400">Ils soutiennent le Bloc</span>
+        <h2 class="mt-2 font-display text-3xl uppercase text-congo-night md:text-4xl">Nos partenaires</h2>
       </div>
-      <video class="aspect-video w-full rounded-3xl border border-slate-200 bg-slate-950 object-cover shadow-deep" autoplay muted controls playsinline preload="metadata">
-        <source src="/videos/retour-mondial-52-ans.mp4" type="video/mp4" />
-      </video>
-    </div>
-  </section>
-
-  <section class="mx-auto max-w-6xl px-4 py-16">
-    <SectionHeader eyebrow="Agenda" title="Prochains evenements" description="Rendez-vous reels autour de la preparation des Leopards." />
-    <div class="grid gap-6 md:grid-cols-3">
-      {events.map((event) => (
-        <Card
-          title={event.data.title}
-          description={`${event.data.date} • ${event.data.time} • ${event.data.location}`}
-          meta={event.data.cta}
-          image={event.data.image}
-          href={`/evenements/${event.slug}`}
-          cta="Details"
-        />
-      ))}
-    </div>
-  </section>
-
-  <section class="mx-auto grid max-w-6xl gap-8 px-4 py-16 md:grid-cols-[1.15fr_0.85fr]">
-    <div>
-      <SectionHeader eyebrow="Video" title="Hommage a la diaspora" description="Liege, Marbella, les chants et les couleurs en mouvement." />
-      <div class="mx-auto max-w-sm">
-        <video class="aspect-[9/16] w-full rounded-3xl border border-slate-200 bg-slate-950 object-cover shadow-deep" controls poster="/media/hommage-diaspora-cover.jpg">
-          <source src="/videos/hommage-diaspora-match-amical.mp4" type="video/mp4" />
-        </video>
+      <div class="grid grid-cols-2 gap-px overflow-hidden rounded-[6px] border border-slate-200 bg-slate-200 sm:grid-cols-3 lg:grid-cols-6">
+        {partners.map((p, i) => (
+          <div data-reveal data-reveal-delay={(i % 6) * 60} class="group flex min-h-[110px] items-center justify-center bg-white p-6 transition-colors hover:bg-slate-50">
+            <img src={p.logo} alt={p.name} loading="lazy" class="max-h-11 w-auto max-w-[120px] object-contain opacity-70 grayscale transition-all duration-500 group-hover:opacity-100 group-hover:grayscale-0" />
+          </div>
+        ))}
       </div>
     </div>
-    <div class="flex flex-col justify-center rounded-3xl border border-slate-200 bg-white p-6 shadow-deep">
-      <p class="text-xs uppercase tracking-[0.3em] text-brand-yellow">Diaspora</p>
-      <h3 class="section-title mt-3 text-4xl">De Liege a Marbella</h3>
-      <p class="mt-3 text-sm leading-6 text-slate-600">Un hommage aux supporters qui portent le drapeau partout ou les Leopards jouent.</p>
-      <audio class="mt-6 w-full" controls src="/audio/hommage-diaspora.mp3"></audio>
-      <a href="/actus/2026-05-25-hommage-diaspora" class="mt-6 inline-flex rounded-full bg-brand-yellow px-5 py-3 text-sm font-semibold text-brand-dark">Voir l'article</a>
-    </div>
   </section>
 
-  <section class="mx-auto max-w-6xl px-4 py-16">
-    <SectionHeader eyebrow="Ambiance" title="Galerie" description="L'energie du bloc en images." />
-    <Gallery items={media} />
-  </section>
-
-
-  <section class="bg-brand-yellow text-brand-dark">
-    <div class="mx-auto grid max-w-6xl gap-8 px-4 py-16 md:grid-cols-2">
+  <!-- ================= REJOINDRE LE BLOC ================= -->
+  <section class="relative overflow-hidden bg-congo-night text-white">
+    <img src="/media/bloc-jersey-tribune-01.jpg" alt="" aria-hidden="true" class="absolute inset-0 h-full w-full object-cover opacity-25" />
+    <div class="absolute inset-0 bg-gradient-to-t from-congo-night via-congo-night/80 to-congo-night/60"></div>
+    <div class="relative mx-auto grid max-w-[84rem] items-center gap-12 px-4 py-24 lg:grid-cols-2 lg:px-8 lg:py-32">
       <div>
-        <p class="text-xs uppercase tracking-[0.3em]">Rejoindre</p>
-        <h2 class="section-title mt-2 text-4xl">Rejoins le Bloc Leopards</h2>
-        <p class="mt-3 text-sm">Rejoins le mouvement, recois le kit supporters, et participe aux mobilisations confirmees.</p>
-        <div class="mt-6 flex flex-wrap gap-4">
-          <a href="/rejoindre" class="rounded-full bg-white px-6 py-3 text-sm font-semibold text-brand-yellow">Formulaire d'adhesion</a>
-          <a href="/charte" class="rounded-full border border-brand-dark px-6 py-3 text-sm font-semibold">Lire la charte</a>
+        <span data-reveal class="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-or">Rejoindre</span>
+        <h2 data-reveal class="mt-4 font-mega uppercase leading-[0.85] [font-size:clamp(2.8rem,7vw,6rem)]">Rejoins<br />le mouvement</h2>
+        <p data-reveal class="mt-6 max-w-md text-lg leading-relaxed text-white/75">Reçois le kit supporters et participe aux mobilisations confirmées. Un seul bloc, une seule voix.</p>
+        <div data-reveal class="mt-8 flex flex-wrap gap-4">
+          <a href="/rejoindre" class="rounded-full bg-or px-8 py-4 text-[0.8rem] font-bold uppercase tracking-[0.1em] text-congo-night transition-transform hover:-translate-y-0.5">Formulaire d'adhésion</a>
+          <a href="/charte" class="rounded-full border border-white/30 px-8 py-4 text-[0.8rem] font-bold uppercase tracking-[0.1em] text-white transition-colors hover:border-or hover:text-or">Lire la charte</a>
         </div>
       </div>
-      <div class="rounded-3xl bg-white p-6 text-slate-900">
-        <p class="text-xs uppercase tracking-[0.3em] text-brand-yellow">Newsletter</p>
-        <p class="mt-3 text-sm text-slate-600">Recevoir les mobilisations confirmees, fan zones, et kits supporters.</p>
+      <div data-reveal="fade" class="rounded-[6px] border border-white/10 bg-white p-7 text-slate-900 shadow-deep">
+        <span class="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-congo">Newsletter</span>
+        <p class="mt-3 text-sm text-slate-600">Recevoir les mobilisations confirmées, fan zones et kits supporters.</p>
         <NewsletterForm />
       </div>
     </div>
   </section>
 </BaseLayout>
+
+<style>
+  /* Galerie home — bandeau photos qui defile en continu de gauche a droite */
+  .photo-strip {
+    position: relative;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(90deg, transparent, black 5%, black 95%, transparent);
+    mask-image: linear-gradient(90deg, transparent, black 5%, black 95%, transparent);
+  }
+  .photo-strip__track {
+    display: flex;
+    width: max-content;
+    animation: photo-strip-scroll 48s linear infinite;
+  }
+  .photo-strip:hover .photo-strip__track {
+    animation-play-state: paused;
+  }
+  .photo-strip__set {
+    display: flex;
+    gap: 1rem;
+    padding: 0 0.5rem;
+  }
+  .photo-strip__item {
+    position: relative;
+    flex: 0 0 auto;
+    width: clamp(15rem, 26vw, 24rem);
+    aspect-ratio: 4 / 3;
+    margin: 0;
+    overflow: hidden;
+    border-radius: 6px;
+    background: #0d1a35;
+  }
+  .photo-strip__item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .photo-strip__item::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 55%, rgba(5,11,24,0.85));
+  }
+  .photo-strip__item figcaption {
+    position: absolute;
+    left: 0.85rem;
+    bottom: 0.75rem;
+    z-index: 1;
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #fff;
+  }
+  @keyframes photo-strip-scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .photo-strip { overflow-x: auto; -webkit-mask-image: none; mask-image: none; }
+    .photo-strip__track { animation: none; }
+    .photo-strip__set[aria-hidden="true"] { display: none; }
+  }
+  @media (max-width: 640px) {
+    .photo-strip__item { width: 72vw; }
+  }
+</style>

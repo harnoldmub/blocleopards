@@ -3,13 +3,16 @@ import { formValue, redirectTo } from "../../lib/forms";
 import { requireDatabase } from "../../lib/neon";
 import { isSpam } from "../../lib/spam";
 import { upsertSupporter } from "../../lib/supporters";
+import { verifyTurnstile } from "../../lib/turnstile";
 
 export const prerender = false;
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, clientAddress }) => {
   try {
     const formData = await request.formData();
     if (isSpam(formData)) return redirectTo("/rejoindre", "success");
+    const captchaOk = await verifyTurnstile(formValue(formData, "cf-turnstile-response"), clientAddress);
+    if (!captchaOk) return redirectTo("/rejoindre", "captcha");
     const prenom = formValue(formData, "prenom");
     const nom = formValue(formData, "nom");
     const email = formValue(formData, "email").toLowerCase();

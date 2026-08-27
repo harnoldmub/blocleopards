@@ -1,17 +1,22 @@
 ---
 const { title, description, meta, image, href, cta } = Astro.props;
+const Tag = href ? "a" : "article";
 ---
-<article class="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-deep transition duration-300 hover:-translate-y-1 hover:shadow-glow">
-  {image && <img src={image} alt={title} class="aspect-[3/4] w-full object-cover md:aspect-[4/3]" />}
-  <div class="p-6">
-    {meta && <p class="text-xs uppercase tracking-[0.3em] text-brand-yellow">{meta}</p>}
-    <h3 class="mt-2 text-xl font-semibold">{title}</h3>
-    <p class="mt-2 text-sm text-slate-600">{description}</p>
+<Tag href={href} class="group flex h-full flex-col overflow-hidden rounded-[4px] border border-slate-200 bg-white shadow-[0_1px_0_rgba(5,11,24,.04),0_24px_50px_-40px_rgba(5,11,24,.5)] transition duration-500 hover:-translate-y-1 hover:border-congo/40 hover:shadow-deep">
+  {image && (
+    <div class="relative aspect-[4/3] overflow-hidden bg-slate-100">
+      <img src={image} alt={title} loading="lazy" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.05]" />
+      <div class="absolute inset-0 bg-gradient-to-t from-congo-night/30 to-transparent opacity-60"></div>
+    </div>
+  )}
+  <div class="flex flex-1 flex-col p-6">
+    {meta && <span class="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-congo">{meta}</span>}
+    <h3 class="mt-2 font-display text-2xl uppercase leading-none text-congo-night">{title}</h3>
+    {description && <p class="mt-3 flex-1 text-sm leading-relaxed text-slate-600">{description}</p>}
     {href && (
-      <a href={href} class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-brand-yellow">
-        {cta ?? "Voir"}
-        <span aria-hidden="true">→</span>
-      </a>
+      <span class="mt-5 inline-flex items-center gap-2 text-[0.74rem] font-bold uppercase tracking-[0.12em] text-congo transition-colors group-hover:text-feu">
+        {cta ?? "Voir"}<span aria-hidden="true">→</span>
+      </span>
     )}
   </div>
-</article>
+</Tag>

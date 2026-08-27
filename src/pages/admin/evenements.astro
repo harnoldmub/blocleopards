@@ -1,0 +1,11 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import AdminEventsCalendar from "../../components/AdminEventsCalendar.tsx";
+import { isAdminAuthed, hasPermission } from "../../lib/auth";
+
+if (!isAdminAuthed(Astro.cookies)) return Astro.redirect("/admin/login");
+if (!hasPermission(Astro.cookies, "events")) return Astro.redirect("/admin/dashboard");
+---
+<AdminLayout title="Calendrier — Admin Bloc Léopards" section="events">
+  <AdminEventsCalendar client:load />
+</AdminLayout>

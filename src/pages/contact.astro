@@ -1,49 +1,57 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import PageHero from "../components/PageHero.astro";
-import SectionHeader from "../components/SectionHeader.astro";
+import Turnstile from "../components/Turnstile.astro";
 ---
-<BaseLayout title="Contact" description="Contacter l'equipe du Bloc Leopards.">
-  <PageHero title="Contact" subtitle="Nous ecrire" image="/media/atelier-1.svg" />
+<BaseLayout title="Contact" description="Contacter l'équipe du Bloc Léopards.">
+  <PageHero title="Contact" subtitle="Nous écrire" image="/media/atelier-1.svg" />
   <section class="mx-auto max-w-5xl px-4 py-16">
     {Astro.url.searchParams.get("status") === "success" && (
-      <div class="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
-        Message enregistre. L'equipe revient vers toi rapidement.
+      <div class="mb-6 rounded-[6px] border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+        Message enregistré. L'équipe revient vers toi rapidement.
       </div>
     )}
     {Astro.url.searchParams.get("status") === "error" && (
-      <div class="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
-        Impossible d'enregistrer le message pour le moment. Verifie la connexion Neon.
+      <div class="mb-6 rounded-[6px] border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+        Impossible d'enregistrer le message pour le moment. Vérifie la connexion Neon.
       </div>
     )}
-    <form name="contact" method="POST" action="/api/contact" class="grid gap-4 rounded-3xl border border-slate-200 bg-white p-6 text-sm">
+    {Astro.url.searchParams.get("status") === "captcha" && (
+      <div class="mb-6 rounded-[6px] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+        Merci de valider le contrôle anti-robot avant d'envoyer le formulaire.
+      </div>
+    )}
+    <form name="contact" method="POST" action="/api/contact" class="grid gap-4 rounded-[6px] border border-slate-200 bg-white p-6 text-sm shadow-deep">
       <input name="_hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;opacity:0;height:0;width:0;" />
       <input name="_t" type="hidden" id="contact-t" />
       <script>document.getElementById('contact-t').value = Date.now();</script>
       <div class="grid gap-3 md:grid-cols-2">
         <label class="grid gap-1.5">
           <span class="text-xs font-semibold text-slate-600">Nom</span>
-          <input name="nom" required class="rounded-xl border border-slate-300 bg-white px-4 py-3" />
+          <input name="nom" required class="rounded-[4px] border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-congo focus:ring-4 focus:ring-congo/15" />
         </label>
         <label class="grid gap-1.5">
           <span class="text-xs font-semibold text-slate-600">Email</span>
-          <input type="email" name="email" required class="rounded-xl border border-slate-300 bg-white px-4 py-3" />
+          <input type="email" name="email" required class="rounded-[4px] border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-congo focus:ring-4 focus:ring-congo/15" />
         </label>
       </div>
       <label class="grid gap-1.5">
         <span class="text-xs font-semibold text-slate-600">Objet</span>
-        <input name="objet" required class="rounded-xl border border-slate-300 bg-white px-4 py-3" />
+        <input name="objet" required class="rounded-[4px] border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-congo focus:ring-4 focus:ring-congo/15" />
       </label>
       <label class="grid gap-1.5">
         <span class="text-xs font-semibold text-slate-600">Message</span>
-        <textarea name="message" rows="5" class="rounded-xl border border-slate-300 bg-white px-4 py-3"></textarea>
+        <textarea name="message" rows="5" class="rounded-[4px] border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-congo focus:ring-4 focus:ring-congo/15"></textarea>
       </label>
-      <button type="submit" class="rounded-full bg-brand-yellow px-6 py-3 text-sm font-semibold text-brand-dark">Envoyer</button>
+
+      <Turnstile />
+
+      <button type="submit" class="rounded-full bg-congo px-6 py-3.5 text-[0.78rem] font-bold uppercase tracking-[0.1em] text-white transition-transform hover:-translate-y-0.5">Envoyer</button>
     </form>
 
-    <div class="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">
-      <p>Email: contact@blocaleopards.cd</p>
-      <p>Adresse: Kinshasa, RDC</p>
+    <div class="mt-8 rounded-[6px] border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">
+      <p>Email : contact@blocaleopards.cd</p>
+      <p>Adresse : Kinshasa, RDC</p>
     </div>
   </section>
 </BaseLayout>

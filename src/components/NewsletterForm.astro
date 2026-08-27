@@ -1,17 +1,23 @@
-<form name="newsletter" method="POST" action="/api/newsletter" class="mt-6 grid items-end gap-3 md:grid-cols-[1fr_auto]">
+---
+import Turnstile from "./Turnstile.astro";
+---
+<form name="newsletter" method="POST" action="/api/newsletter" class="mt-6 grid gap-3">
   <input name="_hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;opacity:0;height:0;width:0;" />
   <input name="_t" type="hidden" id="newsletter-t" />
   <script>document.getElementById('newsletter-t').value = Date.now();</script>
-  <label class="grid w-full gap-1.5">
-    <span class="text-xs font-semibold text-slate-600">Adresse email</span>
-    <input
-      type="email"
-      name="email"
-      required
-      class="w-full rounded-full border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900"
-    />
-  </label>
-  <button type="submit" class="rounded-full bg-brand-yellow px-6 py-3 text-sm font-semibold text-brand-dark">
-    Recevoir les actus
-  </button>
+  <div class="grid items-end gap-3 md:grid-cols-[1fr_auto]">
+    <label class="grid w-full gap-1.5">
+      <span class="text-xs font-semibold text-slate-600">Adresse email</span>
+      <input
+        type="email"
+        name="email"
+        required
+        class="w-full rounded-full border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-congo focus:ring-4 focus:ring-congo/15"
+      />
+    </label>
+    <button type="submit" class="rounded-full bg-congo px-6 py-3 text-[0.78rem] font-bold uppercase tracking-[0.1em] text-white transition-transform hover:-translate-y-0.5">
+      Recevoir les actus
+    </button>
+  </div>
+  <Turnstile />
 </form>

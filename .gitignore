@@ -9,3 +9,6 @@ dist
 .DS_Store
 private/
 public/downloads/*.pdf
+
+.playwright-cli/
+public/references/

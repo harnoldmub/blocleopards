@@ -10,11 +10,13 @@
     "dev": "astro dev",
     "build": "astro build",
     "start": "HOST=0.0.0.0 node ./dist/server/entry.mjs",
+    "serve": "npm run build && node scripts/serve-built.mjs",
     "preview": "astro preview",
     "cms:dev": "sanity dev --host 127.0.0.1 --port 3333",
     "cms:deploy": "sanity deploy",
     "db:migrate": "set -a; [ -f .env ] && . ./.env; set +a; psql \"$DATABASE_URL\" -f db/migrations/001_neon_forms.sql",
     "db:migrate:campagne": "set -a; [ -f .env ] && . ./.env; set +a; psql \"$DATABASE_URL\" -f db/migrations/011_adhesions_campagne_createurs.sql",
+    "db:seed:basket-aout2026": "set -a; [ -f .env ] && . ./.env; set +a; psql \"$DATABASE_URL\" -f db/migrations/014_seed_leopards_basket_aout2026.sql",
     "generate:pdf": "node scripts/generate-pdf.mjs"
   },
   "dependencies": {
@@ -31,6 +33,7 @@
     "country-state-city": "^3.2.1",
     "framer-motion": "^12.40.0",
     "jimp": "^1.6.0",
+    "lenis": "^1.3.26",
     "lucide-react": "^1.17.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",

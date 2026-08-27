@@ -4,28 +4,135 @@ import PageHero from "../components/PageHero.astro";
 import SectionHeader from "../components/SectionHeader.astro";
 import Gallery from "../components/Gallery.astro";
 import media from "../data/media.json";
+
+const perPage = 6;
+const totalPages = Math.max(1, Math.ceil(media.length / perPage));
+const requestedPage = Number(Astro.url.searchParams.get("page") ?? 1);
+const currentPage = Math.min(totalPages, Math.max(1, Number.isFinite(requestedPage) ? requestedPage : 1));
+const pageHref = (page: number) => `/media?page=${Math.min(totalPages, Math.max(1, page))}`;
 ---
 <BaseLayout title="Media" description="Galerie photos et videos du Bloc Leopards.">
   <PageHero title="Media" subtitle="L'ambiance du bloc en images" image="/media/supporters-diaspora-03.jpg" />
-  <section class="mx-auto grid max-w-6xl gap-8 px-4 py-16 md:grid-cols-[1.2fr_0.8fr]">
-    <div>
-      <SectionHeader eyebrow="Film" title="Hommage a la diaspora" description="Le match amical a Liege, Marbella et la ferveur des supporters." />
-      <div class="mx-auto max-w-sm md:mx-0">
-        <video class="aspect-[9/16] w-full rounded-3xl border border-slate-200 bg-slate-950 object-cover shadow-deep" controls poster="/media/hommage-diaspora-cover.jpg">
-          <source src="/videos/hommage-diaspora-match-amical.mp4" type="video/mp4" />
-        </video>
-      </div>
+  <section class="mx-auto max-w-6xl px-4 py-16" data-media-pager data-page-size={perPage} data-total-pages={totalPages} data-current-page={currentPage}>
+    <div class="mb-10 flex flex-wrap items-end justify-between gap-4">
+      <SectionHeader eyebrow="Photos" title="Galerie diaspora" description="Portraits, drapeaux et moments de tribune." />
+      <p class="text-xs font-bold uppercase tracking-[0.16em] text-slate-400" data-page-indicator>
+        Page {currentPage} / {totalPages}
+      </p>
     </div>
-    <aside class="flex flex-col justify-center rounded-3xl border border-slate-200 bg-white p-6 shadow-deep">
-      <p class="text-xs uppercase tracking-[0.3em] text-brand-yellow">Audio</p>
-      <h2 class="section-title mt-3 text-4xl">Voix du bloc</h2>
-      <p class="mt-3 text-sm leading-6 text-slate-600">Une version audio est disponible pour relayer l'hommage sur les canaux supporters.</p>
-      <audio class="mt-6 w-full" controls src="/audio/hommage-diaspora.mp3"></audio>
-      <a href="/actus/2026-05-25-hommage-diaspora" class="mt-6 inline-flex rounded-full bg-brand-yellow px-5 py-3 text-sm font-semibold text-brand-dark">Lire l'article</a>
-    </aside>
-  </section>
-  <section class="mx-auto max-w-6xl px-4 py-16">
-    <SectionHeader eyebrow="Photos" title="Galerie diaspora" description="Portraits, drapeaux et moments de tribune." />
-    <Gallery items={media} />
+
+    <Gallery items={media} currentPage={currentPage} pageSize={perPage} />
+
+    {totalPages > 1 && (
+      <nav class="mt-12 flex flex-wrap items-center justify-center gap-2" aria-label="Pagination de la galerie">
+        <a
+          href={pageHref(currentPage - 1)}
+          class="media-page-btn inline-flex h-11 items-center rounded-full border border-slate-300 px-5 text-xs font-bold uppercase tracking-[0.12em] text-congo transition-colors hover:border-congo hover:bg-congo hover:text-white disabled:pointer-events-none disabled:border-slate-200 disabled:text-slate-300"
+          data-page-prev
+          data-page-target={currentPage - 1}
+          aria-disabled={currentPage === 1 ? "true" : "false"}
+        >
+          Précédent
+        </a>
+        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+          <a
+            href={pageHref(page)}
+            class="media-page-dot grid h-11 w-11 place-items-center rounded-full border border-slate-300 text-sm font-black text-slate-500 transition-colors hover:border-congo hover:text-congo aria-[current=page]:border-congo aria-[current=page]:bg-congo aria-[current=page]:text-white"
+            data-page-button={page}
+            data-page-target={page}
+            aria-current={page === currentPage ? "page" : undefined}
+          >
+            {page}
+          </a>
+        ))}
+        <a
+          href={pageHref(currentPage + 1)}
+          class="media-page-btn inline-flex h-11 items-center rounded-full border border-slate-300 px-5 text-xs font-bold uppercase tracking-[0.12em] text-congo transition-colors hover:border-congo hover:bg-congo hover:text-white disabled:pointer-events-none disabled:border-slate-200 disabled:text-slate-300"
+          data-page-next
+          data-page-target={currentPage + 1}
+          aria-disabled={currentPage === totalPages ? "true" : "false"}
+        >
+          Suivant
+        </a>
+      </nav>
+    )}
   </section>
 </BaseLayout>
+
+<script>
+  const pager = document.querySelector<HTMLElement>("[data-media-pager]");
+  if (pager) {
+    const pageSize = Number(pager.dataset.pageSize ?? 12);
+    const totalPages = Number(pager.dataset.totalPages ?? 1);
+    const cards = Array.from(pager.querySelectorAll<HTMLElement>("[data-gallery-item]"));
+    const buttons = Array.from(pager.querySelectorAll<HTMLAnchorElement>("[data-page-button]"));
+    const previous = pager.querySelector<HTMLAnchorElement>("[data-page-prev]");
+    const next = pager.querySelector<HTMLAnchorElement>("[data-page-next]");
+    const indicator = pager.querySelector<HTMLElement>("[data-page-indicator]");
+    let currentPage = Number(pager.dataset.currentPage ?? 1);
+
+    function renderPage(page: number, shouldScroll = true) {
+      currentPage = Math.min(totalPages, Math.max(1, page));
+      const start = (currentPage - 1) * pageSize;
+      const end = start + pageSize;
+
+      cards.forEach((card, index) => {
+        const isOutsidePage = index < start || index >= end;
+        card.classList.toggle("is-hidden", isOutsidePage);
+        card.setAttribute("aria-hidden", String(isOutsidePage));
+        card.tabIndex = isOutsidePage ? -1 : 0;
+      });
+      buttons.forEach((button) => {
+        const active = Number(button.dataset.pageButton) === currentPage;
+        if (active) button.setAttribute("aria-current", "page");
+        else button.removeAttribute("aria-current");
+      });
+      if (indicator) indicator.textContent = `Page ${currentPage} / ${totalPages}`;
+      if (previous) {
+        previous.href = `/media?page=${Math.max(1, currentPage - 1)}`;
+        previous.dataset.pageTarget = String(currentPage - 1);
+        previous.setAttribute("aria-disabled", String(currentPage === 1));
+      }
+      if (next) {
+        next.href = `/media?page=${Math.min(totalPages, currentPage + 1)}`;
+        next.dataset.pageTarget = String(currentPage + 1);
+        next.setAttribute("aria-disabled", String(currentPage === totalPages));
+      }
+
+      window.history.replaceState(null, "", `/media?page=${currentPage}`);
+
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (shouldScroll && !prefersReducedMotion) {
+        const lenis = (window as unknown as { lenis?: { scrollTo: (target: HTMLElement, options?: { offset?: number; duration?: number }) => void } }).lenis;
+        if (lenis) lenis.scrollTo(pager, { offset: -88, duration: 0.9 });
+        else pager.scrollIntoView({ block: "start", behavior: "smooth" });
+      }
+    }
+
+    pager.querySelectorAll<HTMLAnchorElement>("[data-page-target]").forEach((link) => {
+      link.addEventListener("click", (event) => {
+        const targetPage = Number(link.dataset.pageTarget);
+        if (link.getAttribute("aria-disabled") === "true") {
+          event.preventDefault();
+          return;
+        }
+        event.preventDefault();
+        renderPage(targetPage);
+      });
+    });
+    renderPage(currentPage, false);
+  }
+</script>
+
+<style>
+  :global([data-gallery-item].is-hidden) {
+    display: none;
+  }
+
+  :global([data-page-prev][aria-disabled="true"]),
+  :global([data-page-next][aria-disabled="true"]) {
+    pointer-events: none;
+    border-color: rgb(226 232 240);
+    color: rgb(203 213 225);
+  }
+</style>

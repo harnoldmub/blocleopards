@@ -1,0 +1,579 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const delivered = [
+  {
+    phase: "P1",
+    title: "Fondations",
+    items: ["Bleu Congo #1466E0", "Anton pour les mega-statements", "Lenis + motion", "Reduced-motion + mobile"]
+  },
+  {
+    phase: "P2",
+    title: "Shell",
+    items: ["Header editorial + barre RDC", "Footer wordmark geant", "Captain Leopard preserve", "Ombre au scroll"]
+  },
+  {
+    phase: "P3",
+    title: "Homepage",
+    items: ["Hero video plein ecran", "Manifeste MOKO", "Image-dans-la-typo", "Bandeau photos smooth"]
+  },
+  {
+    phase: "P4",
+    title: "Propagation",
+    items: ["Composants partages restyles", "Galerie masonry", "Video hero compressee", "Responsive 375 valide"]
+  }
+];
+
+const signatures = [
+  ["▶", "Hero video immersif", "Footage de tribune plein ecran derriere une typo condensee surdimensionnee."],
+  ["01", "Manifeste MOKO", "Aplat Bleu Congo, mega-type Lingala : Toza bo moko · Bloc moko · Ekolo moko."],
+  ["BL", "BLOC image-in-type", "Le mot BLOC rempli d'une photo de tribune, audacieux mais maitrise."],
+  ["↝", "Bandeau smooth", "Une ligne horizontale qui defile, pause au survol, fondu de bord, reduced-motion."],
+  ["▬", "Barre RDC + footer geant", "Bleu, jaune, rouge en fil conducteur jusqu'au wordmark final."]
+];
+
+const preserved = [
+  "Logo Bloc Leopards",
+  "Logo Ministere",
+  "6 logos partenaires",
+  "Barre RDC bleu/jaune/rouge",
+  "Captain Leopard",
+  "Formulaires adhesion/contact",
+  "Newsletter",
+  "Evenements",
+  "Galerie & media",
+  "Analytics GA + GTM",
+  "Admin & APIs",
+  "Mondial / Guadalajara"
+];
+
+const remaining = ["Pages bespoke", "Performance images", "QA 768 / 1024 / 1440", "Migration events"];
+---
+
+<BaseLayout title="Recap refonte" description="Recapitulatif de refonte premium du site Bloc Leopards.">
+  <div class="recap-page" data-recap-root>
+    <section class="recap-hero">
+      <video autoplay muted loop playsinline preload="metadata" poster="/videos/hero-poster.jpg" class="recap-hero__media">
+        <source src="/videos/hero.mp4" type="video/mp4" />
+      </video>
+      <div class="recap-hero__overlay"></div>
+      <div class="recap-shell recap-hero__content">
+        <div class="recap-topline">
+          <span>Bloc Leopards · RDC</span>
+          <button type="button" class="theme-toggle" data-theme-toggle aria-label="Changer le theme">
+            <span data-theme-label>Theme</span>
+          </button>
+        </div>
+
+        <p class="recap-kicker">Recapitulatif de refonte</p>
+        <h1>Un seul bloc.<br /><span>Une seule voix.</span></h1>
+        <p class="recap-lede">
+          Refonte premium editoriale du site des supporters des Leopards : fondations, shell et page d'accueil livres, en preservant l'existant.
+        </p>
+
+        <div class="tech-row" aria-label="Stack technique">
+          <span>Astro 4 · SSR</span>
+          <span>React 19</span>
+          <span>Neon · Sanity</span>
+          <span>Lenis + motion</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="recap-section recap-section--env">
+      <div class="recap-shell recap-split">
+        <div>
+          <p class="recap-index">00</p>
+          <h2>Environnement</h2>
+        </div>
+        <div class="env-panel">
+          <p>Le serveur de dev est casse sur ce checkout. La voie fiable est build + serve.</p>
+          <code>npm run serve</code>
+          <p>Build, charge `.env`, puis sert le site sur <strong>http://127.0.0.1:5056</strong>. Relancer apres chaque modification : pas de HMR.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="recap-section">
+      <div class="recap-shell">
+        <p class="recap-index">01</p>
+        <h2>Livré</h2>
+        <div class="phase-grid">
+          {delivered.map((phase) => (
+            <article class="phase-card">
+              <span>{phase.phase}</span>
+              <h3>{phase.title}</h3>
+              <ul>
+                {phase.items.map((item) => <li>{item}</li>)}
+              </ul>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="recap-section recap-section--night">
+      <div class="recap-shell">
+        <p class="recap-index">02</p>
+        <h2>Signatures visuelles</h2>
+        <div class="signature-list">
+          {signatures.map(([icon, title, body]) => (
+            <article class="signature-item">
+              <strong>{icon}</strong>
+              <div>
+                <h3>{title}</h3>
+                <p>{body}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="recap-section">
+      <div class="recap-shell">
+        <p class="recap-index">03</p>
+        <h2>Préservation</h2>
+        <div class="preserved-grid">
+          {preserved.map((item) => (
+            <div class="preserved-item">
+              <span>✓</span>
+              <p>{item}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="recap-section recap-section--alert">
+      <div class="recap-shell recap-split">
+        <div>
+          <p class="recap-index">04</p>
+          <h2>Point d'attention</h2>
+        </div>
+        <div class="attention-copy">
+          <h3>Conflit events → Neon</h3>
+          <p>
+            La page d'accueil charge maintenant les evenements depuis la base. Si la table `events` est absente, la requete pouvait provoquer un 500.
+          </p>
+          <p>
+            Correctif remis : un try/catch de resilience masque les evenements tant que la migration n'est pas appliquee. La table reste a migrer sur l'environnement cible.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="recap-section recap-section--todo">
+      <div class="recap-shell">
+        <p class="recap-index">05</p>
+        <h2>Reste à faire</h2>
+        <div class="todo-row">
+          {remaining.map((item) => <span>{item}</span>)}
+        </div>
+        <p class="recap-footnote">Page interne · Refonte Bloc Leopards · a verifier en live sur 127.0.0.1:5056</p>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .recap-page {
+    --recap-bg: #f6f8fc;
+    --recap-surface: #ffffff;
+    --recap-text: #071124;
+    --recap-muted: #536076;
+    --recap-border: rgba(8, 19, 43, 0.12);
+    --recap-blue: #1466e0;
+    --recap-gold: #f4c400;
+    --recap-red: #d81e27;
+    --recap-night: #050b18;
+    background: var(--recap-bg);
+    color: var(--recap-text);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .recap-page {
+      --recap-bg: #050b18;
+      --recap-surface: #08132b;
+      --recap-text: #eef5ff;
+      --recap-muted: #aebad0;
+      --recap-border: rgba(255, 255, 255, 0.13);
+    }
+  }
+
+  .recap-page[data-theme="light"] {
+    --recap-bg: #f6f8fc;
+    --recap-surface: #ffffff;
+    --recap-text: #071124;
+    --recap-muted: #536076;
+    --recap-border: rgba(8, 19, 43, 0.12);
+  }
+
+  .recap-page[data-theme="dark"] {
+    --recap-bg: #050b18;
+    --recap-surface: #08132b;
+    --recap-text: #eef5ff;
+    --recap-muted: #aebad0;
+    --recap-border: rgba(255, 255, 255, 0.13);
+  }
+
+  .recap-shell {
+    width: min(100% - 2rem, 76rem);
+    margin: 0 auto;
+  }
+
+  .recap-hero {
+    position: relative;
+    min-height: 92vh;
+    display: flex;
+    align-items: end;
+    overflow: hidden;
+    background: var(--recap-night);
+    color: white;
+  }
+
+  .recap-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 8px;
+    background: linear-gradient(90deg, var(--recap-blue) 0 48%, var(--recap-gold) 48% 54%, var(--recap-red) 54% 100%);
+    z-index: 3;
+  }
+
+  .recap-hero__media,
+  .recap-hero__overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .recap-hero__media {
+    object-fit: cover;
+    opacity: 0.46;
+  }
+
+  .recap-hero__overlay {
+    background:
+      linear-gradient(180deg, rgba(5, 11, 24, 0.35), #050b18 92%),
+      linear-gradient(90deg, rgba(5, 11, 24, 0.9), rgba(5, 11, 24, 0.18));
+  }
+
+  .recap-hero__content {
+    position: relative;
+    z-index: 2;
+    padding: 8rem 0 5rem;
+  }
+
+  .recap-topline {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 4rem;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.72);
+  }
+
+  .theme-toggle {
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: white;
+    padding: 0.7rem 1rem;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .recap-kicker,
+  .recap-index {
+    color: var(--recap-gold);
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+  }
+
+  .recap-hero h1,
+  .recap-section h2 {
+    font-family: "Anton", "Bebas Neue", system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0;
+  }
+
+  .recap-hero h1 {
+    margin-top: 1rem;
+    font-size: clamp(4rem, 12vw, 11rem);
+    line-height: 0.86;
+  }
+
+  .recap-hero h1 span {
+    color: var(--recap-gold);
+  }
+
+  .recap-lede {
+    max-width: 48rem;
+    margin-top: 1.6rem;
+    font-size: clamp(1rem, 2vw, 1.35rem);
+    line-height: 1.65;
+    color: rgba(255, 255, 255, 0.78);
+  }
+
+  .tech-row,
+  .todo-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 2rem;
+  }
+
+  .tech-row span,
+  .todo-row span {
+    border: 1px solid var(--recap-border);
+    border-radius: 999px;
+    padding: 0.72rem 1rem;
+    background: color-mix(in srgb, var(--recap-surface) 76%, transparent);
+    color: var(--recap-text);
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .tech-row span {
+    border-color: rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+  }
+
+  .recap-section {
+    padding: clamp(4rem, 8vw, 7rem) 0;
+    background: var(--recap-bg);
+  }
+
+  .recap-section--env,
+  .recap-section--todo {
+    background: var(--recap-surface);
+  }
+
+  .recap-section--night {
+    background: linear-gradient(180deg, #08132b, #050b18);
+    color: white;
+  }
+
+  .recap-section--alert {
+    background: linear-gradient(135deg, rgba(244, 196, 0, 0.18), rgba(20, 102, 224, 0.1));
+  }
+
+  .recap-section h2 {
+    margin-top: 0.6rem;
+    font-size: clamp(2.8rem, 7vw, 6.8rem);
+    line-height: 0.92;
+  }
+
+  .recap-split {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: clamp(2rem, 6vw, 5rem);
+    align-items: start;
+  }
+
+  .env-panel,
+  .attention-copy {
+    border-left: 8px solid var(--recap-gold);
+    background: var(--recap-surface);
+    color: var(--recap-text);
+    padding: clamp(1.4rem, 3vw, 2rem);
+    box-shadow: 0 30px 80px -60px rgba(5, 11, 24, 0.85);
+  }
+
+  .env-panel p,
+  .attention-copy p {
+    color: var(--recap-muted);
+    line-height: 1.75;
+  }
+
+  .env-panel code {
+    display: block;
+    margin: 1rem 0;
+    padding: 1rem;
+    background: var(--recap-night);
+    color: var(--recap-gold);
+    font-weight: 800;
+  }
+
+  .phase-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1px;
+    margin-top: 2rem;
+    border: 1px solid var(--recap-border);
+    background: var(--recap-border);
+  }
+
+  .phase-card {
+    min-height: 20rem;
+    background: var(--recap-surface);
+    padding: clamp(1.2rem, 2vw, 1.7rem);
+  }
+
+  .phase-card span {
+    color: var(--recap-blue);
+    font-family: "Anton", system-ui, sans-serif;
+    font-size: 3.2rem;
+  }
+
+  .phase-card h3,
+  .signature-item h3,
+  .attention-copy h3 {
+    margin-top: 0.5rem;
+    font-size: 1rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .phase-card ul {
+    display: grid;
+    gap: 0.8rem;
+    margin-top: 1.4rem;
+    padding: 0;
+    list-style: none;
+    color: var(--recap-muted);
+    font-size: 0.92rem;
+    line-height: 1.45;
+  }
+
+  .phase-card li::before {
+    content: "";
+    display: inline-block;
+    width: 0.55rem;
+    height: 0.55rem;
+    margin-right: 0.55rem;
+    background: var(--recap-gold);
+  }
+
+  .signature-list {
+    display: grid;
+    margin-top: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+  }
+
+  .signature-item {
+    display: grid;
+    grid-template-columns: 7rem 1fr;
+    gap: 2rem;
+    padding: 1.7rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  }
+
+  .signature-item strong {
+    color: var(--recap-gold);
+    font-family: "Anton", system-ui, sans-serif;
+    font-size: 2.8rem;
+    line-height: 1;
+  }
+
+  .signature-item p {
+    margin-top: 0.4rem;
+    max-width: 48rem;
+    color: rgba(255, 255, 255, 0.68);
+    line-height: 1.65;
+  }
+
+  .preserved-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1px;
+    margin-top: 2rem;
+    border: 1px solid var(--recap-border);
+    background: var(--recap-border);
+  }
+
+  .preserved-item {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    min-height: 5.5rem;
+    background: var(--recap-surface);
+    padding: 1rem;
+  }
+
+  .preserved-item span {
+    display: grid;
+    width: 1.7rem;
+    height: 1.7rem;
+    place-items: center;
+    border-radius: 999px;
+    background: rgba(52, 211, 153, 0.16);
+    color: #16a34a;
+    font-weight: 900;
+  }
+
+  .preserved-item p {
+    font-size: 0.9rem;
+    font-weight: 800;
+  }
+
+  .recap-footnote {
+    margin-top: 2rem;
+    color: var(--recap-muted);
+    font-size: 0.9rem;
+  }
+
+  @media (max-width: 900px) {
+    .recap-split,
+    .phase-grid,
+    .preserved-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .recap-topline,
+    .signature-item {
+      grid-template-columns: 1fr;
+      display: grid;
+    }
+
+    .recap-topline {
+      align-items: start;
+    }
+
+    .recap-split,
+    .phase-grid,
+    .preserved-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .phase-card {
+      min-height: auto;
+    }
+  }
+</style>
+
+<script>
+  const root = document.querySelector("[data-recap-root]");
+  const button = document.querySelector("[data-theme-toggle]");
+  const label = document.querySelector("[data-theme-label]");
+  const storageKey = "bloc-recap-theme";
+
+  function setTheme(theme) {
+    if (!root || !label) return;
+    root.setAttribute("data-theme", theme);
+    label.textContent = theme === "dark" ? "Sombre" : "Clair";
+    localStorage.setItem(storageKey, theme);
+  }
+
+  const initial = localStorage.getItem(storageKey)
+    || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  setTheme(initial);
+
+  button?.addEventListener("click", () => {
+    setTheme(root?.getAttribute("data-theme") === "dark" ? "light" : "dark");
+  });
+</script>

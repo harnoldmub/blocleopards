@@ -1,9 +1,15 @@
 ---
 const { label, href, ctaLabel } = Astro.props;
 ---
-<div class="bg-brand-yellow text-brand-dark">
-  <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 text-sm font-semibold">
-    <span>{label}</span>
-    <a href={href} class="rounded-full bg-white px-4 py-2 text-xs uppercase tracking-[0.2em] text-brand-yellow">{ctaLabel ?? "Mobilisation"}</a>
+<div class="relative overflow-hidden bg-or text-congo-night">
+  <div class="mx-auto flex max-w-[84rem] items-center justify-between gap-4 px-4 py-3 lg:px-8">
+    <div class="flex items-center gap-3">
+      <span class="relative flex h-2.5 w-2.5 shrink-0">
+        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-feu opacity-70"></span>
+        <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-feu"></span>
+      </span>
+      <span class="text-sm font-bold uppercase tracking-[0.04em] md:text-base">{label}</span>
+    </div>
+    <a href={href} class="shrink-0 rounded-full bg-congo-night px-5 py-2 text-[0.7rem] font-bold uppercase tracking-[0.14em] text-or transition-transform hover:-translate-y-0.5">{ctaLabel ?? "Mobilisation"}</a>
   </div>
 </div>

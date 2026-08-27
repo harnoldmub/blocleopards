@@ -1,36 +1,53 @@
 ---
 import Icon from "./Icon.astro";
-const { items } = Astro.props;
+const { items, currentPage = 1, pageSize = items.length } = Astro.props;
+const activePage = Math.max(1, Number(currentPage) || 1);
+const activePageSize = Math.max(1, Number(pageSize) || items.length);
+const pageStart = (activePage - 1) * activePageSize;
+const pageEnd = pageStart + activePageSize;
 ---
-<div class="grid gap-4 md:grid-cols-3" data-gallery>
-  {items.map((item, idx) => (
+<div class="columns-2 gap-4 md:columns-3 md:gap-5 [&>*]:mb-4 md:[&>*]:mb-5" data-gallery>
+  {items.map((item, idx) => {
+    const isOutsidePage = idx < pageStart || idx >= pageEnd;
+    return (
     <button
-      class="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white text-left"
+      class:list={[
+        "group relative block w-full break-inside-avoid overflow-hidden rounded-[4px] bg-slate-100 text-left",
+        isOutsidePage && "is-hidden"
+      ]}
+      data-reveal="fade"
+      data-reveal-delay={(idx % 6) * 60}
       data-gallery-item
       data-gallery-src={item.image}
       data-gallery-title={item.title}
       data-gallery-category={item.category}
       data-gallery-credit={item.credit ?? ""}
+      data-gallery-index={idx}
+      aria-hidden={isOutsidePage ? "true" : "false"}
+      tabindex={isOutsidePage ? -1 : 0}
       type="button"
     >
-      <img src={item.image} alt={item.title} class="aspect-[3/4] w-full object-cover transition duration-500 group-hover:scale-105 md:aspect-[4/3]" />
+      <img src={item.image} alt={item.title} loading="lazy" class="w-full object-cover transition duration-700 ease-out group-hover:scale-[1.05]" />
+      <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-congo-night/70 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100"></div>
+      <span class="pointer-events-none absolute bottom-3 left-3 translate-y-2 text-[0.66rem] font-bold uppercase tracking-[0.14em] text-white opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">{item.title}</span>
       {item.credit && (
-        <span class="absolute bottom-2 right-2 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-medium text-white/90 backdrop-blur-sm flex items-center gap-1"><Icon name="camera" size={10} />{item.credit}</span>
+        <span class="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-congo-night/70 px-2 py-0.5 text-[10px] font-medium text-white/90 backdrop-blur-sm"><Icon name="camera" size={10} />{item.credit}</span>
       )}
     </button>
-  ))}
+    );
+  })}
 </div>
 
-<dialog class="rounded-3xl border border-slate-200 bg-white p-0 text-slate-900" data-gallery-modal>
+<dialog class="rounded-[6px] border border-white/10 bg-congo-night p-0 text-white backdrop:bg-congo-night/80 backdrop:backdrop-blur-sm" data-gallery-modal data-lenis-prevent>
   <div class="relative">
-    <button class="absolute right-4 top-4 z-10 rounded-full bg-black/40 px-3 py-1 text-xs text-white backdrop-blur-sm" data-gallery-close>Fermer</button>
-    <img src="" alt="" class="aspect-[3/4] max-h-[78vh] w-full object-cover md:aspect-auto" data-gallery-image />
-    <div class="flex items-center justify-between gap-3 px-4 py-3" data-gallery-footer>
+    <button class="absolute right-4 top-4 z-10 rounded-full bg-white/15 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.1em] text-white backdrop-blur-sm transition-colors hover:bg-or hover:text-congo-night" data-gallery-close>Fermer</button>
+    <img src="" alt="" class="max-h-[78vh] w-full object-contain" data-gallery-image />
+    <div class="flex items-center justify-between gap-3 border-t border-white/10 px-5 py-4" data-gallery-footer>
       <div>
-        <p class="text-sm font-semibold text-slate-900" data-gallery-modal-title></p>
-        <p class="text-xs text-slate-500" data-gallery-modal-category></p>
+        <p class="font-display text-lg uppercase" data-gallery-modal-title></p>
+        <p class="text-xs uppercase tracking-[0.14em] text-or" data-gallery-modal-category></p>
       </div>
-      <p class="shrink-0 text-xs text-slate-400" data-gallery-modal-credit></p>
+      <p class="shrink-0 text-xs text-white/50" data-gallery-modal-credit></p>
     </div>
   </div>
 </dialog>

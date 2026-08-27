@@ -1,44 +1,111 @@
 ---
 const links = [
-  { label: "Contact", href: "/contact" },
+  { label: "Le mouvement", href: "/mouvement" },
+  { label: "Événements", href: "/evenements" },
   { label: "Partenaires", href: "/partenaires" },
-  { label: "Mentions legales", href: "/mentions-legales" },
-  { label: "Confidentialite", href: "/confidentialite" },
+  { label: "Media", href: "/media" },
+  { label: "Contact", href: "/contact" }
+];
+const legal = [
+  { label: "Mentions légales", href: "/mentions-legales" },
+  { label: "Confidentialité", href: "/confidentialite" },
   { label: "Admin", href: "/admin" }
 ];
 ---
-<footer class="bg-brand-blue text-white">
-  <div class="grid h-2 w-full grid-cols-3">
+<footer class="relative overflow-hidden bg-congo-night text-white">
+  <!-- Barre RDC (identité) -->
+  <div class="grid h-2 w-full grid-cols-3" aria-hidden="true">
     <div class="bg-flag-blue"></div>
     <div class="bg-flag-yellow"></div>
     <div class="bg-flag-red"></div>
   </div>
-  <div class="mx-auto grid max-w-6xl gap-8 px-4 py-12 md:grid-cols-3">
-    <div>
-      <a href="/" class="block mb-6">
-        <div class="flex items-center gap-4">
-          <img src="/brand/logo.png" alt="Bloc Leopards" class="h-24 w-auto" />
-          <img src="/brand/logo-min-sport-white.webp" alt="Ministère des Sports" class="h-16 w-auto opacity-80" />
-        </div>
+
+  <div class="mx-auto max-w-[84rem] px-4 lg:px-8">
+    <!-- Manifeste -->
+    <div class="flex flex-col items-start justify-between gap-8 border-b border-white/10 py-14 lg:flex-row lg:items-end">
+      <div data-reveal>
+        <span class="text-eyebrow text-[0.7rem] font-semibold uppercase tracking-[0.28em] text-or">Le mouvement</span>
+        <h2 class="mt-4 max-w-2xl font-display text-4xl leading-[0.95] md:text-6xl">Un seul bloc.<br /><span class="text-or">Une seule voix.</span></h2>
+      </div>
+      <a href="/rejoindre" data-reveal data-reveal-delay="120" class="shrink-0 rounded-full bg-white px-7 py-4 text-[0.78rem] font-bold uppercase tracking-[0.12em] text-congo-night transition-transform hover:-translate-y-0.5">
+        Rejoindre le Bloc →
       </a>
-      <p class="mt-2 text-sm text-slate-300">Un seul bloc. Une seule voix. Mobilisation citoyenne des supporters pour une tribune positive et respectueuse.</p>
-      <p class="mt-6 text-xs text-slate-400">Les annonces institutionnelles restent a verifier aupres des organismes competents.</p>
     </div>
-    <div>
-      <p class="mb-4 text-sm font-bold uppercase tracking-[0.2em] text-brand-yellow">Navigation</p>
-      <div class="grid gap-3 text-sm text-slate-300">
-        {links.map((item) => (
-          <a href={item.href} class="hover:text-brand-yellow transition-colors">{item.label}</a>
-        ))}
+
+    <!-- Colonnes -->
+    <div class="grid gap-10 py-14 md:grid-cols-[1.7fr_1fr_1fr]">
+      <div>
+        <div class="flex items-center gap-4">
+          <img src="/brand/logo.png" alt="Bloc Leopards" class="h-20 w-auto" />
+          <span class="h-12 w-px bg-white/15"></span>
+          <img src="/brand/logo-min-sport-white.webp" alt="Ministère des Sports et Loisirs" class="h-14 w-auto opacity-85" />
+        </div>
+        <p class="mt-6 max-w-md text-sm leading-relaxed text-white/60">
+          Mobilisation citoyenne des supporters des Léopards de la RDC, pour une tribune positive, informée et respectueuse.
+        </p>
+        <p class="mt-5 text-xs text-white/40">Les annonces institutionnelles restent à vérifier auprès des organismes compétents.</p>
       </div>
-    </div>
-    <div>
-      <p class="mb-4 text-sm font-bold uppercase tracking-[0.2em] text-brand-yellow">Contacts</p>
-      <div class="text-sm text-slate-300 space-y-2">
-        <p>Email: <a href="mailto:contact@blocaleopards.cd" class="hover:text-brand-yellow transition-colors">contact@blocaleopards.cd</a></p>
-        <p>Kinshasa, RDC</p>
+
+      <div>
+        <p class="mb-5 text-[0.7rem] font-bold uppercase tracking-[0.24em] text-or">Navigation</p>
+        <ul class="grid gap-3 text-sm text-white/70">
+          {links.map((item) => (
+            <li><a href={item.href} class="transition-colors hover:text-or">{item.label}</a></li>
+          ))}
+        </ul>
       </div>
-      <p class="mt-6 text-xs text-slate-400">© 2026 Bloc Leopards. Tous droits reserves.</p>
+
+      <div>
+        <p class="mb-5 text-[0.7rem] font-bold uppercase tracking-[0.24em] text-or">Contact</p>
+        <ul class="grid gap-3 text-sm text-white/70">
+          <li><a href="mailto:contact@blocaleopards.cd" class="transition-colors hover:text-or">contact@blocaleopards.cd</a></li>
+          <li>Kinshasa, RDC</li>
+        </ul>
+        <ul class="mt-8 grid gap-2 text-xs text-white/45">
+          {legal.map((item) => (
+            <li><a href={item.href} class="transition-colors hover:text-white/80">{item.label}</a></li>
+          ))}
+        </ul>
+      </div>
     </div>
   </div>
+
+  <!-- Signature finale : logo Bloc géant -->
+  <div class="footer-signature relative overflow-hidden border-t border-white/10 pt-12">
+    <div class="mx-auto flex max-w-[84rem] flex-col items-center px-4 lg:px-8">
+      <img src="/brand/logo.png" alt="Bloc Leopards" class="h-24 w-auto md:h-28" />
+    </div>
+    <div class="footer-wordmark lux-line-mask mt-4">
+      <div data-reveal="mask" class="footer-wordmark-text select-none text-center font-mega leading-[0.82] text-white/[0.07] [font-size:clamp(4rem,20vw,20rem)]">
+        BLOC LÉOPARDS
+      </div>
+    </div>
+  </div>
+
+  <div class="border-t border-white/10 py-6 text-center text-xs text-white/40">
+    © 2026 Bloc Léopards. Tous droits réservés. · Kinshasa, RDC
+  </div>
 </footer>
+
+<style>
+  .footer-signature {
+    isolation: isolate;
+  }
+
+  .footer-wordmark {
+    position: relative;
+    min-height: clamp(5rem, 17vw, 16rem);
+    isolation: isolate;
+  }
+
+  .footer-wordmark-text {
+    position: relative;
+    z-index: 1;
+  }
+
+  @media (max-width: 640px) {
+    .footer-wordmark {
+      min-height: 7rem;
+    }
+  }
+</style>

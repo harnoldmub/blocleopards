@@ -1,14 +1,41 @@
 ---
-const { billeterieActive = true } = Astro.props;
-const quickActions = [
-  ...(billeterieActive ? ["Demander un billet (Mondial)"] : []),
-  "Prochain match",
-  "Quiz Léopards",
-  "Recruter"
+import { requireDatabase } from "../lib/neon";
+
+// Matchs de poule Mondial 2026 — utilisés si aucun événement n'est publié dans l'admin.
+const FALLBACK_MONDIAL_MATCHES = [
+  { label: "17 juin : RDC vs Portugal, NRG Stadium, Houston (USA)." },
+  { label: "23 juin : RDC vs Colombie, Estadio Akron, Guadalajara (Mexique)." },
+  { label: "27 juin : RDC vs Ouzbékistan, Mercedes-Benz Stadium, Atlanta (USA)." }
 ];
+
+const today = new Date().toISOString().slice(0, 10);
+const FR_MONTHS = ["jan.", "fév.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+const formatEventDate = (d: string) => {
+  const [, m, day] = d.split("-");
+  return `${parseInt(day)} ${FR_MONTHS[parseInt(m) - 1]}`;
+};
+
+let upcomingEvents: string[] = [];
+try {
+  const sql = requireDatabase();
+  const rows = await sql`
+    SELECT title, description, date::text as date, location
+    FROM events
+    WHERE published = true AND date >= ${today}
+    ORDER BY date ASC
+    LIMIT 3
+  `;
+  upcomingEvents = rows.map((e: any) => `${formatEventDate(e.date)} : ${e.title}${e.location ? `, ${e.location}` : ""}.`);
+} catch {
+  upcomingEvents = [];
+}
+
+const events = upcomingEvents.length > 0 ? upcomingEvents : FALLBACK_MONDIAL_MATCHES.map((m) => m.label);
+
+const quickActions = ["Prochain match", "Quiz Léopards", "Recruter"];
 ---
 
-<div class="bloc-chat" data-bloc-chat data-billeterie={billeterieActive ? "true" : "false"}>
+<div class="bloc-chat" data-bloc-chat data-events={JSON.stringify(events)}>
   <button class="bloc-chat__launcher" type="button" data-chat-launcher aria-label="Ouvrir Captain Léopard">
     <img src="/brand/logo.png" alt="Bloc Léopards" style="width:34px;height:34px;object-fit:contain;" />
     <span class="bloc-chat__pulse" aria-hidden="true"></span>
@@ -27,11 +54,11 @@ const quickActions = [
     </header>
 
     <div class="bloc-chat__status">
-      <span data-chat-mood>● Matchday · En direct</span>
-      <span><img src="/flags/cd.png" height="12" style="vertical-align:middle;border-radius:2px;margin-right:4px;" alt="RDC" />Liège · Marbella</span>
+      <span data-chat-mood>● Mondial 2026</span>
+      <span><img src="/flags/cd.png" height="12" style="vertical-align:middle;border-radius:2px;margin-right:4px;" alt="RDC" />Houston · Guadalajara · Atlanta</span>
     </div>
 
-    <div class="bloc-chat__messages" data-chat-messages>
+    <div class="bloc-chat__messages" data-chat-messages data-lenis-prevent>
       <div class="bloc-chat__message bloc-chat__message--bot">
         Bienvenue dans le Bloc des Léopards !<br/>
         Je suis Captain Léopard, ton guide supporter officiel.<br/>
@@ -69,30 +96,22 @@ const quickActions = [
       answered: Number(localStorage.getItem('cap-quiz-answered') ?? 0),
       quizIndex: Number(localStorage.getItem('cap-quiz-index') ?? 0),
       activeQuiz: null as any,
-      opened: localStorage.getItem('cap-chat-open') === 'true',
-      billetStep: null as string | null,
-      billetData: {
-        matchKey: '',
-        matchLabel: '',
-        prenom: '',
-        nom: '',
-        pays: '',
-        ville: '',
-        email: '',
-        whatsapp: ''
-      }
+      opened: localStorage.getItem('cap-chat-open') === 'true'
     };
 
+    let liveEvents: string[] = [];
+    try {
+      liveEvents = JSON.parse(root.getAttribute('data-events') || '[]');
+    } catch {
+      liveEvents = [];
+    }
+
     const data = {
-      events: [
-        '26 mai : entraînement au stade Tata Raphael, Kinshasa.',
-        '3 juin à 20h : RDC vs Danemark, stade Maurice-Dufrasne, Liège.',
-        '9 juin : RDC vs Chili, Marbella, Espagne.'
-      ],
+      events: liveEvents,
       quiz: [
         { q: "Depuis quelle année la RDC n'était-elle pas au Mondial ?", options: ['1974', '1998', '2006'], answer: '1974', fact: "La RDC retrouve le Mondial après 52 ans d'absence — depuis 1974 !" },
-        { q: 'Où se joue RDC vs Danemark ?', options: ['Liège', 'Marbella', 'Kinshasa'], answer: 'Liège', fact: 'Le match se joue au stade Maurice-Dufrasne le 3 juin à 20h.' },
-        { q: 'Contre qui joue la RDC à Marbella ?', options: ['Chili', 'Danemark', 'Portugal'], answer: 'Chili', fact: 'RDC vs Chili se joue le 9 juin à Marbella, Espagne.' },
+        { q: 'Où se joue RDC vs Portugal ?', options: ['Houston', 'Atlanta', 'Guadalajara'], answer: 'Houston', fact: 'Le match se joue au NRG Stadium le 17 juin, à Houston (USA).' },
+        { q: 'Contre qui joue la RDC à Guadalajara ?', options: ['Colombie', 'Portugal', 'Ouzbékistan'], answer: 'Colombie', fact: 'RDC vs Colombie se joue le 23 juin à Guadalajara, Mexique.' },
         { q: 'Qui est le sélectionneur des Léopards ?', options: ['Sebastien Desabre', 'Hector Cuper', 'Claude Le Roy'], answer: 'Sebastien Desabre', fact: 'Sébastien Desabre conduit les Léopards dans cette préparation Mondial 2026.' },
       ]
     };
@@ -131,142 +150,6 @@ const quickActions = [
       messages!.scrollTop = messages!.scrollHeight;
     };
 
-    // ─── Billet flow ──────────────────────────────────────────────────────────
-
-    const startBilletFlow = () => {
-      addActionMessage(`
-        <strong>Tirage au Sort Mondial 2026</strong>
-        <span>Le tirage au sort des places en tribune pour le Mondial 2026 est ouvert (résidents USA uniquement) !</span>
-        <div class="bloc-chat__choice-grid" style="margin-top:10px;">
-          <a href="/mondial/tirage" style="background:rgba(247,214,24,0.15);border-color:rgba(247,214,24,0.5);color:#f7d618;font-weight:700;text-align:center;padding:10px;border-radius:8px;text-decoration:none;display:block;">S'inscrire au Tirage au Sort</a>
-          <a href="/mondial" style="text-align:center;padding:10px;border-radius:8px;text-decoration:none;display:block;">Découvrir le Hub Mondial</a>
-        </div>
-      `);
-    };
-
-    const askPrenom = () => {
-      state.billetStep = 'prenom';
-      addTypingReply("Quel est ton <strong>prénom</strong> ?", 400);
-    };
-
-    const askNom = () => {
-      state.billetStep = 'nom';
-      addTypingReply(`Super ${state.billetData.prenom} ! Et ton <strong>nom de famille</strong> ?`, 400);
-    };
-
-    const askPays = () => {
-      state.billetStep = 'pays';
-      addTypingReply("De quel <strong>pays</strong> tu vas soutenir les Léopards ?", 400);
-    };
-
-    const askVille = () => {
-      state.billetStep = 'ville';
-      addTypingReply("Et ta <strong>ville</strong> ?", 400);
-    };
-
-    const askEmail = () => {
-      state.billetStep = 'email';
-      addTypingReply("Ton adresse <strong>email</strong> de contact ?", 400);
-    };
-
-    const askWhatsapp = () => {
-      state.billetStep = 'whatsapp';
-      addTypingReply("Ton <strong>numéro WhatsApp</strong> ? (tape <em>passer</em> pour ignorer)", 400);
-    };
-
-    const showBilletConfirm = () => {
-      state.billetStep = 'confirm';
-      const d = state.billetData;
-      addActionMessage(`
-        <strong>Récapitulatif de ta demande</strong>
-        <div style="margin:10px 0;display:flex;flex-direction:column;gap:5px;font-size:13px;line-height:1.6;">
-          <span><strong>Match :</strong> ${d.matchLabel}</span>
-          <span><strong>Nom :</strong> ${d.prenom} ${d.nom}</span>
-          <span><strong>Lieu :</strong> ${d.ville}, ${d.pays}</span>
-          <span><strong>Email :</strong> ${d.email}</span>
-          ${d.whatsapp ? `<span><strong>WhatsApp :</strong> ${d.whatsapp}</span>` : ''}
-        </div>
-        <div class="bloc-chat__choice-grid" style="margin-top:10px;">
-          <button type="button" data-billet-confirm="yes" style="background:rgba(247,214,24,0.15);border-color:rgba(247,214,24,0.5);color:#f7d618;font-weight:700;">Confirmer ma demande</button>
-          <button type="button" data-billet-confirm="no">Recommencer</button>
-        </div>
-      `);
-    };
-
-    const submitBillet = async () => {
-      state.billetStep = 'submitting';
-      addTypingReply("Un instant, j'enregistre ta demande... ", 300);
-      const d = state.billetData;
-      try {
-        const res = await fetch('/api/gagne-ton-billet', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            match_key: d.matchKey,
-            first_name: d.prenom,
-            last_name: d.nom,
-            email: d.email,
-            phone: d.whatsapp || undefined,
-            country: d.pays,
-            country_code: '',
-            city: d.ville,
-            source: 'chatbot'
-          })
-        });
-        const result = await res.json();
-        state.billetStep = null;
-        if (!res.ok) {
-          addTypingReply(result.error || 'Erreur. Réessaie dans un instant.', 500);
-        } else {
-          mood!.textContent = '● Demande envoyée';
-          addTypingReply("Ta demande est enregistrée dans le Bloc des Léopards !<br/>Si tu es sélectionné·e, on te contacte rapidement.<br/><strong>Allez les Léopards !</strong>", 600);
-        }
-      } catch {
-        state.billetStep = null;
-        addTypingReply("Connexion impossible. Vérifie ta connexion et réessaie.", 500);
-      }
-    };
-
-    const handleBilletInput = (text: string): boolean => {
-      const step = state.billetStep;
-      if (!step || step === 'match' || step === 'confirm' || step === 'submitting') return false;
-
-      switch (step) {
-        case 'prenom':
-          if (!text.trim()) { addTypingReply("Tape ton prénom pour continuer.", 300); return true; }
-          state.billetData.prenom = text.trim();
-          askNom();
-          break;
-        case 'nom':
-          if (!text.trim()) { addTypingReply("Tape ton nom pour continuer.", 300); return true; }
-          state.billetData.nom = text.trim();
-          askPays();
-          break;
-        case 'pays':
-          if (!text.trim()) { addTypingReply("Tape le nom de ton pays pour continuer.", 300); return true; }
-          state.billetData.pays = text.trim();
-          askVille();
-          break;
-        case 'ville':
-          if (!text.trim()) { addTypingReply("Tape le nom de ta ville pour continuer.", 300); return true; }
-          state.billetData.ville = text.trim();
-          askEmail();
-          break;
-        case 'email': {
-          const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text.trim());
-          if (!ok) { addTypingReply("Cet email semble invalide. Exemple : nom@email.com", 300); return true; }
-          state.billetData.email = text.trim();
-          askWhatsapp();
-          break;
-        }
-        case 'whatsapp':
-          state.billetData.whatsapp = (text.trim().toLowerCase() === 'passer') ? '' : text.trim();
-          showBilletConfirm();
-          break;
-      }
-      return true;
-    };
-
     // ─── Quiz ─────────────────────────────────────────────────────────────────
 
     const quizProgress = () => `${state.score}/${state.answered}`;
@@ -287,7 +170,7 @@ const quickActions = [
 
     const showRecruit = () => {
       const inviteUrl = `${window.location.origin}/mondial`;
-      const text = encodeURIComponent(`Rejoins le Bloc des Léopards ! Participe au tirage au sort Mondial 2026 ici : ${inviteUrl}`);
+      const text = encodeURIComponent(`Rejoins le Bloc des Léopards ! Suis les Léopards au Mondial 2026 ici : ${inviteUrl}`);
       addActionMessage(`
         <strong>Recruter des supporters</strong>
         <span>Partage et agrandis le Bloc !</span>
@@ -300,15 +183,10 @@ const quickActions = [
 
     const normalize = (v: string) => v.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
 
-    const billeterieEnabled = root.getAttribute('data-billeterie') !== 'false';
-
     const answer = (raw: string) => {
       const text = normalize(raw);
-      if (text.includes('billet') || text.includes('place') || text.includes('ticket') || text.includes('rejoindre')) {
-        if (!billeterieEnabled) {
-          return "La billetterie n'est pas encore ouverte. Reviens bientôt !";
-        }
-        window.location.href = "/mondial/tirage";
+      if (text.includes('rejoindre') || text.includes('adherer') || text.includes('membre') || text.includes('inscri')) {
+        window.location.href = "/rejoindre";
         return '';
       }
       if (text.includes('match') || text.includes('prochain') || text.includes('quand') || text.includes('evenement')) {
@@ -322,8 +200,8 @@ const quickActions = [
         showRecruit();
         return '';
       }
-      if (text.includes('diaspora') || text.includes('liege') || text.includes('marbella')) {
-        return 'Plan diaspora : 1. Choisis ton point de ralliement, 2. Apprends le chant du Bloc, 3. Arrive en couleurs, 4. Partage tes photos au Bloc après le match !';
+      if (text.includes('diaspora') || text.includes('houston') || text.includes('atlanta') || text.includes('guadalajara')) {
+        return 'Plan diaspora : 1. Choisis ton point de ralliement (Houston, Guadalajara ou Atlanta), 2. Apprends le chant du Bloc, 3. Arrive en couleurs, 4. Partage tes photos au Bloc après le match !';
       }
       if (text.includes('chant') || text.includes('fimbu')) {
         return '"Un seul bloc, une seule voix, pour la nation on donne la voix."';
@@ -331,7 +209,7 @@ const quickActions = [
       if (text.includes('merci') || text.includes('super') || text.includes('bravo')) {
         return 'Parfait supporter ! Le bloc compte sur toi. Allez les Léopards !';
       }
-      return "Je peux t'aider à : demander un billet, voir les prochains matchs, lancer un quiz Léopards, ou recruter un ami. Que veux-tu faire ?";
+      return "Je peux t'aider à : voir les prochains matchs, lancer un quiz Léopards, rejoindre le Bloc, ou recruter un ami. Que veux-tu faire ?";
     };
 
     // ─── Event listeners ──────────────────────────────────────────────────────
@@ -343,18 +221,8 @@ const quickActions = [
       chip.addEventListener('click', () => {
         const value = (chip as HTMLElement).dataset.chatChip!;
         addMessage(value, 'user');
-        const norm = normalize(value);
-        if (norm.includes('billet') || norm.includes('place') || norm.includes('ticket') || norm.includes('rejoindre')) {
-          if (billeterieEnabled) {
-            window.location.href = "/mondial/tirage";
-            return;
-          } else {
-            addTypingReply("La billetterie n'est pas encore ouverte. Reviens bientôt !");
-          }
-        } else {
-          const reply = answer(value);
-          if (reply) addTypingReply(reply);
-        }
+        const reply = answer(value);
+        if (reply) addTypingReply(reply);
       });
     });
 
@@ -381,32 +249,6 @@ const quickActions = [
         mood!.textContent = `Quiz : ${quizProgress()}`;
         return;
       }
-
-      // Billet match selection
-      const matchBtn = target.closest('[data-billet-match]') as HTMLElement;
-      if (matchBtn && state.billetStep === 'match') {
-        const matchKey = matchBtn.dataset.billetMatch!;
-        const label = matchKey === 'rdc-denmark' ? 'RDC vs Danemark · 3 juin · Liège' : 'RDC vs Chili · 9 juin · Marbella';
-        state.billetData.matchKey = matchKey;
-        state.billetData.matchLabel = label;
-        addMessage(label, 'user');
-        askPrenom();
-        return;
-      }
-
-      // Billet confirm
-      const confirmBtn = target.closest('[data-billet-confirm]') as HTMLElement;
-      if (confirmBtn && state.billetStep === 'confirm') {
-        const val = confirmBtn.dataset.billetConfirm;
-        if (val === 'yes') {
-          addMessage('Je confirme', 'user');
-          submitBillet();
-        } else {
-          addMessage('Recommencer', 'user');
-          startBilletFlow();
-        }
-        return;
-      }
     });
 
     form!.addEventListener('submit', (event) => {
@@ -415,8 +257,6 @@ const quickActions = [
       if (!value) return;
       addMessage(value, 'user');
       input.value = '';
-      const handled = handleBilletInput(value);
-      if (handled) return;
       const reply = answer(value);
       if (reply) addTypingReply(reply);
     });

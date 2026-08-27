@@ -4,13 +4,26 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Clés historiques conservées (les pages existantes se re-colorent d'un coup)
+        // brand.blue passe du violet #3200cc au Bleu Congo vif.
         brand: {
-          blue: "#3200cc",
-          yellow: "#d9a700",
-          red: "#d23f00",
-          dark: "#0b0f1f",
-          ink: "#101622"
+          blue: "#1466E0",
+          yellow: "#F4C400",
+          red: "#D81E27",
+          dark: "#08132B",
+          ink: "#050B18"
         },
+        // Système Bleu Congo
+        congo: {
+          DEFAULT: "#1466E0",
+          bright: "#1E7BFF",
+          deep: "#0B47B0",
+          nuit: "#08132B",
+          night: "#050B18"
+        },
+        or: "#F4C400",
+        feu: "#D81E27",
+        // Couleurs drapeau RDC — réservées à la barre bleu/jaune/rouge
         flag: {
           blue: "#007fff",
           red: "#ce1021",
@@ -18,16 +31,22 @@ export default {
         }
       },
       fontFamily: {
+        // Méga-statements éditoriaux (surdimensionnés)
+        mega: ["'Anton'", "'Bebas Neue'", "system-ui", "sans-serif"],
         display: ["'Bebas Neue'", "system-ui", "sans-serif"],
         body: ["'Sora'", "system-ui", "sans-serif"]
       },
+      letterSpacing: {
+        eyebrow: "0.28em"
+      },
       backgroundImage: {
-        "hero-glow": "radial-gradient(60% 80% at 80% 0%, rgba(242,194,0,0.25), transparent), radial-gradient(50% 60% at 0% 20%, rgba(28,46,143,0.2), transparent)",
-        "stadium": "linear-gradient(135deg, #ffffff, #f5f7ff), radial-gradient(circle at 20% 20%, rgba(28,46,143,0.12), transparent 55%), radial-gradient(circle at 80% 10%, rgba(242,194,0,0.18), transparent 45%)"
+        "hero-glow": "radial-gradient(60% 80% at 80% 0%, rgba(244,196,0,0.22), transparent), radial-gradient(50% 60% at 0% 20%, rgba(20,102,224,0.28), transparent)",
+        "congo-night": "linear-gradient(180deg, #08132B 0%, #050B18 100%)"
       },
       boxShadow: {
-        glow: "0 20px 60px -30px rgba(242,194,0,0.45)",
-        deep: "0 24px 60px -40px rgba(15,23,42,0.35)"
+        glow: "0 20px 60px -30px rgba(244,196,0,0.45)",
+        deep: "0 24px 60px -40px rgba(5,11,24,0.55)",
+        card: "0 1px 0 rgba(255,255,255,.04), 0 30px 70px -45px rgba(5,11,24,.7)"
       }
     }
   },
