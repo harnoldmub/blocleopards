@@ -3,6 +3,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import NewsletterForm from "../components/NewsletterForm.astro";
 import MatchBanner from "../components/MatchBanner.astro";
 import Marquee from "../components/Marquee.astro";
+import BasketMission from "../components/BasketMission.astro";
 import site from "../data/site.json";
 import { getSetting } from "../lib/settings";
 import { requireDatabase } from "../lib/neon";
@@ -31,6 +32,16 @@ try {
   console.error("[index] chargement events échoué (table absente ?)", err);
   allEvents = [];
 }
+// Léopards Basket — fenêtre de Dakar (qualif. Mondial FIBA 2027).
+// La section reste visible même si la migration 015 n'est pas encore passée :
+// BasketMission.astro embarque son propre calendrier de repli.
+const BASKET_SLUGS = [
+  "2026-08-27-leopards-basket-rdc-angola",
+  "2026-08-29-leopards-basket-rdc-mali",
+  "2026-08-30-leopards-basket-rdc-egypte"
+];
+const basketEvents = allEvents.filter((event) => BASKET_SLUGS.includes(event.slug));
+
 const upcomingEvents = allEvents.filter((event) => event.date >= today);
 const events = upcomingEvents.slice(0, 4);
 const FR_MONTHS = ["JAN","FEV","MAR","AVR","MAI","JUIN","JUIL","AOUT","SEPT","OCT","NOV","DEC"];
@@ -89,6 +100,9 @@ const homeGallery = [
   </section>
 
   <Marquee items={tickerItems} />
+
+  <!-- ================= LÉOPARDS BASKET — MISSION DAKAR ================= -->
+  <BasketMission events={basketEvents} />
 
   <!-- ================= MANIFESTE ================= -->
   <section id="manifeste" class="scroll-mt-24 bg-congo py-24 text-white lg:py-32">

@@ -23,6 +23,12 @@ export default {
         },
         or: "#F4C400",
         feu: "#D81E27",
+        // Accent Léopards Basket — orange ballon, réservé à la section basket
+        basket: {
+          DEFAULT: "#FF6A13",
+          deep: "#B83A05",
+          glow: "#FFA24A"
+        },
         // Couleurs drapeau RDC — réservées à la barre bleu/jaune/rouge
         flag: {
           blue: "#007fff",

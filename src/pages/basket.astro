@@ -1,0 +1,289 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { requireDatabase } from "../lib/neon";
+
+/**
+ * Page complète « Léopards Basket — Mission Dakar ».
+ * La home n'affiche qu'un bandeau compact (BasketMission.astro) qui pointe ici.
+ */
+
+const FIXTURES = [
+  {
+    slug: "2026-08-27-leopards-basket-rdc-angola",
+    date: "2026-08-27",
+    time: "13H30 (Kinshasa) · 12H30 GMT",
+    opponent: "Angola",
+    flag: "/flags/ao.png",
+    act: "Acte I",
+    hook: "L'entrée en mission, face à une référence du basket africain."
+  },
+  {
+    slug: "2026-08-29-leopards-basket-rdc-mali",
+    date: "2026-08-29",
+    time: "16H30 (Kinshasa) · 15H30 GMT",
+    opponent: "Mali",
+    flag: "/flags/ml.svg",
+    act: "Acte II",
+    hook: "Le match charnière. Celui où l'on confirme."
+  },
+  {
+    slug: "2026-08-30-leopards-basket-rdc-egypte",
+    date: "2026-08-30",
+    time: "13H30 (Kinshasa) · 12H30 GMT",
+    opponent: "Égypte",
+    flag: "/flags/eg.svg",
+    act: "Acte III",
+    hook: "La sortie de mission, et le classement."
+  }
+];
+
+// Résilient : la page reste lisible si la table events n'est pas migrée.
+let rows: any[] = [];
+try {
+  const sql = requireDatabase();
+  rows = await sql`
+    SELECT slug, date::text as date, time, location
+    FROM events
+    WHERE published = true AND slug = ANY(${FIXTURES.map((f) => f.slug)})
+  `;
+} catch (err) {
+  console.error("[basket] chargement events échoué (table absente ?)", err);
+}
+
+const bySlug = new Map(rows.map((r) => [r.slug, r]));
+const fixtures = FIXTURES.map((fx) => ({
+  ...fx,
+  date: bySlug.get(fx.slug)?.date ?? fx.date,
+  time: bySlug.get(fx.slug)?.time || fx.time,
+  location: bySlug.get(fx.slug)?.location || "Dakar Arena, Sénégal"
+}));
+
+const FR_DAYS = ["DIM", "LUN", "MAR", "MER", "JEU", "VEN", "SAM"];
+const FR_MONTHS = ["JAN", "FÉV", "MAR", "AVR", "MAI", "JUIN", "JUIL", "AOÛT", "SEPT", "OCT", "NOV", "DÉC"];
+const parse = (d: string) => new Date(`${d}T12:00:00Z`);
+const today = new Date().toISOString().slice(0, 10);
+
+const hashtags = [
+  "#BlocLéopard",
+  "#LéopardsBasket",
+  "#RDC",
+  "#TeamRDC",
+  "#BasketballRDC",
+  "#AllezLesLéopards"
+];
+---
+<BaseLayout
+  title="Léopards Basket — Mission Dakar"
+  description="Du 27 au 30 août 2026, les Léopards Basketball disputent à la Dakar Arena les qualifications de la Coupe du Monde FIBA Qatar 2027. Le programme et la mobilisation du Bloc."
+  image="/media/basket/gameday-rdc-angola.jpg"
+>
+  <!-- ================= HERO ================= -->
+  <section class="relative flex min-h-[58vh] items-end overflow-hidden bg-congo-night text-white">
+    {/* z-0 : en -z-10 l'affiche passerait derrière le fond opaque de la section. */}
+    <img src="/media/basket/gameday-rdc-angola.jpg" alt="" aria-hidden="true" class="absolute inset-0 z-0 h-full w-full object-cover opacity-40" />
+    <div class="absolute inset-0 z-0 bg-gradient-to-t from-congo-night via-congo-night/75 to-congo-night/45"></div>
+
+    <div class="relative z-10 mx-auto w-full max-w-[84rem] px-4 pb-14 pt-28 lg:px-8">
+      <div class="flex items-center gap-2.5">
+        <img
+          src="/media/basket/logo-febaco.webp"
+          alt="Fédération de Basketball du Congo"
+          width="30"
+          height="30"
+          class="h-[30px] w-[30px] rounded-full bg-white object-contain p-px"
+        />
+        <span class="text-[0.68rem] font-bold uppercase tracking-[0.2em] text-or">
+          Léopards Basket · Qualif. Coupe du Monde FIBA Qatar 2027
+        </span>
+      </div>
+      <h1 data-reveal class="mt-5 font-display uppercase leading-[0.88] [font-size:clamp(2.8rem,7vw,6rem)]">Mission Dakar</h1>
+      <p data-reveal data-reveal-delay="120" class="mt-5 max-w-xl text-lg leading-relaxed text-white/80">
+        Trois matchs à la Dakar Arena, du 27 au 30 août 2026. Un seul drapeau.
+      </p>
+    </div>
+
+    <div class="absolute bottom-0 left-0 right-0 z-10 grid h-[3px] grid-cols-3" aria-hidden="true">
+      <div class="bg-flag-blue"></div>
+      <div class="bg-flag-yellow"></div>
+      <div class="bg-flag-red"></div>
+    </div>
+  </section>
+
+  <!-- ================= PROGRAMME ================= -->
+  <section class="bg-white py-16 lg:py-20">
+    <div class="mx-auto max-w-[64rem] px-4 lg:px-8">
+      <h2 data-reveal class="font-display text-3xl uppercase leading-none text-congo-night md:text-5xl">Le programme</h2>
+
+      <ol class="mt-8 grid gap-3">
+        {fixtures.map((fx, i) => (
+          <li>
+            <a
+              href={`/evenements/${fx.slug}`}
+              data-reveal
+              data-reveal-delay={i * 80}
+              class="basket-row group"
+              data-past={fx.date < today ? "true" : undefined}
+            >
+              <span class="basket-row__flagbar" aria-hidden="true"></span>
+              <span class="flex w-[4.5rem] shrink-0 flex-col text-center">
+                <span class="font-mega text-4xl leading-none text-congo-night">{String(parse(fx.date).getUTCDate())}</span>
+                <span class="text-[0.62rem] font-bold uppercase tracking-[0.14em] text-congo">
+                  {FR_MONTHS[parse(fx.date).getUTCMonth()]} · {FR_DAYS[parse(fx.date).getUTCDay()]}
+                </span>
+              </span>
+
+              <span class="min-w-0 flex-1">
+                <span class="text-[0.62rem] font-bold uppercase tracking-[0.2em] text-basket">{fx.act}</span>
+                <span class="mt-0.5 flex items-center gap-2 font-display text-2xl uppercase leading-none text-congo-night">
+                  RDC <span class="text-slate-300">–</span> {fx.opponent}
+                  <img src={fx.flag} alt="" aria-hidden="true" width="24" height="16" class="h-4 w-6 rounded-[1px] object-cover" />
+                </span>
+                <span class="mt-1.5 block text-sm text-slate-500">{fx.hook}</span>
+              </span>
+
+              <span class="hidden shrink-0 text-right sm:block">
+                <span class="block text-[0.72rem] font-bold uppercase tracking-[0.08em] text-congo-night">{fx.time}</span>
+                <span class="mt-1 block text-[0.72rem] text-slate-500">{fx.location}</span>
+              </span>
+            </a>
+          </li>
+        ))}
+      </ol>
+
+      <p data-reveal class="mt-4 text-[0.7rem] uppercase tracking-[0.1em] text-slate-400">
+        Horaires en heure de Kinshasa (UTC+1) · Source : calendrier officiel FIBA Africa
+      </p>
+
+      <a data-reveal href="/evenements" class="mt-6 inline-block text-[0.72rem] font-bold uppercase tracking-[0.14em] text-congo hover:text-congo-deep">
+        Calendrier complet du Bloc →
+      </a>
+    </div>
+  </section>
+
+  <!-- ================= MISSION ================= -->
+  <section class="bg-congo-night py-16 text-white lg:py-24">
+    <div class="mx-auto grid max-w-[84rem] gap-12 px-4 lg:grid-cols-[1fr_0.7fr] lg:items-center lg:px-8">
+      <div class="max-w-xl">
+        <span data-reveal class="text-[0.68rem] font-bold uppercase tracking-[0.24em] text-or">La mission</span>
+        <h2 data-reveal class="mt-3 font-display text-3xl uppercase leading-[0.95] md:text-5xl">
+          Ce n'est pas seulement une compétition
+        </h2>
+        <div class="mt-6 space-y-4 leading-relaxed text-white/80">
+          <p data-reveal>
+            Face à l'Angola, au Mali puis à l'Égypte, nos guerriers défendent les couleurs nationales
+            avec courage, détermination et fierté. Chaque panier, chaque défense compte.
+          </p>
+          <p data-reveal>
+            C'est notre drapeau. C'est notre nation. C'est notre fierté. Où que tu sois — Kinshasa,
+            Goma, Bruxelles, Paris — le Bloc répond présent.
+          </p>
+        </div>
+        <p data-reveal class="mt-7 font-display text-2xl uppercase leading-none text-or md:text-3xl">
+          Un peuple. Une passion. Une nation.
+        </p>
+        <div data-reveal class="mt-8 flex flex-wrap gap-3">
+          <a href="/rejoindre" class="rounded-full bg-or px-7 py-3.5 text-[0.74rem] font-bold uppercase tracking-[0.1em] text-congo-night transition-transform hover:-translate-y-0.5">
+            Rejoindre le Bloc
+          </a>
+          <a href="/kit-supporters" class="rounded-full border border-white/35 px-7 py-3.5 text-[0.74rem] font-bold uppercase tracking-[0.1em] text-white transition-colors hover:border-or hover:text-or">
+            Kit supporters
+          </a>
+        </div>
+      </div>
+
+      <figure data-reveal="fade" class="basket-video">
+        <video
+          autoplay
+          muted
+          loop
+          playsinline
+          preload="none"
+          poster="/videos/basket/leopards-basket-02-poster.jpg"
+          data-hero-media
+          aria-label="Les Léopards Basketball rassemblés avant la fenêtre de Dakar"
+        >
+          <source src="/videos/basket/leopards-basket-02.mp4" type="video/mp4" />
+        </video>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ================= AFFICHE + HASHTAGS ================= -->
+  <section class="bg-white py-16 lg:py-20">
+    <div class="mx-auto grid max-w-[84rem] items-center gap-10 px-4 md:grid-cols-2 lg:px-8">
+      <figure data-reveal="fade" class="overflow-hidden rounded-[6px] border border-slate-200 bg-slate-100">
+        <img
+          src="/media/basket/gameday-rdc-angola.webp"
+          alt="Affiche Game Day : RDC contre Angola, jeudi 27 août, Dakar Arena"
+          width="720"
+          height="900"
+          loading="lazy"
+          decoding="async"
+          class="block w-full"
+        />
+      </figure>
+      <div>
+        <h2 data-reveal class="font-display text-3xl uppercase leading-none text-congo-night md:text-4xl">Fais vivre la mission</h2>
+        <p data-reveal class="mt-4 text-slate-600">
+          Partage l'affiche, porte le maillot, utilise les hashtags officiels du Bloc.
+        </p>
+        <ul data-reveal class="mt-6 flex flex-wrap gap-2">
+          {hashtags.map((tag) => (
+            <li class="rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-[0.72rem] font-semibold text-slate-700">{tag}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .basket-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: #fff;
+    padding: 1.1rem 1.4rem 1.1rem 1.6rem;
+    transition: border-color 0.3s, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .basket-row:hover {
+    border-color: #1466e0;
+    transform: translateY(-2px);
+  }
+  .basket-row[data-past="true"] {
+    opacity: 0.55;
+  }
+  .basket-row__flagbar {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 5px;
+    background: linear-gradient(to bottom, #007fff 0 33%, #f7d618 33% 66%, #ce1021 66%);
+  }
+
+  .basket-video {
+    position: relative;
+    margin: 0;
+    overflow: hidden;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: #08132b;
+    aspect-ratio: 9 / 13;
+    box-shadow: 0 40px 90px -55px rgba(0, 0, 0, 0.95);
+  }
+  .basket-video video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .basket-row {
+      transition: none;
+    }
+  }
+</style>

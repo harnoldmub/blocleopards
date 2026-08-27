@@ -76,34 +76,81 @@ function initParallax() {
 }
 
 /** Ancres internes fluides avec compensation du header. */
+function scrollToId(id: string, instant = false) {
+  const target = document.getElementById(id);
+  if (!target) return false;
+  if (lenis) lenis.scrollTo(target, { offset: -NAV_OFFSET, duration: instant ? 0 : 1.05 });
+  else {
+    const top = target.getBoundingClientRect().top + window.scrollY - NAV_OFFSET;
+    window.scrollTo({ top, behavior: instant || reduce ? "auto" : "smooth" });
+  }
+  return true;
+}
+
 function initAnchors() {
   document.addEventListener("click", (e) => {
-    const a = (e.target as HTMLElement)?.closest?.('a[href^="#"]') as HTMLAnchorElement | null;
+    // "#id" comme "/#id" : le second sert aux liens de nav depuis les autres pages.
+    const a = (e.target as HTMLElement)?.closest?.('a[href^="#"], a[href^="/#"]') as HTMLAnchorElement | null;
     if (!a) return;
-    const id = a.getAttribute("href")!.slice(1);
+    const id = a.getAttribute("href")!.split("#")[1];
     if (!id) return;
-    const target = document.getElementById(id);
-    if (!target) return;
+    if (!scrollToId(id)) return; // cible absente de cette page → navigation normale
     e.preventDefault();
-    if (lenis) lenis.scrollTo(target, { offset: -NAV_OFFSET, duration: 1.05 });
-    else {
-      const top = target.getBoundingClientRect().top + window.scrollY - NAV_OFFSET;
-      window.scrollTo({ top, behavior: reduce ? "auto" : "smooth" });
-    }
+    history.replaceState(null, "", `#${id}`);
+  });
+
+  // Arrivée depuis une autre page avec un hash : Lenis neutralise le saut natif.
+  if (location.hash.length > 1) {
+    const id = location.hash.slice(1);
+    requestAnimationFrame(() => { window.setTimeout(() => scrollToId(id, true), 60); });
+  }
+}
+
+/**
+ * Autoplay muet fiable pour toutes les vidéos décoratives ([data-hero-media]).
+ * Celles hors écran restent en pause : plusieurs vidéos peuvent coexister sur
+ * une page (hero + section basket) sans se disputer la bande passante.
+ */
+function initHeroVideo() {
+  const videos = Array.from(document.querySelectorAll<HTMLVideoElement>("[data-hero-media]"));
+  if (!videos.length) return;
+
+  const play = (v: HTMLVideoElement) => {
+    v.muted = true;
+    v.play().catch(() => {});
+  };
+
+  // Repli : première interaction utilisateur (politiques d'autoplay strictes).
+  const onInteract = () => {
+    videos.forEach((v) => { if (isInView(v)) play(v); });
+  };
+  window.addEventListener("pointerdown", onInteract, { once: true });
+
+  if (!("IntersectionObserver" in window)) {
+    videos.forEach(play);
+    return;
+  }
+
+  const io = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        const v = entry.target as HTMLVideoElement;
+        if (entry.isIntersecting) play(v);
+        else v.pause();
+      });
+    },
+    { rootMargin: "200px 0px", threshold: 0.01 }
+  );
+  videos.forEach((v) => {
+    v.muted = true;
+    v.addEventListener("canplay", () => { if (isInView(v)) play(v); }, { once: true });
+    io.observe(v);
   });
 }
 
-/** Force la lecture de la vidéo hero (autoplay muet fiable). */
-function initHeroVideo() {
-  const v = document.querySelector<HTMLVideoElement>("[data-hero-media]");
-  if (!v) return;
-  v.muted = true;
-  const tryPlay = () => v.play().catch(() => {});
-  tryPlay();
-  v.addEventListener("canplay", tryPlay, { once: true });
-  // repli : première interaction utilisateur
-  const onInteract = () => { tryPlay(); window.removeEventListener("pointerdown", onInteract); };
-  window.addEventListener("pointerdown", onInteract, { once: true });
+function isInView(el: Element) {
+  const r = el.getBoundingClientRect();
+  return r.bottom > 0 && r.top < (window.innerHeight || 0);
 }
 
 function boot() {

@@ -27,14 +27,15 @@ const day = String(parseInt(event.date.split("-")[2])).padStart(2, "0");
 <BaseLayout title={event.title} description={event.description} image={event.image}>
   <!-- ================= GRANDE AFFICHE ================= -->
   <section class="relative flex min-h-[60vh] items-end overflow-hidden bg-congo-night text-white">
-    <div class="absolute inset-0 -z-10">
+    {/* z-0 (et non -z-10) : en negatif, l'affiche passe DERRIERE le fond opaque de la section. */}
+    <div class="absolute inset-0 z-0">
       {event.image
         ? <img src={event.image} alt="" aria-hidden="true" class="h-full w-full object-cover opacity-45" />
         : <div class="h-full w-full bg-congo-night"></div>}
     </div>
-    <div class="absolute inset-0 -z-10 bg-gradient-to-t from-congo-night via-congo-night/75 to-congo-night/40"></div>
+    <div class="absolute inset-0 z-0 bg-gradient-to-t from-congo-night via-congo-night/75 to-congo-night/40"></div>
 
-    <div class="relative mx-auto flex w-full max-w-[64rem] flex-col gap-8 px-4 pb-14 pt-28 lg:flex-row lg:items-end lg:px-8">
+    <div class="relative z-10 mx-auto flex w-full max-w-[64rem] flex-col gap-8 px-4 pb-14 pt-28 lg:flex-row lg:items-end lg:px-8">
       <div class="shrink-0">
         <div class="rounded-[6px] border border-or/30 bg-white/5 px-5 py-4 text-center backdrop-blur-sm">
           <span class="text-[0.68rem] font-bold uppercase tracking-[0.2em] text-or">{month}</span>

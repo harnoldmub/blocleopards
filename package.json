@@ -17,6 +17,8 @@
     "db:migrate": "set -a; [ -f .env ] && . ./.env; set +a; psql \"$DATABASE_URL\" -f db/migrations/001_neon_forms.sql",
     "db:migrate:campagne": "set -a; [ -f .env ] && . ./.env; set +a; psql \"$DATABASE_URL\" -f db/migrations/011_adhesions_campagne_createurs.sql",
     "db:seed:basket-aout2026": "set -a; [ -f .env ] && . ./.env; set +a; psql \"$DATABASE_URL\" -f db/migrations/014_seed_leopards_basket_aout2026.sql",
+    "db:migrate:events": "set -a; [ -f .env ] && . ./.env; set +a; psql \"$DATABASE_URL\" -f db/migrations/012_events_calendar.sql",
+    "db:migrate:basket-dakar": "set -a; [ -f .env ] && . ./.env; set +a; psql \"$DATABASE_URL\" -f db/migrations/015_fix_leopards_basket_dakar_2026.sql",
     "generate:pdf": "node scripts/generate-pdf.mjs"
   },
   "dependencies": {
