@@ -14,20 +14,21 @@ const shareUrl = Astro.url?.toString() ?? "";
 <BaseLayout title={item.title} description={item.description} image={item.image}>
   <!-- ================= HERO ARTICLE ================= -->
   <section class="relative flex min-h-[46vh] items-end overflow-hidden bg-congo-night text-white">
-    <div class="absolute inset-0 -z-10">
+    {/* z-0 : en -z-10 l'image passerait derrière le fond opaque de la section. */}
+    <div class="absolute inset-0 z-0">
       {item.image
         ? <img src={item.image} alt="" aria-hidden="true" class="h-full w-full object-cover opacity-40" />
         : <div class="h-full w-full bg-congo-night"></div>}
     </div>
-    <div class="absolute inset-0 -z-10 bg-gradient-to-t from-congo-night via-congo-night/70 to-congo-night/40"></div>
+    <div class="absolute inset-0 z-0 bg-gradient-to-t from-congo-night via-congo-night/70 to-congo-night/40"></div>
 
-    <div class="relative mx-auto w-full max-w-[48rem] px-4 pb-14 pt-28 lg:px-8">
+    <div class="relative z-10 mx-auto w-full max-w-[48rem] px-4 pb-14 pt-28 lg:px-8">
       <span class="inline-flex items-center gap-3 text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-or before:h-px before:w-9 before:bg-or/70">Actualité</span>
       <h1 class="mt-5 font-display uppercase leading-[0.92] [font-size:clamp(2.2rem,5.5vw,3.6rem)]">{item.title}</h1>
       <p class="mt-4 text-sm text-white/60">{item.date}</p>
     </div>
 
-    <div class="absolute bottom-0 left-0 right-0 grid h-[3px] grid-cols-3" aria-hidden="true">
+    <div class="absolute bottom-0 left-0 right-0 z-10 grid h-[3px] grid-cols-3" aria-hidden="true">
       <div class="bg-flag-blue"></div>
       <div class="bg-flag-yellow"></div>
       <div class="bg-flag-red"></div>
