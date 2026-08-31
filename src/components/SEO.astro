@@ -2,8 +2,6 @@
 const { title, description, url } = Astro.props;
 const SITE = "https://blocleopards.com";
 const canonical = url ?? SITE;
-// Image de partage compacte : logo Bloc au lieu des grandes images éditoriales.
-const ogImage = `${SITE}/brand/social-logo.png`;
 ---
 <title>{title}</title>
 <meta name="description" content={description} />
@@ -12,13 +10,7 @@ const ogImage = `${SITE}/brand/social-logo.png`;
 <meta property="og:description" content={description} />
 <meta property="og:type" content="website" />
 <meta property="og:url" content={canonical} />
-<meta property="og:image" content={ogImage} />
-<meta property="og:image:width" content="512" />
-<meta property="og:image:height" content="512" />
-<meta property="og:image:alt" content="Logo Bloc Léopards" />
 <meta property="og:site_name" content="Bloc Léopards" />
 <meta name="twitter:card" content="summary" />
 <meta name="twitter:title" content={title} />
 <meta name="twitter:description" content={description} />
-<meta name="twitter:image" content={ogImage} />
-<meta name="twitter:image:alt" content="Logo Bloc Léopards" />
