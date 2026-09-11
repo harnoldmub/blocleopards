@@ -210,7 +210,7 @@ const disponibilites = [
             <span class="bloc-label">Ville *</span>
             <!-- Combobox ville (visible quand des villes sont disponibles) -->
             <div id="ville-combobox-wrap" class="hidden relative" data-city-combobox>
-              <input type="hidden" name="ville" id="ville-hidden" required />
+              <input type="hidden" id="ville-hidden" />
               <button
                 id="ville-trigger"
                 type="button"
@@ -383,7 +383,13 @@ const disponibilites = [
 
         <Turnstile />
 
-        <button type="submit" class="bloc-submit px-6 py-4">Envoyer ma demande</button>
+        <button type="submit" id="adhesion-submit" class="bloc-submit px-6 py-4">
+          <span id="submit-label">Envoyer ma demande</span>
+          <svg id="submit-spinner" class="hidden ml-3 h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 5 5.373 5 12h4z"></path>
+          </svg>
+        </button>
       </form>
 
       <aside class="grid content-start gap-5">
@@ -705,11 +711,13 @@ const disponibilites = [
 
       function switchToFreeText(hint) {
         if (villeComboWrap) villeComboWrap.classList.add("hidden");
+        // ville-hidden ne doit PAS avoir name= en mode champ libre
+        if (villeHidden) { villeHidden.removeAttribute("required"); villeHidden.removeAttribute("name"); }
         if (villeFree) {
           villeFree.classList.remove("hidden");
           villeFree.removeAttribute("disabled");
+          villeFree.setAttribute("name", "ville");
         }
-        if (villeHidden) villeHidden.removeAttribute("required");
         if (villeHint) {
           villeHint.textContent = hint || "Saisissez votre ville.";
           villeHint.classList.remove("hidden");
@@ -750,124 +758,96 @@ const disponibilites = [
         villeListbox.appendChild(emptyEl);
       }
 
+      // Villes locales pour les pays où l'API est peu fiable
+      var LOCAL_CITIES = {
+        "Congo (RDC)": ["Bandundu","Beni","Boende","Bukavu","Bumba","Bunia","Butembo","Gbadolite","Gemena","Goma","Ilebo","Kabalo","Kabare","Kalemie","Kamina","Kananga","Kasongo","Kenge","Kikwit","Kindu","Kinshasa","Kipushi","Kisangani","Kolwezi","Kongolo","Likasi","Lisala","Lodja","Luebo","Lubumbashi","Lusambo","Mahagi","Makanza","Manono","Matadi","Mbandaka","Mbuji-Mayi","Mobayi-Mbongo","Moba","Moanda","Muanda","Mwene-Ditu","Rutshuru","Shabunda","Tshela","Tshikapa","Uvira","Watsa","Zongo"]
+      };
+
       function loadCities(countryName) {
-        // Reset
+        // Villes locales en priorité (instantané)
+        if (LOCAL_CITIES[countryName]) {
+          if (villeHidden) villeHidden.value = "";
+          if (villeLabel) { villeLabel.textContent = "Choisir une ville"; villeLabel.classList.add("text-slate-400"); villeLabel.classList.remove("text-slate-900", "font-medium"); }
+          if (villeListbox) villeListbox.innerHTML = "";
+          if (villeSearch) villeSearch.value = "";
+          populateCities(LOCAL_CITIES[countryName]);
+          switchToCombobox();
+          if (villeHint) villeHint.textContent = "Ou tape le nom de ta ville.";
+          return;
+        }
+
+        // Sinon, appel API
         if (villeHidden) villeHidden.value = "";
-        if (villeLabel) { villeLabel.textContent = "Choisir une ville"; villeLabel.classList.add("text-slate-400"); villeLabel.classList.remove("text-slate-900"); }
+        if (villeLabel) { villeLabel.textContent = "Choisir une ville"; villeLabel.classList.add("text-slate-400"); villeLabel.classList.remove("text-slate-900", "font-medium"); }
         if (villeListbox) villeListbox.innerHTML = "";
         if (villeSearch) villeSearch.value = "";
 
         showSpinner(true);
-        // Map pays FR → nom EN attendu par l'API countriesnow
-        var apiName = countryName;
         var frToEn = {
-          "Congo (RDC)": "Democratic Republic of the Congo",
           "Congo": "Republic of the Congo",
-          "Allemagne": "Germany",
-          "Autriche": "Austria",
-          "Belgique": "Belgium",
-          "Brésil": "Brazil",
-          "Cameroun": "Cameroon",
-          "Chine": "China",
-          "Corée du Sud": "South Korea",
-          "Côte d'Ivoire": "Ivory Coast",
-          "Danemark": "Denmark",
-          "Égypte": "Egypt",
-          "Émirats arabes unis": "United Arab Emirates",
-          "Espagne": "Spain",
-          "États-Unis": "United States",
-          "Finlande": "Finland",
-          "France": "France",
-          "Ghana": "Ghana",
-          "Grèce": "Greece",
-          "Irlande": "Ireland",
-          "Islande": "Iceland",
-          "Italie": "Italy",
-          "Japon": "Japan",
-          "Jordanie": "Jordan",
-          "Luxembourg": "Luxembourg",
-          "Maroc": "Morocco",
-          "Mexique": "Mexico",
-          "Nigeria": "Nigeria",
-          "Norvège": "Norway",
-          "Nouvelle-Zélande": "New Zealand",
-          "Pays-Bas": "Netherlands",
-          "Pérou": "Peru",
-          "Philippines": "Philippines",
-          "Pologne": "Poland",
-          "Portugal": "Portugal",
-          "Royaume-Uni": "United Kingdom",
-          "Russie": "Russia",
-          "Sénégal": "Senegal",
-          "Suède": "Sweden",
-          "Suisse": "Switzerland",
-          "Tchad": "Chad",
-          "Tunisie": "Tunisia",
-          "Turquie": "Turkey",
-          "Ukraine": "Ukraine",
-          "Vietnam": "Vietnam",
-          "Algérie": "Algeria",
-          "Angola": "Angola",
-          "Bénin": "Benin",
-          "Burkina Faso": "Burkina Faso",
-          "Burundi": "Burundi",
-          "Cap-Vert": "Cape Verde",
-          "Centrafrique": "Central African Republic",
-          "Comores": "Comoros",
-          "Djibouti": "Djibouti",
-          "Érythrée": "Eritrea",
-          "Éthiopie": "Ethiopia",
-          "Gabon": "Gabon",
-          "Gambie": "Gambia",
-          "Guinée": "Guinea",
-          "Guinée-Bissau": "Guinea-Bissau",
-          "Guinée équatoriale": "Equatorial Guinea",
-          "Kenya": "Kenya",
-          "Lesotho": "Lesotho",
-          "Libéria": "Liberia",
-          "Libye": "Libya",
-          "Madagascar": "Madagascar",
-          "Malawi": "Malawi",
-          "Mali": "Mali",
-          "Mauritanie": "Mauritania",
-          "Maurice": "Mauritius",
-          "Mozambique": "Mozambique",
-          "Namibie": "Namibia",
-          "Niger": "Niger",
-          "Ouganda": "Uganda",
-          "Rwanda": "Rwanda",
-          "Sao Tomé-et-Principe": "Sao Tome and Principe",
-          "Seychelles": "Seychelles",
-          "Sierra Leone": "Sierra Leone",
-          "Somalie": "Somalia",
-          "Soudan": "Sudan",
-          "Soudan du Sud": "South Sudan",
-          "Tanzanie": "Tanzania",
-          "Togo": "Togo",
-          "Zambie": "Zambia",
-          "Zimbabwe": "Zimbabwe",
+          "Allemagne": "Germany", "Autriche": "Austria", "Belgique": "Belgium",
+          "Brésil": "Brazil", "Cameroun": "Cameroon", "Chine": "China",
+          "Corée du Sud": "South Korea", "Côte d'Ivoire": "Ivory Coast",
+          "Danemark": "Denmark", "Égypte": "Egypt", "Émirats arabes unis": "United Arab Emirates",
+          "Espagne": "Spain", "États-Unis": "United States", "Finlande": "Finland",
+          "France": "France", "Ghana": "Ghana", "Grèce": "Greece",
+          "Irlande": "Ireland", "Islande": "Iceland", "Italie": "Italy",
+          "Japon": "Japan", "Jordanie": "Jordan", "Luxembourg": "Luxembourg",
+          "Maroc": "Morocco", "Mexique": "Mexico", "Nigeria": "Nigeria",
+          "Norvège": "Norway", "Nouvelle-Zélande": "New Zealand", "Pays-Bas": "Netherlands",
+          "Pérou": "Peru", "Philippines": "Philippines", "Pologne": "Poland",
+          "Portugal": "Portugal", "Royaume-Uni": "United Kingdom", "Russie": "Russia",
+          "Sénégal": "Senegal", "Suède": "Sweden", "Suisse": "Switzerland",
+          "Tchad": "Chad", "Tunisie": "Tunisia", "Turquie": "Turkey",
+          "Ukraine": "Ukraine", "Vietnam": "Vietnam", "Algérie": "Algeria",
+          "Angola": "Angola", "Bénin": "Benin", "Burkina Faso": "Burkina Faso",
+          "Burundi": "Burundi", "Cap-Vert": "Cape Verde", "Centrafrique": "Central African Republic",
+          "Comores": "Comoros", "Djibouti": "Djibouti", "Érythrée": "Eritrea",
+          "Éthiopie": "Ethiopia", "Gabon": "Gabon", "Gambie": "Gambia",
+          "Guinée": "Guinea", "Guinée-Bissau": "Guinea-Bissau", "Guinée équatoriale": "Equatorial Guinea",
+          "Kenya": "Kenya", "Lesotho": "Lesotho", "Libéria": "Liberia",
+          "Libye": "Libya", "Madagascar": "Madagascar", "Malawi": "Malawi",
+          "Mali": "Mali", "Mauritanie": "Mauritania", "Maurice": "Mauritius",
+          "Mozambique": "Mozambique", "Namibie": "Namibia", "Niger": "Niger",
+          "Ouganda": "Uganda", "Rwanda": "Rwanda", "Sao Tomé-et-Principe": "Sao Tome and Principe",
+          "Seychelles": "Seychelles", "Sierra Leone": "Sierra Leone", "Somalie": "Somalia",
+          "Soudan": "Sudan", "Soudan du Sud": "South Sudan", "Tanzanie": "Tanzania",
+          "Togo": "Togo", "Zambie": "Zambia", "Zimbabwe": "Zimbabwe",
           "Afrique du Sud": "South Africa"
         };
-        if (frToEn[countryName]) apiName = frToEn[countryName];
+        var apiName = frToEn[countryName] || countryName;
 
         fetch("https://countriesnow.space/api/v0.1/countries/cities/q?country=" + encodeURIComponent(apiName))
           .then(function (r) { return r.json(); })
           .then(function (data) {
             showSpinner(false);
             if (data.error || !Array.isArray(data.data) || data.data.length === 0) {
-              switchToFreeText("Aucune ville trouvée pour ce pays. Saisissez votre ville.");
+              switchToFreeText("Aucune ville trouvée. Saisissez votre ville.");
               return;
             }
-            var cities = data.data.sort();
-            allCities = cities;
-            populateCities(cities);
+            populateCities(data.data.sort());
             switchToCombobox();
-            if (villeHint) villeHint.textContent = "Ou tape le nom de ta ville directement.";
+            if (villeHint) villeHint.textContent = "Ou tape le nom de ta ville.";
           })
           .catch(function () {
             showSpinner(false);
-            switchToFreeText("Impossible de charger les villes. Saisissez votre ville.");
+            switchToFreeText("Saisissez votre ville directement.");
           });
+      }
+
+      // ---- Loader sur le bouton submit ----
+      var submitBtn = document.getElementById("adhesion-submit");
+      var submitLabel = document.getElementById("submit-label");
+      var submitSpinnerEl = document.getElementById("submit-spinner");
+      var adhesionForm = submitBtn && submitBtn.closest("form");
+      if (adhesionForm) {
+        adhesionForm.addEventListener("submit", function () {
+          if (adhesionForm.checkValidity()) {
+            if (submitBtn) submitBtn.setAttribute("disabled", "disabled");
+            if (submitLabel) submitLabel.textContent = "Envoi en cours\u2026";
+            if (submitSpinnerEl) submitSpinnerEl.classList.remove("hidden");
+          }
+        });
       }
     })();
   </script>
