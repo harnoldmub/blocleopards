@@ -86,8 +86,15 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     });
 
     return redirectTo("/rejoindre", "success");
-  } catch (error) {
-    console.error("Adhesion submission failed", error);
+  } catch (error: unknown) {
+    const err = error as Record<string, unknown>;
+    console.error("[adhesion] Échec soumission:", {
+      message: err?.message,
+      code: err?.code,
+      constraint: err?.constraint,
+      detail: err?.detail,
+      stack: err?.stack,
+    });
     return redirectTo("/rejoindre", "error");
   }
 };
