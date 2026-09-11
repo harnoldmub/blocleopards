@@ -165,38 +165,42 @@ const disponibilites = [
               aria-controls="pays-listbox"
               class="bloc-control flex items-center justify-between gap-3 text-left w-full"
             >
-              <span data-pays-label class="truncate text-slate-400">Choisir un pays</span>
-              <span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-congo/10 text-congo">
-                <Icon name="search" size={15} />
+              <span id="pays-trigger-inner" class="flex items-center gap-2.5 min-w-0">
+                <span id="pays-flag-preview" class="combobox-flag hidden"></span>
+                <span data-pays-label class="truncate text-slate-400">Choisir un pays</span>
+              </span>
+              <span class="combobox-chevron">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
               </span>
             </button>
-            <div id="pays-panel" class="pays-panel absolute left-0 right-0 top-full z-40 mt-2 hidden rounded-[8px] border border-congo/15 bg-white p-3 shadow-deep" data-lenis-prevent>
+            <div id="pays-panel" class="combobox-panel hidden" data-lenis-prevent>
               <label class="relative block">
-                <Icon name="search" size={15} class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                 <input
                   id="pays-search"
                   type="search"
                   autocomplete="off"
                   placeholder="Rechercher un pays…"
-                  class="bloc-control min-h-0 py-3 pl-10 pr-4"
+                  class="combobox-search"
                 />
               </label>
-              <div id="pays-listbox" role="listbox" class="mt-3 max-h-64 overflow-y-auto pr-1">
+              <div id="pays-listbox" role="listbox" class="combobox-list">
                 {countries.map((c) => (
                   <button
                     type="button"
                     role="option"
-                    class="pays-option flex w-full items-center gap-3 rounded-[4px] px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-congo/5 hover:text-congo"
+                    class="combobox-option pays-option"
                     data-pays-code={c.code}
                     data-pays-name={c.name}
                     data-pays-flag={c.flag}
                     aria-selected="false"
                   >
-                    <span class="text-xl leading-none">{c.flag}</span>
+                    <span class="combobox-flag">{c.flag}</span>
                     <span>{c.name}</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="combobox-check text-blue-600 ml-auto"><path d="M20 6 9 17l-5-5"/></svg>
                   </button>
                 ))}
-                <p class="hidden px-3 py-4 text-sm text-slate-500" data-pays-empty>Aucun pays trouvé.</p>
+                <p class="combobox-empty hidden" data-pays-empty>Aucun pays trouvé.</p>
               </div>
             </div>
           </div>
@@ -217,23 +221,23 @@ const disponibilites = [
                 class="bloc-control flex items-center justify-between gap-3 text-left w-full"
               >
                 <span data-ville-label class="truncate text-slate-400">Choisir une ville</span>
-                <span id="ville-spinner" class="hidden h-5 w-5 animate-spin rounded-full border-2 border-congo border-t-transparent"></span>
-                <span id="ville-chevron" class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-congo/10 text-congo">
-                  <Icon name="search" size={15} />
+                <span id="ville-spinner" class="hidden h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></span>
+                <span id="ville-chevron" class="combobox-chevron">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                 </span>
               </button>
-              <div id="ville-panel" class="ville-panel absolute left-0 right-0 top-full z-40 mt-2 hidden rounded-[8px] border border-congo/15 bg-white p-3 shadow-deep" data-lenis-prevent>
+              <div id="ville-panel" class="combobox-panel hidden" data-lenis-prevent>
                 <label class="relative block">
-                  <Icon name="search" size={15} class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                   <input
                     id="ville-search"
                     type="search"
                     autocomplete="off"
                     placeholder="Rechercher une ville…"
-                    class="bloc-control min-h-0 py-3 pl-10 pr-4"
+                    class="combobox-search"
                   />
                 </label>
-                <div id="ville-listbox" role="listbox" class="mt-3 max-h-64 overflow-y-auto pr-1">
+                <div id="ville-listbox" role="listbox" class="combobox-list">
                   <!-- Peuplé dynamiquement par JS -->
                 </div>
               </div>
@@ -245,9 +249,9 @@ const disponibilites = [
               required
               autocomplete="address-level2"
               class="bloc-control"
-              placeholder="Votre ville"
+              placeholder="Ta ville"
             />
-            <p id="ville-hint" class="mt-1 text-xs text-slate-500 hidden">Ou tape directement le nom de ta ville.</p>
+            <p id="ville-hint" class="mt-1 text-xs text-slate-400 hidden">Ou tape directement le nom de ta ville.</p>
           </div>
         </div>
 
@@ -271,50 +275,50 @@ const disponibilites = [
               aria-haspopup="listbox"
               aria-expanded="false"
               aria-controls="role-listbox"
-              class="bloc-control flex items-center justify-between gap-3 text-left"
+              class="bloc-control flex items-center justify-between gap-3 text-left w-full"
             >
               <span data-role-label class="truncate text-slate-400">Choisir un métier</span>
-              <span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-congo/10 text-congo">
-                <Icon name="search" size={15} />
+              <span class="combobox-chevron">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
               </span>
             </button>
-            <div id="role-panel" class="role-panel absolute left-0 right-0 top-full z-30 mt-2 hidden rounded-[8px] border border-congo/15 bg-white p-3 shadow-deep" data-lenis-prevent>
+            <div id="role-panel" class="combobox-panel hidden" data-lenis-prevent>
               <label class="relative block">
-                <Icon name="search" size={15} class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                 <input
                   id="role-search"
                   type="search"
                   autocomplete="off"
-                  placeholder="Rechercher un métier..."
-                  class="bloc-control min-h-0 py-3 pl-10 pr-4"
+                  placeholder="Rechercher un métier…"
+                  class="combobox-search"
                 />
               </label>
-              <div id="role-listbox" role="listbox" class="mt-3 max-h-72 overflow-y-auto pr-1">
+              <div id="role-listbox" role="listbox" class="combobox-list">
                 {roleGroups.map((group) => (
                   <div class="role-group" data-role-group>
-                    <p class="px-3 py-2 text-[0.66rem] font-bold uppercase tracking-[0.2em] text-congo">{group.label}</p>
-                    <div class="grid gap-1">
+                    <p class="combobox-group-label">{group.label}</p>
+                    <div>
                       {group.roles.map((role) => (
                         <button
                           type="button"
                           role="option"
-                          class="role-option flex w-full items-center justify-between rounded-[4px] px-3 py-2.5 text-left text-sm font-semibold text-slate-700 transition hover:bg-congo/5 hover:text-congo"
+                          class="combobox-option role-option"
                           data-role-option
                           data-role-value={role}
                           data-role-creative={creativeRoles.includes(role) ? "1" : "0"}
                           aria-selected="false"
                         >
                           <span>{role}</span>
-                          <Icon name="check" size={14} class="hidden text-congo" />
+                          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="combobox-check text-blue-600"><path d="M20 6 9 17l-5-5"/></svg>
                         </button>
                       ))}
                     </div>
                   </div>
                 ))}
-                <p class="hidden px-3 py-4 text-sm text-slate-500" data-role-empty>Aucun métier trouvé.</p>
+                <p class="combobox-empty hidden" data-role-empty>Aucun métier trouvé.</p>
               </div>
             </div>
-            <span class="text-xs text-slate-500">Tape quelques lettres pour retrouver vite ton métier.</span>
+            <span class="text-xs text-slate-400">Tape quelques lettres pour filtrer.</span>
           </div>
           <label class="bloc-field">
             <span class="bloc-label">Canal préféré</span>
@@ -607,9 +611,17 @@ const disponibilites = [
 
       function choosePays(code, name, flag) {
         paysHidden.value = name;
-        paysLabel.textContent = flag + " " + name;
+        // Update label text
+        paysLabel.textContent = name;
         paysLabel.classList.remove("text-slate-400");
-        paysLabel.classList.add("text-slate-900");
+        paysLabel.classList.add("text-slate-900", "font-medium");
+        // Show flag in trigger
+        var flagEl = document.getElementById("pays-flag-preview");
+        if (flagEl) { flagEl.textContent = flag; flagEl.classList.remove("hidden"); }
+        // Mark selected option
+        paysOptions.forEach(function(opt) {
+          opt.setAttribute("aria-selected", opt.dataset.paysName === name ? "true" : "false");
+        });
         closePays();
         paysTrigger.focus();
         selectedCountryName = name;
@@ -725,15 +737,15 @@ const disponibilites = [
           var btn = document.createElement("button");
           btn.type = "button";
           btn.role = "option";
-          btn.className = "ville-option flex w-full items-center rounded-[4px] px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-congo/5 hover:text-congo";
+          btn.className = "combobox-option ville-option";
           btn.dataset.villeName = city;
-          btn.textContent = city;
           btn.setAttribute("aria-selected", "false");
+          btn.innerHTML = '<span>' + city + '</span><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="combobox-check text-blue-600"><path d="M20 6 9 17l-5-5"/></svg>';
           btn.addEventListener("click", function () { chooseVille(city); });
           villeListbox.appendChild(btn);
         });
         var emptyEl = document.createElement("p");
-        emptyEl.className = "ville-empty hidden px-3 py-4 text-sm text-slate-500";
+        emptyEl.className = "combobox-empty hidden";
         emptyEl.textContent = "Aucune ville trouvée. Tape le nom ci-dessus.";
         villeListbox.appendChild(emptyEl);
       }

@@ -113,16 +113,170 @@ textarea.bloc-control {
 .bloc-select {
   appearance: none;
   padding-right: 3.1rem;
+  cursor: pointer;
   background-image:
-    linear-gradient(45deg, transparent 50%, #1466E0 50%),
-    linear-gradient(135deg, #1466E0 50%, transparent 50%),
-    linear-gradient(180deg, rgba(20, 102, 224, 0.1), rgba(20, 102, 224, 0.04));
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%231466E0' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"),
+    linear-gradient(180deg, rgba(20, 102, 224, 0.07), rgba(20, 102, 224, 0.03));
   background-position:
-    calc(100% - 1.32rem) 50%,
-    calc(100% - 1.02rem) 50%,
-    calc(100% - 2.6rem) 50%;
-  background-size: 0.32rem 0.32rem, 0.32rem 0.32rem, 1px 1.8rem;
+    calc(100% - 1rem) 50%,
+    calc(100% - 2.8rem) 50%;
+  background-size: 1rem 1rem, 1px 1.8rem;
   background-repeat: no-repeat;
+}
+
+/* ---- Combobox trigger open state ---- */
+.bloc-control[aria-expanded="true"] {
+  border-color: #1466E0;
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(20, 102, 224, 0.14), 0 18px 40px -30px rgba(20, 102, 224, 0.75);
+}
+
+/* ---- Combobox / dropdown panel ---- */
+.combobox-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 50;
+  border-radius: 14px;
+  border: 1px solid rgba(20, 102, 224, 0.16);
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow:
+    0 4px 6px -1px rgba(16, 22, 34, 0.05),
+    0 20px 50px -15px rgba(20, 102, 224, 0.22),
+    0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+  padding: 8px;
+  transform-origin: top center;
+  animation: panel-in 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+  overflow: hidden;
+}
+
+.combobox-panel.hidden {
+  display: none;
+}
+
+@keyframes panel-in {
+  from { opacity: 0; transform: scaleY(0.92) translateY(-6px); }
+  to   { opacity: 1; transform: scaleY(1)   translateY(0); }
+}
+
+/* ---- Search input inside panel ---- */
+.combobox-search {
+  width: 100%;
+  background: rgba(20, 102, 224, 0.04);
+  border: 1px solid rgba(20, 102, 224, 0.14);
+  border-radius: 8px;
+  color: #101622;
+  font-size: 0.875rem;
+  font-family: inherit;
+  padding: 0.65rem 0.875rem 0.65rem 2.6rem;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.combobox-search::placeholder { color: #94a3b8; }
+
+.combobox-search:focus {
+  border-color: #1466E0;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(20, 102, 224, 0.12);
+}
+
+/* ---- Listbox container ---- */
+.combobox-list {
+  margin-top: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(20, 102, 224, 0.25) transparent;
+}
+
+.combobox-list::-webkit-scrollbar { width: 4px; }
+.combobox-list::-webkit-scrollbar-thumb {
+  background: rgba(20, 102, 224, 0.25);
+  border-radius: 4px;
+}
+.combobox-list::-webkit-scrollbar-track { background: transparent; }
+
+/* ---- Group label ---- */
+.combobox-group-label {
+  padding: 0.6rem 0.75rem 0.25rem;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #1466E0;
+  opacity: 0.7;
+}
+
+/* ---- Option button ---- */
+.combobox-option {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.65rem;
+  border-radius: 8px;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #334155;
+  text-align: left;
+  transition: background 0.12s, color 0.12s;
+  cursor: pointer;
+}
+
+.combobox-option:hover,
+.combobox-option[aria-selected="true"] {
+  background: rgba(20, 102, 224, 0.07);
+  color: #1466E0;
+}
+
+.combobox-option[aria-selected="true"] .combobox-check {
+  display: block;
+}
+
+.combobox-check { display: none; margin-left: auto; flex-shrink: 0; }
+
+/* ---- Empty state ---- */
+.combobox-empty {
+  padding: 1rem 0.75rem;
+  font-size: 0.875rem;
+  color: #94a3b8;
+  text-align: center;
+}
+
+/* ---- Trigger icon (chevron) ---- */
+.combobox-chevron {
+  display: grid;
+  height: 2rem;
+  width: 2rem;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 6px;
+  background: rgba(20, 102, 224, 0.08);
+  color: #1466E0;
+  transition: background 0.15s, transform 0.2s ease;
+}
+
+[aria-expanded="true"] .combobox-chevron {
+  background: rgba(20, 102, 224, 0.14);
+  transform: rotate(180deg);
+}
+
+/* ---- Trigger flag preview ---- */
+.combobox-flag {
+  font-size: 1.25rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.bloc-panel {
+  border: 1px solid rgba(20, 102, 224, 0.12);
+  border-radius: 8px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: 0 24px 60px -46px rgba(16, 22, 34, 0.7);
 }
 
 .bloc-choice {
