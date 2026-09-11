@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "blocleopards-serve",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "serve"],
+      "port": 5056,
+      "url": "http://127.0.0.1:5056"
+    }
+  ]
+}

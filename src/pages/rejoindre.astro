@@ -5,6 +5,7 @@ import SectionHeader from "../components/SectionHeader.astro";
 import Icon from "../components/Icon.astro";
 import Turnstile from "../components/Turnstile.astro";
 import faq from "../data/faq.json";
+import countries from "../data/countries.json";
 
 // Rôles groupés — les rôles « créatifs » et « média » déclenchent le champ portfolio
 const roleGroups = [
@@ -96,7 +97,7 @@ const disponibilites = [
     )}
     {Astro.url.searchParams.get("status") === "error" && (
       <div class="mb-6 rounded-[6px] border border-red-200 bg-red-50 p-4 text-sm text-red-800">
-        Impossible d'enregistrer l'adhésion pour le moment. Vérifie la connexion Neon.
+        Une erreur est survenue lors de l'enregistrement. Réessaie dans quelques instants ou contacte-nous si le problème persiste.
       </div>
     )}
     {Astro.url.searchParams.get("status") === "missing" && (
@@ -151,14 +152,103 @@ const disponibilites = [
         </div>
 
         <div class="grid gap-4 md:grid-cols-2">
-          <label class="bloc-field">
+          <!-- Pays : combobox avec drapeau -->
+          <div class="bloc-field relative" data-country-combobox>
             <span class="bloc-label">Pays</span>
-            <input name="pays" autocomplete="country-name" class="bloc-control" />
-          </label>
-          <label class="bloc-field">
+            <input type="hidden" name="pays" id="pays-hidden" />
+            <button
+              id="pays-trigger"
+              type="button"
+              role="combobox"
+              aria-haspopup="listbox"
+              aria-expanded="false"
+              aria-controls="pays-listbox"
+              class="bloc-control flex items-center justify-between gap-3 text-left w-full"
+            >
+              <span data-pays-label class="truncate text-slate-400">Choisir un pays</span>
+              <span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-congo/10 text-congo">
+                <Icon name="search" size={15} />
+              </span>
+            </button>
+            <div id="pays-panel" class="pays-panel absolute left-0 right-0 top-full z-40 mt-2 hidden rounded-[8px] border border-congo/15 bg-white p-3 shadow-deep" data-lenis-prevent>
+              <label class="relative block">
+                <Icon name="search" size={15} class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  id="pays-search"
+                  type="search"
+                  autocomplete="off"
+                  placeholder="Rechercher un pays…"
+                  class="bloc-control min-h-0 py-3 pl-10 pr-4"
+                />
+              </label>
+              <div id="pays-listbox" role="listbox" class="mt-3 max-h-64 overflow-y-auto pr-1">
+                {countries.map((c) => (
+                  <button
+                    type="button"
+                    role="option"
+                    class="pays-option flex w-full items-center gap-3 rounded-[4px] px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-congo/5 hover:text-congo"
+                    data-pays-code={c.code}
+                    data-pays-name={c.name}
+                    data-pays-flag={c.flag}
+                    aria-selected="false"
+                  >
+                    <span class="text-xl leading-none">{c.flag}</span>
+                    <span>{c.name}</span>
+                  </button>
+                ))}
+                <p class="hidden px-3 py-4 text-sm text-slate-500" data-pays-empty>Aucun pays trouvé.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ville : dynamique selon le pays -->
+          <div class="bloc-field relative" id="ville-field">
             <span class="bloc-label">Ville *</span>
-            <input name="ville" required autocomplete="address-level2" class="bloc-control" />
-          </label>
+            <!-- Combobox ville (visible quand des villes sont disponibles) -->
+            <div id="ville-combobox-wrap" class="hidden relative" data-city-combobox>
+              <input type="hidden" name="ville" id="ville-hidden" required />
+              <button
+                id="ville-trigger"
+                type="button"
+                role="combobox"
+                aria-haspopup="listbox"
+                aria-expanded="false"
+                aria-controls="ville-listbox"
+                class="bloc-control flex items-center justify-between gap-3 text-left w-full"
+              >
+                <span data-ville-label class="truncate text-slate-400">Choisir une ville</span>
+                <span id="ville-spinner" class="hidden h-5 w-5 animate-spin rounded-full border-2 border-congo border-t-transparent"></span>
+                <span id="ville-chevron" class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-congo/10 text-congo">
+                  <Icon name="search" size={15} />
+                </span>
+              </button>
+              <div id="ville-panel" class="ville-panel absolute left-0 right-0 top-full z-40 mt-2 hidden rounded-[8px] border border-congo/15 bg-white p-3 shadow-deep" data-lenis-prevent>
+                <label class="relative block">
+                  <Icon name="search" size={15} class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    id="ville-search"
+                    type="search"
+                    autocomplete="off"
+                    placeholder="Rechercher une ville…"
+                    class="bloc-control min-h-0 py-3 pl-10 pr-4"
+                  />
+                </label>
+                <div id="ville-listbox" role="listbox" class="mt-3 max-h-64 overflow-y-auto pr-1">
+                  <!-- Peuplé dynamiquement par JS -->
+                </div>
+              </div>
+            </div>
+            <!-- Champ libre ville (fallback ou pas de pays sélectionné) -->
+            <input
+              id="ville-free"
+              name="ville"
+              required
+              autocomplete="address-level2"
+              class="bloc-control"
+              placeholder="Votre ville"
+            />
+            <p id="ville-hint" class="mt-1 text-xs text-slate-500 hidden">Ou tape directement le nom de ta ville.</p>
+          </div>
         </div>
 
         <div class="grid gap-4 md:grid-cols-2">
@@ -457,6 +547,316 @@ const disponibilites = [
 
       select.addEventListener("change", sync);
       sync();
+    })();
+  </script>
+
+  <!-- ===== Pays & Ville comboboxes ===== -->
+  <script is:inline>
+    (function () {
+      // ---- PAYS ----
+      var paysHidden = document.getElementById("pays-hidden");
+      var paysTrigger = document.getElementById("pays-trigger");
+      var paysPanel = document.getElementById("pays-panel");
+      var paysSearch = document.getElementById("pays-search");
+      var paysLabel = document.querySelector("[data-pays-label]");
+      var paysOptions = Array.from(document.querySelectorAll(".pays-option"));
+      var paysEmpty = document.querySelector("[data-pays-empty]");
+
+      // ---- VILLE ----
+      var villeHidden = document.getElementById("ville-hidden");
+      var villeTrigger = document.getElementById("ville-trigger");
+      var villePanel = document.getElementById("ville-panel");
+      var villeSearch = document.getElementById("ville-search");
+      var villeLabel = document.querySelector("[data-ville-label]");
+      var villeListbox = document.getElementById("ville-listbox");
+      var villeComboWrap = document.getElementById("ville-combobox-wrap");
+      var villeFree = document.getElementById("ville-free");
+      var villeSpinner = document.getElementById("ville-spinner");
+      var villeChevron = document.getElementById("ville-chevron");
+      var villeHint = document.getElementById("ville-hint");
+
+      var allCities = [];
+      var selectedCountryName = "";
+
+      function norm(s) {
+        return String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      }
+
+      // ---- Pays panel open/close ----
+      function openPays() {
+        paysPanel.classList.remove("hidden");
+        paysTrigger.setAttribute("aria-expanded", "true");
+        setTimeout(function () { paysSearch.focus(); }, 20);
+      }
+      function closePays() {
+        paysPanel.classList.add("hidden");
+        paysTrigger.setAttribute("aria-expanded", "false");
+        paysSearch.value = "";
+        filterPays("");
+      }
+      function filterPays(q) {
+        var n = norm(q);
+        var visible = 0;
+        paysOptions.forEach(function (opt) {
+          var show = !n || norm(opt.dataset.paysName).includes(n);
+          opt.classList.toggle("hidden", !show);
+          if (show) visible++;
+        });
+        if (paysEmpty) paysEmpty.classList.toggle("hidden", visible > 0);
+      }
+
+      function choosePays(code, name, flag) {
+        paysHidden.value = name;
+        paysLabel.textContent = flag + " " + name;
+        paysLabel.classList.remove("text-slate-400");
+        paysLabel.classList.add("text-slate-900");
+        closePays();
+        paysTrigger.focus();
+        selectedCountryName = name;
+        loadCities(name);
+      }
+
+      if (paysTrigger) {
+        paysTrigger.addEventListener("click", function () {
+          paysPanel.classList.contains("hidden") ? openPays() : closePays();
+        });
+      }
+      if (paysSearch) {
+        paysSearch.addEventListener("input", function () { filterPays(paysSearch.value); });
+      }
+      paysOptions.forEach(function (opt) {
+        opt.addEventListener("click", function () {
+          choosePays(opt.dataset.paysCode, opt.dataset.paysName, opt.dataset.paysFlag);
+        });
+      });
+      document.addEventListener("click", function (e) {
+        var root = paysTrigger && paysTrigger.closest("[data-country-combobox]");
+        if (root && !root.contains(e.target)) closePays();
+      });
+
+      // ---- Ville panel open/close ----
+      function openVille() {
+        villePanel.classList.remove("hidden");
+        villeTrigger && villeTrigger.setAttribute("aria-expanded", "true");
+        setTimeout(function () { villeSearch && villeSearch.focus(); }, 20);
+      }
+      function closeVille() {
+        villePanel && villePanel.classList.add("hidden");
+        villeTrigger && villeTrigger.setAttribute("aria-expanded", "false");
+        if (villeSearch) { villeSearch.value = ""; filterVilles(""); }
+      }
+      function filterVilles(q) {
+        var n = norm(q);
+        var items = villeListbox ? Array.from(villeListbox.querySelectorAll(".ville-option")) : [];
+        var visible = 0;
+        items.forEach(function (item) {
+          var show = !n || norm(item.dataset.villeName).includes(n);
+          item.classList.toggle("hidden", !show);
+          if (show) visible++;
+        });
+        var emptyEl = villeListbox && villeListbox.querySelector(".ville-empty");
+        if (emptyEl) emptyEl.classList.toggle("hidden", visible > 0);
+      }
+
+      function chooseVille(name) {
+        if (villeHidden) villeHidden.value = name;
+        if (villeLabel) {
+          villeLabel.textContent = name;
+          villeLabel.classList.remove("text-slate-400");
+          villeLabel.classList.add("text-slate-900");
+        }
+        closeVille();
+        if (villeTrigger) villeTrigger.focus();
+      }
+
+      if (villeTrigger) {
+        villeTrigger.addEventListener("click", function () {
+          villePanel.classList.contains("hidden") ? openVille() : closeVille();
+        });
+      }
+      if (villeSearch) {
+        villeSearch.addEventListener("input", function () { filterVilles(villeSearch.value); });
+      }
+      document.addEventListener("click", function (e) {
+        var root = villeTrigger && villeTrigger.closest("[data-city-combobox]");
+        if (root && !root.contains(e.target)) closeVille();
+      });
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") { closePays(); closeVille(); }
+      });
+
+      // ---- Charger les villes depuis l'API ----
+      function showSpinner(on) {
+        if (villeSpinner) villeSpinner.classList.toggle("hidden", !on);
+        if (villeChevron) villeChevron.classList.toggle("hidden", on);
+      }
+
+      function switchToFreeText(hint) {
+        if (villeComboWrap) villeComboWrap.classList.add("hidden");
+        if (villeFree) {
+          villeFree.classList.remove("hidden");
+          villeFree.removeAttribute("disabled");
+        }
+        if (villeHidden) villeHidden.removeAttribute("required");
+        if (villeHint) {
+          villeHint.textContent = hint || "Saisissez votre ville.";
+          villeHint.classList.remove("hidden");
+        }
+      }
+
+      function switchToCombobox() {
+        if (villeComboWrap) villeComboWrap.classList.remove("hidden");
+        if (villeFree) {
+          villeFree.classList.add("hidden");
+          villeFree.setAttribute("disabled", "disabled");
+          villeFree.removeAttribute("name");
+        }
+        if (villeHidden) {
+          villeHidden.setAttribute("required", "required");
+          villeHidden.setAttribute("name", "ville");
+        }
+        if (villeHint) villeHint.classList.remove("hidden");
+      }
+
+      function populateCities(cities) {
+        if (!villeListbox) return;
+        villeListbox.innerHTML = "";
+        cities.forEach(function (city) {
+          var btn = document.createElement("button");
+          btn.type = "button";
+          btn.role = "option";
+          btn.className = "ville-option flex w-full items-center rounded-[4px] px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-congo/5 hover:text-congo";
+          btn.dataset.villeName = city;
+          btn.textContent = city;
+          btn.setAttribute("aria-selected", "false");
+          btn.addEventListener("click", function () { chooseVille(city); });
+          villeListbox.appendChild(btn);
+        });
+        var emptyEl = document.createElement("p");
+        emptyEl.className = "ville-empty hidden px-3 py-4 text-sm text-slate-500";
+        emptyEl.textContent = "Aucune ville trouvée. Tape le nom ci-dessus.";
+        villeListbox.appendChild(emptyEl);
+      }
+
+      function loadCities(countryName) {
+        // Reset
+        if (villeHidden) villeHidden.value = "";
+        if (villeLabel) { villeLabel.textContent = "Choisir une ville"; villeLabel.classList.add("text-slate-400"); villeLabel.classList.remove("text-slate-900"); }
+        if (villeListbox) villeListbox.innerHTML = "";
+        if (villeSearch) villeSearch.value = "";
+
+        showSpinner(true);
+        // Map pays FR → nom EN attendu par l'API countriesnow
+        var apiName = countryName;
+        var frToEn = {
+          "Congo (RDC)": "Democratic Republic of the Congo",
+          "Congo": "Republic of the Congo",
+          "Allemagne": "Germany",
+          "Autriche": "Austria",
+          "Belgique": "Belgium",
+          "Brésil": "Brazil",
+          "Cameroun": "Cameroon",
+          "Chine": "China",
+          "Corée du Sud": "South Korea",
+          "Côte d'Ivoire": "Ivory Coast",
+          "Danemark": "Denmark",
+          "Égypte": "Egypt",
+          "Émirats arabes unis": "United Arab Emirates",
+          "Espagne": "Spain",
+          "États-Unis": "United States",
+          "Finlande": "Finland",
+          "France": "France",
+          "Ghana": "Ghana",
+          "Grèce": "Greece",
+          "Irlande": "Ireland",
+          "Islande": "Iceland",
+          "Italie": "Italy",
+          "Japon": "Japan",
+          "Jordanie": "Jordan",
+          "Luxembourg": "Luxembourg",
+          "Maroc": "Morocco",
+          "Mexique": "Mexico",
+          "Nigeria": "Nigeria",
+          "Norvège": "Norway",
+          "Nouvelle-Zélande": "New Zealand",
+          "Pays-Bas": "Netherlands",
+          "Pérou": "Peru",
+          "Philippines": "Philippines",
+          "Pologne": "Poland",
+          "Portugal": "Portugal",
+          "Royaume-Uni": "United Kingdom",
+          "Russie": "Russia",
+          "Sénégal": "Senegal",
+          "Suède": "Sweden",
+          "Suisse": "Switzerland",
+          "Tchad": "Chad",
+          "Tunisie": "Tunisia",
+          "Turquie": "Turkey",
+          "Ukraine": "Ukraine",
+          "Vietnam": "Vietnam",
+          "Algérie": "Algeria",
+          "Angola": "Angola",
+          "Bénin": "Benin",
+          "Burkina Faso": "Burkina Faso",
+          "Burundi": "Burundi",
+          "Cap-Vert": "Cape Verde",
+          "Centrafrique": "Central African Republic",
+          "Comores": "Comoros",
+          "Djibouti": "Djibouti",
+          "Érythrée": "Eritrea",
+          "Éthiopie": "Ethiopia",
+          "Gabon": "Gabon",
+          "Gambie": "Gambia",
+          "Guinée": "Guinea",
+          "Guinée-Bissau": "Guinea-Bissau",
+          "Guinée équatoriale": "Equatorial Guinea",
+          "Kenya": "Kenya",
+          "Lesotho": "Lesotho",
+          "Libéria": "Liberia",
+          "Libye": "Libya",
+          "Madagascar": "Madagascar",
+          "Malawi": "Malawi",
+          "Mali": "Mali",
+          "Mauritanie": "Mauritania",
+          "Maurice": "Mauritius",
+          "Mozambique": "Mozambique",
+          "Namibie": "Namibia",
+          "Niger": "Niger",
+          "Ouganda": "Uganda",
+          "Rwanda": "Rwanda",
+          "Sao Tomé-et-Principe": "Sao Tome and Principe",
+          "Seychelles": "Seychelles",
+          "Sierra Leone": "Sierra Leone",
+          "Somalie": "Somalia",
+          "Soudan": "Sudan",
+          "Soudan du Sud": "South Sudan",
+          "Tanzanie": "Tanzania",
+          "Togo": "Togo",
+          "Zambie": "Zambia",
+          "Zimbabwe": "Zimbabwe",
+          "Afrique du Sud": "South Africa"
+        };
+        if (frToEn[countryName]) apiName = frToEn[countryName];
+
+        fetch("https://countriesnow.space/api/v0.1/countries/cities/q?country=" + encodeURIComponent(apiName))
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            showSpinner(false);
+            if (data.error || !Array.isArray(data.data) || data.data.length === 0) {
+              switchToFreeText("Aucune ville trouvée pour ce pays. Saisissez votre ville.");
+              return;
+            }
+            var cities = data.data.sort();
+            allCities = cities;
+            populateCities(cities);
+            switchToCombobox();
+            if (villeHint) villeHint.textContent = "Ou tape le nom de ta ville directement.";
+          })
+          .catch(function () {
+            showSpinner(false);
+            switchToFreeText("Impossible de charger les villes. Saisissez votre ville.");
+          });
+      }
     })();
   </script>
 </BaseLayout>
