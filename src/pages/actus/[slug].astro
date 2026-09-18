@@ -11,7 +11,7 @@ if (!item) return Astro.redirect("/actus");
 
 const shareUrl = Astro.url?.toString() ?? "";
 ---
-<BaseLayout title={item.title} description={item.description} image={item.image}>
+<BaseLayout title={item.title} description={item.description}>
   <!-- ================= HERO ARTICLE ================= -->
   <section class="relative flex min-h-[46vh] items-end overflow-hidden bg-congo-night text-white">
     {/* z-0 : en -z-10 l'image passerait derrière le fond opaque de la section. */}

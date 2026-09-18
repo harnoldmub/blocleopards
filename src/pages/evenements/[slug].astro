@@ -24,7 +24,7 @@ const FR_MONTHS = ["JAN","FEV","MAR","AVR","MAI","JUIN","JUIL","AOUT","SEPT","OC
 const month = FR_MONTHS[parseInt(event.date.split("-")[1]) - 1];
 const day = String(parseInt(event.date.split("-")[2])).padStart(2, "0");
 ---
-<BaseLayout title={event.title} description={event.description} image={event.image}>
+<BaseLayout title={event.title} description={event.description}>
   <!-- ================= GRANDE AFFICHE ================= -->
   <section class="relative flex min-h-[60vh] items-end overflow-hidden bg-congo-night text-white">
     {/* z-0 (et non -z-10) : en negatif, l'affiche passe DERRIERE le fond opaque de la section. */}

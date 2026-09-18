@@ -1,16 +1,33 @@
 ---
-const { title, description, url } = Astro.props;
+const { title, description, url, image, noindex } = Astro.props;
 const SITE = "https://blocleopards.com";
 const canonical = url ?? SITE;
+
+// Image OG par defaut : carree (1:1), legere, pour garantir un apercu compact
+// (petite vignette a gauche) plutot qu'une grande banniere sur WhatsApp/iMessage/X.
+// On n'utilise jamais d'image par-page ici : les visuels des pages (posters,
+// photos de match, images d'articles/evenements Neon) ne sont pas carres et
+// casseraient l'apercu compact. Voir src/layouts/BaseLayout.astro.
+const DEFAULT_OG_IMAGE = `${SITE}/brand/social-logo.png`;
+const DEFAULT_OG_SIZE = 512;
+
+const resolvedImage = image
+  ? new URL(image, SITE).toString()
+  : DEFAULT_OG_IMAGE;
 ---
 <title>{title}</title>
 <meta name="description" content={description} />
 <link rel="canonical" href={canonical} />
+{noindex && <meta name="robots" content="noindex, nofollow" />}
 <meta property="og:title" content={title} />
 <meta property="og:description" content={description} />
 <meta property="og:type" content="website" />
 <meta property="og:url" content={canonical} />
 <meta property="og:site_name" content="Bloc Léopards" />
+<meta property="og:image" content={resolvedImage} />
+<meta property="og:image:width" content={String(DEFAULT_OG_SIZE)} />
+<meta property="og:image:height" content={String(DEFAULT_OG_SIZE)} />
 <meta name="twitter:card" content="summary" />
 <meta name="twitter:title" content={title} />
 <meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={resolvedImage} />
