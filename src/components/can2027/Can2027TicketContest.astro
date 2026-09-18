@@ -69,7 +69,7 @@
             />
           </div>
 
-          <!-- Numéro WhatsApp & Ville -->
+          <!-- Numéro WhatsApp & Email (Optionnel) -->
           <div class="grid gap-4 sm:grid-cols-2">
             <div>
               <label for="contest-phone" class="block text-xs font-bold uppercase tracking-wider text-white/90 mb-2">
@@ -87,17 +87,32 @@
             </div>
 
             <div>
-              <label for="contest-city" class="block text-xs font-bold uppercase tracking-wider text-white/90 mb-2">
-                Ville / Commune de résidence
+              <label for="contest-email" class="block text-xs font-bold uppercase tracking-wider text-white/90 mb-2">
+                Adresse Email <span class="text-white/40 text-[0.68rem] font-normal lowercase">(optionnel)</span>
               </label>
               <input
-                type="text"
-                id="contest-city"
-                name="ville"
-                placeholder="Ex: Kinshasa (Gombe, Lemba...)"
+                type="email"
+                id="contest-email"
+                name="email"
+                placeholder="exemple@email.com"
                 class="w-full rounded-xl border border-white/20 bg-congo-night/80 px-4 py-3.5 text-sm text-white placeholder-white/40 focus:border-or focus:bg-congo-night focus:outline-none transition-all"
               />
+              <span class="mt-1 block text-[0.68rem] text-white/50">Facultatif, pour recevoir les infos du match.</span>
             </div>
+          </div>
+
+          <!-- Ville / Commune de résidence -->
+          <div>
+            <label for="contest-city" class="block text-xs font-bold uppercase tracking-wider text-white/90 mb-2">
+              Ville / Commune de résidence <span class="text-white/40 text-[0.68rem] font-normal lowercase">(optionnel)</span>
+            </label>
+            <input
+              type="text"
+              id="contest-city"
+              name="ville"
+              placeholder="Ex: Kinshasa (Gombe, Lemba, Bandalungwa...)"
+              class="w-full rounded-xl border border-white/20 bg-congo-night/80 px-4 py-3.5 text-sm text-white placeholder-white/40 focus:border-or focus:bg-congo-night focus:outline-none transition-all"
+            />
           </div>
 
           <!-- Match concerné : Kinshasa fixé -->
@@ -202,6 +217,7 @@
         const payload = {
           nom: formData.get("nom"),
           telephone: formData.get("telephone"),
+          email: formData.get("email"),
           ville: formData.get("ville"),
           matchChoix: formData.get("matchChoix"),
           message: formData.get("message")
