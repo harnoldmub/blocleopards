@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600">
+  <rect width="900" height="200" fill="#3E9A00"/>
+  <rect y="200" width="900" height="200" fill="#FFFFFF"/>
+  <rect y="400" width="900" height="200" fill="#E31B23"/>
+  <polygon points="0,0 300,300 0,600" fill="#0073CE"/>
+  <!-- Central Coat of Arms representation -->
+  <g transform="translate(450, 300) scale(0.65)">
+    <!-- Shield -->
+    <path d="M-60,-70 L60,-70 C60,-70 65,40 0,80 C-65,40 -60,-70 -60,-70 Z" fill="#E8E8E8" stroke="#777" stroke-width="3"/>
+    <!-- Silk cotton tree -->
+    <path d="M-6,20 L6,20 L8,-15 L-8,-15 Z" fill="#7A4B23"/>
+    <path d="M-35,-20 C-40,-55 40,-55 35,-20 C30,-5 20,5 -35,-20 Z" fill="#2E7D32"/>
+    <!-- 6 Yellow Stars -->
+    <g fill="#FCD116">
+      <polygon points="-70,-90 -66,-78 -54,-78 -64,-70 -60,-58 -70,-66 -80,-58 -76,-70 -86,-78 -74,-78"/>
+      <polygon points="-42,-95 -38,-83 -26,-83 -36,-75 -32,-63 -42,-71 -52,-63 -48,-75 -58,-83 -46,-83"/>
+      <polygon points="-14,-98 -10,-86 2,-86 -8,-78 -4,-66 -14,-74 -24,-66 -20,-78 -30,-86 -18,-86"/>
+      <polygon points="14,-98 18,-86 30,-86 20,-78 24,-66 14,-74 4,-66 8,-78 -2,-86 10,-86"/>
+      <polygon points="42,-95 46,-83 58,-83 48,-75 52,-63 42,-71 32,-63 36,-75 26,-83 38,-83"/>
+      <polygon points="70,-90 74,-78 86,-78 76,-70 80,-58 70,-66 60,-58 64,-70 54,-78 66,-78"/>
+    </g>
+    <!-- Ribbon -->
+    <path d="M-65,95 Q0,110 65,95 L60,85 Q0,100 -60,85 Z" fill="#EEEEEE" stroke="#999" stroke-width="2"/>
+  </g>
+</svg>

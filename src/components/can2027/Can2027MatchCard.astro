@@ -1,0 +1,238 @@
+---
+/**
+ * Composant de match officiel CAN 2027.
+ * Gère les 3 états réglementaires : UPCOMING, LIVE, FINISHED.
+ * Système graphique Bloc Léopards propre et affirmé.
+ */
+import type { MatchFixture } from "../../data/can2027";
+
+interface Props {
+  match: MatchFixture;
+  isDetailed?: boolean;
+}
+
+const { match, isDetailed = true } = Astro.props;
+
+const isFinished = match.status === "FINISHED";
+const isLive = match.status === "LIVE";
+const isUpcoming = match.status === "UPCOMING";
+---
+
+<article class="can-match-card group relative overflow-hidden rounded-xl border border-white/15 bg-congo-night/80 shadow-2xl backdrop-blur-md transition-all duration-300 hover:border-or/40" data-status={match.status}>
+  <!-- Bordure tricolore supérieure -->
+  <div class="h-1 w-full bg-gradient-to-r from-congo via-or to-feu"></div>
+
+  <div class="p-5 sm:p-7">
+    <!-- En-tête : Badge Journée & Statut -->
+    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
+      <div class="flex items-center gap-2.5">
+        <span class="rounded bg-congo px-2.5 py-1 text-[0.68rem] font-black uppercase tracking-[0.16em] text-white">
+          {match.matchdayLabel}
+        </span>
+        <span class="text-[0.7rem] font-bold uppercase tracking-[0.16em] text-white/70">
+          Éliminatoires CAN 2027
+        </span>
+      </div>
+
+      <!-- Statut du match -->
+      <div>
+        {isUpcoming && (
+          <span class="inline-flex items-center gap-1.5 rounded-full border border-or/40 bg-or/10 px-3 py-1 text-[0.65rem] font-black uppercase tracking-[0.16em] text-or">
+            <span class="h-1.5 w-1.5 rounded-full bg-or"></span>
+            À venir
+          </span>
+        )}
+        {isLive && (
+          <span class="inline-flex items-center gap-1.5 rounded-full border border-feu/50 bg-feu/20 px-3 py-1 text-[0.65rem] font-black uppercase tracking-[0.16em] text-feu animate-pulse">
+            <span class="h-1.5 w-1.5 rounded-full bg-feu"></span>
+            En direct
+          </span>
+        )}
+        {isFinished && (
+          <span class="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-[0.65rem] font-black uppercase tracking-[0.16em] text-emerald-400">
+            Terminé
+          </span>
+        )}
+      </div>
+    </div>
+
+    <!-- Affrontement : Equipes & Scores -->
+    <div class="my-6 grid grid-cols-[1fr_auto_1fr] items-center gap-4 sm:gap-6">
+      <!-- Équipe Domicile -->
+      <div class="flex flex-col items-center text-center sm:flex-row sm:items-center sm:gap-4 sm:text-left">
+        <div class="relative flex h-14 w-14 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white/5 p-2 shadow-inner">
+          <img
+            src={match.homeTeam.flag}
+            alt={match.homeTeam.name}
+            class="max-h-full max-w-full rounded-[2px] object-cover shadow-sm"
+            loading="lazy"
+          />
+          {match.homeTeam.isRDC && (
+            <span class="absolute -top-1.5 -right-1.5 rounded-full bg-or px-1.5 py-0.2 text-[0.55rem] font-black text-congo-night shadow">
+              RDC
+            </span>
+          )}
+        </div>
+        <div class="mt-2 sm:mt-0 min-w-0">
+          <h3 class="font-display text-lg uppercase tracking-wide text-white sm:text-2xl leading-none">
+            {match.homeTeam.name}
+          </h3>
+          <span class="text-[0.68rem] font-bold uppercase tracking-widest text-white/50">
+            {match.homeTeam.code}
+          </span>
+        </div>
+      </div>
+
+      <!-- Séparateur / Score -->
+      <div class="flex flex-col items-center justify-center px-2">
+        {isFinished && match.score ? (
+          <div class="flex items-center gap-2 rounded-lg bg-white/10 px-4 py-2 border border-white/20">
+            <span class="font-mega text-3xl text-white sm:text-4xl">{match.score.home}</span>
+            <span class="text-white/40">–</span>
+            <span class="font-mega text-3xl text-white sm:text-4xl">{match.score.away}</span>
+          </div>
+        ) : (
+          <div class="flex flex-col items-center">
+            <span class="font-display text-2xl uppercase tracking-widest text-or sm:text-3xl">VS</span>
+            <span class="text-[0.62rem] font-bold uppercase tracking-widest text-white/40">{match.city}</span>
+          </div>
+        )}
+      </div>
+
+      <!-- Équipe Extérieur -->
+      <div class="flex flex-col items-center text-center sm:flex-row-reverse sm:items-center sm:gap-4 sm:text-right">
+        <div class="relative flex h-14 w-14 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white/5 p-2 shadow-inner">
+          <img
+            src={match.awayTeam.flag}
+            alt={match.awayTeam.name}
+            class="max-h-full max-w-full rounded-[2px] object-cover shadow-sm"
+            loading="lazy"
+          />
+          {match.awayTeam.isRDC && (
+            <span class="absolute -top-1.5 -left-1.5 rounded-full bg-or px-1.5 py-0.2 text-[0.55rem] font-black text-congo-night shadow">
+              RDC
+            </span>
+          )}
+        </div>
+        <div class="mt-2 sm:mt-0 min-w-0">
+          <h3 class="font-display text-lg uppercase tracking-wide text-white sm:text-2xl leading-none">
+            {match.awayTeam.name}
+          </h3>
+          <span class="text-[0.68rem] font-bold uppercase tracking-widest text-white/50">
+            {match.awayTeam.code}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Détails : Date, Horaire, Stade -->
+    <div class="rounded-lg border border-white/10 bg-white/[0.03] p-4 text-center sm:flex sm:items-center sm:justify-between sm:text-left">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:gap-4">
+        <div class="flex items-center justify-center gap-2 text-sm font-bold text-white">
+          <svg class="h-4 w-4 text-or" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <span>{match.dateStr}</span>
+        </div>
+        <span class="hidden text-white/30 sm:inline">•</span>
+        <div class="mt-1 flex items-center justify-center gap-2 text-xs text-white/70 sm:mt-0">
+          <svg class="h-3.5 w-3.5 text-or" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span class="font-semibold text-or">{match.timeStr}</span>
+        </div>
+      </div>
+
+      <div class="mt-2 flex items-center justify-center gap-2 text-xs text-white/70 sm:mt-0">
+        <svg class="h-3.5 w-3.5 text-congo-bright" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+        <span class="font-medium text-white/90">{match.venue}, {match.city}</span>
+      </div>
+    </div>
+
+    <!-- Si match TERMINÉ : Buteurs, Statistiques & Médias -->
+    {isFinished && isDetailed && (
+      <div class="mt-6 border-t border-white/10 pt-5">
+        <!-- Buteurs -->
+        {match.scorers && match.scorers.length > 0 && (
+          <div class="mb-4">
+            <h4 class="text-[0.66rem] font-bold uppercase tracking-[0.2em] text-or mb-2">Buteurs</h4>
+            <div class="flex flex-wrap gap-2">
+              {match.scorers.map((s) => (
+                <span class="inline-flex items-center gap-1.5 rounded bg-white/10 px-2.5 py-1 text-xs text-white">
+                  ⚽ <span class="font-semibold">{s.player}</span>
+                  <span class="text-[0.7rem] text-or">{s.minute}</span>
+                  <span class="text-[0.65rem] text-white/50 font-bold">({s.team})</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <!-- Résumé -->
+        {match.summary && (
+          <p class="text-sm leading-relaxed text-white/80 mb-4">{match.summary}</p>
+        )}
+
+        <!-- Statistiques clé si disponibles -->
+        {match.stats && (
+          <div class="mb-4 rounded-lg bg-black/40 p-4 border border-white/10">
+            <h4 class="text-[0.65rem] font-black uppercase tracking-[0.2em] text-white/70 mb-3 text-center">
+              Statistiques du match
+            </h4>
+            <div class="space-y-2 text-xs">
+              {match.stats.possession && (
+                <div>
+                  <div class="flex justify-between text-white/80 font-semibold mb-1">
+                    <span>{match.stats.possession[0]}%</span>
+                    <span class="text-white/50 text-[0.65rem] uppercase">Possession</span>
+                    <span>{match.stats.possession[1]}%</span>
+                  </div>
+                  <div class="h-1.5 w-full rounded-full bg-white/10 flex overflow-hidden">
+                    <div class="bg-congo" style={`width: ${match.stats.possession[0]}%`}></div>
+                    <div class="bg-white/30" style={`width: ${match.stats.possession[1]}%`}></div>
+                  </div>
+                </div>
+              )}
+              {match.stats.shots && (
+                <div class="flex justify-between py-1 border-b border-white/5 text-white/80">
+                  <span class="font-bold">{match.stats.shots[0]}</span>
+                  <span class="text-white/50">Tirs totaux</span>
+                  <span class="font-bold">{match.stats.shots[1]}</span>
+                </div>
+              )}
+              {match.stats.shotsOnTarget && (
+                <div class="flex justify-between py-1 border-b border-white/5 text-white/80">
+                  <span class="font-bold">{match.stats.shotsOnTarget[0]}</span>
+                  <span class="text-white/50">Tirs cadrés</span>
+                  <span class="font-bold">{match.stats.shotsOnTarget[1]}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        <!-- Liens Débrief / Média -->
+        <div class="flex flex-wrap items-center gap-3 pt-2">
+          {match.articleUrl && (
+            <a href={match.articleUrl} class="rounded-full bg-or px-4 py-2 text-xs font-bold uppercase tracking-wider text-congo-night hover:bg-yellow-300">
+              Lire le compte-rendu →
+            </a>
+          )}
+          {match.videoUrl && (
+            <a href={match.videoUrl} class="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:border-or">
+              ▶ Revoir les buts
+            </a>
+          )}
+          {match.galleryUrl && (
+            <a href={match.galleryUrl} class="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:border-or">
+              Photos du match
+            </a>
+          )}
+        </div>
+      </div>
+    )}
+  </div>
+</article>

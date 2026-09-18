@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600">
+  <!-- 7 stripes -->
+  <rect width="1200" height="85.7" y="0" fill="#319208"/>
+  <rect width="1200" height="85.7" y="85.7" fill="#FFD200"/>
+  <rect width="1200" height="85.7" y="171.4" fill="#DE2010"/>
+  <rect width="1200" height="85.7" y="257.1" fill="#000000"/>
+  <rect width="1200" height="85.7" y="342.8" fill="#DE2010"/>
+  <rect width="1200" height="85.7" y="428.5" fill="#FFD200"/>
+  <rect width="1200" height="85.8" y="514.2" fill="#319208"/>
+  <!-- Triangle with black border -->
+  <polygon points="0,0 420,300 0,600" fill="#000000"/>
+  <polygon points="0,15 390,300 0,585" fill="#FFFFFF"/>
+  <!-- Red Star -->
+  <polygon points="140,210 155,260 205,260 165,290 180,340 140,310 100,340 115,290 75,260 125,260" fill="#DE2010"/>
+  <!-- Zimbabwe bird silhouette in gold -->
+  <path d="M130,270 C135,260 148,260 152,272 C154,278 152,284 148,287 L152,305 L135,305 L133,292 C128,290 125,282 130,270 Z" fill="#FFD200"/>
+</svg>

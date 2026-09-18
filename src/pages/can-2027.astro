@@ -1,0 +1,434 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Can2027MatchCard from "../components/can2027/Can2027MatchCard.astro";
+import Can2027GroupTable from "../components/can2027/Can2027GroupTable.astro";
+import Can2027Timeline from "../components/can2027/Can2027Timeline.astro";
+import Can2027Squad from "../components/can2027/Can2027Squad.astro";
+import Can2027TicketContest from "../components/can2027/Can2027TicketContest.astro";
+import { CAN2027_DATA, GROUP_E_TEAMS, computeStandings } from "../data/can2027";
+import { getCollection } from "astro:content";
+
+// Récupération des actualités taguées "CAN 2027"
+const allNews = await getCollection("news");
+const canNews = allNews
+  .filter((post) => post.data.tags && post.data.tags.includes("CAN 2027"))
+  .sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
+
+const fixtures = CAN2027_DATA.fixtures;
+const standings = CAN2027_DATA.groupE;
+---
+
+<BaseLayout
+  title="Éliminatoires CAN 2027 — Les Léopards | Bloc Léopards"
+  description="Campagne officielle des Éliminatoires de la CAN 2027 pour les Léopards de la RDC. Tour oyo biso nde. Calendrier, Groupe E, effectif et actualités de la mobilisation."
+  image="/media/can-2027/poster-equipe-bleu-800.webp"
+>
+  <div class="can-campaign-page bg-[#050b18] text-white">
+
+    <!-- ================= 1. HERO MONUMENTAL ================= -->
+    <header class="relative min-h-[85vh] lg:min-h-[92vh] flex items-center overflow-hidden border-b border-white/10">
+      <!-- Fond graphique et textures affiches -->
+      <div class="absolute inset-0 z-0">
+        <img
+          src="/media/can-2027/poster-equipe-bleu.webp"
+          alt="Campagne Éliminatoires CAN 2027"
+          class="h-full w-full object-cover object-top opacity-35 filter brightness-75 contrast-125"
+          loading="eager"
+        />
+        <div class="absolute inset-0 bg-gradient-to-t from-[#050b18] via-[#050b18]/75 to-transparent"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-[#050b18] via-[#050b18]/60 to-transparent"></div>
+      </div>
+
+      <!-- Filigrane Typographique Monumental -->
+      <div class="can-hero-watermark select-none pointer-events-none" aria-hidden="true">
+        <span>LES LÉOPARDS</span>
+      </div>
+
+      <!-- Contenu Hero -->
+      <div class="relative z-10 mx-auto w-full max-w-[88rem] px-4 py-20 lg:px-8">
+        <!-- Surtitre -->
+        <div data-reveal class="inline-block">
+          <span class="text-xs font-bold uppercase tracking-[0.24em] text-or">
+            Éliminatoires CAN 2027
+          </span>
+        </div>
+
+        <!-- Titre Monumental -->
+        <h1 class="mt-6 font-mega uppercase leading-[0.82] [font-size:clamp(3.8rem,11vw,10.5rem)] text-white">
+          <span class="block">LES LÉOPARDS</span>
+          <span class="text-transparent [-webkit-text-stroke:2px_#F4C400]">CAN 2027</span>
+        </h1>
+
+        <!-- Signature Calligraphique -->
+        <div data-reveal class="mt-6 flex flex-wrap items-center gap-4">
+          <div class="inline-block -rotate-1 rounded-md bg-feu px-5 py-2 shadow-xl shadow-feu/40">
+            <span class="font-display text-2xl uppercase tracking-wider text-white sm:text-4xl">
+              « Tour oyo biso nde »
+            </span>
+          </div>
+          <span class="text-sm font-extrabold uppercase tracking-[0.22em] text-white/80">
+            RDC · Eloko ya makasi
+          </span>
+        </div>
+
+        <p data-reveal class="mt-7 max-w-2xl text-base leading-relaxed text-white/85 sm:text-lg">
+          La tribune congolaise entre en scène. Pour les six journées décisives du Groupe E, 
+          le <strong>Bloc Léopards</strong> fédère les 100 millions de Congolais à Kinshasa, 
+          dans les provinces et à travers toute la diaspora mondiale. Un seul bloc, une seule voix.
+        </p>
+
+        <!-- Boutons d'accès direct -->
+        <div data-reveal class="mt-9 flex flex-wrap gap-4">
+          <a
+            href="#matchs"
+            class="rounded-full bg-or px-8 py-4 text-xs font-black uppercase tracking-[0.16em] text-congo-night shadow-lg shadow-or/30 transition-transform hover:-translate-y-1 hover:bg-yellow-300"
+          >
+            Prochains Matchs →
+          </a>
+          <a
+            href="#groupe"
+            class="rounded-full border border-white/30 bg-white/10 px-8 py-4 text-xs font-bold uppercase tracking-[0.16em] text-white backdrop-blur-sm transition-colors hover:border-or hover:text-or"
+          >
+            Le Groupe E
+          </a>
+          <a
+            href="#effectif"
+            class="rounded-full border border-white/30 bg-white/10 px-8 py-4 text-xs font-bold uppercase tracking-[0.16em] text-white backdrop-blur-sm transition-colors hover:border-or hover:text-or"
+          >
+            L'Effectif
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- ================= NAVIGATION SECONDAIRE COLLANTE ================= -->
+    <nav class="sticky top-16 z-40 border-y border-white/15 bg-[#050b18]/90 backdrop-blur-xl">
+      <div class="mx-auto flex max-w-[88rem] items-center justify-between overflow-x-auto px-4 py-3 lg:px-8">
+        <div class="flex items-center gap-1 sm:gap-2">
+          <a href="#matchs" class="rounded-full px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-white/80 transition-colors hover:bg-white/10 hover:text-or">
+            Matchs
+          </a>
+          <a href="#groupe" class="rounded-full px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-white/80 transition-colors hover:bg-white/10 hover:text-or">
+            Groupe E
+          </a>
+          <a href="#calendrier" class="rounded-full px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-white/80 transition-colors hover:bg-white/10 hover:text-or">
+            Calendrier
+          </a>
+          <a href="#effectif" class="rounded-full px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-white/80 transition-colors hover:bg-white/10 hover:text-or">
+            Effectif
+          </a>
+          <a href="#actualites" class="rounded-full px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-white/80 transition-colors hover:bg-white/10 hover:text-or">
+            Actualités
+          </a>
+          <a href="#mobilisation" class="rounded-full px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-white/80 transition-colors hover:bg-white/10 hover:text-or">
+            Mobilisation
+          </a>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <a
+            href="#gagne-ta-place"
+            class="rounded-full bg-or px-4 py-1.5 text-xs font-black uppercase tracking-wider text-congo-night shadow-md hover:bg-yellow-300 transition-all flex items-center gap-1.5 hover:scale-105"
+          >
+            <span>🎟️</span>
+            <span>Gagne ta place</span>
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- ================= 2. PROCHAINS MATCHS ================= -->
+    <section id="matchs" class="scroll-mt-32 py-20 lg:py-28">
+      <div class="mx-auto max-w-[88rem] px-4 lg:px-8">
+        <div class="mb-12 flex flex-wrap items-end justify-between gap-6 border-b border-white/10 pb-6">
+          <div>
+            <span data-reveal class="text-[0.74rem] font-black uppercase tracking-[0.28em] text-or">
+              Calendrier Officiel
+            </span>
+            <h2 data-reveal class="mt-2 font-mega text-4xl uppercase leading-none text-white sm:text-6xl">
+              Prochains Matchs
+            </h2>
+          </div>
+        </div>
+
+        <!-- Grille des Matchs -->
+        <div class="grid gap-8 lg:grid-cols-2">
+          <!-- Match 1 (J1 RDC vs GQ) -->
+          <div>
+            <Can2027MatchCard match={fixtures[0]} />
+          </div>
+
+          <!-- Match 2 (J2 Zimbabwe vs RDC) -->
+          <div>
+            <Can2027MatchCard match={fixtures[1]} />
+          </div>
+        </div>
+
+        <!-- Encadré Lieu & Billetterie Kinshasa -->
+        <div data-reveal class="mt-10 rounded-xl border border-white/10 bg-gradient-to-r from-congo/20 via-congo-night to-congo/10 p-6 sm:p-8 backdrop-blur-md">
+          <div class="grid items-center gap-6 md:grid-cols-[1fr_auto]">
+            <div>
+              <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-or">
+                <span>Stade des Martyrs de la Pentecôte</span>
+                <span>•</span>
+                <span>80 000 places</span>
+              </div>
+              <h3 class="mt-2 font-display text-2xl uppercase tracking-wide text-white sm:text-3xl">
+                Rendez-vous à Kinshasa pour la Journée 1
+              </h3>
+              <p class="mt-2 max-w-2xl text-sm leading-relaxed text-white/75">
+                Le Bloc Léopards déploie ses animateurs de tribunes et prépare le grand tifo national. 
+                Portez vos maillots officiels et rejoignez les cortèges dès 14h00.
+              </p>
+            </div>
+            <div>
+              <a
+                href="/rejoindre"
+                class="inline-block rounded-full bg-feu px-7 py-3.5 text-xs font-black uppercase tracking-[0.16em] text-white shadow-lg shadow-feu/30 hover:bg-red-600 transition-colors"
+              >
+                Rejoindre le cortège du Bloc
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 2.5 JEU-CONCOURS : GAGNE TA PLACE ================= -->
+    <section id="gagne-ta-place" class="scroll-mt-32 py-12 lg:py-20">
+      <div class="mx-auto max-w-[88rem] px-4 lg:px-8">
+        <Can2027TicketContest />
+      </div>
+    </section>
+
+    <!-- ================= 3. LE GROUPE E ================= -->
+    <section id="groupe" class="scroll-mt-32 bg-congo-night/95 py-20 lg:py-28 border-y border-white/10">
+      <div class="mx-auto max-w-[88rem] px-4 lg:px-8">
+        <div class="mb-12">
+          <span data-reveal class="text-[0.74rem] font-black uppercase tracking-[0.28em] text-or">
+            Qualifications CAN 2027
+          </span>
+          <h2 data-reveal class="mt-2 font-mega text-4xl uppercase leading-none text-white sm:text-6xl">
+            Le Groupe E
+          </h2>
+          <p data-reveal class="mt-3 max-w-xl text-base text-white/75">
+            Quatre nations en lice pour décrocher les deux précieux tickets qualificatifs vers la phase finale de la CAN 2027.
+          </p>
+        </div>
+
+        <div class="grid gap-10 lg:grid-cols-12 lg:items-start">
+          <!-- Tableau de classement (8 cols) -->
+          <div class="lg:col-span-8">
+            <Can2027GroupTable standings={standings} />
+          </div>
+
+          <!-- Analyse du groupe & Adversaires (4 cols) -->
+          <div class="lg:col-span-4 space-y-4">
+            <div class="rounded-xl border border-white/15 bg-white/[0.03] p-5">
+              <h3 class="font-display text-xl uppercase tracking-wider text-or">
+                La formule de qualification
+              </h3>
+              <ul class="mt-3 space-y-2 text-xs text-white/80 leading-relaxed">
+                <li class="flex items-start gap-2">
+                  <span class="text-emerald-400 font-bold">✔</span>
+                  <span><strong>1er et 2ème</strong> directement qualifiés pour la CAN 2027.</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-or font-bold">•</span>
+                  <span>6 journées aller-retour disputées jusqu'en mars 2027.</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-feu font-bold">•</span>
+                  <span>Règle de départage : confrontation directe, puis différence de buts générale.</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Focus RDC -->
+            <div class="rounded-xl border border-congo/40 bg-congo/10 p-5">
+              <span class="text-[0.65rem] font-black uppercase tracking-widest text-or">
+                Objectif Bloc
+              </span>
+              <h4 class="mt-1 font-display text-xl uppercase text-white">
+                Faire le plein à domicile
+              </h4>
+              <p class="mt-2 text-xs leading-relaxed text-white/75">
+                Le Stade des Martyrs doit rester imprenable. 9 points pris à Kinshasa garantiront pratiquement 
+                la qualification pour les fauves.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 4. CALENDRIER DE LA CAMPAGNE (6 JOURNÉES) ================= -->
+    <section id="calendrier" class="scroll-mt-32 py-20 lg:py-28">
+      <div class="mx-auto max-w-[88rem] px-4 lg:px-8">
+        <div class="mb-14 text-center">
+          <span data-reveal class="text-[0.74rem] font-black uppercase tracking-[0.28em] text-or">
+            Feuille de Route
+          </span>
+          <h2 data-reveal class="mt-2 font-mega text-4xl uppercase leading-none text-white sm:text-6xl">
+            Calendrier des 6 Journées
+          </h2>
+          <p data-reveal class="mx-auto mt-3 max-w-xl text-base text-white/75">
+            Toutes les fenêtres officielles de la CAF pour suivre et accompagner les Léopards.
+          </p>
+        </div>
+
+        <div class="mx-auto max-w-4xl">
+          <Can2027Timeline />
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 5. EFFECTIF (LES LÉOPARDS) ================= -->
+    <section id="effectif" class="scroll-mt-32 bg-congo-night/95 py-20 lg:py-28 border-y border-white/10">
+      <div class="mx-auto max-w-[88rem] px-4 lg:px-8">
+        <div class="mb-12 text-center">
+          <span data-reveal class="text-[0.74rem] font-black uppercase tracking-[0.28em] text-or">
+            Sélection Nationale
+          </span>
+          <h2 data-reveal class="mt-2 font-mega text-4xl uppercase leading-none text-white sm:text-6xl">
+            Les Léopards
+          </h2>
+          <p data-reveal class="mx-auto mt-3 max-w-xl text-base text-white/75">
+            L'effectif mobilisé pour porter haut le drapeau congolais durant les éliminatoires.
+          </p>
+        </div>
+
+        <!-- Composant Squad avec filtres de poste -->
+        <Can2027Squad />
+      </div>
+    </section>
+
+    <!-- ================= 6. ACTUALITÉS DE LA CAMPAGNE ================= -->
+    <section id="actualites" class="scroll-mt-32 py-20 lg:py-28">
+      <div class="mx-auto max-w-[88rem] px-4 lg:px-8">
+        <div class="mb-12 flex flex-wrap items-end justify-between gap-6 border-b border-white/10 pb-6">
+          <div>
+            <span data-reveal class="text-[0.74rem] font-black uppercase tracking-[0.28em] text-or">
+              Au Cœur du Rassemblement
+            </span>
+            <h2 data-reveal class="mt-2 font-mega text-4xl uppercase leading-none text-white sm:text-6xl">
+              Actualités CAN 2027
+            </h2>
+          </div>
+
+          <a
+            data-reveal
+            href="/actus"
+            class="text-xs font-bold uppercase tracking-[0.16em] text-or hover:text-white transition-colors"
+          >
+            Toutes les actualités du Bloc →
+          </a>
+        </div>
+
+        <!-- Grille des actus CAN 2027 -->
+        <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          {canNews.map((article) => (
+            <article class="group overflow-hidden rounded-xl border border-white/15 bg-white/[0.03] transition-all hover:border-or/40">
+              <div class="relative aspect-video overflow-hidden bg-congo-night">
+                {article.data.image && (
+                  <img
+                    src={article.data.image}
+                    alt={article.data.title}
+                    class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                )}
+                <div class="absolute top-3 left-3">
+                  <span class="rounded bg-feu px-2.5 py-0.5 text-[0.62rem] font-bold uppercase text-white">
+                    CAN 2027
+                  </span>
+                </div>
+              </div>
+
+              <div class="p-5">
+                <time class="text-[0.68rem] font-semibold text-white/50">{article.data.date}</time>
+                <h3 class="mt-2 font-display text-xl uppercase leading-snug text-white group-hover:text-or transition-colors">
+                  <a href={`/actus/${article.slug}`}>
+                    {article.data.title}
+                  </a>
+                </h3>
+                <p class="mt-2 text-xs leading-relaxed text-white/70 line-clamp-3">
+                  {article.data.description}
+                </p>
+                <div class="mt-4 pt-3 border-t border-white/10">
+                  <a href={`/actus/${article.slug}`} class="text-xs font-bold uppercase tracking-wider text-or hover:underline">
+                    Lire l'article →
+                  </a>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 7. MOBILISATION BLOC LÉOPARDS ================= -->
+    <section id="mobilisation" class="scroll-mt-32 relative overflow-hidden bg-gradient-to-r from-congo to-congo-deep py-24 text-white">
+      <div class="can-brush-flag" aria-hidden="true"></div>
+
+      <div class="relative z-10 mx-auto max-w-[88rem] px-4 lg:px-8 text-center">
+        <span data-reveal class="text-xs font-black uppercase tracking-[0.3em] text-or">
+          Ferveur & Unité Nationale
+        </span>
+        <h2 data-reveal class="mt-3 font-mega text-5xl uppercase sm:text-7xl lg:text-8xl">
+          TOUS DERRIÈRE LE BLOC
+        </h2>
+        <p data-reveal class="mx-auto mt-4 max-w-xl text-base sm:text-lg text-white/90">
+          Chants, drapeaux, rassemblements et kit supporters. 
+          Rejoignez le mouvement officiel pour faire rugir la RDC jusqu'à la phase finale.
+        </p>
+
+        <div data-reveal class="mt-9 flex flex-wrap justify-center gap-4">
+          <a
+            href="/rejoindre"
+            class="rounded-full bg-or px-9 py-4 text-xs font-black uppercase tracking-[0.16em] text-congo-night shadow-xl shadow-black/30 hover:bg-yellow-300 transition-transform hover:-translate-y-1"
+          >
+            Rejoindre le Bloc Léopards
+          </a>
+          <a
+            href="/kit-supporters"
+            class="rounded-full border border-white/40 bg-white/10 px-9 py-4 text-xs font-bold uppercase tracking-[0.16em] text-white backdrop-blur-sm hover:bg-white/20 transition-colors"
+          >
+            Télécharger le Kit Supporters
+          </a>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</BaseLayout>
+
+<style>
+  .can-campaign-page {
+    overflow-x: hidden;
+  }
+
+  .can-hero-watermark {
+    position: absolute;
+    top: 45%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    white-space: nowrap;
+    opacity: 0.04;
+    font-family: 'Anton', 'Bebas Neue', sans-serif;
+    font-size: clamp(6rem, 24vw, 26rem);
+    line-height: 0.8;
+    color: #ffffff;
+  }
+
+  .can-brush-flag {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: 
+      radial-gradient(ellipse at 80% 20%, rgba(30, 123, 255, 0.3) 0%, transparent 60%),
+      radial-gradient(ellipse at 20% 80%, rgba(216, 30, 39, 0.25) 0%, transparent 55%),
+      radial-gradient(circle at 50% 50%, rgba(244, 196, 0, 0.1) 0%, transparent 65%);
+  }
+</style>

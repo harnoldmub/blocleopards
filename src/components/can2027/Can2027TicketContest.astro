@@ -1,0 +1,291 @@
+---
+/**
+ * Formulaire de participation au Jeu-Concours :
+ * « Gagne ta place pour les matchs à Kinshasa et en Ouganda ».
+ * Simple, rapide, optimisé mobile et relié à l'API /api/can2027/concours.
+ */
+---
+
+<div class="can-contest-wrapper relative overflow-hidden rounded-3xl border-2 border-or/40 bg-gradient-to-br from-[#071329] via-congo-night to-[#0a1e45] p-6 sm:p-10 lg:p-14 shadow-2xl">
+  <!-- Badge lumineux et décoratif -->
+  <div class="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-or/15 blur-3xl pointer-events-none"></div>
+  <div class="absolute -left-16 -bottom-16 h-56 w-56 rounded-full bg-congo-blue/20 blur-3xl pointer-events-none"></div>
+
+  <div class="relative z-10 grid items-center gap-10 lg:grid-cols-12">
+    <!-- Présentation & Arguments (5 cols) -->
+    <div class="lg:col-span-5 text-left">
+      <div class="inline-flex items-center gap-2 rounded-full border border-or/50 bg-or/10 px-3.5 py-1 text-xs font-black uppercase tracking-[0.2em] text-or">
+        <span class="animate-pulse">🎟️</span>
+        <span>Jeu-Concours Supporters</span>
+      </div>
+
+      <h2 class="mt-4 font-mega text-4xl uppercase leading-[0.9] text-white sm:text-5xl lg:text-6xl">
+        GAGNE TA PLACE <br />
+        <span class="text-or">POUR LES MATCHS</span>
+      </h2>
+
+      <p class="mt-4 text-base font-bold text-sky-300 sm:text-lg">
+        À Kinshasa (Stade des Martyrs) & en Ouganda
+      </p>
+
+      <p class="mt-3 text-sm leading-relaxed text-white/80">
+        Le <strong>Bloc Léopards</strong> offre des places de tribune et des accès supporters pour pousser les Léopards de la RDC vers la victoire. Remplis ce formulaire rapide pour tenter ta chance au tirage au sort officiel !
+      </p>
+
+      <!-- Avantages & Sécurité -->
+      <div class="mt-6 space-y-3 text-xs text-white/85">
+        <div class="flex items-center gap-3">
+          <span class="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 font-bold">✓</span>
+          <span><strong>100% gratuit</strong> et ouvert à tous les supporters des Léopards</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 font-bold">✓</span>
+          <span>Tirage au sort régulier avant chaque journée</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 font-bold">✓</span>
+          <span>Contact direct et remise des places par <strong>WhatsApp</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Formulaire Simple (7 cols) -->
+    <div class="lg:col-span-7">
+      <div class="rounded-2xl border border-white/15 bg-white/[0.04] p-6 sm:p-8 backdrop-blur-xl shadow-inner">
+        <!-- État initial : Formulaire -->
+        <form id="contest-form" class="space-y-5 text-left">
+          <!-- Nom & Prénom -->
+          <div>
+            <label for="contest-nom" class="block text-xs font-bold uppercase tracking-wider text-white/90 mb-2">
+              Nom complet <span class="text-or">*</span>
+            </label>
+            <input
+              type="text"
+              id="contest-nom"
+              name="nom"
+              required
+              placeholder="Ex: Gloire Kabeya"
+              class="w-full rounded-xl border border-white/20 bg-congo-night/80 px-4 py-3.5 text-sm text-white placeholder-white/40 focus:border-or focus:bg-congo-night focus:outline-none transition-all"
+            />
+          </div>
+
+          <!-- Numéro WhatsApp & Ville -->
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label for="contest-phone" class="block text-xs font-bold uppercase tracking-wider text-white/90 mb-2">
+                Numéro WhatsApp / Téléphone <span class="text-or">*</span>
+              </label>
+              <input
+                type="tel"
+                id="contest-phone"
+                name="telephone"
+                required
+                placeholder="+243 ... ou +33 ..."
+                class="w-full rounded-xl border border-white/20 bg-congo-night/80 px-4 py-3.5 text-sm text-white placeholder-white/40 focus:border-or focus:bg-congo-night focus:outline-none transition-all"
+              />
+              <span class="mt-1 block text-[0.68rem] text-white/50">Pour vous envoyer la place si vous gagnez.</span>
+            </div>
+
+            <div>
+              <label for="contest-city" class="block text-xs font-bold uppercase tracking-wider text-white/90 mb-2">
+                Ville / Pays de résidence
+              </label>
+              <input
+                type="text"
+                id="contest-city"
+                name="ville"
+                placeholder="Ex: Kinshasa, Kampala, Paris..."
+                class="w-full rounded-xl border border-white/20 bg-congo-night/80 px-4 py-3.5 text-sm text-white placeholder-white/40 focus:border-or focus:bg-congo-night focus:outline-none transition-all"
+              />
+            </div>
+          </div>
+
+          <!-- Choix du Match -->
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-white/90 mb-2">
+              Pour quel match souhaites-tu une place ? <span class="text-or">*</span>
+            </label>
+            <div class="grid gap-2.5 sm:grid-cols-3">
+              <label class="contest-radio-label relative flex cursor-pointer items-center justify-between rounded-xl border border-white/20 bg-white/5 p-3 text-xs transition-all hover:border-or hover:bg-white/10">
+                <input type="radio" name="matchChoix" value="kinshasa" checked class="peer sr-only" />
+                <div class="flex items-center gap-2">
+                  <span>🏟️</span>
+                  <span class="font-bold text-white peer-checked:text-or">Kinshasa</span>
+                </div>
+                <div class="h-3 w-3 rounded-full border border-white/50 peer-checked:border-or peer-checked:bg-or"></div>
+              </label>
+
+              <label class="contest-radio-label relative flex cursor-pointer items-center justify-between rounded-xl border border-white/20 bg-white/5 p-3 text-xs transition-all hover:border-or hover:bg-white/10">
+                <input type="radio" name="matchChoix" value="ouganda" class="peer sr-only" />
+                <div class="flex items-center gap-2">
+                  <span>✈️</span>
+                  <span class="font-bold text-white peer-checked:text-or">Ouganda</span>
+                </div>
+                <div class="h-3 w-3 rounded-full border border-white/50 peer-checked:border-or peer-checked:bg-or"></div>
+              </label>
+
+              <label class="contest-radio-label relative flex cursor-pointer items-center justify-between rounded-xl border border-white/20 bg-white/5 p-3 text-xs transition-all hover:border-or hover:bg-white/10">
+                <input type="radio" name="matchChoix" value="les-deux" class="peer sr-only" />
+                <div class="flex items-center gap-2">
+                  <span>🎟️</span>
+                  <span class="font-bold text-white peer-checked:text-or">Les deux</span>
+                </div>
+                <div class="h-3 w-3 rounded-full border border-white/50 peer-checked:border-or peer-checked:bg-or"></div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Message d'encouragement (Optionnel) -->
+          <div>
+            <label for="contest-msg" class="block text-xs font-bold uppercase tracking-wider text-white/90 mb-2">
+              Un mot d'encouragement pour les Léopards (Optionnel)
+            </label>
+            <input
+              type="text"
+              id="contest-msg"
+              name="message"
+              maxlength="140"
+              placeholder="Ex: Toko bloquer bango ! Fimbu ya suka !"
+              class="w-full rounded-xl border border-white/20 bg-congo-night/80 px-4 py-3 text-sm text-white placeholder-white/40 focus:border-or focus:bg-congo-night focus:outline-none transition-all"
+            />
+          </div>
+
+          <!-- Message d'erreur éventuel -->
+          <div id="contest-error" class="hidden rounded-xl border border-feu/40 bg-feu/15 p-3 text-xs font-bold text-rose-300"></div>
+
+          <!-- Bouton de soumission -->
+          <button
+            type="submit"
+            id="contest-submit-btn"
+            class="group w-full rounded-full bg-or py-4 px-6 text-sm font-black uppercase tracking-[0.16em] text-congo-night shadow-xl shadow-or/20 hover:bg-yellow-300 transition-all hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-3"
+          >
+            <span>TENTER DE GAGNER MA PLACE</span>
+            <span class="transition-transform group-hover:translate-x-1">→</span>
+          </button>
+        </form>
+
+        <!-- État de confirmation après succès -->
+        <div id="contest-success" class="hidden py-8 text-center">
+          <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20 text-3xl text-emerald-400 border border-emerald-500/30 animate-bounce">
+            ✓
+          </div>
+          <h3 class="mt-4 font-mega text-2xl uppercase tracking-wider text-white sm:text-3xl">
+            Participation Validée !
+          </h3>
+          <p class="mx-auto mt-2 max-w-md text-sm text-white/80" id="contest-success-msg">
+            Votre inscription a bien été enregistrée pour le tirage au sort officiel. 
+            Gardez votre WhatsApp actif, notre équipe contactera directement les gagnants !
+          </p>
+
+          <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <button
+              type="button"
+              id="contest-reset-btn"
+              class="rounded-full border border-white/20 bg-white/10 px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-white/20 transition-all"
+            >
+              Ajouter une autre participation
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function initContestForm() {
+    const form = document.getElementById("contest-form") as HTMLFormElement;
+    const submitBtn = document.getElementById("contest-submit-btn") as HTMLButtonElement;
+    const errorEl = document.getElementById("contest-error");
+    const successEl = document.getElementById("contest-success");
+    const successMsg = document.getElementById("contest-success-msg");
+    const resetBtn = document.getElementById("contest-reset-btn");
+
+    if (!form || !submitBtn) return;
+
+    // Mise à jour visuelle des labels radio
+    const radioLabels = form.querySelectorAll<HTMLLabelElement>(".contest-radio-label");
+    radioLabels.forEach((label) => {
+      const radio = label.querySelector<HTMLInputElement>("input[type=radio]");
+      if (radio) {
+        radio.addEventListener("change", () => {
+          radioLabels.forEach((l) => {
+            l.classList.remove("border-or", "bg-or/15");
+            l.classList.add("border-white/20", "bg-white/5");
+          });
+          if (radio.checked) {
+            label.classList.add("border-or", "bg-or/15");
+            label.classList.remove("border-white/20", "bg-white/5");
+          }
+        });
+        if (radio.checked) {
+          label.classList.add("border-or", "bg-or/15");
+          label.classList.remove("border-white/20", "bg-white/5");
+        }
+      }
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (errorEl) errorEl.classList.add("hidden");
+
+      const originalBtnText = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = "<span>Enregistrement en cours...</span>";
+
+      try {
+        const formData = new FormData(form);
+        const payload = {
+          nom: formData.get("nom"),
+          telephone: formData.get("telephone"),
+          ville: formData.get("ville"),
+          matchChoix: formData.get("matchChoix"),
+          message: formData.get("message")
+        };
+
+        const res = await fetch("/api/can2027/concours", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          form.classList.add("hidden");
+          if (successEl) {
+            successEl.classList.remove("hidden");
+            if (successMsg && data.message) {
+              successMsg.textContent = data.message;
+            }
+          }
+        } else {
+          if (errorEl) {
+            errorEl.textContent = data.error || "Une erreur est survenue. Veuillez vérifier vos coordonnées.";
+            errorEl.classList.remove("hidden");
+          }
+        }
+      } catch (err) {
+        if (errorEl) {
+          errorEl.textContent = "Erreur réseau. Veuillez réessayer dans quelques instants.";
+          errorEl.classList.remove("hidden");
+        }
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+      }
+    });
+
+    if (resetBtn) {
+      resetBtn.addEventListener("click", () => {
+        form.reset();
+        form.classList.remove("hidden");
+        if (successEl) successEl.classList.add("hidden");
+        if (errorEl) errorEl.classList.add("hidden");
+      });
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", initContestForm);
+  document.addEventListener("astro:page-load", initContestForm);
+</script>

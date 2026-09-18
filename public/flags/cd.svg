@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <rect width="800" height="600" fill="#007FFF"/>
+  <!-- Red stripe with yellow borders -->
+  <polygon points="0,600 0,490 800,0 800,110" fill="#F7D618"/>
+  <polygon points="0,575 0,515 800,25 800,85" fill="#CE1021"/>
+  <!-- Yellow Star -->
+  <polygon points="120,60 135,108 185,108 145,138 160,185 120,155 80,185 95,138 55,108 105,108" fill="#F7D618"/>
+</svg>

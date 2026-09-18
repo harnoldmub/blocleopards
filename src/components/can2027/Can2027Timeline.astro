@@ -1,0 +1,88 @@
+---
+/**
+ * Timeline officielle des 6 journées des Éliminatoires CAN 2027.
+ * Conforme aux règles : affichage des matchs confirmés et des fenêtres internationales officielles.
+ */
+import { CAN2027_DATA } from "../../data/can2027";
+
+const timeline = CAN2027_DATA.campaignTimeline;
+---
+
+<div class="can-timeline relative">
+  <!-- Ligne verticale centrale/latérale -->
+  <div class="absolute left-4 top-2 bottom-2 w-0.5 bg-gradient-to-b from-congo via-or to-feu sm:left-1/2 sm:-translate-x-1/2"></div>
+
+  <div class="space-y-6 sm:space-y-10">
+    {timeline.map((step, idx) => {
+      const isEven = idx % 2 === 0;
+      const isConfirmed = step.status === "CONFIRMED";
+
+      return (
+        <div class="relative flex items-start gap-6 sm:gap-0">
+          <!-- Point central / Marqueur -->
+          <div class="absolute left-4 top-5 -translate-x-1/2 sm:left-1/2 z-10">
+            <span class={`flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-black shadow-lg ${
+              isConfirmed 
+                ? 'border-or bg-congo text-or shadow-or/30' 
+                : 'border-white/30 bg-congo-night text-white/70'
+            }`}>
+              {idx + 1}
+            </span>
+          </div>
+
+          <!-- Carte de contenu (alternée sur desktop) -->
+          <div class={`w-full pl-12 sm:pl-0 sm:w-1/2 ${isEven ? 'sm:pr-12 sm:text-right' : 'sm:ml-auto sm:pl-12 sm:text-left'}`}>
+            <div class={`group relative overflow-hidden rounded-xl border p-5 backdrop-blur-md transition-all duration-300 hover:border-or/40 ${
+              isConfirmed
+                ? 'border-white/20 bg-congo-night/90 shadow-xl'
+                : 'border-white/10 bg-white/[0.03] shadow-md'
+            }`}>
+              <!-- Badge Journée -->
+              <div class={`flex items-center gap-2 mb-2 ${isEven ? 'sm:justify-end' : 'sm:justify-start'}`}>
+                <span class={`rounded px-2 py-0.5 text-[0.62rem] font-black uppercase tracking-widest ${
+                  isConfirmed ? 'bg-feu text-white' : 'bg-white/20 text-white/80'
+                }`}>
+                  {step.label}
+                </span>
+                {isConfirmed && (
+                  <span class="text-[0.65rem] font-bold uppercase tracking-wider text-or">
+                    Confirmé
+                  </span>
+                )}
+                {!isConfirmed && (
+                  <span class="text-[0.65rem] font-semibold uppercase tracking-wider text-white/50">
+                    Fenêtre Officielle
+                  </span>
+                )}
+              </div>
+
+              <!-- Titre / Rencontre -->
+              <h4 class="font-display text-xl uppercase tracking-wide text-white sm:text-2xl">
+                {step.fixtureStr}
+              </h4>
+
+              <!-- Date -->
+              <p class="mt-1 text-sm font-bold text-or">
+                {step.dateStr}
+              </p>
+
+              <!-- Lieu / Précisions -->
+              <p class="mt-2 text-xs text-white/65 leading-relaxed">
+                {step.venueStr}
+              </p>
+
+              {isConfirmed && (
+                <div class={`mt-4 pt-3 border-t border-white/10 flex items-center gap-2 text-xs font-bold text-congo-bright ${isEven ? 'sm:justify-end' : 'sm:justify-start'}`}>
+                  <a href="#matchs" class="hover:underline inline-flex items-center gap-1">
+                    <span>Voir les détails du match</span>
+                    <span>→</span>
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+</div>

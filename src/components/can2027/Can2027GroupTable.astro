@@ -1,0 +1,128 @@
+---
+/**
+ * Tableau officiel de classement du Groupe E pour la CAN 2027.
+ * Facilement actualisable depuis src/data/can2027.ts.
+ */
+import type { TeamStanding } from "../../data/can2027";
+
+interface Props {
+  standings: TeamStanding[];
+}
+
+const { standings } = Astro.props;
+
+const enrichedStandings = standings.map((team) => ({
+  ...team,
+  isQualifying: team.position <= 2,
+  diffDisplay: team.goalDiff > 0 ? `+${team.goalDiff}` : `${team.goalDiff}`
+}));
+---
+
+<div class="can-group-table overflow-hidden rounded-xl border border-white/15 bg-congo-night/85 shadow-2xl backdrop-blur-md">
+  <!-- En-tête du tableau -->
+  <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/15 bg-white/[0.04] p-5 sm:px-6">
+    <div class="flex items-center gap-3">
+      <span class="rounded bg-congo px-2.5 py-1 text-[0.68rem] font-black uppercase tracking-[0.2em] text-white">
+        Groupe E
+      </span>
+      <h3 class="font-display text-xl uppercase tracking-wider text-white sm:text-2xl">
+        Classement Officiel
+      </h3>
+    </div>
+    <div class="flex items-center gap-2 text-[0.66rem] font-semibold uppercase tracking-[0.14em] text-white/60">
+      <span class="inline-block h-2 w-2 rounded-full bg-emerald-400"></span>
+      <span>Places 1 & 2 = Qualification CAN 2027</span>
+    </div>
+  </div>
+
+  <!-- Table Responsive -->
+  <div class="overflow-x-auto">
+    <table class="w-full text-left text-sm text-white">
+      <thead>
+        <tr class="border-b border-white/10 bg-black/30 text-[0.68rem] font-black uppercase tracking-[0.16em] text-white/55">
+          <th scope="col" class="py-3.5 pl-4 pr-2 sm:pl-6">Pos</th>
+          <th scope="col" class="py-3.5 px-3">Équipe</th>
+          <th scope="col" class="py-3.5 px-2.5 text-center">MJ</th>
+          <th scope="col" class="py-3.5 px-2 text-center">V</th>
+          <th scope="col" class="py-3.5 px-2 text-center">N</th>
+          <th scope="col" class="py-3.5 px-2 text-center">D</th>
+          <th scope="col" class="py-3.5 px-2 text-center hidden sm:table-cell">BP</th>
+          <th scope="col" class="py-3.5 px-2 text-center hidden sm:table-cell">BC</th>
+          <th scope="col" class="py-3.5 px-2.5 text-center">DIFF</th>
+          <th scope="col" class="py-3.5 pr-4 pl-3 text-center sm:pr-6 font-black text-or">PTS</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-white/5">
+        {enrichedStandings.map((team) => (
+          <tr class={`transition-colors hover:bg-white/[0.06] ${team.isRDC ? 'bg-congo/15 font-semibold' : ''}`}>
+            <!-- Position avec repère visuel -->
+            <td class="py-4 pl-4 pr-2 sm:pl-6">
+              <div class="flex items-center gap-2">
+                <span class={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                  team.isRDC 
+                    ? 'bg-or text-congo-night shadow-md shadow-or/30' 
+                    : team.isQualifying 
+                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+                      : 'text-white/50'
+                }`}>
+                  {team.position}
+                </span>
+              </div>
+            </td>
+
+            <!-- Equipe et Drapeau -->
+            <td class="py-4 px-3">
+              <div class="flex items-center gap-3">
+                <img
+                  src={team.flag}
+                  alt={team.name}
+                  class="h-4.5 w-6 rounded-[2px] object-cover shadow-sm shrink-0"
+                  loading="lazy"
+                />
+                <div class="min-w-0">
+                  <span class={`block truncate text-sm sm:text-base ${team.isRDC ? 'font-extrabold text-white' : 'text-white/90'}`}>
+                    {team.name}
+                  </span>
+                </div>
+                {team.isRDC && (
+                  <span class="hidden rounded bg-feu px-1.5 py-0.5 text-[0.55rem] font-black uppercase text-white sm:inline">
+                    Notre Bloc
+                  </span>
+                )}
+              </div>
+            </td>
+
+            <!-- Matchs Joués -->
+            <td class="py-4 px-2.5 text-center tabular-nums text-white/80">{team.played}</td>
+            <!-- Victoires -->
+            <td class="py-4 px-2 text-center tabular-nums text-white/80">{team.won}</td>
+            <!-- Nuls -->
+            <td class="py-4 px-2 text-center tabular-nums text-white/80">{team.drawn}</td>
+            <!-- Défaites -->
+            <td class="py-4 px-2 text-center tabular-nums text-white/80">{team.lost}</td>
+            <!-- Buts Pour -->
+            <td class="py-4 px-2 text-center tabular-nums text-white/60 hidden sm:table-cell">{team.goalsFor}</td>
+            <!-- Buts Contre -->
+            <td class="py-4 px-2 text-center tabular-nums text-white/60 hidden sm:table-cell">{team.goalsAgainst}</td>
+            <!-- Différence de Buts -->
+            <td class="py-4 px-2.5 text-center tabular-nums font-medium text-white/90">
+              {team.diffDisplay}
+            </td>
+            <!-- Points -->
+            <td class="py-4 pr-4 pl-3 text-center tabular-nums sm:pr-6">
+              <span class={`inline-block font-mega text-base sm:text-lg ${team.isRDC ? 'text-or' : 'text-white'}`}>
+                {team.points}
+              </span>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Note de bas de tableau -->
+  <div class="border-t border-white/10 bg-black/40 px-4 py-3 text-[0.66rem] text-white/50 sm:px-6 flex flex-wrap items-center justify-between gap-2">
+    <span>Classement actualisé automatiquement après chaque journée officielle de la CAF.</span>
+    <span class="text-or/80 font-bold uppercase tracking-wider">Groupe E · CAN 2027</span>
+  </div>
+</div>

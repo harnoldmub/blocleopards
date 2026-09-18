@@ -1,6 +1,7 @@
 ---
 const nav = [
   { label: "Accueil", href: "/" },
+  { label: "CAN 2027", href: "/can-2027", isSpecial: true },
   {
     label: "Mouvement",
     href: "/mouvement",
@@ -15,6 +16,7 @@ const nav = [
     label: "Actions",
     href: "/evenements",
     children: [
+      { label: "Éliminatoires CAN 2027", href: "/can-2027" },
       { label: "Calendrier", href: "/evenements" },
       { label: "Léopards Basket", href: "/basket" },
       { label: "Campagnes", href: "/campagnes" }
@@ -57,8 +59,13 @@ const nav = [
             </div>
           </div>
         ) : (
-          <a href={item.href} class="px-4 py-6 text-[0.82rem] font-semibold uppercase tracking-[0.12em] text-congo-nuit/80 transition-colors hover:text-congo">
+          <a href={item.href} class="flex items-center gap-1.5 px-4 py-6 text-[0.82rem] font-semibold uppercase tracking-[0.12em] text-congo-nuit/80 transition-colors hover:text-congo">
             {item.label}
+            {item.isSpecial && (
+              <span class="rounded bg-feu px-1.5 py-0.5 text-[0.55rem] font-black text-white leading-none shadow-xs">
+                OFFICIEL
+              </span>
+            )}
           </a>
         )
       ))}

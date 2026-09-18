@@ -1,0 +1,287 @@
+---
+/**
+ * Grande section éditoriale « Éliminatoires CAN 2027 » pour la Home page.
+ * Remplace la section Basket avec la nouvelle direction artistique des affiches.
+ */
+import { CAN2027_DATA } from "../../data/can2027";
+
+const j1 = CAN2027_DATA.fixtures[0];
+const j2 = CAN2027_DATA.fixtures[1];
+---
+
+<section id="can-2027" class="can-home-section scroll-mt-24" aria-labelledby="can-home-title">
+  <!-- Texture de grain et coups de pinceaux RDC en superposition -->
+  <div class="can-grain-overlay" aria-hidden="true"></div>
+  <div class="can-brush-flag" aria-hidden="true"></div>
+
+  <!-- Typographie monumentale en arrière-plan (filigrane géant) -->
+  <div class="can-bg-watermark" aria-hidden="true">
+    <span>CAN 2027</span>
+  </div>
+
+  <div class="relative z-10 mx-auto max-w-[88rem] px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+    <!-- En-tête éditorial avec co-branding sobre -->
+    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-white/20 pb-5">
+      <div class="flex items-center gap-3">
+        <span class="text-[0.72rem] font-bold uppercase tracking-[0.24em] text-white/90">
+          {CAN2027_DATA.campaign.surtitre}
+        </span>
+      </div>
+
+      <div class="hidden items-center gap-3 sm:flex">
+        <img src="/brand/logo.png" alt="Bloc Léopards" class="h-8 w-auto brightness-0 invert opacity-90" />
+        <span class="text-white/30">|</span>
+        <span class="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-white/70">
+          {CAN2027_DATA.campaign.groupName} · Phase Éliminatoire
+        </span>
+      </div>
+    </div>
+
+    <!-- Cœur de la composition éditoriale (multicouche avec joueurs) -->
+    <div class="mt-8 grid items-center gap-10 lg:grid-cols-12 lg:gap-12">
+      <!-- Colonne Titre & Narration (5 cols) -->
+      <div class="lg:col-span-6 z-20">
+        <div data-reveal class="inline-block">
+          <span class="text-[0.74rem] font-extrabold uppercase tracking-[0.32em] text-or">
+            Éliminatoires CAN 2027
+          </span>
+        </div>
+
+        <h2 id="can-home-title" data-reveal class="mt-2 font-mega uppercase leading-[0.84] text-white [font-size:clamp(3.8rem,9vw,8.5rem)]">
+          LES LÉOPARDS
+        </h2>
+
+        <!-- Signature calligraphique "Tour oyo biso nde" -->
+        <div data-reveal class="mt-3 flex items-center gap-4">
+          <div class="inline-block -rotate-2 transform rounded-md bg-feu/95 px-4 py-1.5 shadow-lg shadow-feu/30">
+            <span class="font-display text-2xl uppercase tracking-wider text-white md:text-3xl">
+              « {CAN2027_DATA.campaign.signature} »
+            </span>
+          </div>
+          <span class="text-xs font-bold uppercase tracking-[0.2em] text-or/90 hidden sm:inline">
+            {CAN2027_DATA.campaign.slogan}
+          </span>
+        </div>
+
+        <p data-reveal class="mt-6 max-w-xl text-base leading-relaxed text-white/85 sm:text-lg">
+          La République Démocratique du Congo s'élance vers la <strong>CAN 2027</strong>. 
+          Un seul bloc populaire, uni derrière les fauves de Sébastien Desabre pour conquérir le Groupe E 
+          face à la Guinée équatoriale, la Sierra Leone et le Zimbabwe.
+        </p>
+
+        <!-- CTAs d'action -->
+        <div data-reveal class="mt-8 flex flex-wrap items-center gap-4">
+          <a
+            href="/can-2027"
+            class="group inline-flex items-center gap-3 rounded-full bg-or px-7 py-4 text-[0.8rem] font-black uppercase tracking-[0.14em] text-congo-night shadow-[0_12px_30px_-10px_rgba(244,196,0,0.5)] transition-all hover:-translate-y-1 hover:bg-yellow-300"
+          >
+            <span>Voir la campagne</span>
+            <span class="transition-transform group-hover:translate-x-1">→</span>
+          </a>
+
+          <a
+            href="/can-2027#calendrier"
+            class="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/10 px-6 py-4 text-[0.8rem] font-bold uppercase tracking-[0.14em] text-white backdrop-blur-md transition-all hover:border-or hover:bg-white/20 hover:text-or"
+          >
+            <span>Calendrier des matchs</span>
+          </a>
+        </div>
+
+        <!-- Bouton / Bannière Attirante Concours Places Kinshasa & Ouganda -->
+        <div data-reveal class="mt-6">
+          <a
+            href="/can-2027#gagne-ta-place"
+            class="group relative flex items-center justify-between overflow-hidden rounded-2xl border-2 border-or/70 bg-gradient-to-r from-congo-night via-[#0c2352] to-congo-night p-4 sm:p-5 shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:border-or hover:shadow-or/20"
+          >
+            <!-- Lueur dorée arrière-plan -->
+            <div class="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-or/20 blur-2xl group-hover:bg-or/30 transition-all pointer-events-none"></div>
+
+            <div class="flex items-center gap-3.5 sm:gap-4">
+              <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-or text-2xl text-congo-night shadow-lg shadow-or/30 group-hover:scale-110 transition-transform">
+                🎟️
+              </div>
+              <div class="text-left">
+                <div class="flex items-center gap-2">
+                  <span class="inline-flex items-center gap-1 rounded bg-feu px-2 py-0.5 text-[0.62rem] font-black uppercase tracking-widest text-white animate-pulse">
+                    Jeu-Concours
+                  </span>
+                  <span class="text-[0.68rem] font-bold uppercase tracking-wider text-or">
+                    Places offertes
+                  </span>
+                </div>
+                <h3 class="mt-1 font-mega text-xl uppercase tracking-wide text-white group-hover:text-or transition-colors sm:text-2xl leading-none">
+                  Gagne ta place : Kinshasa & Ouganda
+                </h3>
+                <p class="mt-1 text-xs text-white/75 font-medium">
+                  Stade des Martyrs & Déplacement · Formulaire rapide en 30s
+                </p>
+              </div>
+            </div>
+
+            <div class="hidden sm:flex shrink-0 items-center gap-2 rounded-full bg-or px-5 py-2.5 text-xs font-black uppercase tracking-wider text-congo-night shadow-md group-hover:bg-yellow-300 transition-all">
+              <span>Participer</span>
+              <span class="transition-transform group-hover:translate-x-1">→</span>
+            </div>
+          </a>
+        </div>
+
+        <!-- Bloc rendez-vous rapide J1 & J2 -->
+        <div data-reveal class="mt-8 rounded-lg border border-white/15 bg-congo-night/60 p-4 backdrop-blur-md">
+          <div class="flex items-center justify-between text-[0.66rem] font-black uppercase tracking-[0.2em] text-or">
+            <span>Prochaines rencontres</span>
+            <span class="text-white/60">Groupe E</span>
+          </div>
+
+          <div class="mt-3 grid gap-2.5 sm:grid-cols-2">
+            <!-- J1 -->
+            <a href="/can-2027#matchs" class="group flex items-center justify-between rounded bg-white/5 p-2.5 transition-colors hover:bg-white/15">
+              <div class="flex items-center gap-2.5">
+                <span class="rounded bg-feu px-1.5 py-0.5 text-[0.62rem] font-bold uppercase text-white">J1</span>
+                <div class="text-left">
+                  <p class="text-xs font-bold text-white group-hover:text-or">RDC vs Guinée éq.</p>
+                  <p class="text-[0.68rem] text-white/60">24 sept. · Kinshasa</p>
+                </div>
+              </div>
+              <span class="text-xs text-or font-bold">17h</span>
+            </a>
+
+            <!-- J2 -->
+            <a href="/can-2027#matchs" class="group flex items-center justify-between rounded bg-white/5 p-2.5 transition-colors hover:bg-white/15">
+              <div class="flex items-center gap-2.5">
+                <span class="rounded bg-white/20 px-1.5 py-0.5 text-[0.62rem] font-bold uppercase text-white">J2</span>
+                <div class="text-left">
+                  <p class="text-xs font-bold text-white group-hover:text-or">Zimbabwe vs RDC</p>
+                  <p class="text-[0.68rem] text-white/60">28 sept. · Harare</p>
+                </div>
+              </div>
+              <span class="text-xs text-white/80 font-bold">18h</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Colonne Visuel Editorial Multi-joueurs (7 cols) -->
+      <div class="lg:col-span-6 relative">
+        <div class="can-poster-wrapper relative mx-auto max-w-lg lg:max-w-none">
+          <!-- Cadre poster dynamique -->
+          <div class="relative overflow-hidden rounded-xl border border-white/25 bg-gradient-to-b from-[#0b47b0] to-[#050b18] p-2 shadow-2xl shadow-black/80">
+            <div class="relative aspect-[4/5] sm:aspect-[6/7] overflow-hidden rounded-lg">
+              <!-- Image principale de la campagne (les fauves en maillot bleu/rouge) -->
+              <img
+                src="/media/can-2027/poster-equipe-bleu-800.webp"
+                alt="Les Léopards de la RDC - Éliminatoires CAN 2027"
+                width="800"
+                height="1024"
+                class="h-full w-full object-cover object-top transition-transform duration-700 hover:scale-105"
+                loading="eager"
+              />
+
+              <!-- Dégradés de fondu éditorial et ambiance stade -->
+              <div class="absolute inset-0 bg-gradient-to-t from-congo-night via-transparent to-transparent opacity-85"></div>
+              <div class="absolute inset-0 bg-gradient-to-r from-congo-night/40 via-transparent to-congo-night/20"></div>
+
+              <!-- Badges et titrage sur l'image -->
+              <div class="absolute bottom-4 left-4 right-4 z-10 flex items-end justify-between">
+                <div>
+                  <span class="block text-[0.68rem] font-bold uppercase tracking-[0.24em] text-or">
+                    Campagne 2026 - 2027
+                  </span>
+                  <span class="font-display text-2xl uppercase tracking-wider text-white sm:text-3xl">
+                    Tour oyo biso nde
+                  </span>
+                </div>
+
+                <div class="text-right">
+                  <span class="inline-block rounded-full bg-white/15 px-3 py-1 text-[0.65rem] font-bold uppercase tracking-wider text-white backdrop-blur-sm border border-white/20">
+                    Kinshasa · Harare
+                  </span>
+                </div>
+              </div>
+
+              <!-- Vignette secondaire superposée (effet profondeur d'affiche sportive) -->
+              <div class="absolute top-4 right-4 z-10 hidden sm:block w-28 aspect-[3/4] overflow-hidden rounded-md border-2 border-or shadow-2xl -rotate-3 transition-transform hover:rotate-0">
+                <img
+                  src="/media/can-2027/poster-wissa-gold-thumb.webp"
+                  alt="Yoane Wissa - RDC eloko ya makasi"
+                  class="h-full w-full object-cover"
+                  loading="lazy"
+                />
+                <div class="absolute bottom-0 inset-x-0 bg-black/75 px-1.5 py-0.5 text-center text-[0.55rem] font-black uppercase tracking-wider text-or">
+                  Makasi
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Éléments de débordement graphique RDC -->
+          <div class="absolute -bottom-4 -left-4 -z-10 h-28 w-28 rounded-full bg-feu/30 blur-2xl"></div>
+          <div class="absolute -top-4 -right-4 -z-10 h-32 w-32 rounded-full bg-congo/40 blur-2xl"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .can-home-section {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background: linear-gradient(135deg, #061c47 0%, #0d3882 35%, #082153 70%, #040d1f 100%);
+    color: #ffffff;
+  }
+
+  /* Filigrane monumental géant "CAN 2027" */
+  .can-bg-watermark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 0;
+    pointer-events: none;
+    user-select: none;
+    white-space: nowrap;
+    opacity: 0.05;
+    font-family: 'Anton', 'Bebas Neue', sans-serif;
+    font-size: clamp(8rem, 28vw, 32rem);
+    line-height: 0.8;
+    color: #ffffff;
+    -webkit-text-stroke: 3px rgba(255, 255, 255, 0.4);
+  }
+
+  /* Coups de pinceau RDC stylisés en diagonale */
+  .can-brush-flag {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: 
+      radial-gradient(ellipse at 85% 15%, rgba(30, 123, 255, 0.35) 0%, transparent 60%),
+      radial-gradient(ellipse at 15% 85%, rgba(216, 30, 39, 0.25) 0%, transparent 55%),
+      radial-gradient(circle at 50% 50%, rgba(244, 196, 0, 0.12) 0%, transparent 65%);
+    mix-blend-mode: screen;
+  }
+
+  /* Grain / Halftone léger rappelant les affiches imprimées */
+  .can-grain-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.06;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.8) 1px, transparent 1px);
+    background-size: 4px 4px;
+  }
+
+  /* Bande diagonale tricolore RDC */
+  .can-home-section::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #007FFF 0%, #007FFF 33.3%, #F7D618 33.3%, #F7D618 66.6%, #CE1021 66.6%, #CE1021 100%);
+    z-index: 10;
+  }
+</style>

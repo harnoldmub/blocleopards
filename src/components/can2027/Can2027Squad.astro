@@ -1,0 +1,331 @@
+---
+/**
+ * Effectif officiel « Les Léopards » pour la CAN 2027.
+ * Liste officielle communiquée par la FECOFA et le sélectionneur Sébastien Desabre.
+ * Présentation officielle sans photos et sans numéros.
+ */
+import { CAN2027_DATA } from "../../data/can2027";
+
+const stages = CAN2027_DATA.stages;
+const positions = ["Tous", "Gardien", "Défenseur", "Milieu", "Attaquant"] as const;
+
+// Helper pour les couleurs des postes
+function getPositionBadgeClass(position: string) {
+  switch (position) {
+    case "Gardien":
+      return "bg-amber-500/20 text-amber-300 border-amber-500/30";
+    case "Défenseur":
+      return "bg-sky-500/20 text-sky-300 border-sky-500/30";
+    case "Milieu":
+      return "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
+    case "Attaquant":
+      return "bg-rose-500/20 text-rose-300 border-rose-500/30";
+    default:
+      return "bg-white/10 text-white border-white/20";
+  }
+}
+
+function getPositionBorderAccent(position: string) {
+  switch (position) {
+    case "Gardien":
+      return "group-hover:border-amber-400/50 group-hover:shadow-amber-500/10";
+    case "Défenseur":
+      return "group-hover:border-sky-400/50 group-hover:shadow-sky-500/10";
+    case "Milieu":
+      return "group-hover:border-emerald-400/50 group-hover:shadow-emerald-500/10";
+    case "Attaquant":
+      return "group-hover:border-rose-400/50 group-hover:shadow-rose-500/10";
+    default:
+      return "group-hover:border-or/50 group-hover:shadow-or/10";
+  }
+}
+---
+
+<div class="can-squad-section" id="squad-section">
+  <!-- Sélecteur de Stage officiel -->
+  <div class="mb-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+    <div class="inline-flex rounded-xl bg-white/5 p-1.5 border border-white/10 backdrop-blur-md">
+      {stages.map((stage, idx) => (
+        <button
+          type="button"
+          data-stage-target={stage.id}
+          class={`stage-tab-btn rounded-lg px-4 py-2.5 text-xs font-black uppercase tracking-[0.14em] transition-all duration-300 ${
+            idx === 0
+              ? "bg-congo-blue text-white shadow-lg shadow-congo-blue/30 active-stage"
+              : "text-white/70 hover:text-white hover:bg-white/5"
+          }`}
+        >
+          <span class="flex items-center gap-2">
+            <span class={`h-2 w-2 rounded-full ${idx === 0 ? "bg-or animate-pulse" : "bg-white/40"}`}></span>
+            {stage.title}
+          </span>
+        </button>
+      ))}
+    </div>
+  </div>
+
+  <!-- Conteneur des stages -->
+  {stages.map((stage, stageIdx) => {
+    const totalPlayers = stage.players.length;
+    const countG = stage.players.filter(p => p.position === "Gardien").length;
+    const countD = stage.players.filter(p => p.position === "Défenseur").length;
+    const countM = stage.players.filter(p => p.position === "Milieu").length;
+    const countA = stage.players.filter(p => p.position === "Attaquant").length;
+
+    return (
+      <div
+        id={stage.id}
+        class={`stage-panel ${stageIdx === 0 ? "block" : "hidden"}`}
+        data-stage-id={stage.id}
+      >
+        <!-- Bandeau d'information officielle du stage -->
+        <div class="mb-8 overflow-hidden rounded-2xl border border-white/15 bg-gradient-to-r from-congo-night via-[#0c2454] to-congo-night p-5 lg:p-7 shadow-xl">
+          <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <div class="flex flex-wrap items-center gap-2.5">
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-feu/20 px-3 py-1 text-[0.68rem] font-black uppercase tracking-[0.2em] text-feu border border-feu/30">
+                  <span class="h-1.5 w-1.5 rounded-full bg-feu animate-ping"></span>
+                  {stage.badge}
+                </span>
+                <span class="text-xs font-bold uppercase tracking-wider text-or">
+                  {stage.dates}
+                </span>
+              </div>
+
+              <h3 class="mt-2 font-display text-2xl font-black uppercase tracking-wider text-white sm:text-3xl">
+                {stage.title}
+              </h3>
+              <p class="text-xs font-medium text-white/70 sm:text-sm">
+                {stage.subtitle} • Sélectionneur : <strong class="text-white font-bold">{stage.coach}</strong>
+              </p>
+            </div>
+
+            <!-- Rencontres au programme -->
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div class="rounded-xl bg-congo-blue/20 border border-congo-blue/40 px-4 py-2.5 text-xs text-left">
+                <div class="text-[0.68rem] font-bold uppercase tracking-widest text-sky-300">Rencontres au programme</div>
+                <div class="font-medium text-white/90 mt-0.5 space-y-0.5">
+                  {stage.matches.map((m) => (
+                    <div>• <strong class="text-white">{m.label}</strong> ({m.date})</div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Total de sélectionnés par ligne -->
+          <div class="mt-6 flex flex-wrap items-center gap-3 border-t border-white/10 pt-4 text-xs">
+            <span class="font-bold uppercase tracking-wider text-white/60">Effectif retenu ({totalPlayers}) :</span>
+            <span class="inline-flex items-center gap-1.5 rounded-md bg-amber-500/15 px-2.5 py-1 font-bold text-amber-300 border border-amber-500/25">
+              Gardiens: {countG}
+            </span>
+            <span class="inline-flex items-center gap-1.5 rounded-md bg-sky-500/15 px-2.5 py-1 font-bold text-sky-300 border border-sky-500/25">
+              Défenseurs: {countD}
+            </span>
+            <span class="inline-flex items-center gap-1.5 rounded-md bg-emerald-500/15 px-2.5 py-1 font-bold text-emerald-300 border border-emerald-500/25">
+              Milieux: {countM}
+            </span>
+            <span class="inline-flex items-center gap-1.5 rounded-md bg-rose-500/15 px-2.5 py-1 font-bold text-rose-300 border border-rose-500/25">
+              Attaquants: {countA}
+            </span>
+          </div>
+        </div>
+
+        <!-- Barre de filtres et recherche instantanée -->
+        <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <!-- Filtres par poste -->
+          <div class="flex flex-wrap items-center gap-2">
+            {positions.map((pos) => {
+              let count = totalPlayers;
+              if (pos === "Gardien") count = countG;
+              if (pos === "Défenseur") count = countD;
+              if (pos === "Milieu") count = countM;
+              if (pos === "Attaquant") count = countA;
+
+              return (
+                <button
+                  type="button"
+                  data-filter-pos={pos}
+                  data-stage-id={stage.id}
+                  class={`squad-pos-btn rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] transition-all duration-300 ${
+                    pos === "Tous"
+                      ? "bg-or text-congo-night shadow-md shadow-or/20 active-pos"
+                      : "bg-white/10 text-white hover:bg-white/20 border border-white/10"
+                  }`}
+                >
+                  {pos === "Tous" ? `Tous (${count})` : `${pos}s (${count})`}
+                </button>
+              );
+            })}
+          </div>
+
+          <!-- Recherche rapide -->
+          <div class="relative w-full sm:w-72">
+            <input
+              type="text"
+              placeholder="Chercher un joueur ou un club..."
+              data-stage-search={stage.id}
+              class="squad-search-input w-full rounded-xl bg-white/10 border border-white/15 px-4 py-2 text-xs text-white placeholder-white/40 focus:border-or focus:bg-white/15 focus:outline-none transition-all"
+            />
+          </div>
+        </div>
+
+        <!-- Grille des joueurs -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 squad-grid" data-stage-grid={stage.id}>
+          {stage.players.map((player) => (
+            <article
+              class={`squad-player-card group relative overflow-hidden rounded-xl border border-white/15 bg-gradient-to-br from-congo-night via-[#081836] to-congo-night p-5 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl ${getPositionBorderAccent(player.position)}`}
+              data-player-pos={player.position}
+              data-player-name={player.name.toLowerCase()}
+              data-player-club={player.club.toLowerCase()}
+            >
+              <!-- En-tête de la carte : Poste & Drapeau RDC -->
+              <div class="flex items-center justify-between gap-2 mb-3">
+                <span class={`rounded-md px-2.5 py-1 text-[0.62rem] font-bold uppercase tracking-widest border ${getPositionBadgeClass(player.position)}`}>
+                  {player.position}
+                </span>
+
+                <div class="flex items-center gap-1.5">
+                  <span class="text-[0.65rem] font-black uppercase text-or tracking-widest">RDC</span>
+                  <img src="/flags/cd.svg" alt="RDC" class="h-3 w-4 rounded-xs shadow-xs object-cover" />
+                </div>
+              </div>
+
+              <!-- Nom du joueur en typographie condensée monumentale -->
+              <div class="mt-2">
+                <h4 class="font-display text-2xl font-bold uppercase tracking-wider text-white group-hover:text-or transition-colors leading-tight">
+                  {player.name}
+                </h4>
+              </div>
+
+              <!-- Club du joueur -->
+              <div class="mt-4 flex items-center justify-between border-t border-white/10 pt-3 text-xs">
+                <span class="text-[0.7rem] uppercase tracking-wider text-white/50 font-bold">Club</span>
+                <span class="font-bold text-white/90 truncate max-w-[170px] text-right group-hover:text-white transition-colors">
+                  {player.club}
+                </span>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <!-- Message aucun résultat de recherche -->
+        <div class="no-results hidden py-12 text-center text-white/50 text-sm">
+          Aucun joueur ne correspond à votre recherche pour ce stage.
+        </div>
+      </div>
+    );
+  })}
+</div>
+
+<script>
+  function initSquadInteractive() {
+    // 1. Gestion des onglets de Stage
+    const stageTabs = document.querySelectorAll<HTMLButtonElement>(".stage-tab-btn");
+    const stagePanels = document.querySelectorAll<HTMLElement>(".stage-panel");
+
+    stageTabs.forEach((tab) => {
+      tab.addEventListener("click", () => {
+        const targetStageId = tab.getAttribute("data-stage-target");
+
+        stageTabs.forEach((t) => {
+          t.classList.remove("bg-congo-blue", "text-white", "shadow-lg", "shadow-congo-blue/30", "active-stage");
+          t.classList.add("text-white/70");
+          const dot = t.querySelector(".rounded-full");
+          if (dot) {
+            dot.className = "h-2 w-2 rounded-full bg-white/40";
+          }
+        });
+
+        tab.classList.add("bg-congo-blue", "text-white", "shadow-lg", "shadow-congo-blue/30", "active-stage");
+        tab.classList.remove("text-white/70");
+        const activeDot = tab.querySelector(".rounded-full");
+        if (activeDot) {
+          activeDot.className = "h-2 w-2 rounded-full bg-or animate-pulse";
+        }
+
+        stagePanels.forEach((panel) => {
+          if (panel.id === targetStageId) {
+            panel.classList.remove("hidden");
+            panel.classList.add("block");
+          } else {
+            panel.classList.add("hidden");
+            panel.classList.remove("block");
+          }
+        });
+      });
+    });
+
+    // 2. Gestion des filtres de poste et de la recherche par stage
+    stagePanels.forEach((panel) => {
+      const stageId = panel.id;
+      const posButtons = panel.querySelectorAll<HTMLButtonElement>(".squad-pos-btn");
+      const searchInput = panel.querySelector<HTMLInputElement>(".squad-search-input");
+      const cards = panel.querySelectorAll<HTMLElement>(".squad-player-card");
+      const noResults = panel.querySelector<HTMLElement>(".no-results");
+
+      let currentPos = "Tous";
+      let currentQuery = "";
+
+      function filterCards() {
+        let visibleCount = 0;
+
+        cards.forEach((card) => {
+          const cardPos = card.getAttribute("data-player-pos");
+          const cardName = card.getAttribute("data-player-name") || "";
+          const cardClub = card.getAttribute("data-player-club") || "";
+
+          const matchesPos = currentPos === "Tous" || cardPos === currentPos;
+          const matchesQuery = currentQuery === "" || cardName.includes(currentQuery) || cardClub.includes(currentQuery);
+
+          if (matchesPos && matchesQuery) {
+            card.style.display = "";
+            visibleCount++;
+          } else {
+            card.style.display = "none";
+          }
+        });
+
+        if (noResults) {
+          if (visibleCount === 0) {
+            noResults.classList.remove("hidden");
+          } else {
+            noResults.classList.add("hidden");
+          }
+        }
+      }
+
+      posButtons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          currentPos = btn.getAttribute("data-filter-pos") || "Tous";
+
+          posButtons.forEach((b) => {
+            b.classList.remove("bg-or", "text-congo-night", "shadow-md", "shadow-or/20", "active-pos");
+            b.classList.add("bg-white/10", "text-white", "border", "border-white/10");
+          });
+
+          btn.classList.add("bg-or", "text-congo-night", "shadow-md", "shadow-or/20", "active-pos");
+          btn.classList.remove("bg-white/10", "text-white", "border", "border-white/10");
+
+          filterCards();
+        });
+      });
+
+      if (searchInput) {
+        searchInput.addEventListener("input", (e) => {
+          currentQuery = (e.target as HTMLInputElement).value.trim().toLowerCase();
+          filterCards();
+        });
+      }
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", initSquadInteractive);
+  document.addEventListener("astro:page-load", initSquadInteractive);
+</script>
+
+<style>
+  .squad-player-card {
+    will-change: transform;
+  }
+</style>
