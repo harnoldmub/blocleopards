@@ -1,7 +1,7 @@
 ---
 /**
  * Formulaire de participation au Jeu-Concours :
- * « Gagne ta place pour les matchs à Kinshasa et en Ouganda ».
+ * « Gagne ta place pour les matchs à Kinshasa et à Harare ».
  * Simple, rapide, optimisé mobile et relié à l'API /api/can2027/concours.
  */
 ---
@@ -15,7 +15,6 @@
     <!-- Présentation & Arguments (5 cols) -->
     <div class="lg:col-span-5 text-left">
       <div class="inline-flex items-center gap-2 rounded-full border border-or/50 bg-or/10 px-3.5 py-1 text-xs font-black uppercase tracking-[0.2em] text-or">
-        <span class="animate-pulse">🎟️</span>
         <span>Jeu-Concours Supporters</span>
       </div>
 
@@ -25,7 +24,7 @@
       </h2>
 
       <p class="mt-4 text-base font-bold text-sky-300 sm:text-lg">
-        À Kinshasa (Stade des Martyrs) & en Ouganda
+        À Kinshasa (Stade des Martyrs) & à Harare
       </p>
 
       <p class="mt-3 text-sm leading-relaxed text-white/80">
@@ -94,7 +93,7 @@
                 type="text"
                 id="contest-city"
                 name="ville"
-                placeholder="Ex: Kinshasa, Kampala, Paris..."
+                placeholder="Ex: Kinshasa, Harare, Paris..."
                 class="w-full rounded-xl border border-white/20 bg-congo-night/80 px-4 py-3.5 text-sm text-white placeholder-white/40 focus:border-or focus:bg-congo-night focus:outline-none transition-all"
               />
             </div>
@@ -116,10 +115,10 @@
               </label>
 
               <label class="contest-radio-label relative flex cursor-pointer items-center justify-between rounded-xl border border-white/20 bg-white/5 p-3 text-xs transition-all hover:border-or hover:bg-white/10">
-                <input type="radio" name="matchChoix" value="ouganda" class="peer sr-only" />
+                <input type="radio" name="matchChoix" value="harare" class="peer sr-only" />
                 <div class="flex items-center gap-2">
                   <span>✈️</span>
-                  <span class="font-bold text-white peer-checked:text-or">Ouganda</span>
+                  <span class="font-bold text-white peer-checked:text-or">Harare</span>
                 </div>
                 <div class="h-3 w-3 rounded-full border border-white/50 peer-checked:border-or peer-checked:bg-or"></div>
               </label>
@@ -127,7 +126,6 @@
               <label class="contest-radio-label relative flex cursor-pointer items-center justify-between rounded-xl border border-white/20 bg-white/5 p-3 text-xs transition-all hover:border-or hover:bg-white/10">
                 <input type="radio" name="matchChoix" value="les-deux" class="peer sr-only" />
                 <div class="flex items-center gap-2">
-                  <span>🎟️</span>
                   <span class="font-bold text-white peer-checked:text-or">Les deux</span>
                 </div>
                 <div class="h-3 w-3 rounded-full border border-white/50 peer-checked:border-or peer-checked:bg-or"></div>

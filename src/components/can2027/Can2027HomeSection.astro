@@ -7,6 +7,18 @@ import { CAN2027_DATA } from "../../data/can2027";
 
 const j1 = CAN2027_DATA.fixtures[0];
 const j2 = CAN2027_DATA.fixtures[1];
+
+// "Jeudi 24 septembre 2026" -> "24 sept."
+function shortDate(dateStr: string) {
+  const parts = dateStr.split(" ");
+  if (parts.length < 3) return dateStr;
+  return `${parts[1]} ${parts[2].slice(0, 3)}.`;
+}
+// "17:00 (Kinshasa)" -> "17h"
+function shortTime(timeStr: string) {
+  const match = timeStr.match(/^(\d{1,2}):(\d{2})/);
+  return match ? `${match[1]}h` : timeStr;
+}
 ---
 
 <section id="can-2027" class="can-home-section scroll-mt-24" aria-labelledby="can-home-title">
@@ -87,7 +99,7 @@ const j2 = CAN2027_DATA.fixtures[1];
           </a>
         </div>
 
-        <!-- Bouton / Bannière Attirante Concours Places Kinshasa & Ouganda -->
+        <!-- Bouton / Bannière Attirante Concours Places Kinshasa & Harare -->
         <div data-reveal class="mt-6">
           <a
             href="/can-2027#gagne-ta-place"
@@ -97,9 +109,6 @@ const j2 = CAN2027_DATA.fixtures[1];
             <div class="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-or/20 blur-2xl group-hover:bg-or/30 transition-all pointer-events-none"></div>
 
             <div class="flex items-center gap-3.5 sm:gap-4">
-              <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-or text-2xl text-congo-night shadow-lg shadow-or/30 group-hover:scale-110 transition-transform">
-                🎟️
-              </div>
               <div class="text-left">
                 <div class="flex items-center gap-2">
                   <span class="inline-flex items-center gap-1 rounded bg-feu px-2 py-0.5 text-[0.62rem] font-black uppercase tracking-widest text-white animate-pulse">
@@ -110,7 +119,7 @@ const j2 = CAN2027_DATA.fixtures[1];
                   </span>
                 </div>
                 <h3 class="mt-1 font-mega text-xl uppercase tracking-wide text-white group-hover:text-or transition-colors sm:text-2xl leading-none">
-                  Gagne ta place : Kinshasa & Ouganda
+                  Gagne ta place : Kinshasa & Harare
                 </h3>
                 <p class="mt-1 text-xs text-white/75 font-medium">
                   Stade des Martyrs & Déplacement · Formulaire rapide en 30s
@@ -136,25 +145,25 @@ const j2 = CAN2027_DATA.fixtures[1];
             <!-- J1 -->
             <a href="/can-2027#matchs" class="group flex items-center justify-between rounded bg-white/5 p-2.5 transition-colors hover:bg-white/15">
               <div class="flex items-center gap-2.5">
-                <span class="rounded bg-feu px-1.5 py-0.5 text-[0.62rem] font-bold uppercase text-white">J1</span>
+                <span class="rounded bg-feu px-1.5 py-0.5 text-[0.62rem] font-bold uppercase text-white">J{j1.matchday}</span>
                 <div class="text-left">
-                  <p class="text-xs font-bold text-white group-hover:text-or">RDC vs Guinée éq.</p>
-                  <p class="text-[0.68rem] text-white/60">24 sept. · Kinshasa</p>
+                  <p class="text-xs font-bold text-white group-hover:text-or">{j1.homeTeam.code} vs {j1.awayTeam.shortName}</p>
+                  <p class="text-[0.68rem] text-white/60">{shortDate(j1.dateStr)} · {j1.city}</p>
                 </div>
               </div>
-              <span class="text-xs text-or font-bold">17h</span>
+              <span class="text-xs text-or font-bold">{shortTime(j1.timeStr)}</span>
             </a>
 
             <!-- J2 -->
             <a href="/can-2027#matchs" class="group flex items-center justify-between rounded bg-white/5 p-2.5 transition-colors hover:bg-white/15">
               <div class="flex items-center gap-2.5">
-                <span class="rounded bg-white/20 px-1.5 py-0.5 text-[0.62rem] font-bold uppercase text-white">J2</span>
+                <span class="rounded bg-white/20 px-1.5 py-0.5 text-[0.62rem] font-bold uppercase text-white">J{j2.matchday}</span>
                 <div class="text-left">
-                  <p class="text-xs font-bold text-white group-hover:text-or">Zimbabwe vs RDC</p>
-                  <p class="text-[0.68rem] text-white/60">28 sept. · Harare</p>
+                  <p class="text-xs font-bold text-white group-hover:text-or">{j2.homeTeam.shortName} vs {j2.awayTeam.code}</p>
+                  <p class="text-[0.68rem] text-white/60">{shortDate(j2.dateStr)} · {j2.city}</p>
                 </div>
               </div>
-              <span class="text-xs text-white/80 font-bold">18h</span>
+              <span class="text-xs text-white/80 font-bold">{shortTime(j2.timeStr)}</span>
             </a>
           </div>
         </div>
@@ -193,7 +202,7 @@ const j2 = CAN2027_DATA.fixtures[1];
 
                 <div class="text-right">
                   <span class="inline-block rounded-full bg-white/15 px-3 py-1 text-[0.65rem] font-bold uppercase tracking-wider text-white backdrop-blur-sm border border-white/20">
-                    Kinshasa · Harare
+                    {j1.city} · {j2.city}
                   </span>
                 </div>
               </div>

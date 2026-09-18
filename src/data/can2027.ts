@@ -343,7 +343,7 @@ export const CAN2027_DATA = {
       badge: "Éliminatoires CAN 2027",
       coach: "S. Desabre",
       matches: [
-        { label: "RDC vs Sierra Leone", date: "Jeudi 24 Sept 2026", venue: "Stade des Martyrs (Kinshasa)" },
+        { label: "RDC vs Guinée équatoriale", date: "Jeudi 24 Sept 2026", venue: "Stade des Martyrs (Kinshasa)" },
         { label: "Zimbabwe vs RDC", date: "Lundi 28 Sept 2026", venue: "National Sports Stadium (Harare)" }
       ],
       players: [
@@ -358,29 +358,29 @@ export const CAN2027_DATA = {
         { id: "k-pedro", name: "K. PEDRO", position: "Défenseur", club: "AS Saint-Étienne" },
         { id: "j-kayembe", name: "J. KAYEMBE", position: "Défenseur", club: "KRC Genk" },
         { id: "s-kapuadi", name: "S. KAPUADI", position: "Défenseur", club: "Widzew Łódź" },
-        { id: "a-masuaku", name: "A. MASUAKU", position: "Défenseur", club: "Konyaspor" },
+        { id: "a-masuaku", name: "A. MASUAKU", position: "Défenseur", club: "Konyaspor", photo: "/media/can-2027/players/arthur-masuaku.webp", featured: true },
         { id: "j-makengo", name: "J. MAKENGO", position: "Défenseur", club: "SC Freiburg" },
-        { id: "c-mbemba", name: "C. MBEMBA", position: "Défenseur", club: "Al Diriyah" },
-        { id: "a-tuanzebe", name: "A. TUANZEBE", position: "Défenseur", club: "AJ Auxerre" },
+        { id: "c-mbemba", name: "C. MBEMBA", position: "Défenseur", club: "Al Diriyah", photo: "/media/can-2027/players/chancel-mbemba.webp", featured: true },
+        { id: "a-tuanzebe", name: "A. TUANZEBE", position: "Défenseur", club: "AJ Auxerre", photo: "/media/can-2027/players/axel-tuanzebe.webp", featured: true },
         { id: "w-kambwala", name: "W. KAMBWALA", position: "Défenseur", club: "Côme 1907" },
         { id: "d-batubinsika", name: "D. BATUBINSIKA", position: "Défenseur", club: "FCSB (Bucarest)" },
 
         // MILIEUX
         { id: "n-sadiki", name: "N. SADIKI", position: "Milieu", club: "Sunderland AFC" },
-        { id: "s-moutoussamy", name: "S. MOUTOUSSAMY", position: "Milieu", club: "Atromitos FC" },
-        { id: "e-kayembe", name: "E. KAYEMBE", position: "Milieu", club: "Watford FC" },
+        { id: "s-moutoussamy", name: "S. MOUTOUSSAMY", position: "Milieu", club: "Atromitos FC", photo: "/media/can-2027/players/samuel-moutoussamy.webp", featured: true },
+        { id: "e-kayembe", name: "E. KAYEMBE", position: "Milieu", club: "Watford FC", photo: "/media/can-2027/players/edo-kayembe.webp", featured: true },
         { id: "n-mukau", name: "N. MUKAU", position: "Milieu", club: "LOSC Lille" },
         { id: "n-mbamba", name: "N. MBAMBA", position: "Milieu", club: "FC Lorient" },
         { id: "e-banzuzi", name: "E. BANZUZI", position: "Milieu", club: "RB Leipzig" },
         { id: "n-mbuku", name: "N. MBUKU", position: "Milieu", club: "Saint-Trond VV" },
         { id: "b-cipenga", name: "B. CIPENGA", position: "Milieu", club: "UD Almería" },
-        { id: "m-elia", name: "M. ELIA", position: "Milieu", club: "Alanyaspor" },
-        { id: "t-bongonda", name: "T. BONGONDA", position: "Milieu", club: "Al Faisaly" },
+        { id: "m-elia", name: "M. ELIA", position: "Milieu", club: "Alanyaspor", photo: "/media/can-2027/players/meschack-elia.webp", featured: true },
+        { id: "t-bongonda", name: "T. BONGONDA", position: "Milieu", club: "Al Faisaly", photo: "/media/can-2027/players/theo-bongonda.webp", featured: true },
         { id: "s-idumbo", name: "S. IDUMBO", position: "Milieu", club: "AS Monaco" },
 
         // ATTAQUANTS
         { id: "a-pululu", name: "A. PULULU", position: "Attaquant", club: "Al Hazem" },
-        { id: "y-wissa", name: "Y. WISSA", position: "Attaquant", club: "Newcastle United" },
+        { id: "y-wissa", name: "Y. WISSA", position: "Attaquant", club: "Newcastle United", photo: "/media/can-2027/players/yoane-wissa.webp", featured: true },
         { id: "s-banza", name: "S. BANZA", position: "Attaquant", club: "Al Jazira" },
         { id: "f-mayele", name: "F. MAYELE", position: "Attaquant", club: "Al-Ahli SC" }
       ]

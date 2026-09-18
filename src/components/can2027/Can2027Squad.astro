@@ -2,7 +2,7 @@
 /**
  * Effectif officiel « Les Léopards » pour la CAN 2027.
  * Liste officielle communiquée par la FECOFA et le sélectionneur Sébastien Desabre.
- * Présentation officielle sans photos et sans numéros.
+ * Photo si disponible pour les joueurs mis en avant (featured), sinon carte texte.
  */
 import { CAN2027_DATA } from "../../data/can2027";
 
@@ -174,37 +174,82 @@ function getPositionBorderAccent(position: string) {
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 squad-grid" data-stage-grid={stage.id}>
           {stage.players.map((player) => (
             <article
-              class={`squad-player-card group relative overflow-hidden rounded-xl border border-white/15 bg-gradient-to-br from-congo-night via-[#081836] to-congo-night p-5 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl ${getPositionBorderAccent(player.position)}`}
+              class={`squad-player-card group relative overflow-hidden rounded-xl border border-white/15 bg-gradient-to-br from-congo-night via-[#081836] to-congo-night transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl ${getPositionBorderAccent(player.position)} ${player.photo ? "" : "p-5"}`}
               data-player-pos={player.position}
               data-player-name={player.name.toLowerCase()}
               data-player-club={player.club.toLowerCase()}
             >
-              <!-- En-tête de la carte : Poste & Drapeau RDC -->
-              <div class="flex items-center justify-between gap-2 mb-3">
-                <span class={`rounded-md px-2.5 py-1 text-[0.62rem] font-bold uppercase tracking-widest border ${getPositionBadgeClass(player.position)}`}>
-                  {player.position}
-                </span>
+              {player.photo ? (
+                <>
+                  <!-- Portrait du joueur -->
+                  <div class="relative aspect-[3/4] w-full overflow-hidden bg-congo-night">
+                    <img
+                      src={player.photo}
+                      alt={player.name}
+                      loading="lazy"
+                      class="h-full w-full object-cover object-top grayscale-[15%] transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div class="absolute inset-0 bg-gradient-to-t from-congo-night via-congo-night/10 to-transparent"></div>
 
-                <div class="flex items-center gap-1.5">
-                  <span class="text-[0.65rem] font-black uppercase text-or tracking-widest">RDC</span>
-                  <img src="/flags/cd.svg" alt="RDC" class="h-3 w-4 rounded-xs shadow-xs object-cover" />
-                </div>
-              </div>
+                    <!-- Badge sélection -->
+                    <div class="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-or px-2.5 py-1 text-[0.6rem] font-black uppercase tracking-widest text-congo-night shadow-md">
+                      <span>★</span><span>Sélection</span>
+                    </div>
 
-              <!-- Nom du joueur en typographie condensée monumentale -->
-              <div class="mt-2">
-                <h4 class="font-display text-2xl font-bold uppercase tracking-wider text-white group-hover:text-or transition-colors leading-tight">
-                  {player.name}
-                </h4>
-              </div>
+                    <div class="absolute right-3 top-3 flex items-center gap-1.5">
+                      <span class="text-[0.65rem] font-black uppercase text-or tracking-widest drop-shadow">RDC</span>
+                      <img src="/flags/cd.svg" alt="RDC" class="h-3 w-4 rounded-xs shadow-xs object-cover" />
+                    </div>
 
-              <!-- Club du joueur -->
-              <div class="mt-4 flex items-center justify-between border-t border-white/10 pt-3 text-xs">
-                <span class="text-[0.7rem] uppercase tracking-wider text-white/50 font-bold">Club</span>
-                <span class="font-bold text-white/90 truncate max-w-[170px] text-right group-hover:text-white transition-colors">
-                  {player.club}
-                </span>
-              </div>
+                    <!-- Nom en surimpression -->
+                    <div class="absolute inset-x-0 bottom-0 p-4">
+                      <span class={`inline-block rounded-md px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-widest border ${getPositionBadgeClass(player.position)}`}>
+                        {player.position}
+                      </span>
+                      <h4 class="mt-1.5 font-display text-xl font-bold uppercase tracking-wider text-white group-hover:text-or transition-colors leading-tight">
+                        {player.name}
+                      </h4>
+                    </div>
+                  </div>
+
+                  <!-- Club du joueur -->
+                  <div class="flex items-center justify-between px-4 py-3 text-xs">
+                    <span class="text-[0.7rem] uppercase tracking-wider text-white/50 font-bold">Club</span>
+                    <span class="font-bold text-white/90 truncate max-w-[170px] text-right group-hover:text-white transition-colors">
+                      {player.club}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <!-- En-tête de la carte : Poste & Drapeau RDC -->
+                  <div class="flex items-center justify-between gap-2 mb-3">
+                    <span class={`rounded-md px-2.5 py-1 text-[0.62rem] font-bold uppercase tracking-widest border ${getPositionBadgeClass(player.position)}`}>
+                      {player.position}
+                    </span>
+
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-[0.65rem] font-black uppercase text-or tracking-widest">RDC</span>
+                      <img src="/flags/cd.svg" alt="RDC" class="h-3 w-4 rounded-xs shadow-xs object-cover" />
+                    </div>
+                  </div>
+
+                  <!-- Nom du joueur en typographie condensée monumentale -->
+                  <div class="mt-2">
+                    <h4 class="font-display text-2xl font-bold uppercase tracking-wider text-white group-hover:text-or transition-colors leading-tight">
+                      {player.name}
+                    </h4>
+                  </div>
+
+                  <!-- Club du joueur -->
+                  <div class="mt-4 flex items-center justify-between border-t border-white/10 pt-3 text-xs">
+                    <span class="text-[0.7rem] uppercase tracking-wider text-white/50 font-bold">Club</span>
+                    <span class="font-bold text-white/90 truncate max-w-[170px] text-right group-hover:text-white transition-colors">
+                      {player.club}
+                    </span>
+                  </div>
+                </>
+              )}
             </article>
           ))}
         </div>
