@@ -15,20 +15,21 @@
     <!-- Présentation & Arguments (5 cols) -->
     <div class="lg:col-span-5 text-left">
       <div class="inline-flex items-center gap-2 rounded-full border border-or/50 bg-or/10 px-3.5 py-1 text-xs font-black uppercase tracking-[0.2em] text-or">
+        <span class="animate-pulse">🎟️</span>
         <span>Jeu-Concours Supporters</span>
       </div>
 
       <h2 class="mt-4 font-mega text-4xl uppercase leading-[0.9] text-white sm:text-5xl lg:text-6xl">
         GAGNE TA PLACE <br />
-        <span class="text-or">POUR LES MATCHS</span>
+        <span class="text-or">À KINSHASA</span>
       </h2>
 
       <p class="mt-4 text-base font-bold text-sky-300 sm:text-lg">
-        À Kinshasa (Stade des Martyrs) & à Harare
+        Stade des Martyrs de la Pentecôte
       </p>
 
       <p class="mt-3 text-sm leading-relaxed text-white/80">
-        Le <strong>Bloc Léopards</strong> offre des places de tribune et des accès supporters pour pousser les Léopards de la RDC vers la victoire. Remplis ce formulaire rapide pour tenter ta chance au tirage au sort officiel !
+        Le <strong>Bloc Léopards</strong> offre des places de tribune et des accès supporters pour pousser les Léopards de la RDC vers la victoire à domicile au Stade des Martyrs. Remplis ce formulaire rapide pour tenter ta chance au tirage au sort officiel !
       </p>
 
       <!-- Avantages & Sécurité -->
@@ -39,7 +40,7 @@
         </div>
         <div class="flex items-center gap-3">
           <span class="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 font-bold">✓</span>
-          <span>Tirage au sort régulier avant chaque journée</span>
+          <span>Tirage au sort régulier avant la rencontre</span>
         </div>
         <div class="flex items-center gap-3">
           <span class="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 font-bold">✓</span>
@@ -87,50 +88,37 @@
 
             <div>
               <label for="contest-city" class="block text-xs font-bold uppercase tracking-wider text-white/90 mb-2">
-                Ville / Pays de résidence
+                Ville / Commune de résidence
               </label>
               <input
                 type="text"
                 id="contest-city"
                 name="ville"
-                placeholder="Ex: Kinshasa, Harare, Paris..."
+                placeholder="Ex: Kinshasa (Gombe, Lemba...)"
                 class="w-full rounded-xl border border-white/20 bg-congo-night/80 px-4 py-3.5 text-sm text-white placeholder-white/40 focus:border-or focus:bg-congo-night focus:outline-none transition-all"
               />
             </div>
           </div>
 
-          <!-- Choix du Match -->
+          <!-- Match concerné : Kinshasa fixé -->
           <div>
             <label class="block text-xs font-bold uppercase tracking-wider text-white/90 mb-2">
-              Pour quel match souhaites-tu une place ? <span class="text-or">*</span>
+              Match concerné
             </label>
-            <div class="grid gap-2.5 sm:grid-cols-3">
-              <label class="contest-radio-label relative flex cursor-pointer items-center justify-between rounded-xl border border-white/20 bg-white/5 p-3 text-xs transition-all hover:border-or hover:bg-white/10">
-                <input type="radio" name="matchChoix" value="kinshasa" checked class="peer sr-only" />
-                <div class="flex items-center gap-2">
-                  <span>🏟️</span>
-                  <span class="font-bold text-white peer-checked:text-or">Kinshasa</span>
+            <div class="rounded-xl border border-or/40 bg-or/10 p-3.5 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <span class="text-2xl">🏟️</span>
+                <div>
+                  <div class="text-[0.68rem] font-bold uppercase tracking-wider text-or">Éliminatoires CAN 2027 · Journée 1</div>
+                  <div class="text-sm font-bold text-white">RDC vs Guinée équatoriale</div>
+                  <div class="text-[0.68rem] text-white/70">Stade des Martyrs (Kinshasa) · 80 000 places</div>
                 </div>
-                <div class="h-3 w-3 rounded-full border border-white/50 peer-checked:border-or peer-checked:bg-or"></div>
-              </label>
-
-              <label class="contest-radio-label relative flex cursor-pointer items-center justify-between rounded-xl border border-white/20 bg-white/5 p-3 text-xs transition-all hover:border-or hover:bg-white/10">
-                <input type="radio" name="matchChoix" value="harare" class="peer sr-only" />
-                <div class="flex items-center gap-2">
-                  <span>✈️</span>
-                  <span class="font-bold text-white peer-checked:text-or">Harare</span>
-                </div>
-                <div class="h-3 w-3 rounded-full border border-white/50 peer-checked:border-or peer-checked:bg-or"></div>
-              </label>
-
-              <label class="contest-radio-label relative flex cursor-pointer items-center justify-between rounded-xl border border-white/20 bg-white/5 p-3 text-xs transition-all hover:border-or hover:bg-white/10">
-                <input type="radio" name="matchChoix" value="les-deux" class="peer sr-only" />
-                <div class="flex items-center gap-2">
-                  <span class="font-bold text-white peer-checked:text-or">Les deux</span>
-                </div>
-                <div class="h-3 w-3 rounded-full border border-white/50 peer-checked:border-or peer-checked:bg-or"></div>
-              </label>
+              </div>
+              <span class="rounded bg-or px-2.5 py-1 text-[0.65rem] font-black uppercase text-congo-night shrink-0">
+                Kinshasa
+              </span>
             </div>
+            <input type="hidden" name="matchChoix" value="kinshasa" />
           </div>
 
           <!-- Message d'encouragement (Optionnel) -->
@@ -157,7 +145,7 @@
             id="contest-submit-btn"
             class="group w-full rounded-full bg-or py-4 px-6 text-sm font-black uppercase tracking-[0.16em] text-congo-night shadow-xl shadow-or/20 hover:bg-yellow-300 transition-all hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-3"
           >
-            <span>TENTER DE GAGNER MA PLACE</span>
+            <span>TENTER DE GAGNER MA PLACE À KINSHASA</span>
             <span class="transition-transform group-hover:translate-x-1">→</span>
           </button>
         </form>
@@ -200,28 +188,6 @@
     const resetBtn = document.getElementById("contest-reset-btn");
 
     if (!form || !submitBtn) return;
-
-    // Mise à jour visuelle des labels radio
-    const radioLabels = form.querySelectorAll<HTMLLabelElement>(".contest-radio-label");
-    radioLabels.forEach((label) => {
-      const radio = label.querySelector<HTMLInputElement>("input[type=radio]");
-      if (radio) {
-        radio.addEventListener("change", () => {
-          radioLabels.forEach((l) => {
-            l.classList.remove("border-or", "bg-or/15");
-            l.classList.add("border-white/20", "bg-white/5");
-          });
-          if (radio.checked) {
-            label.classList.add("border-or", "bg-or/15");
-            label.classList.remove("border-white/20", "bg-white/5");
-          }
-        });
-        if (radio.checked) {
-          label.classList.add("border-or", "bg-or/15");
-          label.classList.remove("border-white/20", "bg-white/5");
-        }
-      }
-    });
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
