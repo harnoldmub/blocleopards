@@ -25,120 +25,171 @@ function defaultSlug(title: string, date: string): string {
   return `${date}-${slugify(title)}`.replace(/-+$/g, "");
 }
 
+async function ensureEventsTable(sql: any) {
+  await sql`create extension if not exists pgcrypto`;
+  await sql`
+    create table if not exists events (
+      id uuid primary key default gen_random_uuid(),
+      slug text not null unique,
+      title text not null,
+      description text not null,
+      body text not null default '',
+      date date not null,
+      time text not null default '',
+      location text not null default '',
+      cta text not null default '',
+      map text,
+      image text,
+      category text not null default 'event',
+      published boolean not null default true,
+      created_at timestamptz not null default now(),
+      updated_at timestamptz not null default now()
+    )
+  `;
+}
+
 export const GET: APIRoute = async ({ cookies }) => {
   if (!isAdminAuthed(cookies)) return json({ error: "Non autorisé" }, 401);
 
-  const sql = requireDatabase();
-  const rows = await sql`
-    SELECT *
-    FROM events
-    ORDER BY date ASC, created_at ASC
-  `;
+  try {
+    const sql = requireDatabase();
+    await ensureEventsTable(sql);
 
-  return json({ events: rows });
+    const rows = await sql`
+      SELECT *
+      FROM events
+      ORDER BY date ASC, created_at ASC
+    `;
+
+    return json({ events: rows || [] });
+  } catch (err: any) {
+    console.error("[api/admin/events] GET error:", err);
+    return json({ error: err?.message || "Erreur lors de la récupération des événements", events: [] }, 500);
+  }
 };
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   if (!isAdminAuthed(cookies)) return json({ error: "Non autorisé" }, 401);
 
-  const sql = requireDatabase();
-  const body = await request.json();
-  const {
-    title,
-    description,
-    body: content,
-    date,
-    time,
-    location,
-    cta,
-    map,
-    image,
-    category,
-    published,
-  } = body;
-  const slug = body.slug || (title && date ? defaultSlug(title, date) : "");
+  try {
+    const sql = requireDatabase();
+    await ensureEventsTable(sql);
 
-  if (!slug || !title || !description || !date) {
-    return json({ error: "Titre, description et date sont obligatoires." }, 400);
+    const body = await request.json();
+    const {
+      title,
+      description,
+      body: content,
+      date,
+      time,
+      location,
+      cta,
+      map,
+      image,
+      category,
+      published,
+    } = body;
+    const slug = body.slug || (title && date ? defaultSlug(title, date) : "");
+
+    if (!slug || !title || !description || !date) {
+      return json({ error: "Titre, description et date sont obligatoires." }, 400);
+    }
+
+    const [row] = await sql`
+      INSERT INTO events (slug, title, description, body, date, time, location, cta, map, image, category, published)
+      VALUES (
+        ${slug},
+        ${title},
+        ${description},
+        ${content || ""},
+        ${date},
+        ${time || ""},
+        ${location || ""},
+        ${cta || ""},
+        ${map || null},
+        ${image || null},
+        ${category || "event"},
+        ${published !== false}
+      )
+      RETURNING *
+    `;
+
+    return json({ event: row }, 201);
+  } catch (err: any) {
+    console.error("[api/admin/events] POST error:", err);
+    return json({ error: err?.message || "Erreur lors de la création de l'événement" }, 500);
   }
-
-  const [row] = await sql`
-    INSERT INTO events (slug, title, description, body, date, time, location, cta, map, image, category, published)
-    VALUES (
-      ${slug},
-      ${title},
-      ${description},
-      ${content || ""},
-      ${date},
-      ${time || ""},
-      ${location || ""},
-      ${cta || ""},
-      ${map || null},
-      ${image || null},
-      ${category || "event"},
-      ${published !== false}
-    )
-    RETURNING *
-  `;
-
-  return json({ event: row }, 201);
 };
 
 export const PUT: APIRoute = async ({ request, cookies }) => {
   if (!isAdminAuthed(cookies)) return json({ error: "Non autorisé" }, 401);
 
-  const sql = requireDatabase();
-  const body = await request.json();
-  const {
-    id,
-    slug,
-    title,
-    description,
-    body: content,
-    date,
-    time,
-    location,
-    cta,
-    map,
-    image,
-    category,
-    published,
-  } = body;
+  try {
+    const sql = requireDatabase();
+    await ensureEventsTable(sql);
 
-  if (!id) return json({ error: "id requis" }, 400);
-  if (!slug || !title || !description || !date) {
-    return json({ error: "Titre, slug, description et date sont obligatoires." }, 400);
+    const body = await request.json();
+    const {
+      id,
+      slug,
+      title,
+      description,
+      body: content,
+      date,
+      time,
+      location,
+      cta,
+      map,
+      image,
+      category,
+      published,
+    } = body;
+
+    if (!id) return json({ error: "id requis" }, 400);
+    if (!slug || !title || !description || !date) {
+      return json({ error: "Titre, slug, description et date sont obligatoires." }, 400);
+    }
+
+    const [row] = await sql`
+      UPDATE events SET
+        slug = ${slug},
+        title = ${title},
+        description = ${description},
+        body = ${content || ""},
+        date = ${date},
+        time = ${time || ""},
+        location = ${location || ""},
+        cta = ${cta || ""},
+        map = ${map || null},
+        image = ${image || null},
+        category = ${category || "event"},
+        published = ${published !== false},
+        updated_at = NOW()
+      WHERE id = ${id}
+      RETURNING *
+    `;
+
+    return json({ event: row });
+  } catch (err: any) {
+    console.error("[api/admin/events] PUT error:", err);
+    return json({ error: err?.message || "Erreur lors de la mise à jour de l'événement" }, 500);
   }
-
-  const [row] = await sql`
-    UPDATE events SET
-      slug = ${slug},
-      title = ${title},
-      description = ${description},
-      body = ${content || ""},
-      date = ${date},
-      time = ${time || ""},
-      location = ${location || ""},
-      cta = ${cta || ""},
-      map = ${map || null},
-      image = ${image || null},
-      category = ${category || "event"},
-      published = ${published !== false},
-      updated_at = NOW()
-    WHERE id = ${id}
-    RETURNING *
-  `;
-
-  return json({ event: row });
 };
 
 export const DELETE: APIRoute = async ({ request, cookies }) => {
   if (!isAdminAuthed(cookies)) return json({ error: "Non autorisé" }, 401);
 
-  const sql = requireDatabase();
-  const { id } = await request.json();
-  if (!id) return json({ error: "id requis" }, 400);
+  try {
+    const sql = requireDatabase();
+    await ensureEventsTable(sql);
 
-  await sql`DELETE FROM events WHERE id = ${id}`;
-  return json({ success: true });
+    const { id } = await request.json();
+    if (!id) return json({ error: "id requis" }, 400);
+
+    await sql`DELETE FROM events WHERE id = ${id}`;
+    return json({ success: true });
+  } catch (err: any) {
+    console.error("[api/admin/events] DELETE error:", err);
+    return json({ error: err?.message || "Erreur lors de la suppression de l'événement" }, 500);
+  }
 };

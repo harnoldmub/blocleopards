@@ -187,14 +187,30 @@ export default function AdminEventsCalendar() {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [month, setMonth] = useState(new Date());
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<EventDraft | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const response = await fetch("/api/admin/events");
-    const data = await response.json();
-    setEvents((data.events || []).map((event: EventItem) => ({ ...event, date: asDateOnly(event.date) })));
-    setLoading(false);
+    try {
+      setError(null);
+      const response = await fetch("/api/admin/events");
+      if (!response.ok) {
+        let errMsg = "Erreur lors du chargement des événements";
+        try {
+          const errData = await response.json();
+          if (errData?.error) errMsg = errData.error;
+        } catch (_) {}
+        throw new Error(errMsg);
+      }
+      const data = await response.json();
+      setEvents((data.events || []).map((event: EventItem) => ({ ...event, date: asDateOnly(event.date) })));
+    } catch (err: any) {
+      console.error("Erreur chargement calendrier:", err);
+      setError(err?.message || "Impossible de charger les événements.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -211,24 +227,42 @@ export default function AdminEventsCalendar() {
   const visibleEvents = events.filter((event) => toMonthKey(new Date(`${event.date}T12:00:00`)) === toMonthKey(month));
 
   const save = async (event: EventDraft) => {
-    const method = event.id ? "PUT" : "POST";
-    await fetch("/api/admin/events", {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(event),
-    });
-    await load();
+    try {
+      const method = event.id ? "PUT" : "POST";
+      const res = await fetch("/api/admin/events", {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(event),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Erreur lors de l'enregistrement de l'événement.");
+        return;
+      }
+      await load();
+    } catch (e: any) {
+      alert("Erreur réseau : " + (e?.message || "impossible de joindre le serveur"));
+    }
   };
 
   const del = async (id: string) => {
-    await fetch("/api/admin/events", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
-    });
-    setPendingDeleteId(null);
-    setEditing(null);
-    await load();
+    try {
+      const res = await fetch("/api/admin/events", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Erreur lors de la suppression de l'événement.");
+        return;
+      }
+      setPendingDeleteId(null);
+      setEditing(null);
+      await load();
+    } catch (e: any) {
+      alert("Erreur réseau : " + (e?.message || "impossible de joindre le serveur"));
+    }
   };
 
   const moveMonth = (offset: number) => {
@@ -236,6 +270,23 @@ export default function AdminEventsCalendar() {
   };
 
   if (loading) return <div style={{ color: C.muted, fontSize: 14, padding: 40 }}>Chargement...</div>;
+
+  if (error) {
+    return (
+      <div style={{ padding: 40, fontFamily: "'Sora', sans-serif" }}>
+        <div style={{ background: "rgba(248,113,113,0.12)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 12, padding: 24, maxWidth: 600 }}>
+          <h3 style={{ color: C.red, fontSize: 16, marginBottom: 8, fontWeight: 700 }}>Erreur de chargement</h3>
+          <p style={{ color: C.text, fontSize: 13, marginBottom: 16 }}>{error}</p>
+          <button
+            onClick={() => { setLoading(true); load(); }}
+            style={{ background: C.yellow, color: "#000", border: "none", borderRadius: 8, padding: "8px 16px", fontWeight: 700, cursor: "pointer", fontSize: 12 }}
+          >
+            Réessayer
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ fontFamily: "'Sora', sans-serif", color: C.text }}>
