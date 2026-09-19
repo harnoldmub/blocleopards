@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import ConfirmDialog from "./ConfirmDialog";
 import SearchableSelect from "./SearchableSelect";
+import { normalizePhone } from "./AdminSupportersDashboard";
 
 const C = {
   card: "#0d1117", border: "rgba(255,255,255,0.07)", text: "#e2e8f0",
@@ -210,6 +211,7 @@ function Drawer({ row, onClose, onUpdate, onDelete }: { row: any; onClose: () =>
   const [status, setStatus] = useState(row.status);
   const [notes, setNotes] = useState(row.admin_notes || "");
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [reply, setReply] = useState("");
@@ -218,11 +220,30 @@ function Drawer({ row, onClose, onUpdate, onDelete }: { row: any; onClose: () =>
   const [sending, setSending] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
-  const save = async () => {
+  const handleStatusChange = async (newStatus: string) => {
+    if (savingRef.current || saving || status === newStatus) return;
+    savingRef.current = true;
     setSaving(true);
-    await onUpdate(row.id, status, notes);
-    setSaving(false);
-    onClose();
+    setStatus(newStatus);
+    try {
+      await onUpdate(row.id, newStatus, notes);
+    } finally {
+      setSaving(false);
+      savingRef.current = false;
+    }
+  };
+
+  const save = async () => {
+    if (savingRef.current || saving) return;
+    savingRef.current = true;
+    setSaving(true);
+    try {
+      await onUpdate(row.id, status, notes);
+      onClose();
+    } finally {
+      setSaving(false);
+      savingRef.current = false;
+    }
   };
 
   const generateDraft = async () => {
@@ -277,9 +298,8 @@ function Drawer({ row, onClose, onUpdate, onDelete }: { row: any; onClose: () =>
     onClose();
   };
 
-  const waPhone = row.telephone ? row.telephone.replace(/\D/g, "") : null;
-  const waText = encodeURIComponent(`Bonjour ${row.prenom}, votre adhésion au Bloc des Léopards a bien été reçue. Bloc Léopards`);
-  const waUrl = waPhone ? `https://wa.me/${waPhone}?text=${waText}` : null;
+  const phoneInfo = normalizePhone(row.telephone);
+  const waUrl = phoneInfo?.waLink || (row.telephone ? `https://wa.me/${row.telephone.replace(/\D/g, "")}` : null);
 
   const actions: { s: string; label: string; color: string }[] = [
     { s: "pending",   label: "En attente", color: C.yellow },
@@ -311,22 +331,71 @@ function Drawer({ row, onClose, onUpdate, onDelete }: { row: any; onClose: () =>
           {waUrl ? (
             <a href={waUrl} target="_blank" rel="noopener"
               style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "10px 14px", background: "#25d366", borderRadius: 12, color: "#fff", fontSize: 13, fontWeight: 700, textDecoration: "none", minWidth: 100 }}>
-              WhatsApp
+              <span>💬</span> Ouvrir WhatsApp ({phoneInfo?.display || row.telephone})
             </a>
           ) : (
             <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "10px 14px", background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`, borderRadius: 12, color: C.muted, fontSize: 12, minWidth: 100 }}>
-              Pas de téléphone
+              Pas de téléphone renseigné
             </div>
           )}
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 28 }}>
+          <div style={{ borderBottom: `1px solid ${C.border}`, paddingBottom: 12 }}>
+            <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: C.muted, fontWeight: 700, marginBottom: 3 }}>Nom complet</div>
+            <div style={{ fontSize: 14, color: C.text, fontWeight: 600 }}>{row.prenom} {row.nom}</div>
+          </div>
+
+          <div style={{ borderBottom: `1px solid ${C.border}`, paddingBottom: 12 }}>
+            <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: C.muted, fontWeight: 700, marginBottom: 3 }}>Numéro WhatsApp / Téléphone</div>
+            <div style={{ fontSize: 14, color: phoneInfo ? "#25d366" : C.text, fontWeight: 600 }}>
+              {phoneInfo?.display || row.telephone || "—"}
+            </div>
+          </div>
+
+          <div style={{ borderBottom: `1px solid ${C.border}`, paddingBottom: 12 }}>
+            <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: C.muted, fontWeight: 700, marginBottom: 3 }}>Email</div>
+            <div style={{ fontSize: 14, color: C.text }}>
+              {row.email ? (
+                <a href={`mailto:${row.email}`} style={{ color: C.yellow, textDecoration: "none" }}>{row.email}</a>
+              ) : (
+                <span style={{ color: C.muted, fontStyle: "italic" }}>Non renseigné</span>
+              )}
+            </div>
+          </div>
+
+          <div style={{ borderBottom: `1px solid ${C.border}`, paddingBottom: 12 }}>
+            <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: C.muted, fontWeight: 700, marginBottom: 3 }}>Ville &amp; Pays</div>
+            <div style={{ fontSize: 14, color: C.text }}>{[row.ville, row.pays].filter(Boolean).join(", ") || "—"}</div>
+          </div>
+
+          <div style={{ borderBottom: `1px solid ${C.border}`, paddingBottom: 12 }}>
+            <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: C.muted, fontWeight: 700, marginBottom: 3 }}>Rôle souhaité</div>
+            <div style={{ fontSize: 14, color: C.blue, fontWeight: 600 }}>{row.role || "—"}</div>
+          </div>
+
+          {/* Réseaux sociaux & portfolio */}
+          <div style={{ borderBottom: `1px solid ${C.border}`, paddingBottom: 14 }}>
+            <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "#f472b6", fontWeight: 700, marginBottom: 6, display: "flex", alignItems: "center", gap: 5 }}>
+              <span>📸</span>
+              <span>Réseaux Sociaux &amp; Portfolio</span>
+            </div>
+            {row.portfolio && row.portfolio.trim() ? (
+              <div>
+                <SocialMediaLinks text={row.portfolio} />
+                <div style={{ marginTop: 6, fontSize: 12, color: C.muted, wordBreak: "break-all" }}>
+                  {row.portfolio}
+                </div>
+              </div>
+            ) : (
+              <div style={{ fontSize: 12, color: C.muted, fontStyle: "italic" }}>
+                Non renseigné (aucun lien fourni lors de l'adhésion)
+              </div>
+            )}
+          </div>
+
           {[
-            ["Nom", `${row.prenom} ${row.nom}`],
-            ["Email", row.email],
-            ["Téléphone", row.telephone || "—"],
-            ["Ville", `${row.ville}${row.pays ? `, ${row.pays}` : ""}`],
-            ["Canal", row.canal || "—"],
+            ["Canal préféré", row.canal || "—"],
             ["Disponibilité", row.disponibilite || "—"],
             ["Newsletter", row.newsletter_opt_in ? "Oui" : "Non"],
           ].map(([label, value]) => (
@@ -335,53 +404,73 @@ function Drawer({ row, onClose, onUpdate, onDelete }: { row: any; onClose: () =>
               <div style={{ fontSize: 14, color: C.text }}>{value}</div>
             </div>
           ))}
-          {row.portfolio && (
-            <div style={{ borderBottom: `1px solid ${C.border}`, paddingBottom: 12 }}>
-              <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "#f472b6", fontWeight: 700, marginBottom: 6, display: "flex", alignItems: "center", gap: 5 }}>
-                <span>📸</span>
-                <span>Réseaux Sociaux &amp; Portfolio</span>
-              </div>
-              <SocialMediaLinks text={row.portfolio} />
-            </div>
-          )}
+
           {row.motivation && (
             <div style={{ borderBottom: `1px solid ${C.border}`, paddingBottom: 12 }}>
               <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: C.muted, fontWeight: 700, marginBottom: 3 }}>Motivation</div>
-              <div style={{ fontSize: 13, color: C.text, lineHeight: 1.6 }}>{row.motivation}</div>
+              <div style={{ fontSize: 13, color: C.text, lineHeight: 1.6, fontStyle: "italic" }}>« {row.motivation} »</div>
             </div>
           )}
-          <div style={{ fontSize: 11, color: C.muted }}>Reçu le {new Date(row.created_at).toLocaleDateString("fr-FR")}</div>
+          <div style={{ fontSize: 11, color: C.muted }}>Reçu le {new Date(row.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}</div>
         </div>
 
         <div style={{ marginBottom: 20 }}>
           <div style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: C.muted, fontWeight: 700, marginBottom: 10 }}>Statut</div>
           <div style={{ display: "flex", gap: 8 }}>
-            {actions.map((a) => (
-              <button key={a.s} onClick={() => setStatus(a.s)} style={{ padding: "8px 14px", borderRadius: 10, border: `1.5px solid ${status === a.s ? a.color : C.border}`, background: status === a.s ? `${a.color}22` : "transparent", color: status === a.s ? a.color : C.muted, fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all 0.15s" }}>
-                {a.label}
-              </button>
-            ))}
+            {actions.map((a) => {
+              const isCurrent = status === a.s;
+              const isLocked = saving || isCurrent;
+              return (
+                <button
+                  key={a.s}
+                  type="button"
+                  disabled={isLocked}
+                  onClick={() => handleStatusChange(a.s)}
+                  style={{
+                    padding: "8px 14px",
+                    borderRadius: 10,
+                    border: `1.5px solid ${isCurrent ? a.color : C.border}`,
+                    background: isCurrent ? `${a.color}22` : "transparent",
+                    color: isCurrent ? a.color : C.muted,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: isLocked ? "not-allowed" : "pointer",
+                    pointerEvents: isLocked ? "none" : "auto",
+                    opacity: isLocked && !isCurrent ? 0.4 : 1,
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  {saving && isCurrent ? `${a.label}…` : (a.s === "validated" && isCurrent ? "✓ Validé" : a.label)}
+                </button>
+              );
+            })}
           </div>
         </div>
 
         {/* Réponse directe + IA */}
-        <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 18, marginBottom: 14 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, gap: 10 }}>
-            <div style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: C.muted, fontWeight: 700 }}>Répondre à {row.email}</div>
-            <button onClick={generateDraft} disabled={drafting} title="Rédiger la réponse avec l'IA"
-              style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 10, border: `1.5px solid rgba(167,139,250,0.4)`, background: "rgba(167,139,250,0.1)", color: "#a78bfa", fontSize: 12, fontWeight: 700, cursor: drafting ? "wait" : "pointer", whiteSpace: "nowrap" }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3L12 3z"/></svg>
-              {drafting ? "Rédaction…" : "Répondre avec l'IA"}
-            </button>
+        {row.email ? (
+          <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 18, marginBottom: 14 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, gap: 10 }}>
+              <div style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: C.muted, fontWeight: 700 }}>Répondre à {row.email}</div>
+              <button onClick={generateDraft} disabled={drafting} title="Rédiger la réponse avec l'IA"
+                style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 10, border: `1.5px solid rgba(167,139,250,0.4)`, background: "rgba(167,139,250,0.1)", color: "#a78bfa", fontSize: 12, fontWeight: 700, cursor: drafting ? "wait" : "pointer", whiteSpace: "nowrap" }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3L12 3z"/></svg>
+                {drafting ? "Rédaction…" : "Répondre avec l'IA"}
+              </button>
+            </div>
+
+            <input value={consigne} onChange={(e) => setConsigne(e.target.value)} aria-label="Consigne pour l'IA"
+              style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 12px", color: C.text, fontSize: 12, fontFamily: "'Sora', sans-serif", outline: "none", marginBottom: 4 }} />
+            <div style={{ fontSize: 10, color: C.muted, marginBottom: 10 }}>Consigne optionnelle pour l'IA (ton, infos à inclure…)</div>
+
+            <textarea value={reply} onChange={(e) => setReply(e.target.value)} rows={8} aria-label="Message de réponse"
+              style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: `1.5px solid ${C.border}`, borderRadius: 10, padding: "12px 14px", color: C.text, fontSize: 14, lineHeight: 1.6, fontFamily: "'Sora', sans-serif", resize: "vertical", outline: "none" }} />
           </div>
-
-          <input value={consigne} onChange={(e) => setConsigne(e.target.value)} aria-label="Consigne pour l'IA"
-            style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 12px", color: C.text, fontSize: 12, fontFamily: "'Sora', sans-serif", outline: "none", marginBottom: 4 }} />
-          <div style={{ fontSize: 10, color: C.muted, marginBottom: 10 }}>Consigne optionnelle pour l'IA (ton, infos à inclure…)</div>
-
-          <textarea value={reply} onChange={(e) => setReply(e.target.value)} rows={8} aria-label="Message de réponse"
-            style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: `1.5px solid ${C.border}`, borderRadius: 10, padding: "12px 14px", color: C.text, fontSize: 14, lineHeight: 1.6, fontFamily: "'Sora', sans-serif", resize: "vertical", outline: "none" }} />
-        </div>
+        ) : (
+          <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 18, marginBottom: 14, padding: "12px 14px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`, color: C.muted, fontSize: 12 }}>
+            💬 Pas d'adresse email renseignée pour cette adhésion. Pour contacter ce membre, utilise le bouton WhatsApp vert ci-dessus.
+          </div>
+        )}
 
         {feedback && (
           <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 10, fontSize: 13,
@@ -396,7 +485,25 @@ function Drawer({ row, onClose, onUpdate, onDelete }: { row: any; onClose: () =>
           {sending ? "Envoi…" : "Envoyer la réponse"}
         </button>
 
-        <button onClick={save} disabled={saving} style={{ width: "100%", padding: "12px", background: "transparent", border: `1.5px solid ${C.border}`, borderRadius: 12, color: C.muted, fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: saving ? 0.6 : 1 }}>
+        <button
+          type="button"
+          onClick={save}
+          disabled={saving}
+          style={{
+            width: "100%",
+            padding: "12px",
+            background: "transparent",
+            border: `1.5px solid ${C.border}`,
+            borderRadius: 12,
+            color: C.muted,
+            fontFamily: "'Sora', sans-serif",
+            fontSize: 13,
+            fontWeight: 700,
+            cursor: saving ? "not-allowed" : "pointer",
+            pointerEvents: saving ? "none" : "auto",
+            opacity: saving ? 0.6 : 1,
+          }}
+        >
           {saving ? "Enregistrement…" : "Enregistrer le statut"}
         </button>
 
@@ -593,29 +700,59 @@ export default function AdminAdhesionsDashboard() {
       <div className="adh-cards-view">
         {page_rows.length === 0 ? (
           <div style={{ padding: 32, textAlign: "center", color: C.muted, fontSize: 13 }}>Aucun résultat</div>
-        ) : page_rows.map((row) => (
-          <div key={row.id} className="adh-card" onClick={() => setSelected(row)}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-              <div style={{ fontWeight: 700, color: C.text, fontSize: 15 }}>
-                {row.prenom} {row.nom}
-                {row.portfolio && String(row.portfolio).trim() && <span title="Réseaux / portfolio fourni" style={{ marginLeft: 6 }}>🎨</span>}
+        ) : page_rows.map((row) => {
+          const phoneInfo = normalizePhone(row.telephone);
+          return (
+            <div key={row.id} className="adh-card" onClick={() => setSelected(row)}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                <div style={{ fontWeight: 700, color: C.text, fontSize: 15 }}>
+                  {row.prenom} {row.nom}
+                  {row.portfolio && String(row.portfolio).trim() && <span title="Réseaux / portfolio fourni" style={{ marginLeft: 6 }}>🎨</span>}
+                </div>
+                <StatusBadge status={row.status} />
               </div>
-              <StatusBadge status={row.status} />
-            </div>
-            <div style={{ fontSize: 12, color: C.muted, marginBottom: 2 }}>{row.email}</div>
-            {row.telephone && <div style={{ fontSize: 12, color: C.muted, marginBottom: 2 }}>{row.telephone}</div>}
-            {row.portfolio && (
-              <div style={{ marginTop: 4, marginBottom: 6 }}>
-                <SocialMediaLinks text={row.portfolio} />
+              <div style={{ marginBottom: 6 }}>
+                {phoneInfo ? (
+                  <a
+                    href={phoneInfo.waLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      color: "#25d366",
+                      fontWeight: 700,
+                      textDecoration: "none",
+                      background: "rgba(37,211,102,0.12)",
+                      padding: "3px 9px",
+                      borderRadius: 6,
+                      border: "1px solid rgba(37,211,102,0.35)",
+                      fontSize: 12,
+                    }}
+                  >
+                    <span>💬</span>
+                    <span style={{ textDecoration: "underline" }}>{phoneInfo.display}</span>
+                    <span style={{ fontSize: 10, opacity: 0.7 }}>↗</span>
+                  </a>
+                ) : (
+                  <span style={{ color: C.muted, fontSize: 12 }}>—</span>
+                )}
               </div>
-            )}
-            <div style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>{row.ville}{row.pays ? `, ${row.pays}` : ""}</div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 8, borderTop: `1px solid ${C.border}` }}>
-              <RoleBadge role={row.role || "—"} />
-              <span style={{ fontSize: 11, color: C.muted }}>{new Date(row.created_at).toLocaleDateString("fr-FR")}</span>
+              {row.portfolio && row.portfolio.trim() && (
+                <div style={{ marginTop: 4, marginBottom: 8 }}>
+                  <SocialMediaLinks text={row.portfolio} />
+                </div>
+              )}
+              <div style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>{row.ville}{row.pays ? `, ${row.pays}` : ""}</div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 8, borderTop: `1px solid ${C.border}` }}>
+                <RoleBadge role={row.role || "—"} />
+                <span style={{ fontSize: 11, color: C.muted }}>{new Date(row.created_at).toLocaleDateString("fr-FR")}</span>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Desktop table */}
@@ -623,37 +760,79 @@ export default function AdminAdhesionsDashboard() {
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-              {["Nom", "Email", "Ville", "Rôle", "Statut", "Date"].map((h) => (
+              {["Nom", "WhatsApp", "Réseaux / Portfolio", "Ville", "Rôle", "Statut", "Date"].map((h) => (
                 <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: C.muted, fontWeight: 700 }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {page_rows.length === 0 ? (
-              <tr><td colSpan={6} style={{ padding: 32, textAlign: "center", color: C.muted, fontSize: 13 }}>Aucun résultat</td></tr>
-            ) : page_rows.map((row) => (
-              <tr key={row.id} onClick={() => setSelected(row)}
-                style={{ borderBottom: `1px solid ${C.border}`, cursor: "pointer", transition: "background 0.1s" }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.03)")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
-                <td style={{ padding: "12px 16px", fontSize: 13, fontWeight: 600 }}>
-                  {row.prenom} {row.nom}
-                  {row.portfolio && String(row.portfolio).trim() && <span title="Réseaux / portfolio fourni" style={{ marginLeft: 6 }}>🎨</span>}
-                </td>
-                <td style={{ padding: "12px 16px", fontSize: 12, color: C.muted }}>
-                  <div>{row.email}</div>
-                  {row.portfolio && (
-                    <div style={{ marginTop: 4 }}>
+              <tr><td colSpan={7} style={{ padding: 32, textAlign: "center", color: C.muted, fontSize: 13 }}>Aucun résultat</td></tr>
+            ) : page_rows.map((row) => {
+              const phoneInfo = normalizePhone(row.telephone);
+              return (
+                <tr key={row.id} onClick={() => setSelected(row)}
+                  style={{ borderBottom: `1px solid ${C.border}`, cursor: "pointer", transition: "background 0.1s" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.03)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
+                  <td style={{ padding: "12px 16px", fontSize: 13, fontWeight: 600 }}>
+                    {row.prenom} {row.nom}
+                    {row.portfolio && String(row.portfolio).trim() && <span title="Réseaux / portfolio fourni" style={{ marginLeft: 6 }}>🎨</span>}
+                  </td>
+                  <td style={{ padding: "12px 16px", fontSize: 12 }}>
+                    {phoneInfo ? (
+                      <a
+                        href={phoneInfo.waLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        title={`Ouvrir WhatsApp avec ${phoneInfo.display}`}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
+                          color: "#25d366",
+                          fontWeight: 700,
+                          textDecoration: "none",
+                          background: "rgba(37,211,102,0.12)",
+                          padding: "4px 10px",
+                          borderRadius: 7,
+                          border: "1px solid rgba(37,211,102,0.35)",
+                          fontSize: 12,
+                          letterSpacing: "0.02em",
+                          transition: "all 0.15s ease",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = "rgba(37,211,102,0.22)";
+                          e.currentTarget.style.borderColor = "#25d366";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = "rgba(37,211,102,0.12)";
+                          e.currentTarget.style.borderColor = "rgba(37,211,102,0.35)";
+                        }}
+                      >
+                        <span style={{ fontSize: 13 }}>💬</span>
+                        <span style={{ textDecoration: "underline" }}>{phoneInfo.display}</span>
+                        <span style={{ fontSize: 10, opacity: 0.7 }}>↗</span>
+                      </a>
+                    ) : (
+                      <span style={{ color: C.muted, fontSize: 12 }}>—</span>
+                    )}
+                  </td>
+                  <td style={{ padding: "12px 16px", fontSize: 12 }}>
+                    {row.portfolio && String(row.portfolio).trim() ? (
                       <SocialMediaLinks text={row.portfolio} />
-                    </div>
-                  )}
-                </td>
-                <td style={{ padding: "12px 16px", fontSize: 12, color: C.muted }}>{row.ville}{row.pays ? `, ${row.pays}` : ""}</td>
-                <td style={{ padding: "12px 16px" }}><RoleBadge role={row.role || "—"} /></td>
-                <td style={{ padding: "12px 16px" }}><StatusBadge status={row.status} /></td>
-                <td style={{ padding: "12px 16px", fontSize: 11, color: C.muted }}>{new Date(row.created_at).toLocaleDateString("fr-FR")}</td>
-              </tr>
-            ))}
+                    ) : (
+                      <span style={{ color: C.muted, fontSize: 11 }}>—</span>
+                    )}
+                  </td>
+                  <td style={{ padding: "12px 16px", fontSize: 12, color: C.muted }}>{row.ville}{row.pays ? `, ${row.pays}` : ""}</td>
+                  <td style={{ padding: "12px 16px" }}><RoleBadge role={row.role || "—"} /></td>
+                  <td style={{ padding: "12px 16px" }}><StatusBadge status={row.status} /></td>
+                  <td style={{ padding: "12px 16px", fontSize: 11, color: C.muted }}>{new Date(row.created_at).toLocaleDateString("fr-FR")}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

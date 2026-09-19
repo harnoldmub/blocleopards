@@ -282,6 +282,7 @@ function FicheDrawer({
   const [status, setStatus] = useState<string>(adhesion?.status || "pending");
   const [notes, setNotes] = useState<string>(adhesion?.admin_notes || item?.notes || "");
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
 
   const phoneInfo = normalizePhone(data.telephone || data.phone);
   const waText = encodeURIComponent(
@@ -292,11 +293,16 @@ function FicheDrawer({
   const waUrl = phoneInfo ? `${phoneInfo.waLink}?text=${waText}` : null;
 
   const handleSaveStatus = async (newStatus: string) => {
-    if (!isAdhesion || !data.id) return;
+    if (savingRef.current || saving || !isAdhesion || !data.id || status === newStatus) return;
+    savingRef.current = true;
     setSaving(true);
     setStatus(newStatus);
-    await onUpdateAdhesion(data.id, newStatus, notes);
-    setSaving(false);
+    try {
+      await onUpdateAdhesion(data.id, newStatus, notes);
+    } finally {
+      setSaving(false);
+      savingRef.current = false;
+    }
   };
 
   const handleSaveNotes = async () => {
@@ -419,16 +425,19 @@ function FicheDrawer({
               <button
                 type="button"
                 onClick={() => handleSaveStatus("pending")}
-                disabled={saving}
+                disabled={saving || status === "pending"}
                 style={{
                   padding: "8px 10px",
                   borderRadius: 8,
                   fontSize: 11,
                   fontWeight: 700,
-                  cursor: "pointer",
+                  cursor: (saving || status === "pending") ? "not-allowed" : "pointer",
+                  pointerEvents: (saving || status === "pending") ? "none" : "auto",
+                  opacity: (saving && status !== "pending") ? 0.5 : 1,
                   background: status === "pending" ? "rgba(247,214,24,0.2)" : "rgba(255,255,255,0.04)",
                   border: `1px solid ${status === "pending" ? C.yellow : C.border}`,
                   color: status === "pending" ? C.yellow : C.muted,
+                  transition: "all 0.15s ease",
                 }}
               >
                 En attente
@@ -436,36 +445,42 @@ function FicheDrawer({
               <button
                 type="button"
                 onClick={() => handleSaveStatus("validated")}
-                disabled={saving}
+                disabled={saving || status === "validated"}
                 style={{
-                  padding: "8px 10px",
+                  padding: "8px 12px",
                   borderRadius: 8,
                   fontSize: 11,
                   fontWeight: 700,
-                  cursor: "pointer",
-                  background: status === "validated" ? "rgba(52,211,153,0.2)" : "rgba(255,255,255,0.04)",
+                  cursor: (saving || status === "validated") ? "not-allowed" : "pointer",
+                  pointerEvents: (saving || status === "validated") ? "none" : "auto",
+                  opacity: (saving && status !== "validated") ? 0.5 : 1,
+                  background: status === "validated" ? "rgba(52,211,153,0.25)" : "rgba(255,255,255,0.04)",
                   border: `1px solid ${status === "validated" ? "#34d399" : C.border}`,
                   color: status === "validated" ? "#34d399" : C.muted,
+                  transition: "all 0.15s ease",
                 }}
               >
-                ✓ Valider
+                {saving && status === "validated" ? "Validation…" : "✓ Valider"}
               </button>
               <button
                 type="button"
                 onClick={() => handleSaveStatus("rejected")}
-                disabled={saving}
+                disabled={saving || status === "rejected"}
                 style={{
-                  padding: "8px 10px",
+                  padding: "8px 12px",
                   borderRadius: 8,
                   fontSize: 11,
                   fontWeight: 700,
-                  cursor: "pointer",
-                  background: status === "rejected" ? "rgba(248,113,113,0.2)" : "rgba(255,255,255,0.04)",
+                  cursor: (saving || status === "rejected") ? "not-allowed" : "pointer",
+                  pointerEvents: (saving || status === "rejected") ? "none" : "auto",
+                  opacity: (saving && status !== "rejected") ? 0.5 : 1,
+                  background: status === "rejected" ? "rgba(248,113,113,0.25)" : "rgba(255,255,255,0.04)",
                   border: `1px solid ${status === "rejected" ? "#f87171" : C.border}`,
                   color: status === "rejected" ? "#f87171" : C.muted,
+                  transition: "all 0.15s ease",
                 }}
               >
-                ✕ Rejeter
+                {saving && status === "rejected" ? "Rejet…" : "✕ Rejeter"}
               </button>
             </div>
           </div>
@@ -485,7 +500,13 @@ function FicheDrawer({
             </div>
             <div>
               <span style={{ color: C.muted, display: "block", fontSize: 11 }}>Email :</span>
-              <span style={{ fontWeight: 600 }}>{data.email || "—"}</span>
+              <span style={{ fontWeight: 600 }}>
+                {data.email ? (
+                  <a href={`mailto:${data.email}`} style={{ color: C.yellow, textDecoration: "none" }}>{data.email}</a>
+                ) : (
+                  <span style={{ color: C.muted, fontStyle: "italic" }}>Non renseigné</span>
+                )}
+              </span>
             </div>
             <div>
               <span style={{ color: C.muted, display: "block", fontSize: 11 }}>Ville & Pays :</span>
@@ -508,16 +529,25 @@ function FicheDrawer({
           </div>
         </div>
 
-        {/* Réseaux sociaux & Portfolio (si adhésion) */}
-        {(data.portfolio || adhesion?.portfolio) && (
-          <div style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`, borderRadius: 14, padding: 16, marginBottom: 20 }}>
-            <div style={{ fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "#f472b6", fontWeight: 700, marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
-              <span>📸</span>
-              <span>Réseaux Sociaux &amp; Portfolio</span>
-            </div>
-            <SocialMediaLinks text={data.portfolio || adhesion?.portfolio} />
+        {/* Réseaux sociaux & Portfolio */}
+        <div style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`, borderRadius: 14, padding: 16, marginBottom: 20 }}>
+          <div style={{ fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "#f472b6", fontWeight: 700, marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+            <span>📸</span>
+            <span>Réseaux Sociaux &amp; Portfolio</span>
           </div>
-        )}
+          {(data.portfolio || adhesion?.portfolio) ? (
+            <div>
+              <SocialMediaLinks text={data.portfolio || adhesion?.portfolio} />
+              <div style={{ marginTop: 8, fontSize: 12, color: C.muted, wordBreak: "break-all" }}>
+                {data.portfolio || adhesion?.portfolio}
+              </div>
+            </div>
+          ) : (
+            <div style={{ fontSize: 12, color: C.muted, fontStyle: "italic" }}>
+              Non renseigné (aucun réseau social ou portfolio sur cette fiche)
+            </div>
+          )}
+        </div>
 
         {/* Motivation / Message si présent */}
         {(data.motivation || data.message) && (

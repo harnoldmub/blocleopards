@@ -135,12 +135,12 @@ const disponibilites = [
 
         <div class="grid gap-4 md:grid-cols-2">
           <label class="bloc-field">
-            <span class="bloc-label">Email *</span>
-            <input type="email" name="email" required autocomplete="email" class="bloc-control" />
+            <span class="bloc-label">Numéro WhatsApp *</span>
+            <input type="tel" name="telephone" required autocomplete="tel" placeholder="+243 ... ou +33 ..." class="bloc-control" />
           </label>
           <label class="bloc-field">
-            <span class="bloc-label">Téléphone</span>
-            <input type="tel" name="telephone" autocomplete="tel" class="bloc-control" />
+            <span class="bloc-label">Email (optionnel)</span>
+            <input type="email" name="email" autocomplete="email" placeholder="nom@exemple.com" class="bloc-control" />
           </label>
         </div>
 
@@ -330,14 +330,14 @@ const disponibilites = [
         </div>
 
         <!-- Réseaux sociaux / portfolio — mis en avant pour les profils créatifs & média -->
-        <div id="portfolio-block" class="rounded-[8px] border border-or/40 bg-or/5 p-4">
+        <div id="portfolio-block" class="rounded-[8px] border border-or/40 bg-or/5 p-4 transition-all duration-200">
           <label class="bloc-field">
             <span class="flex items-center gap-2 font-semibold text-slate-800">
               <Icon name="camera" size={16} class="text-congo" />Réseaux sociaux &amp; exemples de tes travaux
-              <span id="portfolio-required" class="hidden rounded-full bg-or px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-congo-night">Recommandé</span>
+              <span id="portfolio-required" class="hidden rounded-full bg-congo px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">Requis *</span>
             </span>
             <textarea id="portfolio-input" name="portfolio" rows="3" placeholder="Instagram, TikTok, YouTube, Behance, Drive… colle tes liens ou @pseudos. Montre-nous ce que tu sais faire !" class="bloc-control"></textarea>
-            <span class="text-xs text-slate-500">Pour les créateurs, graphistes, monteurs, photographes, vidéastes et médias : partage tes liens ou quelques exemples.</span>
+            <span id="portfolio-hint" class="text-xs text-slate-500">Pour les créateurs, graphistes, monteurs, photographes, vidéastes, médias ou supporters : partage tes liens ou quelques exemples.</span>
           </label>
         </div>
 
@@ -515,11 +515,22 @@ const disponibilites = [
         block.style.display = "";
         block.style.order = creative ? "-1" : "";
         block.classList.toggle("ring-2", !!creative);
-        block.classList.toggle("ring-or/40", !!creative);
-        if (badge) badge.classList.toggle("hidden", !creative);
-        if (input) input.setAttribute("placeholder", creative
-          ? "Colle tes liens : Instagram, TikTok, YouTube, Behance, Drive… Montre-nous ton meilleur travail !"
-          : "Instagram, TikTok, YouTube, Behance, Drive… (optionnel)");
+        block.classList.toggle("ring-congo", !!creative);
+        if (badge) {
+          badge.classList.toggle("hidden", !creative);
+        }
+        if (input) {
+          input.required = Boolean(creative);
+          input.setAttribute("placeholder", creative
+            ? "Requis pour ton rôle : Instagram, TikTok, YouTube, Behance, Drive… colle tes liens ou @pseudos."
+            : "Instagram, TikTok, YouTube, Behance, Drive… (optionnel)");
+        }
+        const hint = document.getElementById("portfolio-hint");
+        if (hint) {
+          hint.textContent = creative
+            ? "Pour ton profil créatif / média, merci de partager au moins un compte, lien ou portfolio."
+            : "Partage tes comptes réseaux sociaux ou liens si tu souhaites contribuer à l'image du Bloc.";
+        }
       }
 
       trigger.addEventListener("click", function () {

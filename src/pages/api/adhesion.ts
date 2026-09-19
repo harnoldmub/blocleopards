@@ -15,8 +15,9 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     if (!captchaOk) return redirectTo("/rejoindre", "captcha");
     const prenom = formValue(formData, "prenom");
     const nom = formValue(formData, "nom");
-    const email = formValue(formData, "email").toLowerCase();
-    const telephone = formValue(formData, "telephone");
+    const emailRaw = formValue(formData, "email");
+    const email = emailRaw ? emailRaw.toLowerCase().trim() : null;
+    const telephone = formValue(formData, "telephone").trim();
     const date_naissance = formValue(formData, "date_naissance");
     const pays = formValue(formData, "pays");
     const ville = formValue(formData, "ville");
@@ -30,7 +31,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     const isAdult = formData.get("is_adult") === "on";
     const hasPassport = formData.get("has_passport") === "on";
 
-    if (!prenom || !nom || !email || !ville || !role || !charteAccepted || !isAdult || !hasPassport) {
+    if (!prenom || !nom || !telephone || !ville || !role || !charteAccepted || !isAdult || !hasPassport) {
       return redirectTo("/rejoindre", "missing");
     }
 
@@ -58,7 +59,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
         ${prenom},
         ${nom},
         ${email},
-        ${telephone || null},
+        ${telephone},
         ${date_naissance || null},
         ${pays || null},
         ${ville},
@@ -78,11 +79,12 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     await upsertSupporter({
       firstName: prenom,
       lastName: nom,
-      email,
+      email: email || null,
       phone: telephone || null,
       city: ville,
       country: pays || null,
       tags: ["adhesion"],
+      note: portfolio ? `Portfolio: ${portfolio}` : (role ? `Rôle: ${role}` : null),
     });
 
     return redirectTo("/rejoindre", "success");
