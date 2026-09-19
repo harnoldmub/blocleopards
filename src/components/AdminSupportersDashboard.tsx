@@ -529,25 +529,6 @@ function FicheDrawer({
           </div>
         </div>
 
-        {/* Réseaux sociaux & Portfolio */}
-        <div style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`, borderRadius: 14, padding: 16, marginBottom: 20 }}>
-          <div style={{ fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "#f472b6", fontWeight: 700, marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
-            <span>📸</span>
-            <span>Réseaux Sociaux &amp; Portfolio</span>
-          </div>
-          {(data.portfolio || adhesion?.portfolio) ? (
-            <div>
-              <SocialMediaLinks text={data.portfolio || adhesion?.portfolio} />
-              <div style={{ marginTop: 8, fontSize: 12, color: C.muted, wordBreak: "break-all" }}>
-                {data.portfolio || adhesion?.portfolio}
-              </div>
-            </div>
-          ) : (
-            <div style={{ fontSize: 12, color: C.muted, fontStyle: "italic" }}>
-              Non renseigné (aucun réseau social ou portfolio sur cette fiche)
-            </div>
-          )}
-        </div>
 
         {/* Motivation / Message si présent */}
         {(data.motivation || data.message) && (
@@ -644,6 +625,26 @@ function FicheDrawer({
               >
                 {saving ? "Sauvegarde..." : "Enregistrer la note"}
               </button>
+            </div>
+          )}
+        </div>
+
+        {/* Réseaux sociaux & Portfolio (positionné tout en bas) */}
+        <div style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`, borderRadius: 14, padding: 16, marginTop: 20 }}>
+          <div style={{ fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "#f472b6", fontWeight: 700, marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+            <span>📸</span>
+            <span>Réseaux Sociaux &amp; Portfolio</span>
+          </div>
+          {(data.portfolio || adhesion?.portfolio) ? (
+            <div>
+              <SocialMediaLinks text={data.portfolio || adhesion?.portfolio} />
+              <div style={{ marginTop: 8, fontSize: 12, color: C.muted, wordBreak: "break-all" }}>
+                {data.portfolio || adhesion?.portfolio}
+              </div>
+            </div>
+          ) : (
+            <div style={{ fontSize: 12, color: C.muted, fontStyle: "italic" }}>
+              Non renseigné (aucun réseau social ou portfolio sur cette fiche)
             </div>
           )}
         </div>
@@ -977,57 +978,33 @@ export default function AdminSupportersDashboard() {
                 </button>
               </div>
 
-              {/* Contacts séparés */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 8 }}>
-                {s.email && (
+              {/* WhatsApp uniquement (le reste est dans la fiche) */}
+              {phoneInfo && (
+                <div style={{ marginBottom: 8 }}>
                   <a
-                    href={`mailto:${s.email}`}
+                    href={phoneInfo.waLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
                       gap: 6,
-                      color: C.blue,
-                      textDecoration: "none",
+                      padding: "4px 10px",
+                      background: "rgba(37,211,102,0.15)",
+                      border: "1px solid rgba(37,211,102,0.4)",
+                      borderRadius: 7,
+                      color: "#25d366",
                       fontSize: 12,
+                      fontWeight: 700,
+                      textDecoration: "none",
                     }}
                   >
-                    <span>✉️</span>
-                    <span>{s.email}</span>
+                    <span>💬</span>
+                    <span style={{ textDecoration: "underline" }}>{phoneInfo.display}</span>
+                    <span style={{ fontSize: 10, opacity: 0.7 }}>↗</span>
                   </a>
-                )}
-                {phoneInfo && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <a
-                      href={phoneInfo.waLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 4,
-                        padding: "3px 8px",
-                        background: "rgba(37,211,102,0.15)",
-                        border: "1px solid rgba(37,211,102,0.4)",
-                        borderRadius: 6,
-                        color: "#25d366",
-                        fontSize: 11,
-                        fontWeight: 700,
-                        textDecoration: "none",
-                      }}
-                    >
-                      <span>💬 WhatsApp</span>
-                    </a>
-                    <a href={phoneInfo.telLink} style={{ color: C.muted, fontSize: 11, textDecoration: "none" }}>
-                      {phoneInfo.display}
-                    </a>
-                  </div>
-                )}
-                {adh?.portfolio && (
-                  <div style={{ marginTop: 2 }}>
-                    <SocialMediaLinks text={adh.portfolio} />
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
 
               <div style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>{[s.city, s.country].filter(Boolean).join(", ")}</div>
 
@@ -1071,7 +1048,7 @@ export default function AdminSupportersDashboard() {
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: `1px solid ${C.border}`, background: "rgba(255,255,255,0.01)" }}>
-              {["Nom", "Contact (WhatsApp & Email)", "Ville", "Pays", "Segments", "Actions"].map((h, i) => (
+              {["Nom", "WhatsApp", "Ville", "Pays", "Segments", "Actions"].map((h, i) => (
                 <th key={i} style={{ padding: "14px 16px", textAlign: i === 5 ? "right" : "left", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: C.muted, fontWeight: 700 }}>
                   {h}
                 </th>
@@ -1120,88 +1097,46 @@ export default function AdminSupportersDashboard() {
                     </button>
                   </td>
 
-                  {/* Contact : Email et WhatsApp séparés avec formatage + */}
+                  {/* WhatsApp uniquement dans le tableau (le reste est dans la fiche) */}
                   <td style={{ padding: "14px 16px", fontSize: 12 }}>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-start" }}>
-                      {/* Email séparé */}
-                      {s.email && (
-                        <a
-                          href={`mailto:${s.email}`}
-                          title={`Envoyer un email (${s.email})`}
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 5,
-                            color: "#93c5fd",
-                            textDecoration: "none",
-                            fontSize: 12,
-                            fontWeight: 500,
-                            padding: "2px 6px",
-                            borderRadius: 6,
-                            background: "rgba(96,165,250,0.08)",
-                            border: "1px solid rgba(96,165,250,0.18)",
-                            maxWidth: 240,
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          <span style={{ fontSize: 11 }}>✉️</span>
-                          <span style={{ textDecoration: "underline" }}>{s.email}</span>
-                        </a>
-                      )}
-
-                      {/* Numéro WhatsApp avec + ajouté si manquant et lien direct */}
-                      {phoneInfo && (
-                        <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                          <a
-                            href={phoneInfo.waLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            title={`Ouvrir WhatsApp avec ${phoneInfo.display}`}
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 4,
-                              padding: "3px 8px",
-                              borderRadius: 6,
-                              background: "rgba(37,211,102,0.16)",
-                              border: "1px solid rgba(37,211,102,0.4)",
-                              color: "#25d366",
-                              fontSize: 11,
-                              fontWeight: 700,
-                              textDecoration: "none",
-                              boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
-                            }}
-                          >
-                            <span>💬 WhatsApp</span>
-                          </a>
-                          <a
-                            href={phoneInfo.telLink}
-                            title={`Appeler ${phoneInfo.display}`}
-                            style={{
-                              color: C.text,
-                              fontSize: 11,
-                              textDecoration: "none",
-                              fontFamily: "'Sora', monospace",
-                              letterSpacing: "0.02em",
-                              opacity: 0.9,
-                            }}
-                          >
-                            {phoneInfo.display}
-                          </a>
-                        </div>
-                      )}
-
-                      {/* Réseaux sociaux & portfolio liés à l'adhésion */}
-                      {adh?.portfolio && (
-                        <div style={{ marginTop: 2 }}>
-                          <SocialMediaLinks text={adh.portfolio} />
-                        </div>
-                      )}
-
-                      {!s.email && !s.phone && <span style={{ color: C.muted }}>—</span>}
-                    </div>
+                    {phoneInfo ? (
+                      <a
+                        href={phoneInfo.waLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        title={`Ouvrir WhatsApp avec ${phoneInfo.display}`}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
+                          color: "#25d366",
+                          fontWeight: 700,
+                          textDecoration: "none",
+                          background: "rgba(37,211,102,0.12)",
+                          padding: "4px 10px",
+                          borderRadius: 7,
+                          border: "1px solid rgba(37,211,102,0.35)",
+                          fontSize: 12,
+                          letterSpacing: "0.02em",
+                          transition: "all 0.15s ease",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = "rgba(37,211,102,0.22)";
+                          e.currentTarget.style.borderColor = "#25d366";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = "rgba(37,211,102,0.12)";
+                          e.currentTarget.style.borderColor = "rgba(37,211,102,0.35)";
+                        }}
+                      >
+                        <span style={{ fontSize: 13 }}>💬</span>
+                        <span style={{ textDecoration: "underline" }}>{phoneInfo.display}</span>
+                        <span style={{ fontSize: 10, opacity: 0.7 }}>↗</span>
+                      </a>
+                    ) : (
+                      <span style={{ color: C.muted, fontSize: 12 }}>—</span>
+                    )}
                   </td>
 
                   {/* Ville */}

@@ -740,11 +740,6 @@ export default function AdminAdhesionsDashboard() {
                   <span style={{ color: C.muted, fontSize: 12 }}>—</span>
                 )}
               </div>
-              {row.portfolio && row.portfolio.trim() && (
-                <div style={{ marginTop: 4, marginBottom: 8 }}>
-                  <SocialMediaLinks text={row.portfolio} />
-                </div>
-              )}
               <div style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>{row.ville}{row.pays ? `, ${row.pays}` : ""}</div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 8, borderTop: `1px solid ${C.border}` }}>
                 <RoleBadge role={row.role || "—"} />
@@ -760,14 +755,14 @@ export default function AdminAdhesionsDashboard() {
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-              {["Nom", "WhatsApp", "Réseaux / Portfolio", "Ville", "Rôle", "Statut", "Date"].map((h) => (
+              {["Nom", "WhatsApp", "Ville", "Rôle", "Statut", "Date"].map((h) => (
                 <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: C.muted, fontWeight: 700 }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {page_rows.length === 0 ? (
-              <tr><td colSpan={7} style={{ padding: 32, textAlign: "center", color: C.muted, fontSize: 13 }}>Aucun résultat</td></tr>
+              <tr><td colSpan={6} style={{ padding: 32, textAlign: "center", color: C.muted, fontSize: 13 }}>Aucun résultat</td></tr>
             ) : page_rows.map((row) => {
               const phoneInfo = normalizePhone(row.telephone);
               return (
@@ -817,13 +812,6 @@ export default function AdminAdhesionsDashboard() {
                       </a>
                     ) : (
                       <span style={{ color: C.muted, fontSize: 12 }}>—</span>
-                    )}
-                  </td>
-                  <td style={{ padding: "12px 16px", fontSize: 12 }}>
-                    {row.portfolio && String(row.portfolio).trim() ? (
-                      <SocialMediaLinks text={row.portfolio} />
-                    ) : (
-                      <span style={{ color: C.muted, fontSize: 11 }}>—</span>
                     )}
                   </td>
                   <td style={{ padding: "12px 16px", fontSize: 12, color: C.muted }}>{row.ville}{row.pays ? `, ${row.pays}` : ""}</td>
