@@ -133,6 +133,133 @@ function parseCsv(text: string): Record<string, string>[] {
   });
 }
 
+function parseSocialItem(token: string): { label: string; href: string | null; icon: string; color: string; bg: string } {
+  const clean = token.trim();
+  const lower = clean.toLowerCase();
+
+  // Si c'est une URL
+  if (/^https?:\/\//i.test(clean) || clean.startsWith("www.")) {
+    const href = clean.startsWith("http") ? clean : `https://${clean}`;
+    if (lower.includes("instagram.com")) {
+      const handle = clean.split("instagram.com/")[1]?.replace(/\/.*$/, "") || "Instagram";
+      return { label: `@${handle.replace(/^@/, "")}`, href, icon: "📸", color: "#f472b6", bg: "rgba(244,114,182,0.14)" };
+    }
+    if (lower.includes("tiktok.com")) {
+      const handle = clean.split("tiktok.com/")[1]?.replace(/\/.*$/, "") || "TikTok";
+      return { label: handle.startsWith("@") ? handle : `@${handle}`, href, icon: "🎵", color: "#38bdf8", bg: "rgba(56,189,248,0.14)" };
+    }
+    if (lower.includes("youtube.com") || lower.includes("youtu.be")) {
+      return { label: "YouTube", href, icon: "▶️", color: "#f87171", bg: "rgba(248,113,113,0.14)" };
+    }
+    if (lower.includes("x.com") || lower.includes("twitter.com")) {
+      return { label: "X / Twitter", href, icon: "𝕏", color: "#e2e8f0", bg: "rgba(255,255,255,0.1)" };
+    }
+    if (lower.includes("behance.net")) {
+      return { label: "Behance", href, icon: "🎨", color: "#60a5fa", bg: "rgba(96,165,250,0.14)" };
+    }
+    if (lower.includes("linkedin.com")) {
+      return { label: "LinkedIn", href, icon: "💼", color: "#60a5fa", bg: "rgba(96,165,250,0.14)" };
+    }
+    const domain = clean.replace(/^https?:\/\/(www\.)?/, "").split("/")[0];
+    return { label: domain, href, icon: "🔗", color: "#60a5fa", bg: "rgba(96,165,250,0.14)" };
+  }
+
+  // Si commence par @ (ex: @mon_pseudo)
+  if (clean.startsWith("@")) {
+    const handle = clean.slice(1);
+    return {
+      label: clean,
+      href: `https://instagram.com/${handle}`,
+      icon: "📸",
+      color: "#f472b6",
+      bg: "rgba(244,114,182,0.14)",
+    };
+  }
+
+  // Si préfixé par instagram:, insta:, ig:, tiktok:, tt:
+  if (/^(insta|instagram|ig)\s*[:=]\s*(.+)$/i.test(clean)) {
+    const match = clean.match(/^(insta|instagram|ig)\s*[:=]\s*(.+)$/i);
+    const handle = (match?.[2] || "").trim().replace(/^@/, "");
+    return { label: `Instagram: @${handle}`, href: `https://instagram.com/${handle}`, icon: "📸", color: "#f472b6", bg: "rgba(244,114,182,0.14)" };
+  }
+  if (/^(tiktok|tt)\s*[:=]\s*(.+)$/i.test(clean)) {
+    const match = clean.match(/^(tiktok|tt)\s*[:=]\s*(.+)$/i);
+    const handle = (match?.[2] || "").trim().replace(/^@/, "");
+    return { label: `TikTok: @${handle}`, href: `https://tiktok.com/@${handle}`, icon: "🎵", color: "#38bdf8", bg: "rgba(56,189,248,0.14)" };
+  }
+
+  return { label: clean, href: null, icon: "📱", color: "#cbd5e1", bg: "rgba(255,255,255,0.06)" };
+}
+
+export function SocialMediaLinks({ text }: { text: string | null | undefined }) {
+  if (!text || !text.trim()) return null;
+
+  const tokens = text
+    .split(/[\r\n,;]+/)
+    .map(t => t.trim())
+    .filter(Boolean);
+
+  if (tokens.length === 0) return null;
+
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 5, alignItems: "center" }}>
+      {tokens.map((tok, idx) => {
+        const item = parseSocialItem(tok);
+        if (item.href) {
+          return (
+            <a
+              key={idx}
+              href={item.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={`Ouvrir ${item.label}`}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                padding: "2px 7px",
+                borderRadius: 6,
+                background: item.bg,
+                border: `1px solid ${item.color}45`,
+                color: item.color,
+                fontSize: 11,
+                fontWeight: 600,
+                textDecoration: "none",
+                transition: "all 0.15s ease",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = item.color)}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = `${item.color}45`)}
+            >
+              <span style={{ fontSize: 11 }}>{item.icon}</span>
+              <span>{item.label}</span>
+              <span style={{ fontSize: 9, opacity: 0.7 }}>↗</span>
+            </a>
+          );
+        }
+        return (
+          <span
+            key={idx}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              padding: "2px 7px",
+              borderRadius: 6,
+              background: item.bg,
+              border: "1px solid rgba(255,255,255,0.1)",
+              color: item.color,
+              fontSize: 11,
+            }}
+          >
+            <span style={{ fontSize: 11 }}>{item.icon}</span>
+            <span>{item.label}</span>
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 /**
  * Drawer latéral droit : Fiche d'adhésion ou fiche supporter
  */
@@ -380,6 +507,17 @@ function FicheDrawer({
             )}
           </div>
         </div>
+
+        {/* Réseaux sociaux & Portfolio (si adhésion) */}
+        {(data.portfolio || adhesion?.portfolio) && (
+          <div style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`, borderRadius: 14, padding: 16, marginBottom: 20 }}>
+            <div style={{ fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "#f472b6", fontWeight: 700, marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+              <span>📸</span>
+              <span>Réseaux Sociaux &amp; Portfolio</span>
+            </div>
+            <SocialMediaLinks text={data.portfolio || adhesion?.portfolio} />
+          </div>
+        )}
 
         {/* Motivation / Message si présent */}
         {(data.motivation || data.message) && (
@@ -768,7 +906,30 @@ export default function AdminSupportersDashboard() {
           return (
             <div key={s.id} className="sup-card">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-                <div style={{ fontWeight: 700, fontSize: 15 }}>{s.first_name} {s.last_name}</div>
+                <button
+                  type="button"
+                  onClick={() => setActiveFiche({ item: s, adhesion: adh })}
+                  title="Cliquer pour ouvrir la fiche"
+                  style={{
+                    background: "none",
+                    border: "none",
+                    padding: 0,
+                    margin: 0,
+                    font: "inherit",
+                    color: C.text,
+                    textAlign: "left",
+                    cursor: "pointer",
+                    fontWeight: 700,
+                    fontSize: 15,
+                    transition: "color 0.15s ease",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = C.yellow)}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = C.text)}
+                >
+                  <span style={{ textDecoration: "underline", textDecorationColor: "rgba(255,255,255,0.2)" }}>
+                    {s.first_name} {s.last_name}
+                  </span>
+                </button>
                 <button
                   onClick={() => setActiveFiche({ item: s, adhesion: adh })}
                   style={{
@@ -829,6 +990,11 @@ export default function AdminSupportersDashboard() {
                     <a href={phoneInfo.telLink} style={{ color: C.muted, fontSize: 11, textDecoration: "none" }}>
                       {phoneInfo.display}
                     </a>
+                  </div>
+                )}
+                {adh?.portfolio && (
+                  <div style={{ marginTop: 2 }}>
+                    <SocialMediaLinks text={adh.portfolio} />
                   </div>
                 )}
               </div>
@@ -895,11 +1061,33 @@ export default function AdminSupportersDashboard() {
                   style={{ borderBottom: `1px solid ${C.border}` }}
                   title={s.notes || undefined}
                 >
-                  {/* Nom complet */}
-                  <td style={{ padding: "14px 16px", fontSize: 13, fontWeight: 700, color: C.text }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <span>{s.first_name} {s.last_name}</span>
-                    </div>
+                  {/* Nom complet (cliquable pour ouvrir la fiche) */}
+                  <td style={{ padding: "14px 16px", fontSize: 13, fontWeight: 700 }}>
+                    <button
+                      type="button"
+                      onClick={() => setActiveFiche({ item: s, adhesion: adh })}
+                      title="Cliquer pour ouvrir la fiche à droite"
+                      style={{
+                        background: "none",
+                        border: "none",
+                        padding: 0,
+                        margin: 0,
+                        font: "inherit",
+                        color: C.text,
+                        textAlign: "left",
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                        transition: "color 0.15s ease",
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = C.yellow)}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = C.text)}
+                    >
+                      <span style={{ textDecoration: "underline", textDecorationColor: "rgba(255,255,255,0.25)" }}>
+                        {s.first_name} {s.last_name}
+                      </span>
+                    </button>
                   </td>
 
                   {/* Contact : Email et WhatsApp séparés avec formatage + */}
@@ -972,6 +1160,13 @@ export default function AdminSupportersDashboard() {
                           >
                             {phoneInfo.display}
                           </a>
+                        </div>
+                      )}
+
+                      {/* Réseaux sociaux & portfolio liés à l'adhésion */}
+                      {adh?.portfolio && (
+                        <div style={{ marginTop: 2 }}>
+                          <SocialMediaLinks text={adh.portfolio} />
                         </div>
                       )}
 

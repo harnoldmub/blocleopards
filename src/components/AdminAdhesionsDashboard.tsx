@@ -43,25 +43,127 @@ function getRoleStyle(role: string) {
   return ROLE_PALETTE[hash % ROLE_PALETTE.length];
 }
 
-// Rend un texte de portfolio en liens cliquables (URLs) + @pseudos
-function PortfolioLinks({ text }: { text: string }) {
-  const tokens = text.split(/[\s,;]+/).filter(Boolean);
+function parseSocialItem(token: string): { label: string; href: string | null; icon: string; color: string; bg: string } {
+  const clean = token.trim();
+  const lower = clean.toLowerCase();
+
+  // Si c'est une URL
+  if (/^https?:\/\//i.test(clean) || clean.startsWith("www.")) {
+    const href = clean.startsWith("http") ? clean : `https://${clean}`;
+    if (lower.includes("instagram.com")) {
+      const handle = clean.split("instagram.com/")[1]?.replace(/\/.*$/, "") || "Instagram";
+      return { label: `@${handle.replace(/^@/, "")}`, href, icon: "📸", color: "#f472b6", bg: "rgba(244,114,182,0.14)" };
+    }
+    if (lower.includes("tiktok.com")) {
+      const handle = clean.split("tiktok.com/")[1]?.replace(/\/.*$/, "") || "TikTok";
+      return { label: handle.startsWith("@") ? handle : `@${handle}`, href, icon: "🎵", color: "#38bdf8", bg: "rgba(56,189,248,0.14)" };
+    }
+    if (lower.includes("youtube.com") || lower.includes("youtu.be")) {
+      return { label: "YouTube", href, icon: "▶️", color: "#f87171", bg: "rgba(248,113,113,0.14)" };
+    }
+    if (lower.includes("x.com") || lower.includes("twitter.com")) {
+      return { label: "X / Twitter", href, icon: "𝕏", color: "#e2e8f0", bg: "rgba(255,255,255,0.1)" };
+    }
+    if (lower.includes("behance.net")) {
+      return { label: "Behance", href, icon: "🎨", color: "#60a5fa", bg: "rgba(96,165,250,0.14)" };
+    }
+    if (lower.includes("linkedin.com")) {
+      return { label: "LinkedIn", href, icon: "💼", color: "#60a5fa", bg: "rgba(96,165,250,0.14)" };
+    }
+    const domain = clean.replace(/^https?:\/\/(www\.)?/, "").split("/")[0];
+    return { label: domain, href, icon: "🔗", color: "#60a5fa", bg: "rgba(96,165,250,0.14)" };
+  }
+
+  // Si commence par @ (ex: @mon_pseudo)
+  if (clean.startsWith("@")) {
+    const handle = clean.slice(1);
+    return {
+      label: clean,
+      href: `https://instagram.com/${handle}`,
+      icon: "📸",
+      color: "#f472b6",
+      bg: "rgba(244,114,182,0.14)",
+    };
+  }
+
+  // Si préfixé par instagram:, insta:, ig:, tiktok:, tt:
+  if (/^(insta|instagram|ig)\s*[:=]\s*(.+)$/i.test(clean)) {
+    const match = clean.match(/^(insta|instagram|ig)\s*[:=]\s*(.+)$/i);
+    const handle = (match?.[2] || "").trim().replace(/^@/, "");
+    return { label: `Instagram: @${handle}`, href: `https://instagram.com/${handle}`, icon: "📸", color: "#f472b6", bg: "rgba(244,114,182,0.14)" };
+  }
+  if (/^(tiktok|tt)\s*[:=]\s*(.+)$/i.test(clean)) {
+    const match = clean.match(/^(tiktok|tt)\s*[:=]\s*(.+)$/i);
+    const handle = (match?.[2] || "").trim().replace(/^@/, "");
+    return { label: `TikTok: @${handle}`, href: `https://tiktok.com/@${handle}`, icon: "🎵", color: "#38bdf8", bg: "rgba(56,189,248,0.14)" };
+  }
+
+  return { label: clean, href: null, icon: "📱", color: "#cbd5e1", bg: "rgba(255,255,255,0.06)" };
+}
+
+function SocialMediaLinks({ text }: { text: string | null | undefined }) {
+  if (!text || !text.trim()) return null;
+
+  const tokens = text
+    .split(/[\r\n,;]+/)
+    .map(t => t.trim())
+    .filter(Boolean);
+
+  if (tokens.length === 0) return null;
+
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-      {tokens.map((tok, i) => {
-        const isUrl = /^(https?:\/\/|www\.)/i.test(tok);
-        const href = isUrl ? (tok.startsWith("http") ? tok : `https://${tok}`) : null;
-        const label = tok.replace(/^https?:\/\//i, "").replace(/\/$/, "");
-        if (href) {
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 5, alignItems: "center" }}>
+      {tokens.map((tok, idx) => {
+        const item = parseSocialItem(tok);
+        if (item.href) {
           return (
-            <a key={i} href={href} target="_blank" rel="noopener"
-              style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 8, background: "rgba(96,165,250,0.12)", color: "#60a5fa", fontSize: 12, fontWeight: 600, textDecoration: "none", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              🔗 {label}
+            <a
+              key={idx}
+              href={item.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={`Ouvrir ${item.label}`}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                padding: "2px 7px",
+                borderRadius: 6,
+                background: item.bg,
+                border: `1px solid ${item.color}45`,
+                color: item.color,
+                fontSize: 11,
+                fontWeight: 600,
+                textDecoration: "none",
+                transition: "all 0.15s ease",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = item.color)}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = `${item.color}45`)}
+            >
+              <span style={{ fontSize: 11 }}>{item.icon}</span>
+              <span>{item.label}</span>
+              <span style={{ fontSize: 9, opacity: 0.7 }}>↗</span>
             </a>
           );
         }
         return (
-          <span key={i} style={{ padding: "4px 10px", borderRadius: 8, background: "rgba(255,255,255,0.05)", color: C.text, fontSize: 12 }}>{tok}</span>
+          <span
+            key={idx}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              padding: "2px 7px",
+              borderRadius: 6,
+              background: item.bg,
+              border: "1px solid rgba(255,255,255,0.1)",
+              color: item.color,
+              fontSize: 11,
+            }}
+          >
+            <span style={{ fontSize: 11 }}>{item.icon}</span>
+            <span>{item.label}</span>
+          </span>
         );
       })}
     </div>
@@ -235,8 +337,11 @@ function Drawer({ row, onClose, onUpdate, onDelete }: { row: any; onClose: () =>
           ))}
           {row.portfolio && (
             <div style={{ borderBottom: `1px solid ${C.border}`, paddingBottom: 12 }}>
-              <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: C.muted, fontWeight: 700, marginBottom: 6 }}>🎨 Réseaux / Portfolio</div>
-              <PortfolioLinks text={row.portfolio} />
+              <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "#f472b6", fontWeight: 700, marginBottom: 6, display: "flex", alignItems: "center", gap: 5 }}>
+                <span>📸</span>
+                <span>Réseaux Sociaux &amp; Portfolio</span>
+              </div>
+              <SocialMediaLinks text={row.portfolio} />
             </div>
           )}
           {row.motivation && (
@@ -499,6 +604,11 @@ export default function AdminAdhesionsDashboard() {
             </div>
             <div style={{ fontSize: 12, color: C.muted, marginBottom: 2 }}>{row.email}</div>
             {row.telephone && <div style={{ fontSize: 12, color: C.muted, marginBottom: 2 }}>{row.telephone}</div>}
+            {row.portfolio && (
+              <div style={{ marginTop: 4, marginBottom: 6 }}>
+                <SocialMediaLinks text={row.portfolio} />
+              </div>
+            )}
             <div style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>{row.ville}{row.pays ? `, ${row.pays}` : ""}</div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 8, borderTop: `1px solid ${C.border}` }}>
               <RoleBadge role={row.role || "—"} />
@@ -530,7 +640,14 @@ export default function AdminAdhesionsDashboard() {
                   {row.prenom} {row.nom}
                   {row.portfolio && String(row.portfolio).trim() && <span title="Réseaux / portfolio fourni" style={{ marginLeft: 6 }}>🎨</span>}
                 </td>
-                <td style={{ padding: "12px 16px", fontSize: 12, color: C.muted }}>{row.email}</td>
+                <td style={{ padding: "12px 16px", fontSize: 12, color: C.muted }}>
+                  <div>{row.email}</div>
+                  {row.portfolio && (
+                    <div style={{ marginTop: 4 }}>
+                      <SocialMediaLinks text={row.portfolio} />
+                    </div>
+                  )}
+                </td>
                 <td style={{ padding: "12px 16px", fontSize: 12, color: C.muted }}>{row.ville}{row.pays ? `, ${row.pays}` : ""}</td>
                 <td style={{ padding: "12px 16px" }}><RoleBadge role={row.role || "—"} /></td>
                 <td style={{ padding: "12px 16px" }}><StatusBadge status={row.status} /></td>
