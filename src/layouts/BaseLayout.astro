@@ -5,7 +5,7 @@ import Footer from "../components/Footer.astro";
 import SEO from "../components/SEO.astro";
 import ChatAssistant from "../components/ChatAssistant.astro";
 
-const { title, description, image, url, noindex } = Astro.props;
+const { title, description, url, noindex } = Astro.props;
 const siteName = "Bloc Leopards";
 const defaultDescription = "Bloc Leopards rassemble les supporters des Leopards de la RDC autour d'une mobilisation positive, informee et respectueuse.";
 const pageTitle = title ? `${title} | ${siteName}` : siteName;
@@ -18,7 +18,7 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <SEO title={pageTitle} description={pageDescription} image={image} url={pageUrl} noindex={noindex} />
+    <SEO title={pageTitle} description={pageDescription} url={pageUrl} noindex={noindex} />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
