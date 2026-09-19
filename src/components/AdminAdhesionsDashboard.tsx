@@ -542,7 +542,7 @@ export default function AdminAdhesionsDashboard() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<any>(null);
   const [page, setPage] = useState(0);
-  const PER_PAGE = 20;
+  const [perPage, setPerPage] = useState<number>(25);
 
   const load = useCallback(async () => {
     const r = await fetch("/api/admin/adhesions");
@@ -588,8 +588,8 @@ export default function AdminAdhesionsDashboard() {
       return `${r.prenom} ${r.nom} ${r.email} ${r.ville}`.toLowerCase().includes(q);
     }), [adhesions, filterStatus, filterCity, filterRole, filterCreators, search]);
 
-  const page_rows = filtered.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
-  const total_pages = Math.ceil(filtered.length / PER_PAGE);
+  const page_rows = filtered.slice(page * perPage, (page + 1) * perPage);
+  const total_pages = Math.ceil(filtered.length / perPage);
 
   const statusFilters = [
     { id: "all",       label: "Tous",       count: adhesions.length },
@@ -674,6 +674,35 @@ export default function AdminAdhesionsDashboard() {
           options={cities} placeholder="Toutes les villes" searchPlaceholder="Chercher une ville..." />
         <SearchableSelect value={filterRole} onChange={v => { setFilterRole(v); resetPage(); }}
           options={roles} placeholder="Tous les rôles" searchPlaceholder="Chercher un rôle..." />
+
+        {/* Sélecteur de nombre de résultats par page */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6, background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: "2px 10px", height: 38 }}>
+          <span style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>Par page :</span>
+          <select
+            value={perPage}
+            onChange={(e) => {
+              setPerPage(Number(e.target.value));
+              resetPage();
+            }}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: C.yellow,
+              fontSize: 12,
+              fontWeight: 700,
+              fontFamily: "'Sora', sans-serif",
+              cursor: "pointer",
+              outline: "none",
+            }}
+          >
+            <option value={20} style={{ background: "#0d1117", color: "#fff" }}>20</option>
+            <option value={25} style={{ background: "#0d1117", color: "#fff" }}>25</option>
+            <option value={50} style={{ background: "#0d1117", color: "#fff" }}>50</option>
+            <option value={100} style={{ background: "#0d1117", color: "#fff" }}>100</option>
+            <option value={200} style={{ background: "#0d1117", color: "#fff" }}>200</option>
+            <option value={10000} style={{ background: "#0d1117", color: "#fff" }}>Tous ({filtered.length})</option>
+          </select>
+        </div>
 
         {/* Search */}
         <input
@@ -825,14 +854,65 @@ export default function AdminAdhesionsDashboard() {
         </table>
       </div>
 
-      {total_pages > 1 && (
-        <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 16 }}>
-          {Array.from({ length: total_pages }).map((_, i) => (
-            <button key={i} onClick={() => setPage(i)}
-              style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${page === i ? C.yellow : C.border}`, background: page === i ? "rgba(247,214,24,0.12)" : "transparent", color: page === i ? C.yellow : C.muted, fontSize: 12, cursor: "pointer" }}>
-              {i + 1}
-            </button>
-          ))}
+      {/* Pagination avec sélecteur de pages et info */}
+      {filtered.length > 0 && (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 18, flexWrap: "wrap", gap: 12 }}>
+          <div style={{ fontSize: 12, color: C.muted }}>
+            Affichage de <strong>{Math.min(page * perPage + 1, filtered.length)}</strong> à <strong>{Math.min((page + 1) * perPage, filtered.length)}</strong> sur <strong>{filtered.length}</strong> adhésions
+          </div>
+          {total_pages > 1 && (
+            <div style={{ display: "flex", justifyContent: "center", gap: 6, flexWrap: "wrap" }}>
+              <button
+                onClick={() => setPage(p => Math.max(0, p - 1))}
+                disabled={page === 0}
+                style={{
+                  padding: "6px 10px",
+                  borderRadius: 8,
+                  border: `1px solid ${C.border}`,
+                  background: "transparent",
+                  color: page === 0 ? "rgba(255,255,255,0.2)" : C.text,
+                  fontSize: 12,
+                  cursor: page === 0 ? "default" : "pointer",
+                }}
+              >
+                ← Précédent
+              </button>
+              {Array.from({ length: total_pages }).map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setPage(i)}
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    border: `1px solid ${page === i ? C.yellow : C.border}`,
+                    background: page === i ? "rgba(247,214,24,0.12)" : "transparent",
+                    color: page === i ? C.yellow : C.muted,
+                    fontSize: 12,
+                    fontWeight: page === i ? 700 : 400,
+                    cursor: "pointer",
+                  }}
+                >
+                  {i + 1}
+                </button>
+              ))}
+              <button
+                onClick={() => setPage(p => Math.min(total_pages - 1, p + 1))}
+                disabled={page === total_pages - 1}
+                style={{
+                  padding: "6px 10px",
+                  borderRadius: 8,
+                  border: `1px solid ${C.border}`,
+                  background: "transparent",
+                  color: page === total_pages - 1 ? "rgba(255,255,255,0.2)" : C.text,
+                  fontSize: 12,
+                  cursor: page === total_pages - 1 ? "default" : "pointer",
+                }}
+              >
+                Suivant →
+              </button>
+            </div>
+          )}
         </div>
       )}
 
