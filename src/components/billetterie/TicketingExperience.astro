@@ -109,11 +109,9 @@ const { lang = 'fr' } = Astro.props;
         <section class="tk-card tk-card--tickets" aria-labelledby="tickets-title">
           <div class="tk-section-header">
             <h2 id="tickets-title" class="tk-section-title">VOS BILLETS</h2>
-          <span class="tk-max-tag" id="stock-demand">FORTE DEMANDE</span>
+          <span class="tk-max-tag">Maximum 4 billets par commande</span>
           </div>
           <p class="tk-section-helper">Un billet = une entrée au Stade des Martyrs.</p>
-          <p class="tk-stock-copy" id="stock-copy">● Plus que 400 places disponibles</p>
-          <p class="tk-limit-copy">Maximum 4 billets par commande</p>
 
           <div class="tk-ticket-row">
             <div class="tk-ticket-info">
@@ -307,8 +305,7 @@ const { lang = 'fr' } = Astro.props;
       </button>
     </div>
   </div>
-  <div class="tk-stock-toast" id="stock-toast" role="status" aria-live="polite"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c1.8 3.4 5.5 4.5 5.5 9.1A5.5 5.5 0 1 1 6.5 12c0-2.4 1.4-4.4 3.5-6.1-.1 2.2.7 3.2 1.7 3.9C12.6 7.7 12.8 5.3 12 3Z"/></svg><span id="stock-toast-text"></span></div>
-  <div class="tk-online-toast" id="online-toast" role="status" aria-live="polite"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V21M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 21v-1.5a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><span id="online-toast-text"></span></div>
+  <div class="tk-tension-toast" id="tension-toast" role="status" aria-live="polite"><svg id="tension-toast-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V21M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 21v-1.5a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><span id="tension-toast-text"></span></div>
 
   <!-- ======================================================================= -->
   <!-- TRAITEMENT EN COURS / CHARGEMENT INFINI ("SITE QUI RAME")               -->
@@ -356,12 +353,9 @@ const { lang = 'fr' } = Astro.props;
     const sumItemSubtotal = document.getElementById('sum-item-subtotal');
     const sumTotalAmount = document.getElementById('sum-total-amount');
     const mobileTotalVal = document.getElementById('mobile-total-val');
-    const stockDemand = document.getElementById('stock-demand');
-    const stockCopy = document.getElementById('stock-copy');
-    const stockToast = document.getElementById('stock-toast');
-    const stockToastText = document.getElementById('stock-toast-text');
-    const onlineToast = document.getElementById('online-toast');
-    const onlineToastText = document.getElementById('online-toast-text');
+    const tensionToast = document.getElementById('tension-toast');
+    const tensionToastText = document.getElementById('tension-toast-text');
+    const tensionToastIcon = document.getElementById('tension-toast-icon');
 
     const btnValidateOrder = document.getElementById('btn-validate-order');
     const btnMobileValidate = document.getElementById('btn-mobile-validate');
@@ -404,13 +398,7 @@ const { lang = 'fr' } = Astro.props;
       else if (stock <= 50) urgency = `DERNIÈRES PLACES — ${stock} RESTANTES`;
       else if (stock <= 100) urgency = 'MOINS DE 100 PLACES DISPONIBLES';
       else if (stock <= 400) urgency = `FORTE DEMANDE — ${stock} PLACES RESTANTES`;
-      if (stockDemand) stockDemand.textContent = urgency;
-      if (stockCopy) stockCopy.textContent = soldOut ? 'Billetterie complète' : `● ${stock === 1 ? 'Dernière place disponible' : `Plus que ${stock} places disponibles`}`;
       if (mobileTotalVal) mobileTotalVal.textContent = `${quantity * unitPrice} $`;
-      if (stockToast) {
-        stockToastText.textContent = stock === 0 ? 'SOLD OUT — Billetterie complète' : stock <= 10 ? `Plus que ${stock} places disponibles` : stock <= 50 ? `Dernières places — ${stock} restantes` : stock <= 100 ? 'Moins de 100 places disponibles' : stock <= 400 ? `Forte demande — ${stock} places restantes` : 'Places disponibles';
-        stockToast.classList.add('tk-stock-toast--visible');
-      }
       if (mobileTotalVal) mobileTotalVal.textContent = `${quantity * unitPrice} $ · ${stock} restantes`;
       if (soldOut) {
         if (btnPlus) btnPlus.disabled = true;
@@ -420,12 +408,23 @@ const { lang = 'fr' } = Astro.props;
       }
     }
 
+    function showTensionToast(message, kind) {
+      if (!tensionToast || !tensionToastText || !tensionToastIcon) return;
+      tensionToast.classList.remove('tk-tension-toast--visible');
+      window.setTimeout(() => {
+        tensionToastText.textContent = message;
+        tensionToast.classList.toggle('tk-tension-toast--demand', kind === 'demand');
+        tensionToastIcon.innerHTML = kind === 'demand' ? '<path d="M12 3c1.8 3.4 5.5 4.5 5.5 9.1A5.5 5.5 0 1 1 6.5 12c0-2.4 1.4-4.4 3.5-6.1-.1 2.2.7 3.2 1.7 3.9C12.6 7.7 12.8 5.3 12 3Z"/>' : '<path d="M16 21v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V21M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 21v-1.5a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>';
+        tensionToast.classList.add('tk-tension-toast--visible');
+        window.setTimeout(() => tensionToast.classList.remove('tk-tension-toast--visible'), 5000);
+      }, 260);
+    }
+
     function updateOnlineDemo() {
       const connected = Math.floor(Math.random() * 151) + 300;
-      if (onlineToast) {
-        onlineToastText.textContent = `${connected} personnes consultent la billetterie`;
-        onlineToast.classList.add('tk-online-toast--visible');
-      }
+      const stock = Math.max(0, getStock());
+      showTensionToast(`👥 ${connected} personnes consultent la billetterie`, 'online');
+      window.setTimeout(() => showTensionToast(stock === 0 ? 'SOLD OUT' : `🔥 Forte demande — ${stock} places restantes`, 'demand'), 5600);
     }
 
     btnMinus?.addEventListener('click', () => {
@@ -1288,14 +1287,10 @@ const { lang = 'fr' } = Astro.props;
   }
   .tk-pill-tag { color: var(--tk-red); background: #fff1f2; padding: 0.35rem 0.55rem; border-radius: 999px; }
   .tk-section-helper { color: var(--tk-ink-secondary); font-size: 0.84rem; margin: -0.65rem 0 1rem; }
-  .tk-stock-copy { color: var(--tk-red); font-size: 0.75rem; font-weight: 800; letter-spacing: 0.04em; margin: 0 0 1rem; text-transform: uppercase; }
-  .tk-limit-copy { color: var(--tk-ink-muted); font-size: 0.75rem; margin: -0.55rem 0 1rem; }
-  .tk-sum-stock { color: var(--tk-ink-secondary); font-size: 0.78rem; font-weight: 700; margin-top: 0.7rem; }
-  .tk-stock-toast { position: fixed; z-index: 60; left: 50%; bottom: 1.25rem; transform: translate(-50%, 1rem); width: min(calc(100% - 2rem), 28rem); padding: 0.8rem 1rem; border-radius: 999px; background: var(--tk-red); color: #fff; font-family: var(--font-display); font-size: 0.75rem; font-weight: 800; text-align: center; box-shadow: 0 10px 28px rgba(16, 33, 61, 0.25); opacity: 0; pointer-events: none; transition: opacity 220ms ease, transform 220ms ease; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
-  .tk-stock-toast svg, .tk-online-toast svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: 0 0 auto; }
-  .tk-stock-toast--visible { opacity: 1; transform: translate(-50%, 0); }
-  .tk-online-toast { position: fixed; z-index: 60; left: 50%; bottom: 4.45rem; transform: translate(-50%, 1rem); width: min(calc(100% - 2rem), 28rem); padding: 0.65rem 1rem; border-radius: 999px; background: #10213d; color: #fff; font-size: 0.7rem; font-weight: 700; text-align: center; box-shadow: 0 8px 22px rgba(16, 33, 61, 0.2); opacity: 0; pointer-events: none; transition: opacity 220ms ease, transform 220ms ease; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
-  .tk-online-toast--visible { opacity: 1; transform: translate(-50%, 0); }
+  .tk-tension-toast { position: fixed; z-index: 60; top: 1rem; right: 1rem; transform: translateY(-0.6rem); width: min(calc(100% - 2rem), 25rem); padding: 0.7rem 0.9rem; border: 1px solid rgba(255,255,255,0.12); border-radius: 0.7rem; background: #10213d; color: #fff; font-family: var(--font-display); font-size: 0.76rem; font-weight: 700; box-shadow: 0 8px 24px rgba(16, 33, 61, 0.12); opacity: 0; pointer-events: none; transition: opacity 240ms ease, transform 240ms ease; display: flex; align-items: center; gap: 0.5rem; }
+  .tk-tension-toast svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: 0 0 auto; }
+  .tk-tension-toast--visible { opacity: 1; transform: translateY(0); }
+  .tk-tension-toast--demand { border-left: 3px solid var(--tk-red); }
   .tk-input { min-height: 3rem; }
   .tk-counter { height: 2.75rem; }
   .tk-counter-btn { width: 2.75rem; min-width: 44px; }
@@ -1339,8 +1334,7 @@ const { lang = 'fr' } = Astro.props;
     .tk-divider { border-color: rgba(255,255,255,0.16); }
     .tk-summary-card .tk-btn-submit { display: none; }
     .tk-mobile-sticky-bar { padding: 0.65rem 0.85rem max(0.65rem, env(safe-area-inset-bottom)); }
-    .tk-stock-toast { bottom: 5.5rem; }
-    .tk-online-toast { bottom: 9.35rem; }
+    .tk-tension-toast { top: 0.75rem; right: 0.75rem; width: calc(100% - 1.5rem); max-width: none; padding: 0.55rem 0.7rem; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .tk-mobile-bar-content { max-width: none; }
     .tk-btn-submit--mobile { min-width: 8.5rem; height: 3rem; }
   }
