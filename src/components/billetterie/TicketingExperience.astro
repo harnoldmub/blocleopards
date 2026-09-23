@@ -122,7 +122,7 @@ const { lang = 'fr' } = Astro.props;
             </div>
 
             <div class="tk-ticket-pricing">
-              <div class="tk-price-val">30 $</div>
+              <div class="tk-price-val">6 900 FC</div>
               <div class="tk-counter" role="group" aria-label="Quantité de billets">
                 <button type="button" class="tk-counter-btn" id="btn-minus" aria-label="Diminuer" disabled>−</button>
                 <span class="tk-counter-num" id="display-qty" aria-live="polite">1</span>
@@ -252,6 +252,7 @@ const { lang = 'fr' } = Astro.props;
             <div class="tk-sum-teams">RDC <span class="tk-sum-vs">vs</span> GUINÉE ÉQUATORIALE</div>
             <div class="tk-sum-date">24 SEPTEMBRE 2026 · 17:00</div>
             <div class="tk-sum-stadium">Stade des Martyrs · Kinshasa</div>
+            <div class="tk-sum-stadium">Retrait billet : Stade Tata Raphaël</div>
           </div>
 
           <hr class="tk-divider" />
@@ -260,9 +261,9 @@ const { lang = 'fr' } = Astro.props;
           <div class="tk-sum-item">
             <div class="tk-sum-item-header">
               <span class="tk-sum-item-name">STANDARD</span>
-              <span class="tk-sum-item-subtotal" id="sum-item-subtotal">30 $</span>
+              <span class="tk-sum-item-subtotal" id="sum-item-subtotal">6 900 FC</span>
             </div>
-            <div class="tk-sum-item-calc" id="sum-item-calc">1 × 30 $</div>
+            <div class="tk-sum-item-calc" id="sum-item-calc">1 × 6 900 FC</div>
           </div>
 
 
@@ -271,7 +272,7 @@ const { lang = 'fr' } = Astro.props;
           <!-- TOTAL -->
           <div class="tk-sum-total-row">
             <span class="tk-sum-total-lbl">TOTAL</span>
-            <span class="tk-sum-total-amount" id="sum-total-amount">30 $</span>
+            <span class="tk-sum-total-amount" id="sum-total-amount">6 900 FC</span>
           </div>
 
           <!-- BOUTON D'ACTION PRINCIPAL -->
@@ -298,7 +299,7 @@ const { lang = 'fr' } = Astro.props;
     <div class="tk-mobile-bar-content">
       <div class="tk-mobile-total-box">
         <span class="tk-mobile-total-caption">TOTAL</span>
-        <span class="tk-mobile-total-val" id="mobile-total-val">30 $</span>
+        <span class="tk-mobile-total-val" id="mobile-total-val">6 900 FC</span>
       </div>
       <button type="button" class="tk-btn-submit tk-btn-submit--mobile" id="btn-mobile-validate" disabled>
         <span id="btn-mobile-text">RÉSERVER</span>
@@ -326,6 +327,19 @@ const { lang = 'fr' } = Astro.props;
       </p>
     </div>
   </div>
+  <section class="tk-confirmation" id="ticket-confirmation" aria-live="polite" aria-hidden="true">
+    <div class="tk-confirmation-card">
+      <p class="tk-confirmation-kicker">RÉSERVATION ENREGISTRÉE</p>
+      <h2>Votre pré-réservation est enregistrée</h2>
+      <p class="tk-confirmation-match">RDC <span>vs</span> GUINÉE ÉQUATORIALE</p>
+      <p class="tk-confirmation-meta">Jeudi 24 septembre 2026 · 17:00<br />Stade des Martyrs · Kinshasa</p>
+      <p class="tk-booking-label">N° DE DOSSIER</p>
+      <strong class="tk-booking-number" id="booking-number"></strong>
+      <img class="tk-booking-qr" id="booking-qr" alt="QR code de réservation" width="220" height="220" />
+      <p class="tk-confirmation-note">Ceci n’est pas encore votre billet. Pour récupérer votre billet, rendez-vous au Stade Tata Raphaël. Le paiement s’effectuera sur place, lors du retrait.</p>
+      <div class="tk-confirmation-actions"><button type="button" id="download-card">Télécharger ma carte PNG</button></div>
+    </div>
+  </section>
 </div>
 
 <!-- ========================================================================= -->
@@ -338,7 +352,8 @@ const { lang = 'fr' } = Astro.props;
 
     // --- State ---
     let quantity = 1;
-    const unitPrice = 30;
+    const unitPrice = 6900;
+    const formatPrice = (amount) => `${amount.toLocaleString('fr-FR')} FC`;
     const stockMaximum = 1000;
     const stockKey = 'tikeo-demo-stock';
     const getStock = () => Number(localStorage.getItem(stockKey) || 400);
@@ -372,15 +387,19 @@ const { lang = 'fr' } = Astro.props;
     const loadingMsg = document.getElementById('loading-msg');
     const loadingTitle = document.getElementById('loading-title');
     const patienceNote = document.getElementById('patience-note');
+    const confirmation = document.getElementById('ticket-confirmation');
+    const bookingNumber = document.getElementById('booking-number');
+    const bookingQr = document.getElementById('booking-qr');
+    const downloadCard = document.getElementById('download-card');
 
     // --- Update Quantities & Prices ---
     function updatePrices() {
       const total = quantity * unitPrice;
       if (displayQty) displayQty.textContent = String(quantity);
-      if (sumItemCalc) sumItemCalc.textContent = `${quantity} × ${unitPrice} $`;
-      if (sumItemSubtotal) sumItemSubtotal.textContent = `${total} $`;
-      if (sumTotalAmount) sumTotalAmount.textContent = `${total} $`;
-      if (mobileTotalVal) mobileTotalVal.textContent = `${total} $`;
+      if (sumItemCalc) sumItemCalc.textContent = `${quantity} × ${formatPrice(unitPrice)}`;
+      if (sumItemSubtotal) sumItemSubtotal.textContent = formatPrice(total);
+      if (sumTotalAmount) sumTotalAmount.textContent = formatPrice(total);
+      if (mobileTotalVal) mobileTotalVal.textContent = formatPrice(total);
 
       if (btnMinus) btnMinus.disabled = quantity <= minQty;
       if (btnPlus) btnPlus.disabled = quantity >= maxQty;
@@ -397,8 +416,7 @@ const { lang = 'fr' } = Astro.props;
       else if (stock <= 50) urgency = `DERNIÈRES PLACES — ${stock} RESTANTES`;
       else if (stock <= 100) urgency = 'MOINS DE 100 PLACES DISPONIBLES';
       else if (stock <= 400) urgency = `FORTE DEMANDE — ${stock} PLACES RESTANTES`;
-      if (mobileTotalVal) mobileTotalVal.textContent = `${quantity * unitPrice} $`;
-      if (mobileTotalVal) mobileTotalVal.textContent = `${quantity * unitPrice} $`;
+      if (mobileTotalVal) mobileTotalVal.textContent = formatPrice(quantity * unitPrice);
       if (soldOut) {
         if (btnPlus) btnPlus.disabled = true;
         if (btnMinus) btnMinus.disabled = true;
@@ -412,7 +430,7 @@ const { lang = 'fr' } = Astro.props;
       tensionToast.classList.remove('tk-tension-toast--visible');
       window.setTimeout(() => {
         tensionToastText.textContent = message;
-        tensionToast.classList.toggle('tk-tension-toast--demand', kind === 'demand');
+        tensionToast.classList.remove('tk-tension-toast--demand');
         tensionToast.classList.add('tk-tension-toast--visible');
         window.setTimeout(() => tensionToast.classList.remove('tk-tension-toast--visible'), 5000);
       }, 260);
@@ -542,6 +560,7 @@ const { lang = 'fr' } = Astro.props;
       }
       localStorage.setItem(stockKey, String(stock - quantity));
       updateStock();
+      const bookingId = `BL-2026-${String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).padStart(6, '0')}`;
 
       // 1. Désactiver immédiatement le bouton
       if (btnValidateOrder) {
@@ -556,35 +575,33 @@ const { lang = 'fr' } = Astro.props;
       if (btnSpinner) btnSpinner.style.display = 'inline-block';
       if (btnText) btnText.textContent = 'Validation en cours…';
 
-      // 3. Maintien pendant 1s puis passage en plein écran de traitement
+      // Traitement court du prototype : le chargement doit toujours se terminer.
       setTimeout(() => {
         if (loadingBackdrop) {
           loadingBackdrop.classList.add('tk-loading-backdrop--active');
           loadingBackdrop.setAttribute('aria-hidden', 'false');
         }
-
-        // 4. Évolution des messages de statut
-        // La billetterie peut être fortement sollicitée : afficher le message de file d'attente.
-        setTimeout(() => {
-          if (loadingMsg) {
-            loadingMsg.style.opacity = '0';
-            setTimeout(() => {
-              loadingMsg.textContent = 'La billetterie est momentanément saturée. Votre place dans la file est conservée.';
-              loadingMsg.style.opacity = '1';
-            }, 200);
+        if (loadingTitle) loadingTitle.textContent = 'RÉSERVATION ENREGISTRÉE';
+        if (loadingMsg) loadingMsg.textContent = 'Votre réservation est prête. Vous pouvez poursuivre le retrait de votre billet.';
+        if (patienceNote) patienceNote.textContent = 'Présentez votre QR code et votre numéro de réservation lors du retrait.';
+        window.setTimeout(() => {
+          if (loadingBackdrop) {
+            loadingBackdrop.classList.remove('tk-loading-backdrop--active');
+            loadingBackdrop.setAttribute('aria-hidden', 'true');
           }
-          if (loadingTitle) loadingTitle.textContent = 'NOUS SOMMES NOMBREUX À RÉSERVER';
-        }, 3500);
-
-        // À 10s : Apparition feutrée de l'avertissement de patience
-        setTimeout(() => {
-          if (patienceNote) {
-            patienceNote.classList.add('tk-patience-note--visible');
-          }
-        }, 10000);
-
-        // La demande reste en attente tant que la billetterie est saturée.
-      }, 1000);
+          if (btnSpinner) btnSpinner.style.display = 'none';
+          if (btnText) btnText.textContent = 'RÉSERVATION ENREGISTRÉE';
+          fetch(`/api/can2027/qr?reservation=${encodeURIComponent(bookingId)}`)
+            .then((response) => response.json())
+            .then((data) => {
+              if (bookingNumber) bookingNumber.textContent = bookingId;
+              if (bookingQr) bookingQr.src = data.qr;
+              confirmation?.classList.add('tk-confirmation--visible');
+              confirmation?.setAttribute('aria-hidden', 'false');
+              downloadCard?.addEventListener('click', () => { const qrImage = new Image(); qrImage.onload = () => { const canvas = document.createElement('canvas'); canvas.width = 900; canvas.height = 1000; const ctx = canvas.getContext('2d'); if (!ctx) return; ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = '#10213d'; ctx.font = '800 42px Arial'; ctx.textAlign = 'center'; ctx.fillText('PRÉ-RÉSERVATION ENREGISTRÉE', 450, 85); ctx.font = '800 30px Arial'; ctx.fillText('RDC vs GUINÉE ÉQUATORIALE', 450, 145); ctx.font = '24px Arial'; ctx.fillText('Jeudi 24 septembre 2026 · 17:00', 450, 195); ctx.fillText('Stade des Martyrs · Kinshasa', 450, 235); ctx.font = '800 22px Arial'; ctx.fillText('N° DE DOSSIER', 450, 300); ctx.font = '800 34px monospace'; ctx.fillText(bookingId, 450, 345); ctx.drawImage(qrImage, 340, 385, 220, 220); ctx.font = '700 22px Arial'; ctx.fillText('RETRAIT BILLET : STADE TATA RAPHAËL', 450, 670); ctx.font = '20px Arial'; ctx.fillText('Paiement sur place lors du retrait', 450, 720); ctx.font = '18px Arial'; ctx.fillText('Cette carte confirme votre pré-réservation.', 450, 790); canvas.toBlob((blob) => { if (!blob) return; const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `${bookingId}-carte.png`; link.click(); URL.revokeObjectURL(link.href); }, 'image/png'); }; qrImage.src = data.qr; });
+            });
+        }, 650);
+      }, 250);
     }
 
     btnValidateOrder?.addEventListener('click', triggerOrderValidation);
@@ -1289,7 +1306,19 @@ const { lang = 'fr' } = Astro.props;
   .tk-tension-toast { position: fixed; z-index: 60; top: 5.35rem; right: 1rem; transform: translateY(-0.6rem); width: min(calc(100% - 2rem), 25rem); padding: 0.7rem 0.9rem; border: 1px solid rgba(255,255,255,0.12); border-radius: 0.7rem; background: #10213d; color: #fff; font-family: var(--font-display); font-size: 0.76rem; font-weight: 700; box-shadow: 0 8px 24px rgba(16, 33, 61, 0.12); opacity: 0; pointer-events: none; transition: opacity 240ms ease, transform 240ms ease; display: flex; align-items: center; gap: 0.5rem; }
   .tk-tension-toast svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: 0 0 auto; }
   .tk-tension-toast--visible { opacity: 1; transform: translateY(0); }
-  .tk-tension-toast--demand { border-left: 3px solid var(--tk-red); }
+  .tk-confirmation { position: fixed; inset: 0; z-index: 70; display: flex; align-items: center; justify-content: center; padding: 1rem; background: rgba(16,33,61,0.42); opacity: 0; pointer-events: none; transition: opacity 240ms ease; }
+  .tk-confirmation--visible { opacity: 1; pointer-events: auto; }
+  .tk-confirmation-card { width: min(100%, 30rem); max-height: calc(100vh - 2rem); overflow: auto; border: 1px solid var(--tk-border); border-radius: 1rem; background: #fff; padding: 2rem; color: var(--tk-ink-main); text-align: center; box-shadow: 0 20px 60px rgba(16,33,61,0.2); }
+  .tk-confirmation-kicker, .tk-booking-label { color: var(--tk-blue-rdc); font-family: var(--font-display); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; }
+  .tk-confirmation-card h2 { margin: 0.65rem 0; font-family: var(--font-display); font-size: 1.65rem; font-weight: 800; }
+  .tk-confirmation-match { font-family: var(--font-display); font-size: 1.1rem; font-weight: 800; }
+  .tk-confirmation-match span { color: var(--tk-blue-rdc); }
+  .tk-confirmation-meta, .tk-confirmation-note { color: var(--tk-ink-secondary); font-size: 0.82rem; line-height: 1.5; }
+  .tk-booking-label { margin-top: 1.5rem; color: var(--tk-ink-muted); }
+  .tk-booking-number { display: block; margin-top: 0.25rem; color: var(--tk-ink-main); font-family: monospace; font-size: 1.45rem; letter-spacing: 0.06em; }
+  .tk-booking-qr { display: block; margin: 1rem auto; border: 0.5rem solid #fff; box-shadow: 0 0 0 1px var(--tk-border); }
+  .tk-confirmation-actions { display: grid; gap: 0.6rem; margin-top: 1.25rem; }
+  .tk-confirmation-actions button { min-height: 2.8rem; border: 0; border-radius: 999px; background: var(--tk-blue-rdc); color: #fff; cursor: pointer; font-family: var(--font-display); font-size: 0.75rem; font-weight: 800; text-transform: uppercase; }
   .tk-input { min-height: 3rem; }
   .tk-counter { height: 2.75rem; }
   .tk-counter-btn { width: 2.75rem; min-width: 44px; }
