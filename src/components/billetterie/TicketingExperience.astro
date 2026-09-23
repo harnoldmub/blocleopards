@@ -252,7 +252,7 @@ const { lang = 'fr' } = Astro.props;
             <div class="tk-sum-teams">RDC <span class="tk-sum-vs">vs</span> GUINÉE ÉQUATORIALE</div>
             <div class="tk-sum-date">24 SEPTEMBRE 2026 · 17:00</div>
             <div class="tk-sum-stadium">Stade des Martyrs · Kinshasa</div>
-            <div class="tk-sum-stadium">Retrait billet : Stade Tata Raphaël</div>
+            <div class="tk-sum-pickup"><span class="tk-sum-pickup-label">RETRAIT DU BILLET</span><strong>Stade Tata Raphaël</strong></div>
           </div>
 
           <hr class="tk-divider" />
@@ -329,10 +329,12 @@ const { lang = 'fr' } = Astro.props;
   </div>
   <section class="tk-confirmation" id="ticket-confirmation" aria-live="polite" aria-hidden="true">
     <div class="tk-confirmation-card">
+      <button type="button" class="tk-confirmation-close" id="close-confirmation" aria-label="Fermer le récapitulatif">×</button>
       <p class="tk-confirmation-kicker">RÉSERVATION ENREGISTRÉE</p>
       <h2>Votre pré-réservation est enregistrée</h2>
       <p class="tk-confirmation-match">RDC <span>vs</span> GUINÉE ÉQUATORIALE</p>
       <p class="tk-confirmation-meta">Jeudi 24 septembre 2026 · 17:00<br />Stade des Martyrs · Kinshasa</p>
+      <div class="tk-confirmation-pickup"><span>RETRAIT DU BILLET</span><strong>Stade Tata Raphaël</strong><small>Paiement sur place lors du retrait</small></div>
       <p class="tk-booking-label">N° DE DOSSIER</p>
       <strong class="tk-booking-number" id="booking-number"></strong>
       <img class="tk-booking-qr" id="booking-qr" alt="QR code de réservation" width="220" height="220" />
@@ -391,6 +393,12 @@ const { lang = 'fr' } = Astro.props;
     const bookingNumber = document.getElementById('booking-number');
     const bookingQr = document.getElementById('booking-qr');
     const downloadCard = document.getElementById('download-card');
+    const closeConfirmation = document.getElementById('close-confirmation');
+
+    closeConfirmation?.addEventListener('click', () => {
+      confirmation?.classList.remove('tk-confirmation--visible');
+      confirmation?.setAttribute('aria-hidden', 'true');
+    });
 
     // --- Update Quantities & Prices ---
     function updatePrices() {
@@ -591,14 +599,14 @@ const { lang = 'fr' } = Astro.props;
           }
           if (btnSpinner) btnSpinner.style.display = 'none';
           if (btnText) btnText.textContent = 'RÉSERVATION ENREGISTRÉE';
-          fetch(`/api/can2027/qr?reservation=${encodeURIComponent(bookingId)}`)
+          fetch(`/api/can2027/qr?reservation=${encodeURIComponent(bookingId)}&prenom=${encodeURIComponent((inpPrenom?.value || '').trim())}&nom=${encodeURIComponent((inpNom?.value || '').trim())}`)
             .then((response) => response.json())
             .then((data) => {
               if (bookingNumber) bookingNumber.textContent = bookingId;
               if (bookingQr) bookingQr.src = data.qr;
               confirmation?.classList.add('tk-confirmation--visible');
               confirmation?.setAttribute('aria-hidden', 'false');
-              downloadCard?.addEventListener('click', () => { const qrImage = new Image(); qrImage.onload = () => { const canvas = document.createElement('canvas'); canvas.width = 900; canvas.height = 1000; const ctx = canvas.getContext('2d'); if (!ctx) return; ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = '#10213d'; ctx.font = '800 42px Arial'; ctx.textAlign = 'center'; ctx.fillText('PRÉ-RÉSERVATION ENREGISTRÉE', 450, 85); ctx.font = '800 30px Arial'; ctx.fillText('RDC vs GUINÉE ÉQUATORIALE', 450, 145); ctx.font = '24px Arial'; ctx.fillText('Jeudi 24 septembre 2026 · 17:00', 450, 195); ctx.fillText('Stade des Martyrs · Kinshasa', 450, 235); ctx.font = '800 22px Arial'; ctx.fillText('N° DE DOSSIER', 450, 300); ctx.font = '800 34px monospace'; ctx.fillText(bookingId, 450, 345); ctx.drawImage(qrImage, 340, 385, 220, 220); ctx.font = '700 22px Arial'; ctx.fillText('RETRAIT BILLET : STADE TATA RAPHAËL', 450, 670); ctx.font = '20px Arial'; ctx.fillText('Paiement sur place lors du retrait', 450, 720); ctx.font = '18px Arial'; ctx.fillText('Cette carte confirme votre pré-réservation.', 450, 790); canvas.toBlob((blob) => { if (!blob) return; const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `${bookingId}-carte.png`; link.click(); URL.revokeObjectURL(link.href); }, 'image/png'); }; qrImage.src = data.qr; });
+              downloadCard?.addEventListener('click', () => { const qrImage = new Image(); qrImage.onload = () => { const canvas = document.createElement('canvas'); canvas.width = 900; canvas.height = 1000; const ctx = canvas.getContext('2d'); if (!ctx) return; ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = '#10213d'; ctx.font = '800 42px Arial'; ctx.textAlign = 'center'; ctx.fillText('PRÉ-RÉSERVATION ENREGISTRÉE', 450, 85); ctx.font = '800 30px Arial'; ctx.fillText('RDC vs GUINÉE ÉQUATORIALE', 450, 145); ctx.font = '24px Arial'; ctx.fillText('Jeudi 24 septembre 2026 · 17:00', 450, 195); ctx.fillText('Stade des Martyrs · Kinshasa', 450, 235); ctx.font = '800 22px Arial'; ctx.fillText('N° DE DOSSIER', 450, 300); ctx.font = '800 34px monospace'; ctx.fillText(bookingId, 450, 345); ctx.drawImage(qrImage, 340, 385, 220, 220); ctx.fillStyle = '#fff5f5'; ctx.fillRect(120, 650, 660, 115); ctx.fillStyle = '#d32f2f'; ctx.fillRect(120, 650, 8, 115); ctx.fillStyle = '#d32f2f'; ctx.font = '800 18px Arial'; ctx.fillText('RETRAIT DU BILLET', 450, 685); ctx.fillStyle = '#10213d'; ctx.font = '700 24px Arial'; ctx.fillText('Stade Tata Raphaël', 450, 720); ctx.font = '18px Arial'; ctx.fillText('Paiement sur place lors du retrait', 450, 750); ctx.fillStyle = '#10213d'; ctx.font = '18px Arial'; ctx.fillText('Cette carte confirme votre pré-réservation.', 450, 825); canvas.toBlob((blob) => { if (!blob) return; const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `${bookingId}-carte.png`; link.click(); URL.revokeObjectURL(link.href); }, 'image/png'); }; qrImage.src = data.qr; });
             });
         }, 650);
       }, 250);
@@ -1076,6 +1084,9 @@ const { lang = 'fr' } = Astro.props;
     font-size: 0.78rem;
     color: var(--tk-ink-muted);
   }
+  .tk-sum-pickup { display: grid; gap: 0.18rem; margin-top: 0.7rem; padding: 0.65rem 0.75rem; border-left: 3px solid var(--tk-red); border-radius: 0 0.45rem 0.45rem 0; background: #fff5f5; }
+  .tk-sum-pickup-label { color: var(--tk-red); font-family: var(--font-display); font-size: 0.62rem; font-weight: 800; letter-spacing: 0.1em; }
+  .tk-sum-pickup strong { color: var(--tk-ink-main); font-size: 0.86rem; }
 
   .tk-divider {
     border: none;
@@ -1308,12 +1319,18 @@ const { lang = 'fr' } = Astro.props;
   .tk-tension-toast--visible { opacity: 1; transform: translateY(0); }
   .tk-confirmation { position: fixed; inset: 0; z-index: 70; display: flex; align-items: center; justify-content: center; padding: 1rem; background: rgba(16,33,61,0.42); opacity: 0; pointer-events: none; transition: opacity 240ms ease; }
   .tk-confirmation--visible { opacity: 1; pointer-events: auto; }
-  .tk-confirmation-card { width: min(100%, 30rem); max-height: calc(100vh - 2rem); overflow: auto; border: 1px solid var(--tk-border); border-radius: 1rem; background: #fff; padding: 2rem; color: var(--tk-ink-main); text-align: center; box-shadow: 0 20px 60px rgba(16,33,61,0.2); }
+  .tk-confirmation-card { position: relative; width: min(100%, 30rem); max-height: calc(100vh - 2rem); overflow: auto; border: 1px solid var(--tk-border); border-radius: 1rem; background: #fff; padding: 2rem; color: var(--tk-ink-main); text-align: center; box-shadow: 0 20px 60px rgba(16,33,61,0.2); }
+  .tk-confirmation-close { position: absolute; top: 0.75rem; right: 0.85rem; width: 2.2rem; height: 2.2rem; border: 1px solid var(--tk-border); border-radius: 999px; background: #fff; color: var(--tk-ink-muted); cursor: pointer; font-size: 1.5rem; line-height: 1; transition: background 180ms ease, color 180ms ease, border-color 180ms ease; }
+  .tk-confirmation-close:hover, .tk-confirmation-close:focus-visible { border-color: var(--tk-blue-rdc); background: #eef5ff; color: var(--tk-blue-rdc); outline: none; }
   .tk-confirmation-kicker, .tk-booking-label { color: var(--tk-blue-rdc); font-family: var(--font-display); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; }
   .tk-confirmation-card h2 { margin: 0.65rem 0; font-family: var(--font-display); font-size: 1.65rem; font-weight: 800; }
   .tk-confirmation-match { font-family: var(--font-display); font-size: 1.1rem; font-weight: 800; }
   .tk-confirmation-match span { color: var(--tk-blue-rdc); }
   .tk-confirmation-meta, .tk-confirmation-note { color: var(--tk-ink-secondary); font-size: 0.82rem; line-height: 1.5; }
+  .tk-confirmation-pickup { display: grid; gap: 0.25rem; margin: 1.15rem 0; padding: 0.85rem 1rem; border: 1px solid rgba(211, 47, 47, 0.2); border-left: 4px solid var(--tk-red); border-radius: 0 0.7rem 0.7rem 0; background: #fff5f5; text-align: left; }
+  .tk-confirmation-pickup span { color: var(--tk-red); font-family: var(--font-display); font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; }
+  .tk-confirmation-pickup strong { color: var(--tk-ink-main); font-family: var(--font-display); font-size: 1rem; }
+  .tk-confirmation-pickup small { color: var(--tk-ink-secondary); font-size: 0.75rem; }
   .tk-booking-label { margin-top: 1.5rem; color: var(--tk-ink-muted); }
   .tk-booking-number { display: block; margin-top: 0.25rem; color: var(--tk-ink-main); font-family: monospace; font-size: 1.45rem; letter-spacing: 0.06em; }
   .tk-booking-qr { display: block; margin: 1rem auto; border: 0.5rem solid #fff; box-shadow: 0 0 0 1px var(--tk-border); }
