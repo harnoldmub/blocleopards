@@ -113,6 +113,7 @@ const { lang = 'fr' } = Astro.props;
           </div>
           <p class="tk-section-helper">Un billet = une entrée au Stade des Martyrs.</p>
           <p class="tk-stock-copy" id="stock-copy">● Plus que 400 places disponibles</p>
+          <p class="tk-limit-copy">Maximum 4 billets par commande</p>
 
           <div class="tk-ticket-row">
             <div class="tk-ticket-info">
@@ -286,14 +287,6 @@ const { lang = 'fr' } = Astro.props;
             <span id="btn-text">RÉSERVER MA PLACE →</span>
           </button>
 
-          <!-- RÉASSURANCE DISCRÈTE -->
-          <div class="tk-security-note">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-            </svg>
-            <span>Paiement sécurisé</span>
-          </div>
         </div>
       </aside>
 
@@ -356,8 +349,8 @@ const { lang = 'fr' } = Astro.props;
     const maxQty = 4;
 
     // --- Elements ---
-    const btnMinus = document.getElementById('btn-minus') as HTMLButtonElement | null;
-    const btnPlus = document.getElementById('btn-plus') as HTMLButtonElement | null;
+    const btnMinus = document.getElementById('btn-minus');
+    const btnPlus = document.getElementById('btn-plus');
     const displayQty = document.getElementById('display-qty');
     const sumItemCalc = document.getElementById('sum-item-calc');
     const sumItemSubtotal = document.getElementById('sum-item-subtotal');
@@ -370,17 +363,17 @@ const { lang = 'fr' } = Astro.props;
     const onlineToast = document.getElementById('online-toast');
     const onlineToastText = document.getElementById('online-toast-text');
 
-    const btnValidateOrder = document.getElementById('btn-validate-order') as HTMLButtonElement | null;
-    const btnMobileValidate = document.getElementById('btn-mobile-validate') as HTMLButtonElement | null;
+    const btnValidateOrder = document.getElementById('btn-validate-order');
+    const btnMobileValidate = document.getElementById('btn-mobile-validate');
     const btnText = document.getElementById('btn-text');
     const btnSpinner = document.getElementById('btn-spinner');
 
-    const inpPrenom = document.getElementById('inp-prenom') as HTMLInputElement | null;
-    const inpNom = document.getElementById('inp-nom') as HTMLInputElement | null;
-    const inpEmail = document.getElementById('inp-email') as HTMLInputElement | null;
-    const inpEmailConfirm = document.getElementById('inp-email-confirm') as HTMLInputElement | null;
-    const inpPhone = document.getElementById('inp-phone') as HTMLInputElement | null;
-    const inpCountry = document.getElementById('inp-country') as HTMLSelectElement | null;
+    const inpPrenom = document.getElementById('inp-prenom');
+    const inpNom = document.getElementById('inp-nom');
+    const inpEmail = document.getElementById('inp-email');
+    const inpEmailConfirm = document.getElementById('inp-email-confirm');
+    const inpPhone = document.getElementById('inp-phone');
+    const inpCountry = document.getElementById('inp-country');
 
     const loadingBackdrop = document.getElementById('loading-backdrop');
     const loadingMsg = document.getElementById('loading-msg');
@@ -450,7 +443,7 @@ const { lang = 'fr' } = Astro.props;
     });
 
     // --- Real-time Front-end Validation ---
-    function checkValidity(): boolean {
+    function checkValidity() {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       const phoneRegex = /^[\d\s\+\(\)\-\.]{7,20}$/;
 
@@ -479,9 +472,9 @@ const { lang = 'fr' } = Astro.props;
 
     // Input error feedback on blur / typing
     function setupFieldFeedback(
-      input: HTMLInputElement | HTMLSelectElement | null,
-      errId: string,
-      validator: () => { valid: boolean; msg: string }
+      input,
+      errId,
+      validator
     ) {
       if (!input) return;
       const errSpan = document.getElementById(errId);
@@ -1296,6 +1289,7 @@ const { lang = 'fr' } = Astro.props;
   .tk-pill-tag { color: var(--tk-red); background: #fff1f2; padding: 0.35rem 0.55rem; border-radius: 999px; }
   .tk-section-helper { color: var(--tk-ink-secondary); font-size: 0.84rem; margin: -0.65rem 0 1rem; }
   .tk-stock-copy { color: var(--tk-red); font-size: 0.75rem; font-weight: 800; letter-spacing: 0.04em; margin: 0 0 1rem; text-transform: uppercase; }
+  .tk-limit-copy { color: var(--tk-ink-muted); font-size: 0.75rem; margin: -0.55rem 0 1rem; }
   .tk-sum-stock { color: var(--tk-ink-secondary); font-size: 0.78rem; font-weight: 700; margin-top: 0.7rem; }
   .tk-stock-toast { position: fixed; z-index: 60; left: 50%; bottom: 1.25rem; transform: translate(-50%, 1rem); width: min(calc(100% - 2rem), 28rem); padding: 0.8rem 1rem; border-radius: 999px; background: var(--tk-red); color: #fff; font-family: var(--font-display); font-size: 0.75rem; font-weight: 800; text-align: center; box-shadow: 0 10px 28px rgba(16, 33, 61, 0.25); opacity: 0; pointer-events: none; transition: opacity 220ms ease, transform 220ms ease; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
   .tk-stock-toast svg, .tk-online-toast svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: 0 0 auto; }
@@ -1337,7 +1331,7 @@ const { lang = 'fr' } = Astro.props;
     .tk-price-val { font-size: 1.5rem; }
     .tk-form-grid { gap: 0.8rem; }
     .tk-label { font-size: 0.68rem; }
-    .tk-summary-col { order: -1; }
+    .tk-summary-col { order: 2; }
     .tk-summary-card { padding: 1rem; border-radius: 14px; background: #10213d; color: #fff; }
     .tk-summary-title, .tk-sum-teams, .tk-sum-total-lbl, .tk-sum-total-amount { color: #fff; }
     .tk-sum-date, .tk-sum-item-calc { color: rgba(255,255,255,0.72); }

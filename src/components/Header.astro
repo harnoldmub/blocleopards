@@ -26,7 +26,7 @@ const nav = [
 ];
 ---
 <header data-site-header class="sticky top-0 z-50 bg-white/85 backdrop-blur-xl transition-shadow duration-500">
-  <div class="mx-auto flex max-w-[84rem] items-center justify-between px-4 py-4 lg:px-8 lg:py-5">
+  <div class="mx-auto flex max-w-[84rem] items-center justify-between px-4 py-3 lg:px-8">
     <!-- Bouton menu mobile -->
     <button id="mobile-menu-btn" class="p-2 text-congo-nuit md:hidden" aria-label="Menu">
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
@@ -44,7 +44,7 @@ const nav = [
       {nav.map((item) => (
         item.children ? (
           <div class="group relative">
-            <a href={item.href} class="flex items-center gap-1.5 px-5 py-7 text-[0.78rem] font-semibold uppercase tracking-[0.14em] text-congo-nuit/80 transition-colors hover:text-congo">
+            <a href={item.href} class="flex items-center gap-1.5 px-4 py-6 text-[0.82rem] font-semibold uppercase tracking-[0.12em] text-congo-nuit/80 transition-colors hover:text-congo">
               {item.label}
               <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-congo transition-transform group-hover:rotate-180"><path d="m6 9 6 6 6-6"/></svg>
             </a>
@@ -59,7 +59,7 @@ const nav = [
             </div>
           </div>
         ) : (
-          <a href={item.href} class="flex items-center gap-1.5 px-5 py-7 text-[0.78rem] font-semibold uppercase tracking-[0.14em] text-congo-nuit/80 transition-colors hover:text-congo">
+          <a href={item.href} class="flex items-center gap-1.5 px-4 py-6 text-[0.82rem] font-semibold uppercase tracking-[0.12em] text-congo-nuit/80 transition-colors hover:text-congo">
             {item.label}
             {item.isSpecial && (
               <span class="rounded bg-feu px-1.5 py-0.5 text-[0.55rem] font-black text-white leading-none shadow-xs">

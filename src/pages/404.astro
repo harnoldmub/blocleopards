@@ -1,0 +1,18 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Page introuvable" description="Cette page n'existe pas ou n'est plus disponible.">
+  <section class="relative flex min-h-[68vh] items-center overflow-hidden bg-congo-night px-6 py-24 text-white">
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_75%_25%,rgba(0,127,255,0.3),transparent_38%),radial-gradient(circle_at_20%_80%,rgba(206,17,38,0.24),transparent_34%)]" aria-hidden="true"></div>
+    <div class="relative mx-auto w-full max-w-[84rem]">
+      <span class="text-eyebrow text-[0.72rem] font-bold uppercase tracking-[0.3em] text-or">Bloc Léopards · 404</span>
+      <h1 class="mt-5 max-w-3xl font-mega text-7xl uppercase leading-[0.82] sm:text-9xl">Cette page<br /><span class="text-transparent [-webkit-text-stroke:2px_#F4C400]">a disparu.</span></h1>
+      <p class="mt-8 max-w-lg text-base leading-relaxed text-white/70 sm:text-lg">Le lien que vous avez suivi n'existe plus ou l'adresse est incorrecte.</p>
+      <div class="mt-9 flex flex-wrap gap-3">
+        <a href="/" class="rounded-full bg-or px-7 py-4 text-xs font-black uppercase tracking-[0.14em] text-congo-night transition hover:-translate-y-0.5 hover:bg-yellow-300">Retour à l'accueil →</a>
+        <a href="/can-2027" class="rounded-full border border-white/25 px-7 py-4 text-xs font-bold uppercase tracking-[0.14em] text-white transition hover:border-or hover:text-or">Voir les Léopards</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
