@@ -122,7 +122,7 @@ const { lang = 'fr' } = Astro.props;
             </div>
 
             <div class="tk-ticket-pricing">
-              <div class="tk-price-val">6 900 FC</div>
+              <div class="tk-price-val">69 000 FC</div>
               <div class="tk-counter" role="group" aria-label="Quantité de billets">
                 <button type="button" class="tk-counter-btn" id="btn-minus" aria-label="Diminuer" disabled>−</button>
                 <span class="tk-counter-num" id="display-qty" aria-live="polite">1</span>
@@ -260,9 +260,9 @@ const { lang = 'fr' } = Astro.props;
           <div class="tk-sum-item">
             <div class="tk-sum-item-header">
               <span class="tk-sum-item-name">STANDARD</span>
-              <span class="tk-sum-item-subtotal" id="sum-item-subtotal">6 900 FC</span>
+              <span class="tk-sum-item-subtotal" id="sum-item-subtotal">69 000 FC</span>
             </div>
-            <div class="tk-sum-item-calc" id="sum-item-calc">1 × 6 900 FC</div>
+            <div class="tk-sum-item-calc" id="sum-item-calc">1 × 69 000 FC</div>
           </div>
 
 
@@ -271,7 +271,7 @@ const { lang = 'fr' } = Astro.props;
           <!-- TOTAL -->
           <div class="tk-sum-total-row">
             <span class="tk-sum-total-lbl">TOTAL</span>
-            <span class="tk-sum-total-amount" id="sum-total-amount">6 900 FC</span>
+            <span class="tk-sum-total-amount" id="sum-total-amount">69 000 FC</span>
           </div>
 
           <!-- BOUTON D'ACTION PRINCIPAL -->
@@ -298,7 +298,7 @@ const { lang = 'fr' } = Astro.props;
     <div class="tk-mobile-bar-content">
       <div class="tk-mobile-total-box">
         <span class="tk-mobile-total-caption">TOTAL</span>
-        <span class="tk-mobile-total-val" id="mobile-total-val">6 900 FC</span>
+        <span class="tk-mobile-total-val" id="mobile-total-val">69 000 FC</span>
       </div>
       <button type="button" class="tk-btn-submit tk-btn-submit--mobile" id="btn-mobile-validate" disabled>
         <span id="btn-mobile-text">RÉSERVER</span>
@@ -353,7 +353,7 @@ const { lang = 'fr' } = Astro.props;
 
     // --- State ---
     let quantity = 1;
-    const unitPrice = 6900;
+    const unitPrice = 69000;
     const formatPrice = (amount) => `${amount.toLocaleString('fr-FR')} FC`;
     const stockMaximum = 1000;
     const stockKey = 'tikeo-demo-stock';
