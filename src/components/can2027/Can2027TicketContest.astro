@@ -1,270 +1,62 @@
 ---
-/**
- * Formulaire de participation au Jeu-Concours :
- * « Gagne ta place pour les matchs à Kinshasa et à Harare ».
- * Simple, rapide, optimisé mobile et relié à l'API /api/can2027/concours.
- */
+/** Prototype local de réservation. Le stock est volontairement isolé ici afin
+ * de pouvoir être remplacé plus tard par un service backend atomique. */
 ---
 
-<div class="can-contest-wrapper relative overflow-hidden rounded-3xl border-2 border-or/40 bg-gradient-to-br from-[#071329] via-congo-night to-[#0a1e45] p-6 sm:p-10 lg:p-14 shadow-2xl">
-  <!-- Badge lumineux et décoratif -->
-  <div class="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-or/15 blur-3xl pointer-events-none"></div>
-  <div class="absolute -left-16 -bottom-16 h-56 w-56 rounded-full bg-congo-blue/20 blur-3xl pointer-events-none"></div>
-
-  <div class="relative z-10 grid items-center gap-10 lg:grid-cols-12">
-    <!-- Présentation & Arguments (5 cols) -->
-    <div class="lg:col-span-5 text-left">
-      <div class="inline-flex items-center gap-2 rounded-full border border-or/50 bg-or/10 px-3.5 py-1 text-xs font-black uppercase tracking-[0.2em] text-or">
-        <span>Jeu-Concours Supporters</span>
-      </div>
-
-      <h2 class="mt-4 font-mega text-4xl uppercase leading-[0.9] text-white sm:text-5xl lg:text-6xl">
-        GAGNE TA PLACE <br />
-        <span class="text-or">À KINSHASA</span>
-      </h2>
-
-      <p class="mt-4 text-base font-bold text-sky-300 sm:text-lg">
-        Stade des Martyrs de la Pentecôte
-      </p>
-
-      <p class="mt-3 text-sm leading-relaxed text-white/80">
-        Le <strong>Bloc Léopards</strong> offre des places de tribune et des accès supporters pour pousser les Léopards de la RDC vers la victoire à domicile au Stade des Martyrs. Remplis ce formulaire rapide pour tenter ta chance au tirage au sort officiel !
-      </p>
-
-      <!-- Avantages & Sécurité -->
-      <div class="mt-6 space-y-3 text-xs text-white/85">
-        <div class="flex items-center gap-3">
-          <span class="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 font-bold">✓</span>
-          <span><strong>100% gratuit</strong> et ouvert à tous les supporters des Léopards</span>
-        </div>
-        <div class="flex items-center gap-3">
-          <span class="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 font-bold">✓</span>
-          <span>Tirage au sort régulier avant la rencontre</span>
-        </div>
-        <div class="flex items-center gap-3">
-          <span class="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 font-bold">✓</span>
-          <span>Contact direct et remise des places par <strong>WhatsApp</strong></span>
-        </div>
+<div class="can-contest-wrapper relative overflow-hidden rounded-3xl border-2 border-or/40 bg-gradient-to-br from-[#071329] via-congo-night to-[#0a1e45] p-6 shadow-2xl sm:p-10 lg:p-14">
+  <div class="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-or/15 blur-3xl" aria-hidden="true"></div>
+  <div class="relative z-10 grid items-start gap-10 lg:grid-cols-12">
+    <div class="text-left lg:col-span-5">
+      <div class="inline-flex rounded-full border border-or/50 bg-or/10 px-3.5 py-1 text-xs font-black uppercase tracking-[0.2em] text-or">Billetterie · Prototype</div>
+      <h2 class="mt-4 font-mega text-4xl uppercase leading-[0.9] text-white sm:text-5xl lg:text-6xl">RÉSERVE TA PLACE <span class="text-or">À KINSHASA</span></h2>
+      <p class="mt-4 text-base font-bold text-sky-300 sm:text-lg">RDC vs Guinée équatoriale</p>
+      <p class="mt-2 text-sm leading-relaxed text-white/75">Jeudi 24 septembre 2026 · 17:00<br />Stade des Martyrs · Kinshasa</p><p class="mt-4 text-xs text-white/50">Stock de démonstration local — il ne s'agit pas encore d'un stock serveur réel.</p>
+      <div class="mt-8 rounded-xl border border-white/10 bg-white/[0.04] p-4 text-sm text-white/80">
+        <p class="font-bold text-white">PAIEMENT & RETRAIT</p>
+        <p class="mt-2">Le paiement s'effectue lors du retrait de votre billet au Ministère des Sports et Loisirs.</p>
+        <p class="mt-2">Présentez votre QR code et votre numéro de réservation lors du retrait.</p>
       </div>
     </div>
 
-    <!-- Formulaire Simple (7 cols) -->
     <div class="lg:col-span-7">
-      <div class="rounded-2xl border border-white/15 bg-white/[0.04] p-6 sm:p-8 backdrop-blur-xl shadow-inner">
-        <!-- État initial : Formulaire -->
-        <form id="contest-form" class="space-y-5 text-left">
-          <!-- Nom & Prénom -->
-          <div>
-            <label for="contest-nom" class="block text-xs font-bold uppercase tracking-wider text-white/90 mb-2">
-              Nom complet <span class="text-or">*</span>
-            </label>
-            <input
-              type="text"
-              id="contest-nom"
-              name="nom"
-              required
-              placeholder="Ex: Gloire Kabeya"
-              class="w-full rounded-xl border border-white/20 bg-congo-night/80 px-4 py-3.5 text-sm text-white placeholder-white/40 focus:border-or focus:bg-congo-night focus:outline-none transition-all"
-            />
-          </div>
-
-          <!-- Numéro WhatsApp & Email (Optionnel) -->
-          <div class="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label for="contest-phone" class="block text-xs font-bold uppercase tracking-wider text-white/90 mb-2">
-                Numéro WhatsApp / Téléphone <span class="text-or">*</span>
-              </label>
-              <input
-                type="tel"
-                id="contest-phone"
-                name="telephone"
-                required
-                placeholder="+243 ... ou +33 ..."
-                class="w-full rounded-xl border border-white/20 bg-congo-night/80 px-4 py-3.5 text-sm text-white placeholder-white/40 focus:border-or focus:bg-congo-night focus:outline-none transition-all"
-              />
-              <span class="mt-1 block text-[0.68rem] text-white/50">Pour vous envoyer la place si vous gagnez.</span>
-            </div>
-
-            <div>
-              <label for="contest-email" class="block text-xs font-bold uppercase tracking-wider text-white/90 mb-2">
-                Adresse Email <span class="text-white/40 text-[0.68rem] font-normal lowercase">(optionnel)</span>
-              </label>
-              <input
-                type="email"
-                id="contest-email"
-                name="email"
-                placeholder="exemple@email.com"
-                class="w-full rounded-xl border border-white/20 bg-congo-night/80 px-4 py-3.5 text-sm text-white placeholder-white/40 focus:border-or focus:bg-congo-night focus:outline-none transition-all"
-              />
-              <span class="mt-1 block text-[0.68rem] text-white/50">Facultatif, pour recevoir les infos du match.</span>
-            </div>
-          </div>
-
-          <!-- Ville / Commune de résidence -->
-          <div>
-            <label for="contest-city" class="block text-xs font-bold uppercase tracking-wider text-white/90 mb-2">
-              Ville / Commune de résidence <span class="text-white/40 text-[0.68rem] font-normal lowercase">(optionnel)</span>
-            </label>
-            <input
-              type="text"
-              id="contest-city"
-              name="ville"
-              placeholder="Ex: Kinshasa (Gombe, Lemba, Bandalungwa...)"
-              class="w-full rounded-xl border border-white/20 bg-congo-night/80 px-4 py-3.5 text-sm text-white placeholder-white/40 focus:border-or focus:bg-congo-night focus:outline-none transition-all"
-            />
-          </div>
-
-          <!-- Match concerné : Kinshasa fixé -->
-          <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-white/90 mb-2">
-              Match concerné
-            </label>
-            <div class="rounded-xl border border-or/40 bg-or/10 p-3.5 flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <span class="text-2xl">🏟️</span>
-                <div>
-                  <div class="text-[0.68rem] font-bold uppercase tracking-wider text-or">Éliminatoires CAN 2027 · Journée 1</div>
-                  <div class="text-sm font-bold text-white">RDC vs Guinée équatoriale</div>
-                  <div class="text-[0.68rem] text-white/70">Stade des Martyrs (Kinshasa) · 80 000 places</div>
-                </div>
-              </div>
-              <span class="rounded bg-or px-2.5 py-1 text-[0.65rem] font-black uppercase text-congo-night shrink-0">
-                Kinshasa
-              </span>
-            </div>
-            <input type="hidden" name="matchChoix" value="kinshasa" />
-          </div>
-
-          <!-- Message d'encouragement (Optionnel) -->
-          <div>
-            <label for="contest-msg" class="block text-xs font-bold uppercase tracking-wider text-white/90 mb-2">
-              Un mot d'encouragement pour les Léopards (Optionnel)
-            </label>
-            <input
-              type="text"
-              id="contest-msg"
-              name="message"
-              maxlength="140"
-              placeholder="Ex: Toko bloquer bango ! Fimbu ya suka !"
-              class="w-full rounded-xl border border-white/20 bg-congo-night/80 px-4 py-3 text-sm text-white placeholder-white/40 focus:border-or focus:bg-congo-night focus:outline-none transition-all"
-            />
-          </div>
-
-          <!-- Message d'erreur éventuel -->
-          <div id="contest-error" class="hidden rounded-xl border border-feu/40 bg-feu/15 p-3 text-xs font-bold text-rose-300"></div>
-
-          <!-- Bouton de soumission -->
-          <button
-            type="submit"
-            id="contest-submit-btn"
-            class="group w-full rounded-full bg-or py-4 px-6 text-sm font-black uppercase tracking-[0.16em] text-congo-night shadow-xl shadow-or/20 hover:bg-yellow-300 transition-all hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-3"
-          >
-            <span>TENTER DE GAGNER MA PLACE À KINSHASA</span>
-            <span class="transition-transform group-hover:translate-x-1">→</span>
-          </button>
-        </form>
-
-        <!-- État de confirmation après succès -->
-        <div id="contest-success" class="hidden py-8 text-center">
-          <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20 text-3xl text-emerald-400 border border-emerald-500/30 animate-bounce">
-            ✓
-          </div>
-          <h3 class="mt-4 font-mega text-2xl uppercase tracking-wider text-white sm:text-3xl">
-            Participation Validée !
-          </h3>
-          <p class="mx-auto mt-2 max-w-md text-sm text-white/80" id="contest-success-msg">
-            Votre inscription a bien été enregistrée pour le tirage au sort officiel. 
-            Gardez votre WhatsApp actif, notre équipe contactera directement les gagnants !
-          </p>
-
-          <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <button
-              type="button"
-              id="contest-reset-btn"
-              class="rounded-full border border-white/20 bg-white/10 px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-white/20 transition-all"
-            >
-              Ajouter une autre participation
-            </button>
-          </div>
+      <div id="ticket-form-panel" class="rounded-2xl border border-white/15 bg-white/[0.04] p-6 shadow-inner sm:p-8">
+        <div class="mb-6">
+          <div class="flex items-center justify-between gap-4 text-xs font-black uppercase tracking-wider text-or"><span>DISPONIBILITÉ</span><span id="ticket-stock-label">400 places restantes</span></div>
+          <p id="ticket-demand" class="mt-3 text-sm font-bold text-white/80">Forte demande — 400 places restantes</p>
         </div>
+        <form id="ticket-form" class="space-y-5">
+          <div>
+            <label for="ticket-quantity" class="mb-2 block text-xs font-bold uppercase tracking-wider text-white/90">Nombre de billets</label>
+            <select id="ticket-quantity" class="w-full rounded-xl border border-white/20 bg-congo-night/80 px-4 py-3.5 text-sm text-white focus:border-or focus:outline-none">
+              <option value="1">1 billet × 30 €</option><option value="2">2 billets × 30 €</option><option value="3">3 billets × 30 €</option><option value="4">4 billets × 30 €</option><option value="5">5 billets × 30 €</option>
+            </select>
+          </div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white"><div class="flex justify-between"><span id="ticket-summary">STANDARD · 30 €</span><strong id="ticket-total">TOTAL À PAYER : 30 €</strong></div><p id="ticket-summary-stock" class="mt-2 text-xs font-bold text-white/75">● 400 places restantes</p><p class="mt-3 border-t border-white/10 pt-3 text-xs text-white/60">Paiement lors du retrait — aucun paiement en ligne.</p></div>
+          <div><label for="ticket-name" class="mb-2 block text-xs font-bold uppercase tracking-wider text-white/90">Nom complet</label><input id="ticket-name" required class="w-full rounded-xl border border-white/20 bg-congo-night/80 px-4 py-3.5 text-sm text-white placeholder-white/40 focus:border-or focus:outline-none" placeholder="Ex : Gloire Kabeya" /></div>
+          <div class="grid gap-4 sm:grid-cols-2"><div><label for="ticket-phone" class="mb-2 block text-xs font-bold uppercase tracking-wider text-white/90">Téléphone</label><input id="ticket-phone" required type="tel" class="w-full rounded-xl border border-white/20 bg-congo-night/80 px-4 py-3.5 text-sm text-white focus:border-or focus:outline-none" /></div><div><label for="ticket-email" class="mb-2 block text-xs font-bold uppercase tracking-wider text-white/90">E-mail</label><input id="ticket-email" required type="email" class="w-full rounded-xl border border-white/20 bg-congo-night/80 px-4 py-3.5 text-sm text-white focus:border-or focus:outline-none" /></div></div>
+          <p id="ticket-error" class="hidden rounded-xl border border-feu/40 bg-feu/15 p-3 text-xs font-bold text-rose-300"></p>
+          <button id="ticket-submit" class="w-full rounded-full bg-or px-6 py-4 text-sm font-black uppercase tracking-[0.12em] text-congo-night transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-50" type="submit">RÉSERVER MA PLACE →</button>
+        </form>
+      </div>
+
+      <div id="ticket-confirmation" class="hidden rounded-2xl border border-emerald-400/30 bg-white/[0.04] p-6 text-center sm:p-8">
+        <p class="text-xs font-black uppercase tracking-[0.2em] text-emerald-300">RÉSERVATION ENREGISTRÉE</p><h3 class="mt-4 font-mega text-3xl uppercase text-white">RDC <span class="text-or">vs</span> GUINÉE ÉQUATORIALE</h3><p class="mt-3 text-sm text-white/70">Jeudi 24 septembre 2026 · 17:00<br />Stade des Martyrs · Kinshasa</p>
+        <p class="mt-6 text-xs font-black uppercase tracking-wider text-white/60">N° DE RÉSERVATION</p><p id="ticket-number" class="mt-1 font-mono text-2xl font-bold text-or"></p><img id="ticket-qr" class="mx-auto mt-5 rounded-lg bg-white p-3" width="220" height="220" alt="QR code de réservation" />
+        <div class="mt-5 rounded-xl border border-or/50 bg-or/10 p-4 text-left text-sm text-white"><p class="font-black text-or">CONSERVEZ CE QR CODE</p><p class="mt-1">Vous aurez besoin de ce QR code et de votre numéro de réservation pour récupérer votre billet.</p><p class="mt-2 text-xs text-white/70">Nous vous recommandons de télécharger votre réservation ou d'effectuer une capture d'écran maintenant.</p></div>
+        <div class="mt-5 grid gap-3 sm:grid-cols-2"><button id="download-qr" class="rounded-full border border-white/25 px-4 py-3 text-xs font-bold uppercase text-white hover:border-or hover:text-or">TÉLÉCHARGER MON QR CODE ↓</button><button id="download-reservation" class="rounded-full bg-or px-4 py-3 text-xs font-bold uppercase text-congo-night hover:bg-yellow-300">TÉLÉCHARGER MA RÉSERVATION ↓</button></div><p class="mt-4 text-xs text-white/55">Vous pouvez aussi effectuer une capture d'écran de cette page.</p>
+        <div class="mt-6 border-t border-white/10 pt-5 text-left text-sm text-white/80"><p class="font-bold text-white">RETRAIT & PAIEMENT</p><p class="mt-2">À payer : <span id="ticket-payment"></span><br />Lieu : Ministère des Sports et Loisirs<br />Adresse : Boulevard Triomphal — Nouveau Bâtiment Administratif (site ex-Tembe Na Tembe), 3e niveau — Kinshasa/Lingwala<br />Mode de paiement : Paiement lors du retrait<br />À présenter : ✓ QR code · ✓ Numéro de réservation</p></div>
       </div>
     </div>
   </div>
 </div>
 
 <script>
-  function initContestForm() {
-    const form = document.getElementById("contest-form") as HTMLFormElement;
-    const submitBtn = document.getElementById("contest-submit-btn") as HTMLButtonElement;
-    const errorEl = document.getElementById("contest-error");
-    const successEl = document.getElementById("contest-success");
-    const successMsg = document.getElementById("contest-success-msg");
-    const resetBtn = document.getElementById("contest-reset-btn");
-
-    if (!form || !submitBtn) return;
-
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      if (errorEl) errorEl.classList.add("hidden");
-
-      const originalBtnText = submitBtn.innerHTML;
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = "<span>Enregistrement en cours...</span>";
-
-      try {
-        const formData = new FormData(form);
-        const payload = {
-          nom: formData.get("nom"),
-          telephone: formData.get("telephone"),
-          email: formData.get("email"),
-          ville: formData.get("ville"),
-          matchChoix: formData.get("matchChoix"),
-          message: formData.get("message")
-        };
-
-        const res = await fetch("/api/can2027/concours", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-
-        const data = await res.json();
-
-        if (res.ok && data.success) {
-          form.classList.add("hidden");
-          if (successEl) {
-            successEl.classList.remove("hidden");
-            if (successMsg && data.message) {
-              successMsg.textContent = data.message;
-            }
-          }
-        } else {
-          if (errorEl) {
-            errorEl.textContent = data.error || "Une erreur est survenue. Veuillez vérifier vos coordonnées.";
-            errorEl.classList.remove("hidden");
-          }
-        }
-      } catch (err) {
-        if (errorEl) {
-          errorEl.textContent = "Erreur réseau. Veuillez réessayer dans quelques instants.";
-          errorEl.classList.remove("hidden");
-        }
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalBtnText;
-      }
-    });
-
-    if (resetBtn) {
-      resetBtn.addEventListener("click", () => {
-        form.reset();
-        form.classList.remove("hidden");
-        if (successEl) successEl.classList.add("hidden");
-        if (errorEl) errorEl.classList.add("hidden");
-      });
-    }
-  }
-
-  document.addEventListener("DOMContentLoaded", initContestForm);
-  document.addEventListener("astro:page-load", initContestForm);
+  const total = 1000, price = 30, key = "bloc-leopards-demo-stock";
+  const getStock = () => Number(localStorage.getItem(key) || 400);
+  const id = (x) => document.getElementById(x);
+  function render() { const stock = getStock(); const sold = stock <= 0; const remaining = Math.max(0, stock); const remainingLabel = remaining === 1 ? "1 place restante" : `${remaining} places restantes`; id("ticket-stock-label").textContent = remainingLabel; id("ticket-summary-stock").textContent = `● ${remainingLabel}`; id("ticket-demand").textContent = stock <= 0 ? "SOLD OUT" : stock === 1 ? "Dernière place disponible" : stock <= 10 ? `Plus que ${stock} places disponibles` : stock <= 20 ? `Presque complet — ${stock} places restantes` : stock <= 50 ? `Dernières places — ${stock} restantes` : stock <= 100 ? "Moins de 100 places disponibles" : stock <= 400 ? `Forte demande — ${stock} places restantes` : "Places disponibles"; const select = id("ticket-quantity"); const button = id("ticket-submit"); select.disabled = sold; button.disabled = sold; if (sold) { button.textContent = "SOLD OUT"; id("ticket-error").textContent = "Billetterie complète."; id("ticket-error").classList.remove("hidden"); } }
+  function updateTotal() { const n = Number(id("ticket-quantity").value); id("ticket-summary").textContent = `${n} billet${n > 1 ? "s" : ""} × ${price} €`; id("ticket-total").textContent = `TOTAL À PAYER : ${n * price} €`; }
+  function randomCode() { const bytes = crypto.getRandomValues(new Uint32Array(1))[0] % 1000000; return `BL-2026-${String(bytes).padStart(6, "0")}`; }
+  function init() { if (!id("ticket-form")) return; render(); updateTotal(); id("ticket-quantity").addEventListener("change", updateTotal); id("ticket-form").addEventListener("submit", async (event) => { event.preventDefault(); const n = Number(id("ticket-quantity").value); if (n > getStock()) { id("ticket-error").textContent = "La quantité demandée dépasse le stock disponible."; id("ticket-error").classList.remove("hidden"); return; } const button = id("ticket-submit"); button.disabled = true; button.textContent = "Enregistrement de votre réservation…"; await new Promise(r => setTimeout(r, 500)); button.textContent = "Génération de votre QR code…"; await new Promise(r => setTimeout(r, 500)); const number = randomCode(); localStorage.setItem(key, String(getStock() - n)); id("ticket-number").textContent = number; id("ticket-payment").textContent = `${price} € × ${n} billet${n > 1 ? "s" : ""} = ${price * n} €`; const qrResponse = await fetch(`/api/can2027/qr?reservation=${encodeURIComponent(number)}`); const qrData = await qrResponse.json(); id("ticket-qr").src = qrData.qr; id("ticket-form-panel").classList.add("hidden"); id("ticket-confirmation").classList.remove("hidden"); const qr = id("ticket-qr"); id("download-qr").onclick = () => { const a = document.createElement("a"); a.href = qr.src; a.download = `${number}-qr.png`; a.click(); }; id("download-reservation").onclick = () => { const blob = new Blob([`RÉSERVATION ${number}\nRDC vs GUINÉE ÉQUATORIALE\nJeudi 24 septembre 2026 · 17:00\nStade des Martyrs · Kinshasa\nBillets : ${n}\nTotal à payer au retrait : ${price * n} €`], { type: "text/plain;charset=utf-8" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `${number}-reservation.txt`; a.click(); URL.revokeObjectURL(a.href); }; }); }
+  document.addEventListener("DOMContentLoaded", init); document.addEventListener("astro:page-load", init);
 </script>
