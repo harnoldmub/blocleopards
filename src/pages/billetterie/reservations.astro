@@ -1,0 +1,36 @@
+---
+---
+
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Réservations — Billetterie Tikeo</title>
+  </head>
+  <body>
+    <main class="page">
+      <header class="header"><a href="/billetterie" class="brand">TIKEO</a><span>BILLETTERIE OFFICIELLE</span></header>
+      <section class="hero"><p class="eyebrow">SUIVI DES RÉSERVATIONS</p><h1>Retrouvez une réservation</h1><p>Recherchez par nom, prénom ou code de réservation.</p><label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Nom, prénom ou BL-2026-000000" autocomplete="off" /></label></section>
+      <section class="results" aria-live="polite"><div id="reservation-list"></div></section>
+    </main>
+  </body>
+</html>
+
+<script>
+  const input = document.getElementById('search');
+  const list = document.getElementById('reservation-list');
+  const all = JSON.parse(localStorage.getItem('bloc-leopards-reservations') || '[]');
+  const escapeHtml = (value) => String(value || '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
+  const render = () => {
+    const query = (input.value || '').trim().toLowerCase();
+    const rows = all.filter((row) => `${row.prenom} ${row.nom} ${row.id}`.toLowerCase().includes(query));
+    list.innerHTML = rows.length ? rows.map((row) => `<article class="reservation"><div class="reservation-person"><span class="avatar">${escapeHtml((row.prenom || '?').charAt(0))}</span><div><strong>${escapeHtml(row.prenom)} ${escapeHtml(row.nom)}</strong><span>Réservation enregistrée</span></div></div><div class="reservation-meta"><code>${escapeHtml(row.id)}</code><b>VALIDÉE</b></div></article>`).join('') : `<div class="empty">${query ? 'Aucune réservation trouvée.' : 'Aucune réservation enregistrée.'}</div>`;
+  };
+  input.addEventListener('input', render);
+  render();
+</script>
+
+<style>
+  :global(*) { box-sizing: border-box; } :global(body) { margin:0; background:#f5f8fc; color:#10213d; font-family:Arial,sans-serif; } .page { min-height:100vh; } .header { display:flex; align-items:center; gap:1rem; padding:1.25rem max(1.25rem, calc((100% - 76rem)/2)); background:#10213d; color:#aebbd0; font-size:.72rem; letter-spacing:.12em; font-weight:700; } .brand { color:#fff; font-size:1.15rem; letter-spacing:.2em; text-decoration:none; } .hero, .results { width:min(100% - 2rem, 58rem); margin:auto; } .hero { padding:4rem 0 2rem; } .eyebrow { color:#d32f2f; font-size:.72rem; font-weight:800; letter-spacing:.14em; } h1 { margin:.5rem 0; font-size:clamp(2rem,5vw,3.5rem); } .hero p:not(.eyebrow) { color:#637692; font-size:1.05rem; } .search { display:flex; align-items:center; gap:.65rem; margin-top:1.75rem; padding:0 1rem; border:1px solid #d8e2ee; border-radius:.8rem; background:#fff; box-shadow:0 8px 25px rgba(16,33,61,.06); } .search span { color:#1769d1; font-size:1.5rem; } input { width:100%; min-height:3.4rem; border:0; outline:0; color:#10213d; font-size:1rem; } .results { display:grid; gap:.7rem; padding-bottom:3rem; } .reservation { display:flex; justify-content:space-between; align-items:center; gap:1rem; padding:1rem 1.15rem; border:1px solid #d8e2ee; border-radius:.7rem; background:#fff; box-shadow:0 5px 18px rgba(16,33,61,.04); } .reservation-person { display:flex; align-items:center; gap:.8rem; min-width:0; } .reservation-person > div { display:grid; gap:.3rem; min-width:0; } .avatar { display:grid; place-items:center; width:2.35rem; height:2.35rem; flex:none; border-radius:50%; background:#eaf2fc; color:#1769d1; font-weight:800; font-family:Arial,sans-serif; text-transform:uppercase; } .reservation strong { color:#111827; font-size:1rem; } .reservation-person span:not(.avatar) { color:#7a8799; font-size:.78rem; font-family:Arial,sans-serif; } .reservation-meta { display:flex; align-items:center; gap:.7rem; flex:none; } .reservation code { padding:.4rem .55rem; border:1px solid #e4e4e0; border-radius:4px; color:#4b607c; background:#f7f7f4; font-size:.76rem; } .reservation b { padding:.4rem .55rem; border-radius:4px; background:#e8f7ef; color:#16824b; font-size:.62rem; letter-spacing:.08em; } .empty { padding:2rem; border:1px dashed #bdcadd; border-radius:.8rem; color:#637692; text-align:center; } @media (max-width:600px) { .header { padding:1rem; } .hero { padding-top:2.5rem; } .reservation { align-items:flex-start; } .reservation-meta { display:grid; justify-items:end; gap:.45rem; } .reservation code { font-size:.66rem; } }
+</style>
