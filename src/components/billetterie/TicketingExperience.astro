@@ -202,7 +202,7 @@ const { lang = 'fr' } = Astro.props;
 
               <!-- TÉLÉPHONE -->
               <div class="tk-form-group" data-field="phone">
-                <label for="inp-phone" class="tk-label">TÉLÉPHONE *</label>
+                <label for="inp-phone" class="tk-label">WHATSAPP *</label>
                 <input
                   type="tel"
                   id="inp-phone"
@@ -252,7 +252,6 @@ const { lang = 'fr' } = Astro.props;
             <div class="tk-sum-teams">RDC <span class="tk-sum-vs">vs</span> GUINÉE ÉQUATORIALE</div>
             <div class="tk-sum-date">24 SEPTEMBRE 2026 · 17:00</div>
             <div class="tk-sum-stadium">Stade des Martyrs · Kinshasa</div>
-            <div class="tk-sum-pickup"><span class="tk-sum-pickup-label">RETRAIT DU BILLET</span><strong>Stade Tata Raphaël</strong></div>
           </div>
 
           <hr class="tk-divider" />
@@ -338,7 +337,7 @@ const { lang = 'fr' } = Astro.props;
       <p class="tk-booking-label">N° DE DOSSIER</p>
       <strong class="tk-booking-number" id="booking-number"></strong>
       <img class="tk-booking-qr" id="booking-qr" alt="QR code de réservation" width="220" height="220" />
-      <p class="tk-confirmation-note">Ceci n’est pas encore votre billet. Pour récupérer votre billet, rendez-vous au Stade Tata Raphaël. Le paiement s’effectuera sur place, lors du retrait.</p>
+      <p class="tk-confirmation-note">Votre pré-réservation est bien enregistrée. Rendez-vous demain à 10 h au Stade Tata Raphaël pour effectuer le paiement sur place et retirer votre billet. Présentez votre numéro de dossier et votre QR code.</p>
       <div class="tk-confirmation-actions"><button type="button" id="download-card">Télécharger ma carte PNG</button></div>
     </div>
   </section>
@@ -569,6 +568,9 @@ const { lang = 'fr' } = Astro.props;
       localStorage.setItem(stockKey, String(stock - quantity));
       updateStock();
       const bookingId = `BL-2026-${String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).padStart(6, '0')}`;
+      const reservations = JSON.parse(localStorage.getItem('bloc-leopards-reservations') || '[]');
+      reservations.push({ id: bookingId, prenom: (inpPrenom?.value || '').trim(), nom: (inpNom?.value || '').trim(), email: (inpEmail?.value || '').trim(), whatsapp: (inpPhone?.value || '').trim(), quantity, createdAt: new Date().toISOString() });
+      localStorage.setItem('bloc-leopards-reservations', JSON.stringify(reservations));
 
       // 1. Désactiver immédiatement le bouton
       if (btnValidateOrder) {
@@ -1084,8 +1086,8 @@ const { lang = 'fr' } = Astro.props;
     font-size: 0.78rem;
     color: var(--tk-ink-muted);
   }
-  .tk-sum-pickup { display: grid; gap: 0.18rem; margin-top: 0.7rem; padding: 0.65rem 0.75rem; border-left: 3px solid var(--tk-red); border-radius: 0 0.45rem 0.45rem 0; background: #fff5f5; }
-  .tk-sum-pickup-label { color: var(--tk-red); font-family: var(--font-display); font-size: 0.62rem; font-weight: 800; letter-spacing: 0.1em; }
+  .tk-sum-pickup { display: grid; gap: 0.18rem; margin-top: 0.7rem; padding: 0.65rem 0.75rem; border: 1px solid #e4e4e0; border-radius: 5px; background: #f7f7f4; }
+  .tk-sum-pickup-label { color: var(--tk-ink-secondary); font-family: var(--font-display); font-size: 0.62rem; font-weight: 800; letter-spacing: 0.1em; }
   .tk-sum-pickup strong { color: var(--tk-ink-main); font-size: 0.86rem; }
 
   .tk-divider {
@@ -1327,8 +1329,8 @@ const { lang = 'fr' } = Astro.props;
   .tk-confirmation-match { font-family: var(--font-display); font-size: 1.1rem; font-weight: 800; }
   .tk-confirmation-match span { color: var(--tk-blue-rdc); }
   .tk-confirmation-meta, .tk-confirmation-note { color: var(--tk-ink-secondary); font-size: 0.82rem; line-height: 1.5; }
-  .tk-confirmation-pickup { display: grid; gap: 0.25rem; margin: 1.15rem 0; padding: 0.85rem 1rem; border: 1px solid rgba(211, 47, 47, 0.2); border-left: 4px solid var(--tk-red); border-radius: 0 0.7rem 0.7rem 0; background: #fff5f5; text-align: left; }
-  .tk-confirmation-pickup span { color: var(--tk-red); font-family: var(--font-display); font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; }
+  .tk-confirmation-pickup { display: grid; gap: 0.25rem; margin: 1.15rem 0; padding: 0.85rem 1rem; border: 1px solid #e4e4e0; border-radius: 5px; background: #f7f7f4; text-align: left; }
+  .tk-confirmation-pickup span { color: var(--tk-ink-secondary); font-family: var(--font-display); font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; }
   .tk-confirmation-pickup strong { color: var(--tk-ink-main); font-family: var(--font-display); font-size: 1rem; }
   .tk-confirmation-pickup small { color: var(--tk-ink-secondary); font-size: 0.75rem; }
   .tk-booking-label { margin-top: 1.5rem; color: var(--tk-ink-muted); }
