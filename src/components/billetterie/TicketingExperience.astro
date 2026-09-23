@@ -398,7 +398,7 @@ const { lang = 'fr' } = Astro.props;
       else if (stock <= 100) urgency = 'MOINS DE 100 PLACES DISPONIBLES';
       else if (stock <= 400) urgency = `FORTE DEMANDE — ${stock} PLACES RESTANTES`;
       if (mobileTotalVal) mobileTotalVal.textContent = `${quantity * unitPrice} $`;
-      if (mobileTotalVal) mobileTotalVal.textContent = `${quantity * unitPrice} $ · ${stock} restantes`;
+      if (mobileTotalVal) mobileTotalVal.textContent = `${quantity * unitPrice} $`;
       if (soldOut) {
         if (btnPlus) btnPlus.disabled = true;
         if (btnMinus) btnMinus.disabled = true;
