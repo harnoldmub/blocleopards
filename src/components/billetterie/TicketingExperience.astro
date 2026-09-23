@@ -22,7 +22,6 @@ const { lang = 'fr' } = Astro.props;
       <div class="tk-header-right">
         <div class="tk-campaign-logos" aria-label="Campagne de qualification CAN 2027">
           <img src="/billetterie/Liste Bloc Léopards 2.png" alt="CAN 2027 Qualifiers" class="tk-campaign-logo tk-campaign-logo--qualifiers" />
-          <img src="/billetterie/Logo_FECOFA_-_2023.svg.webp" alt="FECOFA" class="tk-campaign-logo tk-campaign-logo--feco" />
         </div>
         <a href="#aide" class="tk-link-help" id="btn-help-modal">AIDE</a>
         <span class="tk-header-sep" aria-hidden="true">|</span>
@@ -431,7 +430,7 @@ const { lang = 'fr' } = Astro.props;
     function updateOnlineDemo() {
       const connected = Math.floor(Math.random() * 151) + 300;
       if (onlineToast) {
-        onlineToastText.textContent = `${connected} personnes consultent la billetterie · démonstration`;
+        onlineToastText.textContent = `${connected} personnes consultent la billetterie`;
         onlineToast.classList.add('tk-online-toast--visible');
       }
     }
