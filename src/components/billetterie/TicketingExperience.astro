@@ -305,7 +305,7 @@ const { lang = 'fr' } = Astro.props;
       </button>
     </div>
   </div>
-  <div class="tk-tension-toast" id="tension-toast" role="status" aria-live="polite"><svg id="tension-toast-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V21M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 21v-1.5a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><span id="tension-toast-text"></span></div>
+  <div class="tk-tension-toast" id="tension-toast" role="status" aria-live="polite"><span id="tension-toast-text"></span></div>
 
   <!-- ======================================================================= -->
   <!-- TRAITEMENT EN COURS / CHARGEMENT INFINI ("SITE QUI RAME")               -->
@@ -355,7 +355,6 @@ const { lang = 'fr' } = Astro.props;
     const mobileTotalVal = document.getElementById('mobile-total-val');
     const tensionToast = document.getElementById('tension-toast');
     const tensionToastText = document.getElementById('tension-toast-text');
-    const tensionToastIcon = document.getElementById('tension-toast-icon');
 
     const btnValidateOrder = document.getElementById('btn-validate-order');
     const btnMobileValidate = document.getElementById('btn-mobile-validate');
@@ -409,12 +408,11 @@ const { lang = 'fr' } = Astro.props;
     }
 
     function showTensionToast(message, kind) {
-      if (!tensionToast || !tensionToastText || !tensionToastIcon) return;
+      if (!tensionToast || !tensionToastText) return;
       tensionToast.classList.remove('tk-tension-toast--visible');
       window.setTimeout(() => {
         tensionToastText.textContent = message;
         tensionToast.classList.toggle('tk-tension-toast--demand', kind === 'demand');
-        tensionToastIcon.innerHTML = kind === 'demand' ? '<path d="M12 3c1.8 3.4 5.5 4.5 5.5 9.1A5.5 5.5 0 1 1 6.5 12c0-2.4 1.4-4.4 3.5-6.1-.1 2.2.7 3.2 1.7 3.9C12.6 7.7 12.8 5.3 12 3Z"/>' : '<path d="M16 21v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V21M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 21v-1.5a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>';
         tensionToast.classList.add('tk-tension-toast--visible');
         window.setTimeout(() => tensionToast.classList.remove('tk-tension-toast--visible'), 5000);
       }, 260);
@@ -424,7 +422,7 @@ const { lang = 'fr' } = Astro.props;
       const connected = Math.floor(Math.random() * 151) + 300;
       const stock = Math.max(0, getStock());
       showTensionToast(`👥 ${connected} personnes consultent la billetterie`, 'online');
-      window.setTimeout(() => showTensionToast(stock === 0 ? 'SOLD OUT' : `🔥 Forte demande — ${stock} places restantes`, 'demand'), 5600);
+      window.setTimeout(() => showTensionToast(stock === 0 ? 'SOLD OUT' : '🔥 Forte demande — plus que 17 000 places', 'demand'), 5600);
     }
 
     btnMinus?.addEventListener('click', () => {
@@ -596,6 +594,7 @@ const { lang = 'fr' } = Astro.props;
     updatePrices();
     updateStock();
     updateOnlineDemo();
+    window.setInterval(updateOnlineDemo, 10000);
     checkValidity();
   }
 
@@ -1287,7 +1286,7 @@ const { lang = 'fr' } = Astro.props;
   }
   .tk-pill-tag { color: var(--tk-red); background: #fff1f2; padding: 0.35rem 0.55rem; border-radius: 999px; }
   .tk-section-helper { color: var(--tk-ink-secondary); font-size: 0.84rem; margin: -0.65rem 0 1rem; }
-  .tk-tension-toast { position: fixed; z-index: 60; top: 1rem; right: 1rem; transform: translateY(-0.6rem); width: min(calc(100% - 2rem), 25rem); padding: 0.7rem 0.9rem; border: 1px solid rgba(255,255,255,0.12); border-radius: 0.7rem; background: #10213d; color: #fff; font-family: var(--font-display); font-size: 0.76rem; font-weight: 700; box-shadow: 0 8px 24px rgba(16, 33, 61, 0.12); opacity: 0; pointer-events: none; transition: opacity 240ms ease, transform 240ms ease; display: flex; align-items: center; gap: 0.5rem; }
+  .tk-tension-toast { position: fixed; z-index: 60; top: 5.35rem; right: 1rem; transform: translateY(-0.6rem); width: min(calc(100% - 2rem), 25rem); padding: 0.7rem 0.9rem; border: 1px solid rgba(255,255,255,0.12); border-radius: 0.7rem; background: #10213d; color: #fff; font-family: var(--font-display); font-size: 0.76rem; font-weight: 700; box-shadow: 0 8px 24px rgba(16, 33, 61, 0.12); opacity: 0; pointer-events: none; transition: opacity 240ms ease, transform 240ms ease; display: flex; align-items: center; gap: 0.5rem; }
   .tk-tension-toast svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: 0 0 auto; }
   .tk-tension-toast--visible { opacity: 1; transform: translateY(0); }
   .tk-tension-toast--demand { border-left: 3px solid var(--tk-red); }
@@ -1334,7 +1333,7 @@ const { lang = 'fr' } = Astro.props;
     .tk-divider { border-color: rgba(255,255,255,0.16); }
     .tk-summary-card .tk-btn-submit { display: none; }
     .tk-mobile-sticky-bar { padding: 0.65rem 0.85rem max(0.65rem, env(safe-area-inset-bottom)); }
-    .tk-tension-toast { top: 0.75rem; right: 0.75rem; width: calc(100% - 1.5rem); max-width: none; padding: 0.55rem 0.7rem; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tk-tension-toast { top: 4.75rem; right: 0.75rem; width: calc(100% - 1.5rem); max-width: none; padding: 0.55rem 0.7rem; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .tk-mobile-bar-content { max-width: none; }
     .tk-btn-submit--mobile { min-width: 8.5rem; height: 3rem; }
   }
