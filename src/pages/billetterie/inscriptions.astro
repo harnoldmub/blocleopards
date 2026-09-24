@@ -12,7 +12,7 @@ try {
     from billetterie_reservations
     where status <> 'cancelled'
     order by created_at desc
-    limit 1000
+    limit 10000
   `;
 } catch (error) {
   console.error("[billetterie] Liste publique indisponible:", error);

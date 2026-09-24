@@ -1,5 +1,6 @@
 ---
 import { requireDatabase, hasDatabase } from "../../lib/neon";
+import { getSetting } from "../../lib/settings";
 import Turnstile from "../Turnstile.astro";
 
 interface Props {
@@ -9,7 +10,8 @@ interface Props {
 const { lang = 'fr' } = Astro.props;
 
 let reservationsCount = 0;
-const totalCapacity = 1000;
+const capacitySetting = await getSetting("billetterie_capacity", "5000");
+const totalCapacity = Number(capacitySetting) || 5000;
 
 if (hasDatabase) {
   try {
@@ -444,7 +446,7 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
     let quantity = 1;
     const unitPrice = 69000;
     const formatPrice = (amount) => `${amount.toLocaleString('fr-FR')} FC`;
-    const totalCapacity = Number(root.dataset.totalCapacity || 1000);
+    const totalCapacity = Number(root.dataset.totalCapacity || 5000);
     let reservationsCount = Number(root.dataset.reservationsCount || 0);
     let remainingPlaces = Math.max(0, Number(root.dataset.remainingPlaces ?? (totalCapacity - reservationsCount)));
     const getStock = () => remainingPlaces;

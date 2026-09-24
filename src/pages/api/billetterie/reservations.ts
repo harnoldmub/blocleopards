@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { randomInt } from "node:crypto";
 import { requireDatabase } from "../../../lib/neon";
 import { verifyTurnstile } from "../../../lib/turnstile";
+import { getSetting } from "../../../lib/settings";
 
 export const prerender = false;
 
@@ -18,7 +19,8 @@ export const GET: APIRoute = async () => {
       where status <> 'cancelled'
     `;
     const count = Number(rows[0]?.total || 0);
-    const totalCapacity = 1000;
+    const capacitySetting = await getSetting("billetterie_capacity", "5000");
+    const totalCapacity = Number(capacitySetting) || 5000;
     return new Response(
       JSON.stringify({
         totalCapacity,
