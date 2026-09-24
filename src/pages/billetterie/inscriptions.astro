@@ -71,7 +71,7 @@ const totalTickets = reservations.reduce((acc, r) => acc + (Number(r.quantity) |
           </p>
           <div class="winners-grid">
             {contestWinners.map((w) => (
-              <div class:list={["winner-chip", { "winner-chip--featured": w.rank === 3 }]}>
+              <div class="winner-chip">
                 <span class="winner-chip-rank">{w.rank}</span>
                 <span class="winner-chip-name">{w.name}</span>
               </div>
@@ -340,10 +340,6 @@ const totalTickets = reservations.reduce((acc, r) => acc + (Number(r.quantity) |
   .winner-chip:hover {
     transform: translateY(-2px);
     border-color: #fbbf24;
-  }
-  .winner-chip--featured {
-    background: rgba(245, 158, 11, 0.15);
-    border-color: rgba(245, 158, 11, 0.45);
   }
   .winner-chip-rank {
     display: grid;
