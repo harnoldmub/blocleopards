@@ -462,10 +462,16 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
     const tensionToast = document.getElementById('tension-toast');
     const tensionToastText = document.getElementById('tension-toast-text');
 
+    const checkoutForm = document.getElementById('mono-checkout-form');
     const btnValidateOrder = document.getElementById('btn-validate-order');
     const btnMobileValidate = document.getElementById('btn-mobile-validate');
     const btnText = document.getElementById('btn-text');
+    const btnMobileText = document.getElementById('btn-mobile-text');
     const btnSpinner = document.getElementById('btn-spinner');
+
+    let isSubmitting = false;
+    let currentBookingId = '';
+    let currentQrData = '';
 
     const inpPrenom = document.getElementById('inp-prenom');
     const inpNom = document.getElementById('inp-nom');
@@ -537,7 +543,41 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
     closeConfirmation?.addEventListener('click', () => {
       confirmation?.classList.remove('tk-confirmation--visible');
       confirmation?.setAttribute('aria-hidden', 'true');
+      isSubmitting = false;
+      if (btnText) btnText.textContent = 'RÉSERVER MA PLACE →';
+      if (btnMobileText) btnMobileText.textContent = 'RÉSERVER';
+      checkValidity();
     });
+
+    function resetForm() {
+      if (checkoutForm && typeof checkoutForm.reset === 'function') {
+        checkoutForm.reset();
+      }
+      if (inpPrenom) inpPrenom.value = '';
+      if (inpNom) inpNom.value = '';
+      if (inpPhone) inpPhone.value = '';
+      if (inpCountry) inpCountry.selectedIndex = 0;
+
+      document.querySelectorAll('.tk-form-group--error').forEach((grp) => {
+        grp.classList.remove('tk-form-group--error');
+      });
+      document.querySelectorAll('.tk-error-text').forEach((span) => {
+        span.textContent = '';
+      });
+
+      quantity = 1;
+      updatePrices();
+
+      if (btnSpinner) btnSpinner.style.display = 'none';
+      if (btnValidateOrder) {
+        btnValidateOrder.disabled = true;
+        btnValidateOrder.classList.remove('tk-btn-submit--loading');
+      }
+      if (btnMobileValidate) {
+        btnMobileValidate.disabled = true;
+        btnMobileValidate.classList.remove('tk-btn-submit--loading');
+      }
+    }
 
     // --- Update Quantities & Prices ---
     function updatePrices() {
@@ -636,6 +676,7 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
       const validPh = phoneRegex.test(ph);
       const validC = c.length > 0;
 
+      if (isSubmitting) return false;
       const isAllValid = validP && validN && validPh && validC;
 
       // Enable / Disable buttons
@@ -704,6 +745,9 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
 
     // --- Action : Clic sur Valider (Chargement Infini) ---
     async function triggerOrderValidation() {
+      // Bloquer immédiatement tout clic concurrent ou multiple
+      if (isSubmitting) return;
+
       if (!checkValidity()) return;
       const stock = getStock();
       if (stock < quantity) {
@@ -711,18 +755,23 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
         return;
       }
 
-      // 1. Désactiver immédiatement le bouton
+      // Verrouiller la soumission dès le premier clic
+      isSubmitting = true;
+
+      // 1. Désactiver immédiatement les boutons et appliquer l'état de chargement
       if (btnValidateOrder) {
         btnValidateOrder.disabled = true;
         btnValidateOrder.classList.add('tk-btn-submit--loading');
       }
       if (btnMobileValidate) {
         btnMobileValidate.disabled = true;
+        btnMobileValidate.classList.add('tk-btn-submit--loading');
       }
 
       // 2. Remplacer contenu par spinner + "Validation en cours…"
       if (btnSpinner) btnSpinner.style.display = 'inline-block';
       if (btnText) btnText.textContent = 'Validation en cours…';
+      if (btnMobileText) btnMobileText.textContent = 'Validation…';
 
       let bookingId = '';
       try {
@@ -747,48 +796,118 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
         updateStock();
       } catch (error) {
         console.error('[billetterie] Réservation non enregistrée:', error);
+        isSubmitting = false;
         if (btnSpinner) btnSpinner.style.display = 'none';
         if (btnText) btnText.textContent = 'RÉESSAYER';
+        if (btnMobileText) btnMobileText.textContent = 'RÉESSAYER';
         if (btnValidateOrder) {
           btnValidateOrder.disabled = false;
           btnValidateOrder.classList.remove('tk-btn-submit--loading');
         }
-        if (btnMobileValidate) btnMobileValidate.disabled = false;
+        if (btnMobileValidate) {
+          btnMobileValidate.disabled = false;
+          btnMobileValidate.classList.remove('tk-btn-submit--loading');
+        }
         if (loadingMsg) loadingMsg.textContent = 'La réservation n’a pas pu être enregistrée. Vérifiez votre connexion et réessayez.';
         return;
       }
 
-      // Traitement court du prototype : le chargement doit toujours se terminer.
-      setTimeout(() => {
+      // Voile de chargement
+      if (loadingBackdrop) {
+        loadingBackdrop.classList.add('tk-loading-backdrop--active');
+        loadingBackdrop.setAttribute('aria-hidden', 'false');
+      }
+      if (loadingTitle) loadingTitle.textContent = 'RÉSERVATION ENREGISTRÉE';
+      if (loadingMsg) loadingMsg.textContent = 'Votre réservation est prête. Vous pouvez poursuivre le retrait de votre billet.';
+      if (patienceNote) patienceNote.textContent = 'Présentez votre QR code et votre numéro de réservation lors du retrait.';
+
+      window.setTimeout(() => {
         if (loadingBackdrop) {
-          loadingBackdrop.classList.add('tk-loading-backdrop--active');
-          loadingBackdrop.setAttribute('aria-hidden', 'false');
+          loadingBackdrop.classList.remove('tk-loading-backdrop--active');
+          loadingBackdrop.setAttribute('aria-hidden', 'true');
         }
-        if (loadingTitle) loadingTitle.textContent = 'RÉSERVATION ENREGISTRÉE';
-        if (loadingMsg) loadingMsg.textContent = 'Votre réservation est prête. Vous pouvez poursuivre le retrait de votre billet.';
-        if (patienceNote) patienceNote.textContent = 'Présentez votre QR code et votre numéro de réservation lors du retrait.';
-        window.setTimeout(() => {
-          if (loadingBackdrop) {
-            loadingBackdrop.classList.remove('tk-loading-backdrop--active');
-            loadingBackdrop.setAttribute('aria-hidden', 'true');
-          }
-          if (btnSpinner) btnSpinner.style.display = 'none';
-          if (btnText) btnText.textContent = 'RÉSERVATION ENREGISTRÉE';
-          fetch(`/api/can2027/qr?reservation=${encodeURIComponent(bookingId)}`)
-            .then((response) => response.json())
-            .then((data) => {
-              if (bookingNumber) bookingNumber.textContent = bookingId;
-              if (bookingQr) bookingQr.src = data.qr;
-              confirmation?.classList.add('tk-confirmation--visible');
-              confirmation?.setAttribute('aria-hidden', 'false');
-              downloadCard?.addEventListener('click', () => { const qrImage = new Image(); qrImage.onload = () => { const canvas = document.createElement('canvas'); canvas.width = 900; canvas.height = 1000; const ctx = canvas.getContext('2d'); if (!ctx) return; ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = '#10213d'; ctx.font = '800 42px Arial'; ctx.textAlign = 'center'; ctx.fillText('PRÉ-RÉSERVATION ENREGISTRÉE', 450, 85); ctx.font = '800 30px Arial'; ctx.fillText('RDC vs GUINÉE ÉQUATORIALE', 450, 145); ctx.font = '24px Arial'; ctx.fillText('Jeudi 24 septembre 2026 · 17:00', 450, 195); ctx.fillText('Stade des Martyrs · Kinshasa', 450, 235); ctx.font = '800 22px Arial'; ctx.fillText('N° DE DOSSIER', 450, 300); ctx.font = '800 34px monospace'; ctx.fillText(bookingId, 450, 345); ctx.drawImage(qrImage, 340, 385, 220, 220); ctx.fillStyle = '#fff5f5'; ctx.fillRect(120, 650, 660, 115); ctx.fillStyle = '#d32f2f'; ctx.fillRect(120, 650, 8, 115); ctx.fillStyle = '#d32f2f'; ctx.font = '800 18px Arial'; ctx.fillText('RETRAIT DU BILLET', 450, 685); ctx.fillStyle = '#10213d'; ctx.font = '700 24px Arial'; ctx.fillText('Stade Tata Raphaël', 450, 720); ctx.font = '18px Arial'; ctx.fillText('Paiement sur place lors du retrait', 450, 750); ctx.fillStyle = '#10213d'; ctx.font = '18px Arial'; ctx.fillText('Cette carte confirme votre pré-réservation.', 450, 825); canvas.toBlob((blob) => { if (!blob) return; const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `${bookingId}-carte.png`; link.click(); URL.revokeObjectURL(link.href); }, 'image/png'); }; qrImage.src = data.qr; });
-            });
-        }, 650);
-      }, 250);
+
+        // Réinitialiser les champs du formulaire après validation
+        resetForm();
+
+        if (btnSpinner) btnSpinner.style.display = 'none';
+        if (btnText) btnText.textContent = 'RÉSERVATION ENREGISTRÉE';
+        if (btnMobileText) btnMobileText.textContent = 'ENREGISTRÉE';
+        if (btnValidateOrder) btnValidateOrder.disabled = true;
+        if (btnMobileValidate) btnMobileValidate.disabled = true;
+
+        fetch(`/api/can2027/qr?reservation=${encodeURIComponent(bookingId)}`)
+          .then((response) => response.json())
+          .then((data) => {
+            currentBookingId = bookingId;
+            currentQrData = data.qr;
+            if (bookingNumber) bookingNumber.textContent = bookingId;
+            if (bookingQr) bookingQr.src = data.qr;
+            confirmation?.classList.add('tk-confirmation--visible');
+            confirmation?.setAttribute('aria-hidden', 'false');
+          });
+      }, 650);
     }
+
+    // Gestion du téléchargement de la carte (enregistré une seule fois)
+    downloadCard?.addEventListener('click', () => {
+      if (!currentQrData || !currentBookingId) return;
+      const qrImage = new Image();
+      qrImage.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 900;
+        canvas.height = 1000;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#10213d';
+        ctx.font = '800 42px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('PRÉ-RÉSERVATION ENREGISTRÉE', 450, 85);
+        ctx.font = '800 30px Arial';
+        ctx.fillText('RDC vs GUINÉE ÉQUATORIALE', 450, 145);
+        ctx.font = '24px Arial';
+        ctx.fillText('Jeudi 24 septembre 2026 · 17:00', 450, 195);
+        ctx.fillText('Stade des Martyrs · Kinshasa', 450, 235);
+        ctx.font = '800 22px Arial';
+        ctx.fillText('N° DE DOSSIER', 450, 300);
+        ctx.font = '800 34px monospace';
+        ctx.fillText(currentBookingId, 450, 345);
+        ctx.drawImage(qrImage, 340, 385, 220, 220);
+        ctx.fillStyle = '#fff5f5';
+        ctx.fillRect(120, 650, 660, 115);
+        ctx.fillStyle = '#d32f2f';
+        ctx.fillRect(120, 650, 8, 115);
+        ctx.fillStyle = '#d32f2f';
+        ctx.font = '800 18px Arial';
+        ctx.fillText('RETRAIT DU BILLET', 450, 685);
+        ctx.fillStyle = '#10213d';
+        ctx.font = '700 24px Arial';
+        ctx.fillText('Stade Tata Raphaël', 450, 720);
+        ctx.font = '18px Arial';
+        ctx.fillText('Paiement sur place lors du retrait', 450, 750);
+        ctx.fillStyle = '#10213d';
+        ctx.font = '18px Arial';
+        ctx.fillText('Cette carte confirme votre pré-réservation.', 450, 825);
+        canvas.toBlob((blob) => {
+          if (!blob) return;
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = `${currentBookingId}-carte.png`;
+          link.click();
+          URL.revokeObjectURL(link.href);
+        }, 'image/png');
+      };
+      qrImage.src = currentQrData;
+    });
 
     btnValidateOrder?.addEventListener('click', triggerOrderValidation);
     btnMobileValidate?.addEventListener('click', triggerOrderValidation);
+    checkoutForm?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      triggerOrderValidation();
+    });
 
     // Initial calculation
     updatePrices();
@@ -1335,6 +1454,7 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
     color: #ffffff;
     cursor: not-allowed;
     opacity: 0.75;
+    pointer-events: none;
   }
   .tk-btn-submit--loading {
     cursor: wait !important;
