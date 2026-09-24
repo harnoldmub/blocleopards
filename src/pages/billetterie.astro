@@ -10,7 +10,7 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Tikeo — Billetterie Officielle</title>
     <meta name="description" content="Billetterie officielle du match RDC vs Guinée Équatoriale au Stade des Martyrs de Kinshasa." />
-    <meta name="robots" content="noindex, nofollow" />
+    <meta name="robots" content="index, follow" />
     {turnstileSiteKey && (
       <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     )}
