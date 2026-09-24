@@ -8,6 +8,30 @@ const headers = { "Content-Type": "application/json", "Cache-Control": "no-store
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const whatsappPattern = /^[\d\s+().-]{7,20}$/;
 
+export const GET: APIRoute = async () => {
+  try {
+    const sql = requireDatabase();
+    const rows = await sql`
+      select count(*)::int as total
+      from billetterie_reservations
+      where status <> 'cancelled'
+    `;
+    const count = Number(rows[0]?.total || 0);
+    const totalCapacity = 1000;
+    return new Response(
+      JSON.stringify({
+        totalCapacity,
+        reservationsCount: count,
+        remainingPlaces: Math.max(0, totalCapacity - count)
+      }),
+      { status: 200, headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=5" } }
+    );
+  } catch (error) {
+    console.error("[billetterie] Erreur comptage réservations:", error);
+    return new Response(JSON.stringify({ error: "Impossible de récupérer les statistiques" }), { status: 500, headers });
+  }
+};
+
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();

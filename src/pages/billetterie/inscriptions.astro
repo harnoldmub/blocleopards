@@ -8,7 +8,7 @@ const historicalReservations = 15;
 try {
   const sql = requireDatabase();
   reservations = await sql`
-    select reservation_code, first_name, last_name, status
+    select reservation_code, first_name, last_name, whatsapp, status, quantity
     from billetterie_reservations
     where status <> 'cancelled'
     order by created_at desc
@@ -17,6 +17,8 @@ try {
 } catch (error) {
   console.error("[billetterie] Liste publique indisponible:", error);
 }
+
+const passedCount = reservations.filter((r) => r.status === "paid").length;
 ---
 
 <!doctype html>
@@ -28,16 +30,93 @@ try {
   </head>
   <body>
     <main class="page">
-      <header class="header"><a href="/billetterie" class="brand">TIKEO</a><span>BILLETTERIE OFFICIELLE</span></header>
-      <section class="hero"><p class="eyebrow">SUIVI DES RÉSERVATIONS</p><h1>Retrouvez une réservation</h1><p>Recherchez par nom, prénom ou code de réservation.</p><p class="activity"><strong>{reservations.length + historicalReservations}</strong> personnes au total <span aria-hidden="true">·</span> <strong>{reservations.length}</strong> réservation{reservations.length > 1 ? "s" : ""} enregistrée{reservations.length > 1 ? "s" : ""}</p><label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Nom, prénom ou BL-2026-000000" autocomplete="off" /></label></section>
+      <header class="header">
+        <a href="/billetterie" class="brand">TIKEO</a>
+        <span>BILLETTERIE OFFICIELLE</span>
+      </header>
+
+      <section class="hero">
+        <p class="eyebrow">SUIVI DES RÉSERVATIONS</p>
+        <h1>Retrouvez une réservation</h1>
+        <p>Recherchez par nom, prénom, numéro WhatsApp ou code de réservation.</p>
+        <p class="activity">
+          <strong>{reservations.length + historicalReservations}</strong> personnes au total
+          <span aria-hidden="true">·</span>
+          <strong>{reservations.length}</strong> réservation{reservations.length > 1 ? "s" : ""}
+          <span aria-hidden="true">·</span>
+          <span class="passed-pill"><strong id="passed-count">{passedCount}</strong> présent{passedCount > 1 ? "s" : ""}</span>
+        </p>
+        <label class="search">
+          <span aria-hidden="true">⌕</span>
+          <input
+            id="search"
+            type="search"
+            placeholder="Nom, prénom, WhatsApp ou BL-2026-000000"
+            autocomplete="off"
+          />
+        </label>
+      </section>
+
       <section class="results" aria-live="polite">
         <div id="reservation-list">
-          {reservations.map((reservation) => (
-            <article class="reservation" data-search={`${reservation.first_name} ${reservation.last_name} ${reservation.reservation_code}`.toLowerCase()}>
-              <div class="reservation-person"><span class="avatar">{reservation.first_name.charAt(0)}</span><div><strong>{reservation.first_name} {reservation.last_name}</strong><span>Pré-réservation enregistrée</span></div></div>
-              <div class="reservation-meta"><code>{reservation.reservation_code}</code><b>ENREGISTRÉE</b></div>
-            </article>
-          ))}
+          {reservations.map((reservation) => {
+            const isPassed = reservation.status === "paid";
+            const cleanDigits = (reservation.whatsapp || "").replace(/[^\d]/g, "");
+            const waLink = cleanDigits ? `https://wa.me/${cleanDigits}` : null;
+            return (
+              <article
+                class:list={["reservation", { "reservation--passed": isPassed }]}
+                data-code={reservation.reservation_code}
+                data-search={`${reservation.first_name} ${reservation.last_name} ${reservation.reservation_code} ${reservation.whatsapp || ""}`.toLowerCase()}
+              >
+                <!-- CASE À COCHER (PRÉSENCE / RETRAIT) -->
+                <div class="reservation-check">
+                  <label class="check-control" title={isPassed ? "Décocher" : "Cocher si la personne se présente"}>
+                    <input
+                      type="checkbox"
+                      class="check-input"
+                      data-code={reservation.reservation_code}
+                      checked={isPassed}
+                    />
+                    <span class="check-box" aria-hidden="true"></span>
+                    <span class="check-label">Passé</span>
+                  </label>
+                </div>
+
+                <div class="reservation-person">
+                  <span class="avatar">{reservation.first_name.charAt(0)}</span>
+                  <div class="reservation-info">
+                    <div class="reservation-name-line">
+                      <strong>{reservation.first_name} {reservation.last_name}</strong>
+                      {reservation.quantity && reservation.quantity > 1 && (
+                        <span class="badge-qty">{reservation.quantity} billets</span>
+                      )}
+                    </div>
+
+                    {reservation.whatsapp && waLink && (
+                      <a
+                        href={waLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="whatsapp-pill"
+                        title={`Ouvrir WhatsApp (${reservation.whatsapp})`}
+                      >
+                        <svg class="whatsapp-icon" viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true">
+                          <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.23 8.23 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.2 8.2 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24m4.52 11.66c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.01-1.24-.75-.67-1.25-1.49-1.4-1.74-.14-.25-.02-.39.11-.51.11-.11.25-.29.37-.43.13-.15.17-.25.25-.42.08-.17.04-.32-.02-.45s-.56-1.35-.77-1.85c-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1s.9 2.44 1.03 2.61c.13.17 1.77 2.7 4.28 3.79.6.26 1.07.41 1.43.53.6.19 1.15.16 1.58.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.06-.11-.23-.18-.48-.3"/>
+                        </svg>
+                        <span>{reservation.whatsapp}</span>
+                      </a>
+                    )}
+                  </div>
+                </div>
+
+                <div class="reservation-meta">
+                  <code>{reservation.reservation_code}</code>
+                  <b class="status-badge">{isPassed ? "RETIRÉ" : "ENREGISTRÉE"}</b>
+                </div>
+              </article>
+            );
+          })}
           {reservations.length === 0 && <div class="empty" id="initial-empty">Aucune réservation enregistrée.</div>}
           <div class="empty" id="search-empty" hidden>Aucune réservation trouvée.</div>
         </div>
@@ -47,11 +126,11 @@ try {
 </html>
 
 <script>
-  const input = document.getElementById('search');
-  const cards = Array.from(document.querySelectorAll('[data-search]'));
+  const input = document.getElementById('search') as HTMLInputElement | null;
+  const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-search]'));
   const empty = document.getElementById('search-empty');
   const filterReservations = () => {
-    const query = (input.value || '').trim().toLowerCase();
+    const query = (input?.value || '').trim().toLowerCase();
     let visible = 0;
     cards.forEach((card) => {
       const matches = !query || (card.getAttribute('data-search') || '').includes(query);
@@ -61,6 +140,68 @@ try {
     if (empty) empty.toggleAttribute('hidden', !query || visible > 0);
   };
   input?.addEventListener('input', filterReservations);
+
+  // Synchronisation des cases à cocher (Base de données + localStorage backup)
+  const LOCAL_STORAGE_KEY = 'tikeo_checked_reservations_v2';
+  let localChecked = new Set<string>();
+  try {
+    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (saved) localChecked = new Set(JSON.parse(saved));
+  } catch (e) {}
+
+  const checkboxes = document.querySelectorAll<HTMLInputElement>('.check-input');
+
+  function updatePassedCountDisplay() {
+    const totalPassed = document.querySelectorAll<HTMLInputElement>('.check-input:checked').length;
+    const badge = document.getElementById('passed-count');
+    if (badge) badge.textContent = String(totalPassed);
+  }
+
+  checkboxes.forEach((cb) => {
+    const code = cb.dataset.code;
+    const card = cb.closest<HTMLElement>('.reservation');
+    const badge = card?.querySelector('.status-badge');
+
+    // Restore from localStorage if needed
+    if (code && localChecked.has(code) && !cb.checked) {
+      cb.checked = true;
+      card?.classList.add('reservation--passed');
+      if (badge) badge.textContent = 'RETIRÉ';
+    }
+
+    cb.addEventListener('change', async () => {
+      const isChecked = cb.checked;
+      if (isChecked) {
+        card?.classList.add('reservation--passed');
+        if (badge) badge.textContent = 'RETIRÉ';
+        if (code) localChecked.add(code);
+      } else {
+        card?.classList.remove('reservation--passed');
+        if (badge) badge.textContent = 'ENREGISTRÉE';
+        if (code) localChecked.delete(code);
+      }
+
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(Array.from(localChecked)));
+      } catch (e) {}
+
+      updatePassedCountDisplay();
+
+      if (code) {
+        try {
+          await fetch('/api/billetterie/checkin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code, checked: isChecked })
+          });
+        } catch (err) {
+          console.warn('[checkin] Erreur sync réseau:', err);
+        }
+      }
+    });
+  });
+
+  updatePassedCountDisplay();
 </script>
 
 <style is:global>
@@ -77,27 +218,164 @@ try {
   .activity { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .55rem; margin: 1rem 0 0; color: #637692 !important; font-size: .78rem !important; letter-spacing: .01em; }
   .activity strong { color: #1769d1; font-size: 1.05rem; }
   .activity span { color: #d32f2f; }
+  .passed-pill { display: inline-flex; align-items: center; gap: .3rem; padding: .15rem .55rem; background: #e8f7ef; border: 1px solid #c0ebd2; border-radius: 999px; color: #16824b !important; }
+  .passed-pill strong { color: #16824b !important; }
   .search { display: flex; align-items: center; gap: .65rem; margin-top: 1.75rem; padding: 0 1rem; border: 1px solid #d8e2ee; border-radius: 8px; background: #fff; box-shadow: 0 10px 30px rgba(16,33,61,.06); transition: border-color 180ms ease, box-shadow 180ms ease; }
   .search:focus-within { border-color: #1769d1; box-shadow: 0 0 0 3px rgba(23,105,209,.1); }
   .search span { color: #1769d1; font-size: 1.5rem; }
   .search input { width: 100%; min-height: 3.6rem; border: 0; outline: 0; color: #10213d; background: transparent; font-size: 1rem; }
   .results { padding-bottom: 4rem; }
   #reservation-list { display: grid; gap: .75rem; }
-  .reservation { display: flex; justify-content: space-between; align-items: center; gap: 1.25rem; min-height: 5rem; padding: 1rem 1.15rem; border: 1px solid #dce4ee; border-radius: 8px; background: #fff; box-shadow: 0 5px 18px rgba(16,33,61,.04); }
+
+  /* Carte Réservation */
+  .reservation {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 1rem;
+    min-height: 5.25rem;
+    padding: .9rem 1.15rem;
+    border: 1px solid #dce4ee;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 4px 14px rgba(16,33,61,.04);
+    transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  }
+  .reservation:hover {
+    border-color: #c0d1e5;
+    box-shadow: 0 6px 20px rgba(16,33,61,.07);
+  }
+  .reservation--passed {
+    background: #f6fbf8;
+    border-color: #9fe0be;
+    box-shadow: 0 4px 14px rgba(22, 130, 75, 0.08);
+  }
+
+  /* Case à cocher */
+  .reservation-check {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .check-control {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    cursor: pointer;
+    user-select: none;
+    padding: .45rem .6rem;
+    border-radius: 6px;
+    background: #f3f6fa;
+    transition: background 150ms ease;
+  }
+  .check-control:hover {
+    background: #e6edf7;
+  }
+  .reservation--passed .check-control {
+    background: #e5f6ec;
+  }
+  .check-input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 0;
+    height: 0;
+  }
+  .check-box {
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 2px solid #a4b6cb;
+    border-radius: 4px;
+    background: #fff;
+    display: grid;
+    place-items: center;
+    transition: all 150ms ease;
+    flex: none;
+    position: relative;
+  }
+  .check-input:checked + .check-box {
+    background: #16824b;
+    border-color: #16824b;
+  }
+  .check-input:checked + .check-box::after {
+    content: "";
+    width: 4px;
+    height: 8px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    margin-top: -2px;
+  }
+  .check-label {
+    font-size: .75rem;
+    font-weight: 700;
+    color: #556984;
+    letter-spacing: .02em;
+  }
+  .check-input:checked ~ .check-label {
+    color: #16824b;
+    font-weight: 800;
+  }
+
+  /* Person info */
   .reservation-person { display: flex; align-items: center; gap: .85rem; min-width: 0; }
-  .reservation-person > div { display: grid; gap: .28rem; min-width: 0; }
-  .avatar { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; flex: none; border-radius: 50%; background: #eaf2fc; color: #1769d1; font-size: .9rem; font-weight: 800; text-transform: uppercase; }
+  .avatar { display: grid; place-items: center; width: 2.65rem; height: 2.65rem; flex: none; border-radius: 50%; background: #eaf2fc; color: #1769d1; font-size: .95rem; font-weight: 800; text-transform: uppercase; }
+  .reservation--passed .avatar { background: #d7f2e3; color: #16824b; }
+  .reservation-info { display: grid; gap: .25rem; min-width: 0; }
+  .reservation-name-line { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
   .reservation strong { overflow: hidden; color: #111827; font-size: 1rem; text-overflow: ellipsis; white-space: nowrap; }
-  .reservation-person span:not(.avatar) { color: #7a8799; font-size: .78rem; }
+  .badge-qty { display: inline-block; padding: .1rem .4rem; background: #eef2f8; color: #43556d; font-size: .65rem; font-weight: 800; border-radius: 4px; letter-spacing: .02em; }
+
+  /* WhatsApp Pill */
+  .whatsapp-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: .38rem;
+    width: fit-content;
+    padding: .2rem .55rem;
+    background: #eafaf1;
+    color: #0d6e3b;
+    border: 1px solid rgba(37, 211, 102, 0.4);
+    border-radius: 999px;
+    text-decoration: none;
+    font-size: .76rem;
+    font-weight: 700;
+    transition: all 140ms ease;
+  }
+  .whatsapp-pill:hover {
+    background: #d6f6e2;
+    border-color: #25d366;
+    color: #075029;
+    box-shadow: 0 2px 8px rgba(37, 211, 102, 0.25);
+    transform: translateY(-1px);
+  }
+  .whatsapp-icon { color: #25d366; flex: none; }
+
+  /* Meta code & Status */
   .reservation-meta { display: flex; align-items: center; gap: .65rem; flex: none; }
   .reservation code { padding: .45rem .6rem; border: 1px solid #e4e4e0; border-radius: 5px; color: #40536d; background: #f7f7f4; font-size: .76rem; white-space: nowrap; }
-  .reservation b { padding: .45rem .6rem; border-radius: 5px; background: #e8f7ef; color: #16824b; font-size: .62rem; letter-spacing: .08em; white-space: nowrap; }
+  .status-badge { padding: .45rem .6rem; border-radius: 5px; background: #e8f7ef; color: #16824b; font-size: .62rem; font-weight: 800; letter-spacing: .08em; white-space: nowrap; }
+  .reservation--passed .status-badge { background: #16824b; color: #ffffff; }
+
   .empty { padding: 2.5rem; border: 1px dashed #bdcadd; border-radius: 8px; color: #637692; background: rgba(255,255,255,.5); text-align: center; }
-  @media (max-width: 600px) {
+
+  @media (max-width: 680px) {
     .header { padding: 1rem; }
     .hero { padding-top: 2.5rem; }
-    .reservation { display: grid; gap: .85rem; }
-    .reservation-meta { justify-content: space-between; width: 100%; padding-left: 3.35rem; }
+    .reservation {
+      grid-template-columns: 1fr;
+      gap: .75rem;
+      padding: .85rem 1rem;
+    }
+    .reservation-check {
+      justify-content: flex-start;
+    }
+    .reservation-meta {
+      justify-content: space-between;
+      width: 100%;
+      border-top: 1px solid #edf2f7;
+      padding-top: .6rem;
+    }
     .reservation code { font-size: .7rem; }
   }
 </style>

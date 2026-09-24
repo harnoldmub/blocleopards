@@ -1,12 +1,40 @@
 ---
+import { requireDatabase, hasDatabase } from "../../lib/neon";
+
 interface Props {
   lang?: 'fr' | 'en';
 }
 
 const { lang = 'fr' } = Astro.props;
+
+let reservationsCount = 0;
+const totalCapacity = 1000;
+
+if (hasDatabase) {
+  try {
+    const db = requireDatabase();
+    const rows = await db`
+      select count(*)::int as total
+      from billetterie_reservations
+      where status <> 'cancelled'
+    `;
+    reservationsCount = Number(rows[0]?.total || 0);
+  } catch (error) {
+    console.error("[billetterie] Impossible de récupérer le nombre de réservations:", error);
+  }
+}
+
+const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
 ---
 
-<div class="tk-mono-page" id="ticketing-root" data-lang={lang}>
+<div
+  class="tk-mono-page"
+  id="ticketing-root"
+  data-lang={lang}
+  data-total-capacity={totalCapacity}
+  data-reservations-count={reservationsCount}
+  data-remaining-places={remainingPlaces}
+>
   <!-- ======================================================================= -->
   <!-- HEADER BLANC ÉPURÉ                                                      -->
   <!-- ======================================================================= -->
@@ -328,9 +356,17 @@ const { lang = 'fr' } = Astro.props;
     let quantity = 1;
     const unitPrice = 69000;
     const formatPrice = (amount) => `${amount.toLocaleString('fr-FR')} FC`;
-    const stockMaximum = 1000;
-    const stockKey = 'tikeo-demo-stock';
-    const getStock = () => Number(localStorage.getItem(stockKey) || 400);
+    const totalCapacity = Number(root.dataset.totalCapacity || 1000);
+    let reservationsCount = Number(root.dataset.reservationsCount || 0);
+    let remainingPlaces = Math.max(0, Number(root.dataset.remainingPlaces ?? (totalCapacity - reservationsCount)));
+    const stockKey = 'tikeo-demo-stock-v2';
+    const getStock = () => {
+      const stored = localStorage.getItem(stockKey);
+      if (stored !== null && !isNaN(Number(stored))) {
+        return Math.max(0, Math.min(Number(stored), remainingPlaces));
+      }
+      return remainingPlaces;
+    };
     const minQty = 1;
     const maxQty = 4;
 
@@ -386,14 +422,14 @@ const { lang = 'fr' } = Astro.props;
     function updateStock() {
       const stock = Math.max(0, getStock());
       const soldOut = stock === 0;
-      const label = stock === 1 ? '1 place restante' : `${stock} places restantes`;
+      const label = stock === 1 ? '1 place restante' : `${stock.toLocaleString('fr-FR')} places restantes`;
       let urgency = 'PLACES DISPONIBLES';
       if (stock === 0) urgency = 'SOLD OUT';
       else if (stock <= 10) urgency = `PLUS QUE ${stock} PLACES DISPONIBLES`;
       else if (stock <= 20) urgency = `PRESQUE COMPLET — ${stock} PLACES RESTANTES`;
       else if (stock <= 50) urgency = `DERNIÈRES PLACES — ${stock} RESTANTES`;
       else if (stock <= 100) urgency = 'MOINS DE 100 PLACES DISPONIBLES';
-      else if (stock <= 400) urgency = `FORTE DEMANDE — ${stock} PLACES RESTANTES`;
+      else urgency = `FORTE DEMANDE — PLUS QUE ${stock.toLocaleString('fr-FR')} PLACES`;
       if (mobileTotalVal) mobileTotalVal.textContent = formatPrice(quantity * unitPrice);
       if (soldOut) {
         if (btnPlus) btnPlus.disabled = true;
@@ -418,7 +454,25 @@ const { lang = 'fr' } = Astro.props;
       const connected = Math.floor(Math.random() * 151) + 300;
       const stock = Math.max(0, getStock());
       showTensionToast(`👥 ${connected} personnes consultent la billetterie`, 'online');
-      window.setTimeout(() => showTensionToast(stock === 0 ? 'SOLD OUT' : '🔥 Forte demande — plus que 1 000 places', 'demand'), 5600);
+      const placesText = stock <= 0
+        ? 'SOLD OUT'
+        : `🔥 Forte demande — plus que ${stock === 1 ? '1 place' : `${stock.toLocaleString('fr-FR')} places`}`;
+      window.setTimeout(() => showTensionToast(placesText, 'demand'), 5600);
+    }
+
+    async function syncDynamicStock() {
+      try {
+        const res = await fetch('/api/billetterie/reservations');
+        if (res.ok) {
+          const data = await res.json();
+          if (typeof data.remainingPlaces === 'number') {
+            remainingPlaces = Math.max(0, data.remainingPlaces);
+            updateStock();
+          }
+        }
+      } catch (err) {
+        // Silencieux
+      }
     }
 
     btnMinus?.addEventListener('click', () => {
@@ -555,7 +609,8 @@ const { lang = 'fr' } = Astro.props;
           throw new Error(reservationData?.error || 'Réservation impossible');
         }
         bookingId = reservationData.reservation.reservation_code;
-        localStorage.setItem(stockKey, String(stock - quantity));
+        remainingPlaces = Math.max(0, remainingPlaces - quantity);
+        localStorage.setItem(stockKey, String(Math.max(0, stock - quantity)));
         updateStock();
       } catch (error) {
         console.error('[billetterie] Réservation non enregistrée:', error);
@@ -607,6 +662,7 @@ const { lang = 'fr' } = Astro.props;
     updateStock();
     updateOnlineDemo();
     window.setInterval(updateOnlineDemo, 10000);
+    window.setInterval(syncDynamicStock, 30000);
     checkValidity();
   }
 
