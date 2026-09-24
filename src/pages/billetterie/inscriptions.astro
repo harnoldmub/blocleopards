@@ -2,6 +2,9 @@
 import { requireDatabase } from "../../lib/neon";
 
 let reservations: any[] = [];
+// 15 réservations historiques ont été réalisées avant la mise en place de
+// l'enregistrement en base. Le total public reste donc base actuelle + historique.
+const historicalReservations = 15;
 try {
   const sql = requireDatabase();
   reservations = await sql`
@@ -26,7 +29,7 @@ try {
   <body>
     <main class="page">
       <header class="header"><a href="/billetterie" class="brand">TIKEO</a><span>BILLETTERIE OFFICIELLE</span></header>
-      <section class="hero"><p class="eyebrow">SUIVI DES RÉSERVATIONS</p><h1>Retrouvez une réservation</h1><p>Recherchez par nom, prénom ou code de réservation.</p><label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Nom, prénom ou BL-2026-000000" autocomplete="off" /></label></section>
+      <section class="hero"><p class="eyebrow">SUIVI DES RÉSERVATIONS</p><h1>Retrouvez une réservation</h1><p>Recherchez par nom, prénom ou code de réservation.</p><p class="activity"><strong>{reservations.length + historicalReservations}</strong> personnes au total <span aria-hidden="true">·</span> <strong>{reservations.length}</strong> réservation{reservations.length > 1 ? "s" : ""} enregistrée{reservations.length > 1 ? "s" : ""}</p><label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Nom, prénom ou BL-2026-000000" autocomplete="off" /></label></section>
       <section class="results" aria-live="polite">
         <div id="reservation-list">
           {reservations.map((reservation) => (
@@ -71,6 +74,9 @@ try {
   .eyebrow { margin: 0; color: #d32f2f; font-size: .72rem; font-weight: 800; letter-spacing: .14em; }
   h1 { margin: .7rem 0; font-size: clamp(2.25rem, 5vw, 3.75rem); line-height: 1.05; letter-spacing: -.035em; }
   .hero p:not(.eyebrow) { color: #637692; font-size: 1.05rem; }
+  .activity { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .55rem; margin: 1rem 0 0; color: #637692 !important; font-size: .78rem !important; letter-spacing: .01em; }
+  .activity strong { color: #1769d1; font-size: 1.05rem; }
+  .activity span { color: #d32f2f; }
   .search { display: flex; align-items: center; gap: .65rem; margin-top: 1.75rem; padding: 0 1rem; border: 1px solid #d8e2ee; border-radius: 8px; background: #fff; box-shadow: 0 10px 30px rgba(16,33,61,.06); transition: border-color 180ms ease, box-shadow 180ms ease; }
   .search:focus-within { border-color: #1769d1; box-shadow: 0 0 0 3px rgba(23,105,209,.1); }
   .search span { color: #1769d1; font-size: 1.5rem; }
