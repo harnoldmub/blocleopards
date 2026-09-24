@@ -69,7 +69,7 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
     <div class="tk-mobile-intro">
       <div class="tk-mobile-kicker">RÉSERVER EN QUELQUES CLICS</div>
       <h1>Tikeo, votre place pour le match.</h1>
-      <p>Choisissez vos billets et recevez les prochaines instructions par WhatsApp / SMS.</p>
+      <p>Choisissez vos billets. <strong>Une fois réservé, le lieu de retrait et les consignes de paiement vous seront directement indiqués</strong> (par WhatsApp / SMS).</p>
     </div>
     <div class="tk-grid">
 
@@ -77,6 +77,20 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
       <!-- COLONNE GAUCHE (65%) : MATCH + BILLETS + INFORMATIONS               -->
       <!-- =================================================================== -->
       <div class="tk-content-col">
+
+        <!-- BANDEAU D'INFORMATION RETRAIT & PAIEMENT SUR LE SITE -->
+        <div class="tk-trust-callout">
+          <div class="tk-trust-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="16" x2="12" y2="12"/>
+              <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+          </div>
+          <div class="tk-trust-text">
+            <strong>Paiement et retrait de vos billets :</strong> Une fois votre réservation effectuée sur le site, nous vous indiquerons directement où récupérer votre billet et effectuer votre paiement. <a href="#aide" class="tk-trust-link" id="link-trust-help">Comment ça marche ?</a>
+          </div>
+        </div>
 
         <!-- ----------------------------------------------------------------- -->
         <!-- 1 — MATCH COMPACT                                                 -->
@@ -275,6 +289,14 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
             <span class="tk-sum-total-amount" id="sum-total-amount">69 000 FC</span>
           </div>
 
+          <!-- RAPPEL PAIEMENT & RETRAIT -->
+          <div class="tk-sum-reassurance">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <span>Paiement au retrait. Le lieu et les modalités vous seront indiqués après votre réservation.</span>
+          </div>
+
           <!-- BOUTON D'ACTION PRINCIPAL -->
           <button
             type="button"
@@ -342,6 +364,67 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
       <div class="tk-confirmation-actions"><button type="button" id="download-card">Télécharger ma carte PNG</button></div>
     </div>
   </section>
+
+  <!-- ======================================================================= -->
+  <!-- MODALE D'AIDE : RETRAIT ET PAIEMENT DES BILLETS (#aide)                 -->
+  <!-- ======================================================================= -->
+  <aside
+    class="tk-help-modal-backdrop"
+    id="help-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="help-modal-title"
+    aria-hidden="true"
+  >
+    <div class="tk-help-modal-card">
+      <button
+        type="button"
+        class="tk-help-modal-close"
+        id="btn-close-help"
+        aria-label="Fermer la fenêtre d'aide"
+      >×</button>
+
+      <div class="tk-help-modal-header">
+        <span class="tk-help-kicker">INFORMATIONS & RETRAIT</span>
+        <h2 id="help-modal-title">Où récupérer et payer vos billets ?</h2>
+      </div>
+
+      <div class="tk-help-notice-box">
+        <div class="tk-help-notice-icon" aria-hidden="true">💡</div>
+        <p><strong>Aucun paiement en ligne requis aujourd’hui.</strong> Une fois votre place réservée sur ce site, nous vous indiquerons directement où récupérer votre billet et effectuer votre paiement (par WhatsApp / SMS).</p>
+      </div>
+
+      <div class="tk-help-steps">
+        <div class="tk-help-step">
+          <div class="tk-help-step-num">1</div>
+          <div class="tk-help-step-body">
+            <strong>1. Réservez vos places en ligne</strong>
+            <p>Indiquez simplement votre prénom, nom, numéro WhatsApp et pays de résidence. Votre quota est immédiatement bloqué.</p>
+          </div>
+        </div>
+
+        <div class="tk-help-step">
+          <div class="tk-help-step-num">2</div>
+          <div class="tk-help-step-body">
+            <strong>2. Confirmation avec N° de dossier & QR Code</strong>
+            <p>Dès validation, votre confirmation officielle s’affiche à l’écran avec votre numéro de dossier unique et votre QR code de pré-réservation.</p>
+          </div>
+        </div>
+
+        <div class="tk-help-step">
+          <div class="tk-help-step-num">3</div>
+          <div class="tk-help-step-body">
+            <strong>3. Lieu de retrait et paiement sur place</strong>
+            <p>Le point exact de retrait (Stade Tata Raphaël à Kinshasa), les créneaux horaires et les modalités de paiement sur place vous seront communiqués.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="tk-help-modal-footer">
+        <button type="button" class="tk-btn-help-ok" id="btn-ok-help">J'ai compris →</button>
+      </div>
+    </div>
+  </aside>
 </div>
 
 <!-- ========================================================================= -->
@@ -400,6 +483,58 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
     const bookingQr = document.getElementById('booking-qr');
     const downloadCard = document.getElementById('download-card');
     const closeConfirmation = document.getElementById('close-confirmation');
+
+    const helpModal = document.getElementById('help-modal');
+    const btnHelpModal = document.getElementById('btn-help-modal');
+    const linkTrustHelp = document.getElementById('link-trust-help');
+    const btnCloseHelp = document.getElementById('btn-close-help');
+    const btnOkHelp = document.getElementById('btn-ok-help');
+
+    function openHelpModal(e?: Event) {
+      if (e) e.preventDefault();
+      helpModal?.classList.add('tk-help-modal--visible');
+      helpModal?.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      if (window.location.hash !== '#aide') {
+        history.replaceState(null, '', window.location.pathname + window.location.search + '#aide');
+      }
+    }
+
+    function closeHelpModal() {
+      helpModal?.classList.remove('tk-help-modal--visible');
+      helpModal?.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      if (window.location.hash === '#aide') {
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+    }
+
+    btnHelpModal?.addEventListener('click', openHelpModal);
+    linkTrustHelp?.addEventListener('click', openHelpModal);
+    btnCloseHelp?.addEventListener('click', closeHelpModal);
+    btnOkHelp?.addEventListener('click', closeHelpModal);
+
+    helpModal?.addEventListener('click', (e) => {
+      if (e.target === helpModal) closeHelpModal();
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && helpModal?.classList.contains('tk-help-modal--visible')) {
+        closeHelpModal();
+      }
+    });
+
+    // Ouvrir automatiquement si l'URL contient #aide
+    if (window.location.hash === '#aide') {
+      openHelpModal();
+    }
+    window.addEventListener('hashchange', () => {
+      if (window.location.hash === '#aide') {
+        openHelpModal();
+      } else if (helpModal?.classList.contains('tk-help-modal--visible')) {
+        closeHelpModal();
+      }
+    });
 
     closeConfirmation?.addEventListener('click', () => {
       confirmation?.classList.remove('tk-confirmation--visible');
@@ -1385,12 +1520,248 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
   .tk-btn-submit { min-height: 3.25rem; }
   .tk-mobile-intro { display: none; }
 
+  /* -------------------------------------------------------------------------
+     BANDEAU D'INFORMATION RETRAIT & PAIEMENT SUR LE SITE
+     ------------------------------------------------------------------------- */
+  .tk-trust-callout {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.25rem;
+    background: #eef6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: var(--tk-radius);
+    color: #1e3a8a;
+  }
+  .tk-trust-icon {
+    flex: none;
+    color: var(--tk-blue-rdc);
+    margin-top: 0.1rem;
+  }
+  .tk-trust-text {
+    font-size: 0.88rem;
+    line-height: 1.45;
+    color: #1e3a8a;
+  }
+  .tk-trust-text strong {
+    color: #172554;
+    font-weight: 700;
+  }
+  .tk-trust-link {
+    color: var(--tk-blue-rdc);
+    font-weight: 700;
+    text-decoration: underline;
+    margin-left: 0.25rem;
+    cursor: pointer;
+  }
+  .tk-trust-link:hover {
+    color: #10213d;
+  }
+
+  .tk-sum-reassurance {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 0.85rem;
+    margin-bottom: 1rem;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    color: #dbeafe;
+    font-size: 0.76rem;
+    line-height: 1.35;
+  }
+  .tk-sum-reassurance svg {
+    flex: none;
+    color: #60a5fa;
+  }
+
+  /* -------------------------------------------------------------------------
+     MODALE D'AIDE (#aide)
+     ------------------------------------------------------------------------- */
+  .tk-help-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem;
+    background: rgba(16, 33, 61, 0.55);
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 220ms ease;
+  }
+  .tk-help-modal-backdrop.tk-help-modal--visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .tk-help-modal-card {
+    position: relative;
+    width: min(100%, 34rem);
+    max-height: calc(100vh - 2.5rem);
+    overflow-y: auto;
+    background: #ffffff;
+    border: 1px solid var(--tk-border);
+    border-radius: 1.25rem;
+    padding: 2.25rem 2rem;
+    box-shadow: 0 25px 60px rgba(16, 33, 61, 0.25);
+    transform: scale(0.96) translateY(8px);
+    transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .tk-help-modal--visible .tk-help-modal-card {
+    transform: scale(1) translateY(0);
+  }
+  .tk-help-modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1.15rem;
+    width: 2.25rem;
+    height: 2.25rem;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--tk-border);
+    border-radius: 50%;
+    background: #f8fafc;
+    color: var(--tk-ink-muted);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 160ms ease;
+  }
+  .tk-help-modal-close:hover,
+  .tk-help-modal-close:focus-visible {
+    background: #eef5ff;
+    color: var(--tk-blue-rdc);
+    border-color: var(--tk-blue-rdc);
+    outline: none;
+  }
+
+  .tk-help-kicker {
+    display: inline-block;
+    color: var(--tk-blue-rdc);
+    font-family: var(--font-display);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    margin-bottom: 0.4rem;
+  }
+  .tk-help-modal-header h2 {
+    margin: 0 0 1.25rem;
+    font-family: var(--font-display);
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: var(--tk-ink-main);
+    line-height: 1.2;
+    padding-right: 2rem;
+  }
+
+  .tk-help-notice-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    padding: 1.1rem 1.25rem;
+    background: #f0fdf4;
+    border: 1.5px solid #86efac;
+    border-radius: 12px;
+    margin-bottom: 1.75rem;
+  }
+  .tk-help-notice-icon {
+    font-size: 1.35rem;
+    line-height: 1;
+    flex: none;
+  }
+  .tk-help-notice-box p {
+    margin: 0;
+    color: #14532d;
+    font-size: 0.92rem;
+    line-height: 1.5;
+  }
+  .tk-help-notice-box strong {
+    color: #052e16;
+  }
+
+  .tk-help-steps {
+    display: grid;
+    gap: 1.15rem;
+    margin-bottom: 1.75rem;
+  }
+  .tk-help-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .tk-help-step-num {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: #eef5ff;
+    color: var(--tk-blue-rdc);
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    font-weight: 800;
+    display: grid;
+    place-items: center;
+    flex: none;
+    border: 1px solid #bfdbfe;
+  }
+  .tk-help-step-body strong {
+    display: block;
+    color: var(--tk-ink-main);
+    font-size: 0.95rem;
+    margin-bottom: 0.2rem;
+  }
+  .tk-help-step-body p {
+    margin: 0;
+    color: var(--tk-ink-secondary);
+    font-size: 0.84rem;
+    line-height: 1.45;
+  }
+
+  .tk-help-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--tk-border);
+  }
+  .tk-btn-help-ok {
+    padding: 0.75rem 1.75rem;
+    border: 0;
+    border-radius: 999px;
+    background: var(--tk-blue-rdc);
+    color: #fff;
+    font-family: var(--font-display);
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: background 160ms ease, transform 160ms ease;
+  }
+  .tk-btn-help-ok:hover {
+    background: #0d4fa6;
+    transform: translateY(-1px);
+  }
+
   @media (max-width: 639px) {
     .tk-header { height: 4rem; }
     .tk-header-inner { padding: 0 1rem; }
-    .tk-brand-caption, .tk-campaign-logo--feco, .tk-link-help, .tk-header-sep { display: none; }
+    .tk-brand-caption, .tk-campaign-logo--feco, .tk-header-sep { display: none; }
+    .tk-link-help {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.35rem 0.7rem;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      border-radius: 999px;
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-decoration: none;
+    }
     .tk-campaign-logo--qualifiers { width: 6.3rem; height: 1.8rem; }
-    .tk-header-right { gap: 0; }
+    .tk-header-right { gap: 0.5rem; }
     .tk-layout-container { margin-top: 0; padding: 0 0.85rem 1rem; }
     .tk-mobile-intro { display: block; padding: 1.7rem 0.3rem 1.2rem; }
     .tk-mobile-kicker { color: var(--tk-red); font-family: var(--font-display); font-weight: 800; font-size: 0.68rem; letter-spacing: 0.1em; }
