@@ -1,5 +1,6 @@
 ---
 import { requireDatabase, hasDatabase } from "../../lib/neon";
+import Turnstile from "../Turnstile.astro";
 
 interface Props {
   lang?: 'fr' | 'en';
@@ -246,6 +247,12 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
                   <option value="Autre pays">Autre pays</option>
                 </select>
                 <span class="tk-error-text" id="err-country" aria-live="polite"></span>
+              </div>
+
+              <!-- PROTECTION CLOUDFLARE TURNSTILE & ANTI-BOT -->
+              <input type="text" name="_hp" tabindex="-1" autocomplete="off" style="position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0;" aria-hidden="true" />
+              <div class="tk-turnstile-wrap">
+                <Turnstile />
               </div>
             </div>
           </form>
@@ -577,6 +584,12 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
         btnMobileValidate.disabled = true;
         btnMobileValidate.classList.remove('tk-btn-submit--loading');
       }
+
+      if ((window as any).turnstile && typeof (window as any).turnstile.reset === 'function') {
+        try {
+          (window as any).turnstile.reset();
+        } catch (_) {}
+      }
     }
 
     // --- Update Quantities & Prices ---
@@ -783,7 +796,9 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
             lastName: (inpNom?.value || '').trim(),
             whatsapp: (inpPhone?.value || '').trim(),
             country: (inpCountry?.value || '').trim(),
-            quantity
+            quantity,
+            turnstileToken: ((document.querySelector('[name="cf-turnstile-response"]') as HTMLInputElement)?.value || '').trim(),
+            _hp: ((document.querySelector('[name="_hp"]') as HTMLInputElement)?.value || '').trim()
           })
         });
         const reservationData = await reservationResponse.json();
@@ -794,9 +809,14 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
         remainingPlaces = Math.max(0, remainingPlaces - quantity);
         localStorage.setItem(stockKey, String(Math.max(0, stock - quantity)));
         updateStock();
-      } catch (error) {
+      } catch (error: any) {
         console.error('[billetterie] Réservation non enregistrée:', error);
         isSubmitting = false;
+        if ((window as any).turnstile && typeof (window as any).turnstile.reset === 'function') {
+          try {
+            (window as any).turnstile.reset();
+          } catch (_) {}
+        }
         if (btnSpinner) btnSpinner.style.display = 'none';
         if (btnText) btnText.textContent = 'RÉESSAYER';
         if (btnMobileText) btnMobileText.textContent = 'RÉESSAYER';
@@ -808,7 +828,7 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
           btnMobileValidate.disabled = false;
           btnMobileValidate.classList.remove('tk-btn-submit--loading');
         }
-        if (loadingMsg) loadingMsg.textContent = 'La réservation n’a pas pu être enregistrée. Vérifiez votre connexion et réessayez.';
+        if (loadingMsg) loadingMsg.textContent = error?.message || 'La réservation n’a pas pu être enregistrée. Vérifiez votre connexion et réessayez.';
         return;
       }
 
@@ -1524,6 +1544,13 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
     width: auto;
     min-width: 9rem;
     height: 2.75rem;
+  }
+
+  .tk-turnstile-wrap {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 0.5rem;
   }
 
   /* -------------------------------------------------------------------------

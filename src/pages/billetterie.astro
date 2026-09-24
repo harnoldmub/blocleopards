@@ -1,5 +1,6 @@
 ---
 import TicketingExperience from "../components/billetterie/TicketingExperience.astro";
+const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
 ---
 
 <!doctype html>
@@ -10,6 +11,9 @@ import TicketingExperience from "../components/billetterie/TicketingExperience.a
     <title>Tikeo — Billetterie Officielle</title>
     <meta name="description" content="Billetterie officielle du match RDC vs Guinée Équatoriale au Stade des Martyrs de Kinshasa." />
     <meta name="robots" content="noindex, nofollow" />
+    {turnstileSiteKey && (
+      <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    )}
   </head>
   <body>
     <TicketingExperience lang="fr" />

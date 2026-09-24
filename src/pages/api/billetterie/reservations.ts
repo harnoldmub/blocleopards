@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { randomInt } from "node:crypto";
 import { requireDatabase } from "../../../lib/neon";
+import { verifyTurnstile } from "../../../lib/turnstile";
 
 export const prerender = false;
 
@@ -32,9 +33,24 @@ export const GET: APIRoute = async () => {
   }
 };
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, clientAddress }) => {
   try {
     const body = await request.json();
+
+    // Protection anti-bot : champ honeypot
+    if (body._hp) {
+      return new Response(JSON.stringify({ error: "Validation refusée." }), { status: 400, headers });
+    }
+
+    // Protection anti-bot : Cloudflare Turnstile
+    const turnstileToken = String(body.turnstileToken || body["cf-turnstile-response"] || "").trim();
+    const captchaOk = await verifyTurnstile(turnstileToken, clientAddress);
+    if (!captchaOk) {
+      return new Response(
+        JSON.stringify({ error: "Contrôle de sécurité Cloudflare requis ou invalide. Veuillez réessayer." }),
+        { status: 403, headers }
+      );
+    }
     const firstName = String(body.firstName || "").trim();
     const lastName = String(body.lastName || "").trim();
     const email = body.email ? String(body.email).trim().toLowerCase() : null;
