@@ -19,6 +19,7 @@ try {
 }
 
 const passedCount = reservations.filter((r) => r.status === "paid").length;
+const totalTickets = reservations.reduce((acc, r) => acc + (Number(r.quantity) || 1), 0);
 ---
 
 <!doctype html>
@@ -42,6 +43,8 @@ const passedCount = reservations.filter((r) => r.status === "paid").length;
         <p class="activity">
           <strong>{reservations.length + historicalReservations}</strong> personnes au total
           <span aria-hidden="true">·</span>
+          <span class="activity-tickets"><strong>{totalTickets}</strong> billets demandés</span>
+          <span aria-hidden="true">·</span>
           <strong>{reservations.length}</strong> réservation{reservations.length > 1 ? "s" : ""}
           <span aria-hidden="true">·</span>
           <span class="passed-pill"><strong id="passed-count">{passedCount}</strong> présent{passedCount > 1 ? "s" : ""}</span>
@@ -61,13 +64,14 @@ const passedCount = reservations.filter((r) => r.status === "paid").length;
         <div id="reservation-list">
           {reservations.map((reservation) => {
             const isPassed = reservation.status === "paid";
+            const qty = Number(reservation.quantity) || 1;
             const cleanDigits = (reservation.whatsapp || "").replace(/[^\d]/g, "");
             const waLink = cleanDigits ? `https://wa.me/${cleanDigits}` : null;
             return (
               <article
                 class:list={["reservation", { "reservation--passed": isPassed }]}
                 data-code={reservation.reservation_code}
-                data-search={`${reservation.first_name} ${reservation.last_name} ${reservation.reservation_code} ${reservation.whatsapp || ""}`.toLowerCase()}
+                data-search={`${reservation.first_name} ${reservation.last_name} ${reservation.reservation_code} ${reservation.whatsapp || ""} ${qty} billet ${qty} billets`.toLowerCase()}
               >
                 <!-- CASE À COCHER (PRÉSENCE / RETRAIT) -->
                 <div class="reservation-check">
@@ -88,9 +92,6 @@ const passedCount = reservations.filter((r) => r.status === "paid").length;
                   <div class="reservation-info">
                     <div class="reservation-name-line">
                       <strong>{reservation.first_name} {reservation.last_name}</strong>
-                      {reservation.quantity && reservation.quantity > 1 && (
-                        <span class="badge-qty">{reservation.quantity} billets</span>
-                      )}
                     </div>
 
                     {reservation.whatsapp && waLink && (
@@ -111,6 +112,18 @@ const passedCount = reservations.filter((r) => r.status === "paid").length;
                 </div>
 
                 <div class="reservation-meta">
+                  <!-- NOMBRE DE BILLETS DEMANDÉS -->
+                  <span class="badge-qty" title="Nombre de billets demandés">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <rect width="18" height="13" x="3" y="5" rx="2"/>
+                      <path d="M3 10h18"/>
+                      <path d="M8 14h.01"/>
+                      <path d="M12 14h.01"/>
+                      <path d="M16 14h.01"/>
+                    </svg>
+                    <strong>{qty}</strong> {qty > 1 ? "billets" : "billet"}
+                  </span>
+
                   <code>{reservation.reservation_code}</code>
                   <b class="status-badge">{isPassed ? "RETIRÉ" : "ENREGISTRÉE"}</b>
                 </div>
@@ -218,6 +231,8 @@ const passedCount = reservations.filter((r) => r.status === "paid").length;
   .activity { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .55rem; margin: 1rem 0 0; color: #637692 !important; font-size: .78rem !important; letter-spacing: .01em; }
   .activity strong { color: #1769d1; font-size: 1.05rem; }
   .activity span { color: #d32f2f; }
+  .activity-tickets { display: inline-flex; align-items: center; gap: .25rem; }
+  .activity-tickets strong { color: #0f56b3 !important; }
   .passed-pill { display: inline-flex; align-items: center; gap: .3rem; padding: .15rem .55rem; background: #e8f7ef; border: 1px solid #c0ebd2; border-radius: 999px; color: #16824b !important; }
   .passed-pill strong { color: #16824b !important; }
   .search { display: flex; align-items: center; gap: .65rem; margin-top: 1.75rem; padding: 0 1rem; border: 1px solid #d8e2ee; border-radius: 8px; background: #fff; box-shadow: 0 10px 30px rgba(16,33,61,.06); transition: border-color 180ms ease, box-shadow 180ms ease; }
@@ -324,7 +339,35 @@ const passedCount = reservations.filter((r) => r.status === "paid").length;
   .reservation-info { display: grid; gap: .25rem; min-width: 0; }
   .reservation-name-line { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
   .reservation strong { overflow: hidden; color: #111827; font-size: 1rem; text-overflow: ellipsis; white-space: nowrap; }
-  .badge-qty { display: inline-block; padding: .1rem .4rem; background: #eef2f8; color: #43556d; font-size: .65rem; font-weight: 800; border-radius: 4px; letter-spacing: .02em; }
+
+  /* Badge Nombre de billets */
+  .badge-qty {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .35rem .6rem;
+    background: #eff6ff;
+    color: #1e40af;
+    border: 1px solid #bfdbfe;
+    border-radius: 6px;
+    font-size: .74rem;
+    font-weight: 700;
+    letter-spacing: .01em;
+    white-space: nowrap;
+  }
+  .badge-qty strong {
+    font-size: .84rem;
+    font-weight: 800;
+    color: #1d4ed8;
+  }
+  .reservation--passed .badge-qty {
+    background: #ecfdf5;
+    color: #065f46;
+    border-color: #a7f3d0;
+  }
+  .reservation--passed .badge-qty strong {
+    color: #047857;
+  }
 
   /* WhatsApp Pill */
   .whatsapp-pill {
@@ -352,7 +395,7 @@ const passedCount = reservations.filter((r) => r.status === "paid").length;
   .whatsapp-icon { color: #25d366; flex: none; }
 
   /* Meta code & Status */
-  .reservation-meta { display: flex; align-items: center; gap: .65rem; flex: none; }
+  .reservation-meta { display: flex; align-items: center; gap: .65rem; flex: none; flex-wrap: wrap; justify-content: flex-end; }
   .reservation code { padding: .45rem .6rem; border: 1px solid #e4e4e0; border-radius: 5px; color: #40536d; background: #f7f7f4; font-size: .76rem; white-space: nowrap; }
   .status-badge { padding: .45rem .6rem; border-radius: 5px; background: #e8f7ef; color: #16824b; font-size: .62rem; font-weight: 800; letter-spacing: .08em; white-space: nowrap; }
   .reservation--passed .status-badge { background: #16824b; color: #ffffff; }
