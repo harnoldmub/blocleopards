@@ -18,6 +18,15 @@ try {
   console.error("[billetterie] Liste publique indisponible:", error);
 }
 
+// Liste officielle des 5 gagnants du jeu-concours CAN 2027 (places offertes au Stade Tata Raphaël)
+const contestWinners = [
+  { rank: 1, name: "Eric Bangula" },
+  { rank: 2, name: "Don de Dieu Mbengo" },
+  { rank: 3, name: "Autsai Safi Carine" },
+  { rank: 4, name: "Raphaël Mukala" },
+  { rank: 5, name: "Grace Kwengani" },
+];
+
 const passedCount = reservations.filter((r) => r.status === "paid").length;
 const totalTickets = reservations.reduce((acc, r) => acc + (Number(r.quantity) || 1), 0);
 ---
@@ -49,6 +58,27 @@ const totalTickets = reservations.reduce((acc, r) => acc + (Number(r.quantity) |
           <span aria-hidden="true">·</span>
           <span class="passed-pill"><strong id="passed-count">{passedCount}</strong> présent{passedCount > 1 ? "s" : ""}</span>
         </p>
+
+        <!-- CARTE OFFICIELLE : LES 5 GAGNANTS DU JEU-CONCOURS -->
+        <section class="winners-block" aria-label="Gagnants du jeu-concours CAN 2027">
+          <div class="winners-header">
+            <span class="winners-pill">🏆 JEU-CONCOURS · 5 PLACES OFFERTES</span>
+            <span class="winners-match">RDC vs Guinée Équatoriale</span>
+          </div>
+          <h2 class="winners-title">Liste des 5 Gagnants</h2>
+          <p class="winners-subtitle">
+            Tirage au sort officiel — retrait des places au Stade Tata Raphaël :
+          </p>
+          <div class="winners-grid">
+            {contestWinners.map((w) => (
+              <div class:list={["winner-chip", { "winner-chip--featured": w.rank === 3 }]}>
+                <span class="winner-chip-rank">{w.rank}</span>
+                <span class="winner-chip-name">{w.name}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
         <label class="search">
           <span aria-hidden="true">⌕</span>
           <input
@@ -65,13 +95,14 @@ const totalTickets = reservations.reduce((acc, r) => acc + (Number(r.quantity) |
           {reservations.map((reservation) => {
             const isPassed = reservation.status === "paid";
             const qty = Number(reservation.quantity) || 1;
+            const isWinner = reservation.reservation_code?.startsWith("BL-2026-WIN");
             const cleanDigits = (reservation.whatsapp || "").replace(/[^\d]/g, "");
             const waLink = cleanDigits ? `https://wa.me/${cleanDigits}` : null;
             return (
               <article
-                class:list={["reservation", { "reservation--passed": isPassed }]}
+                class:list={["reservation", { "reservation--passed": isPassed, "reservation--winner": isWinner }]}
                 data-code={reservation.reservation_code}
-                data-search={`${reservation.first_name} ${reservation.last_name} ${reservation.reservation_code} ${reservation.whatsapp || ""} ${qty} billet ${qty} billets`.toLowerCase()}
+                data-search={`${reservation.first_name} ${reservation.last_name} ${reservation.reservation_code} ${!isWinner && reservation.whatsapp ? reservation.whatsapp : ""} ${isWinner ? "gagnant concours jeu" : ""} ${qty} billet ${qty} billets`.toLowerCase()}
               >
                 <!-- CASE À COCHER (PRÉSENCE / RETRAIT) -->
                 <div class="reservation-check">
@@ -88,13 +119,16 @@ const totalTickets = reservations.reduce((acc, r) => acc + (Number(r.quantity) |
                 </div>
 
                 <div class="reservation-person">
-                  <span class="avatar">{reservation.first_name.charAt(0)}</span>
+                  <span class:list={["avatar", { "avatar--winner": isWinner }]}>
+                    {isWinner ? "🏆" : reservation.first_name.charAt(0)}
+                  </span>
                   <div class="reservation-info">
                     <div class="reservation-name-line">
                       <strong>{reservation.first_name} {reservation.last_name}</strong>
+                      {isWinner && <span class="winner-badge">Gagnant Concours</span>}
                     </div>
 
-                    {reservation.whatsapp && waLink && (
+                    {!isWinner && reservation.whatsapp && waLink && (
                       <a
                         href={waLink}
                         target="_blank"
@@ -125,7 +159,9 @@ const totalTickets = reservations.reduce((acc, r) => acc + (Number(r.quantity) |
                   </span>
 
                   <code>{reservation.reservation_code}</code>
-                  <b class="status-badge">{isPassed ? "RETIRÉ" : "ENREGISTRÉE"}</b>
+                  <b class:list={["status-badge", { "status-badge--winner": isWinner }]}>
+                    {isPassed ? "RETIRÉ" : isWinner ? "OFFERT" : "ENREGISTRÉE"}
+                  </b>
                 </div>
               </article>
             );
@@ -235,6 +271,101 @@ const totalTickets = reservations.reduce((acc, r) => acc + (Number(r.quantity) |
   .activity-tickets strong { color: #0f56b3 !important; }
   .passed-pill { display: inline-flex; align-items: center; gap: .3rem; padding: .15rem .55rem; background: #e8f7ef; border: 1px solid #c0ebd2; border-radius: 999px; color: #16824b !important; }
   .passed-pill strong { color: #16824b !important; }
+
+  /* Bloc Gagnants Concours */
+  .winners-block {
+    margin: 2rem 0 1.25rem;
+    padding: 1.35rem 1.5rem;
+    background: linear-gradient(135deg, #0e1e38 0%, #152c52 100%);
+    border: 1.5px solid #f59e0b;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(16, 33, 61, 0.12), 0 0 0 1px rgba(245, 158, 11, 0.2);
+    color: #fff;
+  }
+  .winners-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    margin-bottom: .6rem;
+  }
+  .winners-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .25rem .7rem;
+    background: rgba(245, 158, 11, 0.2);
+    border: 1px solid rgba(245, 158, 11, 0.5);
+    border-radius: 999px;
+    color: #fbbf24;
+    font-size: .68rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+  }
+  .winners-match {
+    color: #93c5fd;
+    font-size: .74rem;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+  .winners-title {
+    margin: 0 0 .3rem;
+    font-size: 1.35rem;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: -.02em;
+  }
+  .winners-subtitle {
+    margin: 0 0 1.1rem;
+    color: #cbd5e1 !important;
+    font-size: .84rem !important;
+  }
+  .winners-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: .65rem;
+  }
+  .winner-chip {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    padding: .6rem .85rem;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    transition: transform 160ms ease, border-color 160ms ease;
+  }
+  .winner-chip:hover {
+    transform: translateY(-2px);
+    border-color: #fbbf24;
+  }
+  .winner-chip--featured {
+    background: rgba(245, 158, 11, 0.15);
+    border-color: rgba(245, 158, 11, 0.45);
+  }
+  .winner-chip-rank {
+    display: grid;
+    place-items: center;
+    width: 1.65rem;
+    height: 1.65rem;
+    border-radius: 50%;
+    background: #f59e0b;
+    color: #10213d;
+    font-size: .75rem;
+    font-weight: 900;
+    flex: none;
+  }
+  .winner-chip-name {
+    font-size: .86rem;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   .search { display: flex; align-items: center; gap: .65rem; margin-top: 1.75rem; padding: 0 1rem; border: 1px solid #d8e2ee; border-radius: 8px; background: #fff; box-shadow: 0 10px 30px rgba(16,33,61,.06); transition: border-color 180ms ease, box-shadow 180ms ease; }
   .search:focus-within { border-color: #1769d1; box-shadow: 0 0 0 3px rgba(23,105,209,.1); }
   .search span { color: #1769d1; font-size: 1.5rem; }
@@ -398,7 +529,35 @@ const totalTickets = reservations.reduce((acc, r) => acc + (Number(r.quantity) |
   .reservation-meta { display: flex; align-items: center; gap: .65rem; flex: none; flex-wrap: wrap; justify-content: flex-end; }
   .reservation code { padding: .45rem .6rem; border: 1px solid #e4e4e0; border-radius: 5px; color: #40536d; background: #f7f7f4; font-size: .76rem; white-space: nowrap; }
   .status-badge { padding: .45rem .6rem; border-radius: 5px; background: #e8f7ef; color: #16824b; font-size: .62rem; font-weight: 800; letter-spacing: .08em; white-space: nowrap; }
+  .status-badge--winner { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
   .reservation--passed .status-badge { background: #16824b; color: #ffffff; }
+
+  /* Badges Gagnant */
+  .winner-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: .15rem .5rem;
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+    border-radius: 999px;
+    color: #92400e;
+    font-size: .68rem;
+    font-weight: 800;
+    letter-spacing: .02em;
+  }
+  .avatar--winner {
+    background: #fef3c7 !important;
+    color: #d97706 !important;
+    font-size: 1.15rem !important;
+  }
+  .reservation--winner {
+    border-color: #fde68a;
+    background: #fffdf5;
+  }
+  .reservation--winner.reservation--passed {
+    background: #f6fbf8;
+    border-color: #9fe0be;
+  }
 
   .empty { padding: 2.5rem; border: 1px dashed #bdcadd; border-radius: 8px; color: #637692; background: rgba(255,255,255,.5); text-align: center; }
 
