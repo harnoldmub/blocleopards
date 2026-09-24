@@ -4,7 +4,6 @@ import Can2027MatchCard from "../components/can2027/Can2027MatchCard.astro";
 import Can2027GroupTable from "../components/can2027/Can2027GroupTable.astro";
 import Can2027Timeline from "../components/can2027/Can2027Timeline.astro";
 import Can2027Squad from "../components/can2027/Can2027Squad.astro";
-import Can2027TicketContest from "../components/can2027/Can2027TicketContest.astro";
 import { CAN2027_DATA, GROUP_E_TEAMS, computeStandings } from "../data/can2027";
 import { getCollection } from "astro:content";
 
@@ -183,14 +182,6 @@ const standings = CAN2027_DATA.groupE;
             </div>
           </div>
         </div>
-      </div>
-    </section>
-
-    <!-- ================= 2.5 BILLETTERIE ================= -->
-    <section id="gagne-ta-place" class="scroll-mt-32 border-t border-white/10 py-16 lg:py-24">
-      <div class="mx-auto max-w-[88rem] px-4 lg:px-8">
-        <div class="mb-12 text-center"><span data-reveal class="text-[0.74rem] font-black uppercase tracking-[0.28em] text-or">Billetterie & Tribune Supporters</span></div>
-        <Can2027TicketContest />
       </div>
     </section>
 

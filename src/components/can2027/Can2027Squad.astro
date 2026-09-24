@@ -2,7 +2,7 @@
 /**
  * Effectif officiel « Les Léopards » pour la CAN 2027.
  * Liste officielle communiquée par la FECOFA et le sélectionneur Sébastien Desabre.
- * Photo si disponible pour les joueurs mis en avant (featured), sinon carte texte.
+ * Les cartes restent éditoriales et textuelles, sans portraits de joueurs.
  */
 import { CAN2027_DATA } from "../../data/can2027";
 
@@ -174,12 +174,12 @@ function getPositionBorderAccent(position: string) {
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 squad-grid" data-stage-grid={stage.id}>
           {stage.players.map((player) => (
             <article
-              class={`squad-player-card group relative overflow-hidden rounded-xl border border-white/15 bg-gradient-to-br from-congo-night via-[#081836] to-congo-night transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl ${getPositionBorderAccent(player.position)} ${player.photo ? "" : "p-5"}`}
+              class={`squad-player-card group relative overflow-hidden rounded-xl border border-white/15 bg-gradient-to-br from-congo-night via-[#081836] to-congo-night p-5 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl ${getPositionBorderAccent(player.position)}`}
               data-player-pos={player.position}
               data-player-name={player.name.toLowerCase()}
               data-player-club={player.club.toLowerCase()}
             >
-              {player.photo ? (
+              {false ? (
                 <>
                   <!-- Portrait du joueur -->
                   <div class="relative aspect-[3/4] w-full overflow-hidden bg-congo-night">
