@@ -41,7 +41,7 @@ const { lang = 'fr' } = Astro.props;
     <div class="tk-mobile-intro">
       <div class="tk-mobile-kicker">RÉSERVER EN QUELQUES CLICS</div>
       <h1>Tikeo, votre place pour le match.</h1>
-      <p>Choisissez vos billets et recevez les prochaines instructions par e-mail.</p>
+      <p>Choisissez vos billets et recevez les prochaines instructions par WhatsApp / SMS.</p>
     </div>
     <div class="tk-grid">
 
@@ -172,37 +172,9 @@ const { lang = 'fr' } = Astro.props;
                 <span class="tk-error-text" id="err-nom" aria-live="polite"></span>
               </div>
 
-              <!-- E-MAIL -->
-              <div class="tk-form-group" data-field="email">
-                <label for="inp-email" class="tk-label">E-MAIL *</label>
-                <input
-                  type="email"
-                  id="inp-email"
-                  name="email"
-                  autocomplete="email"
-                  required
-                  class="tk-input"
-                />
-                <span class="tk-error-text" id="err-email" aria-live="polite"></span>
-              </div>
-
-              <!-- CONFIRMATION E-MAIL -->
-              <div class="tk-form-group" data-field="emailConfirm">
-                <label for="inp-email-confirm" class="tk-label">CONFIRMER L'E-MAIL *</label>
-                <input
-                  type="email"
-                  id="inp-email-confirm"
-                  name="emailConfirm"
-                  autocomplete="email"
-                  required
-                  class="tk-input"
-                />
-                <span class="tk-error-text" id="err-email-confirm" aria-live="polite"></span>
-              </div>
-
-              <!-- TÉLÉPHONE -->
+              <!-- NUMÉRO DE TÉLÉPHONE (WHATSAPP) -->
               <div class="tk-form-group" data-field="phone">
-                <label for="inp-phone" class="tk-label">WHATSAPP *</label>
+                <label for="inp-phone" class="tk-label">NUMÉRO DE TÉLÉPHONE (WHATSAPP) *</label>
                 <input
                   type="tel"
                   id="inp-phone"
@@ -210,6 +182,7 @@ const { lang = 'fr' } = Astro.props;
                   autocomplete="tel"
                   required
                   class="tk-input"
+                  placeholder="+243 ..."
                 />
                 <span class="tk-error-text" id="err-phone" aria-live="polite"></span>
               </div>
@@ -379,8 +352,6 @@ const { lang = 'fr' } = Astro.props;
 
     const inpPrenom = document.getElementById('inp-prenom');
     const inpNom = document.getElementById('inp-nom');
-    const inpEmail = document.getElementById('inp-email');
-    const inpEmailConfirm = document.getElementById('inp-email-confirm');
     const inpPhone = document.getElementById('inp-phone');
     const inpCountry = document.getElementById('inp-country');
 
@@ -466,24 +437,19 @@ const { lang = 'fr' } = Astro.props;
 
     // --- Real-time Front-end Validation ---
     function checkValidity() {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       const phoneRegex = /^[\d\s\+\(\)\-\.]{7,20}$/;
 
       const p = (inpPrenom?.value || '').trim();
       const n = (inpNom?.value || '').trim();
-      const e = (inpEmail?.value || '').trim();
-      const ec = (inpEmailConfirm?.value || '').trim();
       const ph = (inpPhone?.value || '').trim();
       const c = (inpCountry?.value || '').trim();
 
       const validP = p.length >= 2;
       const validN = n.length >= 2;
-      const validE = emailRegex.test(e);
-      const validEC = ec.length > 0 && ec.toLowerCase() === e.toLowerCase();
       const validPh = phoneRegex.test(ph);
       const validC = c.length > 0;
 
-      const isAllValid = validP && validN && validE && validEC && validPh && validC;
+      const isAllValid = validP && validN && validPh && validC;
 
       // Enable / Disable buttons
       if (btnValidateOrder) btnValidateOrder.disabled = !isAllValid;
@@ -537,15 +503,7 @@ const { lang = 'fr' } = Astro.props;
       msg: 'Nom requis (min. 2 caractères)'
     }));
 
-    setupFieldFeedback(inpEmail, 'err-email', () => ({
-      valid: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inpEmail?.value.trim() || ''),
-      msg: 'Adresse e-mail invalide'
-    }));
 
-    setupFieldFeedback(inpEmailConfirm, 'err-email-confirm', () => ({
-      valid: (inpEmailConfirm?.value.trim() || '').toLowerCase() === (inpEmail?.value.trim() || '').toLowerCase(),
-      msg: 'Les e-mails ne correspondent pas'
-    }));
 
     setupFieldFeedback(inpPhone, 'err-phone', () => ({
       valid: /^[\d\s\+\(\)\-\.]{7,20}$/.test(inpPhone?.value.trim() || ''),
@@ -587,7 +545,6 @@ const { lang = 'fr' } = Astro.props;
           body: JSON.stringify({
             firstName: (inpPrenom?.value || '').trim(),
             lastName: (inpNom?.value || '').trim(),
-            email: (inpEmail?.value || '').trim(),
             whatsapp: (inpPhone?.value || '').trim(),
             country: (inpCountry?.value || '').trim(),
             quantity

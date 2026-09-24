@@ -13,12 +13,21 @@ export const POST: APIRoute = async ({ request }) => {
     const body = await request.json();
     const firstName = String(body.firstName || "").trim();
     const lastName = String(body.lastName || "").trim();
-    const email = String(body.email || "").trim().toLowerCase();
+    const email = body.email ? String(body.email).trim().toLowerCase() : null;
     const whatsapp = String(body.whatsapp || "").trim();
     const country = String(body.country || "").trim();
     const quantity = Number(body.quantity);
 
-    if (firstName.length < 2 || lastName.length < 2 || !emailPattern.test(email) || !whatsappPattern.test(whatsapp) || !country || !Number.isInteger(quantity) || quantity < 1 || quantity > 4) {
+    if (
+      firstName.length < 2 ||
+      lastName.length < 2 ||
+      (email && !emailPattern.test(email)) ||
+      !whatsappPattern.test(whatsapp) ||
+      !country ||
+      !Number.isInteger(quantity) ||
+      quantity < 1 ||
+      quantity > 4
+    ) {
       return new Response(JSON.stringify({ error: "Informations de réservation invalides." }), { status: 400, headers });
     }
 
