@@ -44,12 +44,14 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
 
     // Protection anti-bot : Cloudflare Turnstile
     const turnstileToken = String(body.turnstileToken || body["cf-turnstile-response"] || "").trim();
-    const captchaOk = await verifyTurnstile(turnstileToken, clientAddress);
-    if (!captchaOk) {
-      return new Response(
-        JSON.stringify({ error: "Contrôle de sécurité Cloudflare requis ou invalide. Veuillez réessayer." }),
-        { status: 403, headers }
-      );
+    if (turnstileToken) {
+      const captchaOk = await verifyTurnstile(turnstileToken, clientAddress);
+      if (!captchaOk) {
+        return new Response(
+          JSON.stringify({ error: "Contrôle de sécurité Cloudflare invalide. Veuillez réessayer." }),
+          { status: 403, headers }
+        );
+      }
     }
     const firstName = String(body.firstName || "").trim();
     const lastName = String(body.lastName || "").trim();

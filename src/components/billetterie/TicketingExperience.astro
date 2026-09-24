@@ -435,7 +435,7 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
 <!-- ========================================================================= -->
 <!-- SCRIPTS CLIENTS : REACTIVITÉ, VALIDATION EN DIRECT & CHARGEMENT INFINI    -->
 <!-- ========================================================================= -->
-<script lang="ts">
+<script is:inline>
   function initMonoPageCheckout() {
     const root = document.getElementById('ticketing-root');
     if (!root) return;
@@ -447,14 +447,7 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
     const totalCapacity = Number(root.dataset.totalCapacity || 1000);
     let reservationsCount = Number(root.dataset.reservationsCount || 0);
     let remainingPlaces = Math.max(0, Number(root.dataset.remainingPlaces ?? (totalCapacity - reservationsCount)));
-    const stockKey = 'tikeo-demo-stock-v2';
-    const getStock = () => {
-      const stored = localStorage.getItem(stockKey);
-      if (stored !== null && !isNaN(Number(stored))) {
-        return Math.max(0, Math.min(Number(stored), remainingPlaces));
-      }
-      return remainingPlaces;
-    };
+    const getStock = () => remainingPlaces;
     const minQty = 1;
     const maxQty = 4;
 
@@ -501,8 +494,8 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
     const btnCloseHelp = document.getElementById('btn-close-help');
     const btnOkHelp = document.getElementById('btn-ok-help');
 
-    function openHelpModal(e?: Event) {
-      if (e) e.preventDefault();
+    function openHelpModal(e) {
+      if (e && e.preventDefault) e.preventDefault();
       helpModal?.classList.add('tk-help-modal--visible');
       helpModal?.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
@@ -585,9 +578,9 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
         btnMobileValidate.classList.remove('tk-btn-submit--loading');
       }
 
-      if ((window as any).turnstile && typeof (window as any).turnstile.reset === 'function') {
+      if (window.turnstile && typeof window.turnstile.reset === 'function') {
         try {
-          (window as any).turnstile.reset();
+          window.turnstile.reset();
         } catch (_) {}
       }
     }
@@ -727,7 +720,13 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
 
       input.addEventListener('input', () => {
         checkValidity();
-        if (group?.classList.contains('tk-form-group--error')) {
+        if (group && group.classList.contains('tk-form-group--error')) {
+          handleValidate();
+        }
+      });
+      input.addEventListener('change', () => {
+        checkValidity();
+        if (group && group.classList.contains('tk-form-group--error')) {
           handleValidate();
         }
       });
@@ -761,7 +760,21 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
       // Bloquer immédiatement tout clic concurrent ou multiple
       if (isSubmitting) return;
 
-      if (!checkValidity()) return;
+      if (!checkValidity()) {
+        const p = (inpPrenom && inpPrenom.value ? inpPrenom.value : '').trim();
+        const n = (inpNom && inpNom.value ? inpNom.value : '').trim();
+        const ph = (inpPhone && inpPhone.value ? inpPhone.value : '').trim();
+        const c = (inpCountry && inpCountry.value ? inpCountry.value : '').trim();
+
+        if (p.length < 2 && inpPrenom) inpPrenom.closest('.tk-form-group')?.classList.add('tk-form-group--error');
+        if (n.length < 2 && inpNom) inpNom.closest('.tk-form-group')?.classList.add('tk-form-group--error');
+        if (!ph && inpPhone) inpPhone.closest('.tk-form-group')?.classList.add('tk-form-group--error');
+        if (!c && inpCountry) inpCountry.closest('.tk-form-group')?.classList.add('tk-form-group--error');
+
+        const firstErr = document.querySelector('.tk-form-group--error');
+        if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
       const stock = getStock();
       if (stock < quantity) {
         updateStock();
@@ -788,6 +801,8 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
 
       let bookingId = '';
       try {
+        const turnstileEl = document.querySelector('[name="cf-turnstile-response"]');
+        const hpEl = document.querySelector('[name="_hp"]');
         const reservationResponse = await fetch('/api/billetterie/reservations', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -797,8 +812,8 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
             whatsapp: (inpPhone?.value || '').trim(),
             country: (inpCountry?.value || '').trim(),
             quantity,
-            turnstileToken: ((document.querySelector('[name="cf-turnstile-response"]') as HTMLInputElement)?.value || '').trim(),
-            _hp: ((document.querySelector('[name="_hp"]') as HTMLInputElement)?.value || '').trim()
+            turnstileToken: (turnstileEl && turnstileEl.value ? turnstileEl.value : '').trim(),
+            _hp: (hpEl && hpEl.value ? hpEl.value : '').trim()
           })
         });
         const reservationData = await reservationResponse.json();
@@ -807,14 +822,13 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
         }
         bookingId = reservationData.reservation.reservation_code;
         remainingPlaces = Math.max(0, remainingPlaces - quantity);
-        localStorage.setItem(stockKey, String(Math.max(0, stock - quantity)));
         updateStock();
-      } catch (error: any) {
+      } catch (error) {
         console.error('[billetterie] Réservation non enregistrée:', error);
         isSubmitting = false;
-        if ((window as any).turnstile && typeof (window as any).turnstile.reset === 'function') {
+        if (window.turnstile && typeof window.turnstile.reset === 'function') {
           try {
-            (window as any).turnstile.reset();
+            window.turnstile.reset();
           } catch (_) {}
         }
         if (btnSpinner) btnSpinner.style.display = 'none';
@@ -938,7 +952,11 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
     checkValidity();
   }
 
-  initMonoPageCheckout();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMonoPageCheckout);
+  } else {
+    initMonoPageCheckout();
+  }
   document.addEventListener('astro:page-load', initMonoPageCheckout);
 </script>
 
@@ -1474,7 +1492,6 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
     color: #ffffff;
     cursor: not-allowed;
     opacity: 0.75;
-    pointer-events: none;
   }
   .tk-btn-submit--loading {
     cursor: wait !important;
