@@ -1,9 +1,26 @@
 ---
+import { requireDatabase } from "../../lib/neon";
+
 const reservation = Astro.url.searchParams.get("reservation")?.trim() || "";
-const prenom = Astro.url.searchParams.get("prenom")?.trim() || "";
-const nom = Astro.url.searchParams.get("nom")?.trim() || "";
-const valid = /^BL-2026-\d{6}$/.test(reservation);
-const fullName = [prenom, nom].filter(Boolean).join(" ") || "Nom non renseigné";
+let dossier: any = null;
+
+if (/^BL-2026-\d{6}$/.test(reservation)) {
+  try {
+    const sql = requireDatabase();
+    const rows = await sql`
+      select reservation_code, first_name, last_name, status
+      from billetterie_reservations
+      where reservation_code = ${reservation}
+      limit 1
+    `;
+    dossier = rows[0] || null;
+  } catch (error) {
+    console.error("[billetterie] Vérification impossible:", error);
+  }
+}
+
+const valid = Boolean(dossier && dossier.status !== "cancelled");
+const fullName = dossier ? `${dossier.first_name} ${dossier.last_name}` : "";
 ---
 
 <!doctype html>

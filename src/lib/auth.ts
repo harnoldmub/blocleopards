@@ -7,6 +7,7 @@ export const ADMIN_SECTIONS = [
   { id: "stats",        label: "Statistiques", icon: "bar-chart"   },
   { id: "mondial",      label: "Mondial USA",  icon: "globe"        },
   { id: "guadalajara",  label: "Guadalajara",  icon: "plane"        },
+  { id: "billetterie",  label: "Billetterie",  icon: "ticket"       },
   { id: "adhesions",    label: "Adhésions",    icon: "users"        },
   { id: "supporters",   label: "Supporters",   icon: "list"         },
   { id: "contacts",     label: "Messages",     icon: "mail"         },

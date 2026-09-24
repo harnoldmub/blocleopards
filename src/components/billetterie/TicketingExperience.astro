@@ -447,7 +447,7 @@ const { lang = 'fr' } = Astro.props;
       const connected = Math.floor(Math.random() * 151) + 300;
       const stock = Math.max(0, getStock());
       showTensionToast(`👥 ${connected} personnes consultent la billetterie`, 'online');
-      window.setTimeout(() => showTensionToast(stock === 0 ? 'SOLD OUT' : '🔥 Forte demande — plus que 17 000 places', 'demand'), 5600);
+      window.setTimeout(() => showTensionToast(stock === 0 ? 'SOLD OUT' : '🔥 Forte demande — plus que 1 000 places', 'demand'), 5600);
     }
 
     btnMinus?.addEventListener('click', () => {
@@ -558,19 +558,13 @@ const { lang = 'fr' } = Astro.props;
     }));
 
     // --- Action : Clic sur Valider (Chargement Infini) ---
-    function triggerOrderValidation() {
+    async function triggerOrderValidation() {
       if (!checkValidity()) return;
       const stock = getStock();
       if (stock < quantity) {
         updateStock();
         return;
       }
-      localStorage.setItem(stockKey, String(stock - quantity));
-      updateStock();
-      const bookingId = `BL-2026-${String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).padStart(6, '0')}`;
-      const reservations = JSON.parse(localStorage.getItem('bloc-leopards-reservations') || '[]');
-      reservations.push({ id: bookingId, prenom: (inpPrenom?.value || '').trim(), nom: (inpNom?.value || '').trim(), email: (inpEmail?.value || '').trim(), whatsapp: (inpPhone?.value || '').trim(), quantity, createdAt: new Date().toISOString() });
-      localStorage.setItem('bloc-leopards-reservations', JSON.stringify(reservations));
 
       // 1. Désactiver immédiatement le bouton
       if (btnValidateOrder) {
@@ -584,6 +578,40 @@ const { lang = 'fr' } = Astro.props;
       // 2. Remplacer contenu par spinner + "Validation en cours…"
       if (btnSpinner) btnSpinner.style.display = 'inline-block';
       if (btnText) btnText.textContent = 'Validation en cours…';
+
+      let bookingId = '';
+      try {
+        const reservationResponse = await fetch('/api/billetterie/reservations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            firstName: (inpPrenom?.value || '').trim(),
+            lastName: (inpNom?.value || '').trim(),
+            email: (inpEmail?.value || '').trim(),
+            whatsapp: (inpPhone?.value || '').trim(),
+            country: (inpCountry?.value || '').trim(),
+            quantity
+          })
+        });
+        const reservationData = await reservationResponse.json();
+        if (!reservationResponse.ok || !reservationData?.reservation?.reservation_code) {
+          throw new Error(reservationData?.error || 'Réservation impossible');
+        }
+        bookingId = reservationData.reservation.reservation_code;
+        localStorage.setItem(stockKey, String(stock - quantity));
+        updateStock();
+      } catch (error) {
+        console.error('[billetterie] Réservation non enregistrée:', error);
+        if (btnSpinner) btnSpinner.style.display = 'none';
+        if (btnText) btnText.textContent = 'RÉESSAYER';
+        if (btnValidateOrder) {
+          btnValidateOrder.disabled = false;
+          btnValidateOrder.classList.remove('tk-btn-submit--loading');
+        }
+        if (btnMobileValidate) btnMobileValidate.disabled = false;
+        if (loadingMsg) loadingMsg.textContent = 'La réservation n’a pas pu être enregistrée. Vérifiez votre connexion et réessayez.';
+        return;
+      }
 
       // Traitement court du prototype : le chargement doit toujours se terminer.
       setTimeout(() => {
@@ -601,7 +629,7 @@ const { lang = 'fr' } = Astro.props;
           }
           if (btnSpinner) btnSpinner.style.display = 'none';
           if (btnText) btnText.textContent = 'RÉSERVATION ENREGISTRÉE';
-          fetch(`/api/can2027/qr?reservation=${encodeURIComponent(bookingId)}&prenom=${encodeURIComponent((inpPrenom?.value || '').trim())}&nom=${encodeURIComponent((inpNom?.value || '').trim())}`)
+          fetch(`/api/can2027/qr?reservation=${encodeURIComponent(bookingId)}`)
             .then((response) => response.json())
             .then((data) => {
               if (bookingNumber) bookingNumber.textContent = bookingId;

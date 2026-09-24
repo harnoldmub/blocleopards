@@ -1,4 +1,19 @@
 ---
+import { requireDatabase } from "../../lib/neon";
+
+let reservations: any[] = [];
+try {
+  const sql = requireDatabase();
+  reservations = await sql`
+    select reservation_code, first_name, last_name, status
+    from billetterie_reservations
+    where status <> 'cancelled'
+    order by created_at desc
+    limit 1000
+  `;
+} catch (error) {
+  console.error("[billetterie] Liste publique indisponible:", error);
+}
 ---
 
 <!doctype html>
@@ -6,29 +21,43 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Réservations — Billetterie Tikeo</title>
+    <title>Inscriptions — Billetterie Tikeo</title>
   </head>
   <body>
     <main class="page">
       <header class="header"><a href="/billetterie" class="brand">TIKEO</a><span>BILLETTERIE OFFICIELLE</span></header>
       <section class="hero"><p class="eyebrow">SUIVI DES RÉSERVATIONS</p><h1>Retrouvez une réservation</h1><p>Recherchez par nom, prénom ou code de réservation.</p><label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Nom, prénom ou BL-2026-000000" autocomplete="off" /></label></section>
-      <section class="results" aria-live="polite"><div id="reservation-list"></div></section>
+      <section class="results" aria-live="polite">
+        <div id="reservation-list">
+          {reservations.map((reservation) => (
+            <article class="reservation" data-search={`${reservation.first_name} ${reservation.last_name} ${reservation.reservation_code}`.toLowerCase()}>
+              <div class="reservation-person"><span class="avatar">{reservation.first_name.charAt(0)}</span><div><strong>{reservation.first_name} {reservation.last_name}</strong><span>Pré-réservation enregistrée</span></div></div>
+              <div class="reservation-meta"><code>{reservation.reservation_code}</code><b>ENREGISTRÉE</b></div>
+            </article>
+          ))}
+          {reservations.length === 0 && <div class="empty" id="initial-empty">Aucune réservation enregistrée.</div>}
+          <div class="empty" id="search-empty" hidden>Aucune réservation trouvée.</div>
+        </div>
+      </section>
     </main>
   </body>
 </html>
 
 <script>
   const input = document.getElementById('search');
-  const list = document.getElementById('reservation-list');
-  const all = JSON.parse(localStorage.getItem('bloc-leopards-reservations') || '[]');
-  const escapeHtml = (value) => String(value || '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
-  const render = () => {
+  const cards = Array.from(document.querySelectorAll('[data-search]'));
+  const empty = document.getElementById('search-empty');
+  const filterReservations = () => {
     const query = (input.value || '').trim().toLowerCase();
-    const rows = all.filter((row) => `${row.prenom} ${row.nom} ${row.id}`.toLowerCase().includes(query));
-    list.innerHTML = rows.length ? rows.map((row) => `<article class="reservation"><div class="reservation-person"><span class="avatar">${escapeHtml((row.prenom || '?').charAt(0))}</span><div><strong>${escapeHtml(row.prenom)} ${escapeHtml(row.nom)}</strong><span>Réservation enregistrée</span></div></div><div class="reservation-meta"><code>${escapeHtml(row.id)}</code><b>VALIDÉE</b></div></article>`).join('') : `<div class="empty">${query ? 'Aucune réservation trouvée.' : 'Aucune réservation enregistrée.'}</div>`;
+    let visible = 0;
+    cards.forEach((card) => {
+      const matches = !query || (card.getAttribute('data-search') || '').includes(query);
+      card.toggleAttribute('hidden', !matches);
+      if (matches) visible += 1;
+    });
+    if (empty) empty.toggleAttribute('hidden', !query || visible > 0);
   };
-  input.addEventListener('input', render);
-  render();
+  input?.addEventListener('input', filterReservations);
 </script>
 
 <style is:global>
