@@ -9,6 +9,15 @@
 export type MerchSize = "S" | "M" | "L" | "XL" | "XXL";
 export const APPAREL_SIZES: MerchSize[] = ["S", "M", "L", "XL", "XXL"];
 
+export type MerchCategory = "textile" | "accessoires" | "goodies";
+
+/** Ordre d'affichage des filtres de la boutique. */
+export const MERCH_CATEGORIES: { id: MerchCategory; label: string }[] = [
+  { id: "textile", label: "Textile" },
+  { id: "accessoires", label: "Accessoires" },
+  { id: "goodies", label: "Goodies" }
+];
+
 export type MerchAvailability = "in_stock" | "low_stock" | "preorder" | "out_of_stock";
 
 export interface MerchProduct {
@@ -18,6 +27,7 @@ export interface MerchProduct {
   /** Prix unitaire en USD (entier ou décimal). */
   price: number;
   image: string;
+  category: MerchCategory;
   availability: MerchAvailability;
   /** Absent = taille unique. */
   sizes?: MerchSize[];
@@ -38,6 +48,7 @@ export const MERCH_PRODUCTS: MerchProduct[] = [
     description: "Bleu Congo, bande jaune et rouge. Tissu respirant pour chanter 90 minutes.",
     price: 35,
     image: "/media/merch/maillot-supporter.svg",
+    category: "textile",
     availability: "in_stock",
     sizes: APPAREL_SIZES,
     badge: "Best-seller",
@@ -49,6 +60,7 @@ export const MERCH_PRODUCTS: MerchProduct[] = [
     description: "Coton blanc, logo Bloc Léopards brodé côté cœur.",
     price: 15,
     image: "/media/merch/tshirt-bloc-leopards.svg",
+    category: "textile",
     availability: "in_stock",
     sizes: APPAREL_SIZES,
     details: ["100 % coton, col rond", "Logo Bloc Léopards côté cœur", "Liseré aux couleurs du drapeau", "Lavage à 30 °C, sur l'envers"]
@@ -59,6 +71,7 @@ export const MERCH_PRODUCTS: MerchProduct[] = [
     description: "Casquette bleu nuit, étoile jaune brodée, réglable.",
     price: 12,
     image: "/media/merch/casquette.svg",
+    category: "accessoires",
     availability: "low_stock",
     details: ["Taille unique, réglable à l'arrière", "Étoile jaune brodée", "Visière incurvée"]
   },
@@ -68,6 +81,7 @@ export const MERCH_PRODUCTS: MerchProduct[] = [
     description: "Écharpe tricotée aux couleurs du drapeau, à lever en tribune.",
     price: 10,
     image: "/media/merch/echarpe.svg",
+    category: "accessoires",
     availability: "in_stock",
     details: ["Maille tricotée double face", "Environ 140 × 18 cm, franges", "Idéale pour les chants en tribune"]
   },
@@ -77,6 +91,7 @@ export const MERCH_PRODUCTS: MerchProduct[] = [
     description: "Lot de 3 bracelets silicone bleu, jaune et rouge.",
     price: 3,
     image: "/media/merch/bracelets.svg",
+    category: "goodies",
     availability: "preorder",
     details: ["Lot de 3 : bleu, jaune et rouge", "Silicone souple, taille adulte", "Inscription « Toza bomoko »"]
   }

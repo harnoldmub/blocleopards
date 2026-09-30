@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Check, Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 import {
-  AVAILABILITY_LABELS,
   MERCH_PRODUCTS,
   PAYMENT_METHODS,
   SHOW_PAYMENT_METHODS,
@@ -16,19 +15,13 @@ import type { GeoCountry } from "../../lib/geo";
 import { useMerchCart, type ResolvedCartLine } from "../../lib/merch/cart";
 import { buildOrder, formatPhone, orderWhatsappMessage, submitOrder, whatsappUrl, type MerchOrder } from "../../lib/merch/orders";
 import Combobox, { FlagIcon, type ComboOption } from "./Combobox";
+import { Availability, ProductImage, SizePicker, productHref, useSizeChoice } from "./ProductParts";
+import ShopCatalog from "./ShopCatalog";
 
 type Panel = "closed" | "cart" | "checkout" | "done";
 
 const DEFAULT_COUNTRY = "CD";
 
-const availabilityTone: Record<MerchProduct["availability"], string> = {
-  in_stock: "bg-emerald-400",
-  low_stock: "bg-or",
-  preorder: "bg-congo-bright",
-  out_of_stock: "bg-feu"
-};
-
-const productHref = (p: MerchProduct) => `/boutique/${p.id}`;
 
 /* ---------------------------------------------------------------- */
 
@@ -73,22 +66,18 @@ export default function MerchShop({ countries, productId }: Props) {
     setToast(`${product.name}${size ? ` (${size})` : ""} ajouté au panier`);
   }
 
+  /** « Commander » depuis une carte : ajoute puis ouvre directement le formulaire. */
+  function handleBuy(product: MerchProduct, size: MerchSize | null) {
+    cart.add(product.id, size, 1);
+    setPanel("checkout");
+  }
+
   return (
     <>
       {detail ? (
         <ProductDetail product={detail} cartCount={cart.count} onAdd={handleAdd} onOpenCart={() => setPanel("cart")} />
       ) : (
-        <>
-          <div className="mb-8 flex items-center justify-between gap-4">
-            <p className="text-sm text-slate-500">{MERCH_PRODUCTS.length} produits · Livraison à Kinshasa, en province et diaspora</p>
-            <CartButton count={cart.count} onClick={() => setPanel("cart")} />
-          </div>
-          <div className="grid grid-cols-1 gap-5 min-[480px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-            {MERCH_PRODUCTS.map((p) => (
-              <ProductCard key={p.id} product={p} onAdd={handleAdd} />
-            ))}
-          </div>
-        </>
+        <ShopCatalog cartCount={cart.count} onOpenCart={() => setPanel("cart")} onAdd={handleAdd} onBuy={handleBuy} />
       )}
 
       {/* Bouton panier flottant (mobile), à gauche pour ne pas gêner l'assistant */}
@@ -139,131 +128,6 @@ export default function MerchShop({ countries, productId }: Props) {
 const panelTitle = (p: Panel) => (p === "checkout" ? "Vos coordonnées" : p === "done" ? "Commande envoyée" : "Votre panier");
 
 /* ---------------------------------------------------------------- */
-
-function CartButton({ count, onClick }: { count: number; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="relative inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-5 text-[0.75rem] font-bold uppercase tracking-[0.1em] text-congo-night transition-colors hover:border-congo hover:text-congo"
-      aria-label={`Ouvrir le panier (${count} article${count > 1 ? "s" : ""})`}
-    >
-      <ShoppingBag size={18} aria-hidden="true" />
-      Panier
-      <span className="grid min-w-6 place-items-center rounded-full bg-or px-1.5 text-[0.7rem] font-black text-congo-night">{count}</span>
-    </button>
-  );
-}
-
-function Availability({ product }: { product: MerchProduct }) {
-  return (
-    <p className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600">
-      <span className={`h-2 w-2 rounded-full ${availabilityTone[product.availability]}`} aria-hidden="true" />
-      {AVAILABILITY_LABELS[product.availability]}
-    </p>
-  );
-}
-
-function SizePicker({ sizes, value, onChange, error }: { sizes: MerchSize[]; value: MerchSize | null; onChange: (s: MerchSize) => void; error: boolean }) {
-  return (
-    <fieldset>
-      <legend className="mb-2 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-slate-400">Taille</legend>
-      <div className="flex flex-wrap gap-1.5">
-        {sizes.map((s) => (
-          <button
-            key={s}
-            type="button"
-            aria-pressed={value === s}
-            onClick={() => onChange(s)}
-            className={`min-h-10 min-w-10 rounded-[4px] border px-2 text-xs font-bold transition-colors ${
-              value === s ? "border-congo bg-congo text-white" : "border-slate-200 text-slate-700 hover:border-congo hover:text-congo"
-            }`}
-          >
-            {s}
-          </button>
-        ))}
-      </div>
-      {error && <p className="mt-2 text-xs font-semibold text-feu" role="alert">Choisissez une taille.</p>}
-    </fieldset>
-  );
-}
-
-/** Taille obligatoire pour les vêtements : logique partagée carte / fiche. */
-function useSizeChoice(product: MerchProduct) {
-  const [size, setSize] = useState<MerchSize | null>(null);
-  const [error, setError] = useState(false);
-  const needsSize = !!product.sizes?.length;
-  return {
-    size,
-    error,
-    needsSize,
-    choose: (s: MerchSize) => {
-      setSize(s);
-      setError(false);
-    },
-    /** Renvoie la taille à utiliser, ou `false` si elle manque. */
-    resolve: (): MerchSize | null | false => {
-      if (needsSize && !size) {
-        setError(true);
-        return false;
-      }
-      return needsSize ? size : null;
-    }
-  };
-}
-
-function ProductImage({ product, className = "" }: { product: MerchProduct; className?: string }) {
-  return (
-    <div className={`relative aspect-square overflow-hidden bg-gradient-to-br from-congo-nuit to-congo-night ${className}`}>
-      <img src={product.image} alt={product.name} className="h-full w-full object-contain p-6 transition-transform duration-500 group-hover:scale-[1.04] motion-reduce:transition-none" />
-      {product.badge && (
-        <span className="absolute left-3 top-3 rounded-full bg-or px-2.5 py-1 text-[0.62rem] font-black uppercase tracking-[0.12em] text-congo-night">{product.badge}</span>
-      )}
-    </div>
-  );
-}
-
-function ProductCard({ product, onAdd }: { product: MerchProduct; onAdd: (p: MerchProduct, s: MerchSize | null) => void }) {
-  const choice = useSizeChoice(product);
-  const purchasable = isPurchasable(product);
-
-  function add() {
-    const size = choice.resolve();
-    if (size !== false) onAdd(product, size);
-  }
-
-  return (
-    // Toute la carte ouvre la fiche (lien étiré sur le nom) ; tailles et ajout restent au-dessus (z-10).
-    <article className="group relative flex cursor-pointer flex-col overflow-hidden rounded-[6px] border border-slate-200 bg-white transition-shadow hover:shadow-[0_18px_40px_-24px_rgba(5,11,24,0.45)]">
-      <ProductImage product={product} />
-      <div className="flex flex-1 flex-col gap-3 p-4">
-        <div>
-          <div className="flex items-start justify-between gap-3">
-            <h3 className="font-display text-2xl uppercase leading-none text-congo-night">
-              <a href={productHref(product)} className="after:absolute after:inset-0 after:content-[''] group-hover:text-congo focus-visible:outline-none after:focus-visible:rounded-[6px] after:focus-visible:ring-2 after:focus-visible:ring-congo">{product.name}</a>
-            </h3>
-            <span className="shrink-0 text-base font-bold tabular-nums text-congo">{formatMerchPrice(product.price)}</span>
-          </div>
-          <p className="mt-2 text-sm leading-relaxed text-slate-500">{product.description}</p>
-        </div>
-        <Availability product={product} />
-        {choice.needsSize && (
-          <div className="relative z-10">
-            <SizePicker sizes={product.sizes!} value={choice.size} onChange={choice.choose} error={choice.error} />
-          </div>
-        )}
-        <button
-          type="button"
-          onClick={add}
-          disabled={!purchasable}
-          className="relative z-10 mt-auto inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-congo px-5 text-[0.75rem] font-black uppercase tracking-[0.12em] text-white transition-colors hover:bg-congo-deep disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
-        >
-          {purchasable ? "Ajouter au panier" : "Épuisé"}
-        </button>
-      </div>
-    </article>
-  );
-}
 
 function ProductDetail({
   product,
@@ -447,7 +311,7 @@ function CartPanel({
       <ul className="flex-1 divide-y divide-slate-100 overflow-y-auto px-5">
         {items.map((l) => (
           <li key={l.key} className="flex gap-4 py-4">
-            <a href={productHref(l.product)} className="h-20 w-20 shrink-0 overflow-hidden rounded-[4px] bg-gradient-to-br from-congo-nuit to-congo-night">
+            <a href={productHref(l.product)} className="h-20 w-20 shrink-0 overflow-hidden rounded-[8px] bg-[#EEF2F8]">
               <img src={l.product.image} alt="" className="h-full w-full object-contain p-2" />
             </a>
             <div className="flex min-w-0 flex-1 flex-col">

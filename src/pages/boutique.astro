@@ -1,6 +1,5 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import PageHero from "../components/PageHero.astro";
 import MerchShop from "../components/merch/MerchShop.tsx";
 import { MERCH_CONTACT_PHONE } from "../data/merch";
 import { getCountries } from "../lib/geo";
@@ -8,14 +7,15 @@ import { getCountries } from "../lib/geo";
 const countries = getCountries();
 ---
 <BaseLayout title="Boutique" description="Boutique officielle Bloc Léopards : maillot supporter, t-shirt, casquette, écharpe et goodies aux couleurs de la RDC.">
-  <PageHero
-    eyebrow="Boutique officielle"
-    title="Merch Bloc Léopards"
-    subtitle="Portez les couleurs du Bloc en tribune. Commandez en quelques clics, sans compte : notre équipe vous recontacte sur WhatsApp."
-    image="/media/bloc-tribune-2026/bloc-tribune-218.jpg"
-  />
+  <!-- Héros : méga-titre posé sur la photo, rogné en bas ; la barre de recherche du catalogue vient le chevaucher. -->
+  <section class="relative h-[44vh] min-h-[300px] overflow-hidden bg-congo-night lg:h-[52vh]">
+    <img src="/media/bloc-tribune-2026/bloc-tribune-218.jpg" alt="" aria-hidden="true" class="absolute inset-0 z-0 h-full w-full object-cover object-[50%_30%] opacity-80" />
+    <div class="absolute inset-0 z-0 bg-gradient-to-b from-congo-night/40 via-congo-night/10 to-congo-night/50"></div>
+    <p class="absolute left-0 right-0 top-8 z-10 mx-auto max-w-[84rem] px-4 text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-or lg:px-8">Boutique officielle · Bloc Léopards</p>
+    <h1 class="pointer-events-none absolute inset-x-0 bottom-[4.75rem] z-10 sm:bottom-0 sm:translate-y-[18%] select-none text-center font-mega uppercase leading-[0.8] text-white [font-size:clamp(4.5rem,21vw,19rem)]">Boutique</h1>
+  </section>
 
-  <section class="mx-auto max-w-[84rem] px-4 py-12 lg:px-8 lg:py-16">
+  <section class="mx-auto max-w-[84rem] px-4 pb-16 lg:px-8 lg:pb-24">
     <MerchShop client:load countries={countries} />
   </section>
 
