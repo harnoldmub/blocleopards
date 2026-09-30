@@ -1,0 +1,44 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import MerchShop from "../../components/merch/MerchShop.tsx";
+import { MERCH_PRODUCTS, formatMerchPrice } from "../../data/merch";
+import { getCountries } from "../../lib/geo";
+
+const product = MERCH_PRODUCTS.find((p) => p.id === Astro.params.id);
+if (!product) return Astro.redirect("/boutique");
+
+const countries = getCountries();
+const others = MERCH_PRODUCTS.filter((p) => p.id !== product.id);
+---
+<BaseLayout title={`${product.name} · Boutique`} description={`${product.name} : ${product.description} ${formatMerchPrice(product.price)}, boutique officielle Bloc Léopards.`}>
+  <div class="bg-slate-50">
+    <nav aria-label="Fil d'Ariane" class="mx-auto max-w-[84rem] px-4 py-4 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400 lg:px-8">
+      <a href="/boutique" class="hover:text-congo">Boutique</a>
+      <span class="mx-2" aria-hidden="true">/</span>
+      <span class="text-congo-night">{product.name}</span>
+    </nav>
+  </div>
+
+  <section class="mx-auto max-w-[84rem] px-4 py-10 lg:px-8 lg:py-14">
+    <MerchShop client:load countries={countries} productId={product.id} />
+  </section>
+
+  <section class="border-t border-slate-100 bg-slate-50">
+    <div class="mx-auto max-w-[84rem] px-4 py-12 lg:px-8">
+      <h2 class="font-display text-3xl uppercase text-congo-night">Complétez votre tenue</h2>
+      <div class="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+        {others.map((p) => (
+          <a href={`/boutique/${p.id}`} class="group overflow-hidden rounded-[6px] border border-slate-200 bg-white">
+            <div class="aspect-square bg-gradient-to-br from-congo-nuit to-congo-night">
+              <img src={p.image} alt="" loading="lazy" class="h-full w-full object-contain p-5 transition-transform duration-500 group-hover:scale-[1.04] motion-reduce:transition-none" />
+            </div>
+            <div class="flex items-baseline justify-between gap-2 p-3">
+              <span class="font-display text-lg uppercase leading-none text-congo-night group-hover:text-congo">{p.name}</span>
+              <span class="shrink-0 text-sm font-bold tabular-nums text-congo">{formatMerchPrice(p.price)}</span>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+</BaseLayout>

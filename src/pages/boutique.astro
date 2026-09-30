@@ -1,0 +1,40 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import PageHero from "../components/PageHero.astro";
+import MerchShop from "../components/merch/MerchShop.tsx";
+import { MERCH_CONTACT_PHONE } from "../data/merch";
+import { getCountries } from "../lib/geo";
+
+const countries = getCountries();
+---
+<BaseLayout title="Boutique" description="Boutique officielle Bloc Léopards : maillot supporter, t-shirt, casquette, écharpe et goodies aux couleurs de la RDC.">
+  <PageHero
+    eyebrow="Boutique officielle"
+    title="Merch Bloc Léopards"
+    subtitle="Portez les couleurs du Bloc en tribune. Commandez en quelques clics, sans compte : notre équipe vous recontacte sur WhatsApp."
+    image="/media/bloc-tribune-2026/bloc-tribune-218.jpg"
+  />
+
+  <section class="mx-auto max-w-[84rem] px-4 py-12 lg:px-8 lg:py-16">
+    <MerchShop client:load countries={countries} />
+  </section>
+
+  <section class="border-t border-slate-100 bg-slate-50">
+    <div class="mx-auto grid max-w-[84rem] gap-8 px-4 py-12 sm:grid-cols-3 lg:px-8">
+      <div>
+        <h2 class="font-display text-2xl uppercase text-congo-night">1 · Choisissez</h2>
+        <p class="mt-2 text-sm leading-relaxed text-slate-500">Ajoutez vos articles et votre taille au panier.</p>
+      </div>
+      <div>
+        <h2 class="font-display text-2xl uppercase text-congo-night">2 · Commandez</h2>
+        <p class="mt-2 text-sm leading-relaxed text-slate-500">Laissez vos coordonnées : la commande part directement sur WhatsApp.</p>
+      </div>
+      <div>
+        <h2 class="font-display text-2xl uppercase text-congo-night">3 · On vous appelle</h2>
+        <p class="mt-2 text-sm leading-relaxed text-slate-500">
+          L'équipe confirme paiement et livraison sur WhatsApp. Contact : <a href={`tel:${MERCH_CONTACT_PHONE}`} class="font-semibold text-congo">+243 850 620 014</a>
+        </p>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
