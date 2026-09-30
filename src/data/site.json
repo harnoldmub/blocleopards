@@ -1,6 +1,6 @@
 {
-  "matchDay": true,
-  "matchDayLabel": "⚽ Éliminatoires CAN 2027 : RDC vs Guinée équatoriale · 24 sept. à Kinshasa",
-  "matchDayCTA": "/can-2027",
-  "matchDayCTALabel": "Voir la campagne"
+  "matchDay": false,
+  "matchDayLabel": "",
+  "matchDayCTA": "/billetterie",
+  "matchDayCTALabel": "Voir la billetterie"
 }

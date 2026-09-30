@@ -3,7 +3,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import NewsletterForm from "../components/NewsletterForm.astro";
 import MatchBanner from "../components/MatchBanner.astro";
 import Marquee from "../components/Marquee.astro";
-import Can2027HomeSection from "../components/can2027/Can2027HomeSection.astro";
 import site from "../data/site.json";
 import { getSetting } from "../lib/settings";
 import { requireDatabase } from "../lib/neon";
@@ -71,35 +70,32 @@ const homeGallery = [
   {site.matchDay && <MatchBanner label={site.matchDayLabel} href={site.matchDayCTA} ctaLabel={site.matchDayCTALabel} />}
 
   <!-- ================= HERO ================= -->
-  <section class="relative flex min-h-[92vh] items-end overflow-hidden bg-congo-night text-white">
-    <video autoplay muted loop playsinline preload="auto" poster="/videos/hero-poster.jpg" data-hero-media class="absolute inset-0 z-0 h-full w-full object-cover">
-      <source src="/videos/hero.mp4" type="video/mp4" />
+  <!-- Plein écran, vidéo dominante : un seul voile en bas à gauche pour la lisibilité, le reste respire. -->
+  <section class="relative flex min-h-[100svh] items-end overflow-hidden bg-congo-night text-white">
+    <video autoplay muted loop playsinline preload="auto" poster="/videos/hero-new-poster.jpg" data-hero-media class="absolute inset-0 z-0 h-full w-full object-cover">
+      <source src="/videos/hero-new.mp4" type="video/mp4" />
     </video>
-    <div class="absolute inset-0 z-0 bg-gradient-to-t from-congo-night via-congo-night/35 to-transparent"></div>
-    <div class="absolute inset-0 z-0 bg-gradient-to-r from-congo-night/70 via-congo-night/15 to-transparent"></div>
+    <div class="absolute inset-x-0 bottom-0 z-0 h-2/3 bg-gradient-to-t from-congo-night/85 via-congo-night/30 to-transparent"></div>
+    <div class="absolute inset-0 z-0 bg-gradient-to-r from-congo-night/45 via-transparent to-transparent"></div>
 
-    <div class="relative z-10 mx-auto w-full max-w-[84rem] px-4 pb-16 pt-28 sm:pb-20 lg:px-8">
-      <span data-reveal class="inline-flex items-center gap-3 text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-or before:h-px before:w-9 before:bg-or/70">Bloc Léopards · RDC</span>
-      <h1 class="mt-6 max-w-6xl font-mega uppercase leading-[0.84] [font-size:clamp(3.6rem,9vw,9.5rem)]">
+    <div class="relative z-10 mx-auto w-full max-w-[84rem] px-4 pb-20 pt-40 sm:pb-28 lg:px-8 lg:pb-32">
+      <img data-reveal src="/logo-rdc--white.png" alt="R.D. Congo, Cœur de l'Afrique" width="1183" height="331" class="h-10 w-auto sm:h-12" />
+      <h1 class="mt-8 max-w-5xl font-mega uppercase leading-[0.88] [font-size:clamp(3rem,7.5vw,7.5rem)]">
         <span class="lux-line-mask"><span data-reveal="mask" class="text-transparent [-webkit-text-stroke:2px_#ffffff]">Un seul bloc.</span></span>
         <span class="lux-line-mask"><span data-reveal="mask" data-reveal-delay="120" class="text-transparent [-webkit-text-stroke:2px_#F4C400]">Une seule voix.</span></span>
       </h1>
-      <p data-reveal data-reveal-delay="220" class="mt-7 max-w-xl text-lg leading-relaxed text-white/80">
-        La tribune congolaise se rassemble : chants, drapeaux, ferveur et discipline. Derrière les Léopards, partout où ils jouent.
+      <p data-reveal data-reveal-delay="220" class="mt-8 max-w-md text-base leading-relaxed text-white/80 sm:text-lg">
+        Derrière les Léopards, partout où ils jouent.
       </p>
-      <div data-reveal data-reveal-delay="300" class="mt-9 flex flex-wrap items-center gap-4">
-        <a href="/billetterie" class="group inline-flex min-h-12 items-center gap-3 rounded-full bg-or px-8 py-3.5 text-[0.8rem] font-black uppercase tracking-[0.12em] text-congo-night shadow-xl shadow-or/20 transition-colors hover:bg-yellow-300"><span>Billetterie Léopards</span><span aria-hidden="true" class="transition-transform group-hover:translate-x-1">→</span></a>
-        <a href="/rejoindre" class="inline-flex min-h-12 items-center rounded-full border border-white/30 bg-white/10 backdrop-blur-sm px-7 py-3.5 text-[0.78rem] font-bold uppercase tracking-[0.12em] text-white transition-colors hover:border-or hover:text-or">Rejoindre le Bloc</a>
-        <a href="/can-2027" class="inline-flex min-h-12 items-center border-b border-white/45 px-1 text-[0.78rem] font-bold uppercase tracking-[0.12em] text-white transition-colors hover:border-or hover:text-or">Campagne CAN 2027</a>
+      <div data-reveal data-reveal-delay="300" class="mt-10 flex flex-wrap items-center gap-4">
+        <a href="/rejoindre" class="group inline-flex min-h-12 items-center gap-3 rounded-full bg-or px-8 py-3.5 text-[0.8rem] font-black uppercase tracking-[0.12em] text-congo-night shadow-xl shadow-or/20 transition-colors hover:bg-yellow-300"><span>Rejoindre le Bloc</span><span aria-hidden="true" class="transition-transform group-hover:translate-x-1">→</span></a>
+        <a href="/evenements" class="inline-flex min-h-12 items-center rounded-full border border-white/30 bg-white/10 backdrop-blur-sm px-7 py-3.5 text-[0.78rem] font-bold uppercase tracking-[0.12em] text-white transition-colors hover:border-or hover:text-or">Voir le calendrier</a>
       </div>
     </div>
-    <div class="absolute bottom-6 right-5 hidden items-center gap-3 text-[0.62rem] uppercase tracking-[0.28em] text-white/50 lg:flex lg:right-8">Scroll<span class="h-8 w-px animate-[float_2.4s_ease-in-out_infinite] bg-gradient-to-b from-or to-transparent"></span></div>
+    <div class="absolute bottom-8 right-5 hidden items-center gap-3 text-[0.62rem] uppercase tracking-[0.28em] text-white/50 lg:flex lg:right-8">Scroll<span class="h-8 w-px animate-[float_2.4s_ease-in-out_infinite] bg-gradient-to-b from-or to-transparent"></span></div>
   </section>
 
   <Marquee items={tickerItems} />
-
-  <!-- ================= ÉLIMINATOIRES CAN 2027 — NOUVELLE SECTION ================= -->
-  <Can2027HomeSection />
 
   <!-- ================= MANIFESTE ================= -->
   <section id="manifeste" class="scroll-mt-24 bg-congo py-24 text-white lg:py-32">
