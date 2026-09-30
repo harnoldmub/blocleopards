@@ -8,6 +8,7 @@ import { getSetting } from "../lib/settings";
 import { requireDatabase } from "../lib/neon";
 
 const partners = [
+  { name: "R.D. Congo, Cœur de l'Afrique", logo: "/logo-rdc.png" },
   { name: "SONAS", logo: "/media/partenaires/LOGO SONAS.png" },
   { name: "Equity BCDC", logo: "/media/partenaires/Logo_EquityBCDC.png" },
   { name: "MFS Groupe", logo: "/media/partenaires/MFS GROUPE.png" },
@@ -208,9 +209,9 @@ const homeGallery = [
         <span class="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-slate-400">Ils soutiennent le Bloc</span>
         <h2 class="mt-2 font-display text-3xl uppercase text-congo-night md:text-4xl">Nos partenaires</h2>
       </div>
-      <div class="grid grid-cols-2 gap-px overflow-hidden rounded-[6px] border border-slate-200 bg-slate-200 sm:grid-cols-3 lg:grid-cols-6">
+      <div class="grid grid-cols-2 gap-px overflow-hidden rounded-[6px] border border-slate-200 bg-slate-200 sm:grid-cols-3 lg:grid-cols-7">
         {partners.map((p, i) => (
-          <div data-reveal data-reveal-delay={(i % 6) * 60} class="group flex min-h-[110px] items-center justify-center bg-white p-6 transition-colors hover:bg-slate-50">
+          <div data-reveal data-reveal-delay={(i % 6) * 60} class:list={["group flex min-h-[110px] items-center justify-center bg-white p-6 transition-colors hover:bg-slate-50", i === 0 && "col-span-2 sm:col-span-3 lg:col-span-1"]}>
             <img src={p.logo} alt={p.name} loading="lazy" class="max-h-11 w-auto max-w-[120px] object-contain opacity-70 grayscale transition-all duration-500 group-hover:opacity-100 group-hover:grayscale-0" />
           </div>
         ))}
