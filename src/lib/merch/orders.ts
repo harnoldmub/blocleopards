@@ -4,7 +4,7 @@ import type { ResolvedCartLine } from "./cart";
 export interface MerchCustomer {
   firstName: string;
   lastName: string;
-  /** Indicatif sans « + » et numéro local, ex. { dial: "243", number: "850 620 014" }. */
+  /** Indicatif sans « + » et numéro local, ex. { dial: "243", number: "81 234 5678" }. */
   phone: { dial: string; number: string };
   country: { iso: string; name: string };
   city: string;

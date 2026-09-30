@@ -3,7 +3,6 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Check, Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 import {
   AVAILABILITY_LABELS,
-  MERCH_CONTACT_PHONE,
   MERCH_PRODUCTS,
   PAYMENT_METHODS,
   SHOW_PAYMENT_METHODS,
@@ -20,7 +19,6 @@ import Combobox, { FlagIcon, type ComboOption } from "./Combobox";
 
 type Panel = "closed" | "cart" | "checkout" | "done";
 
-const PHONE_DISPLAY = "+243 850 620 014";
 const DEFAULT_COUNTRY = "CD";
 
 const availabilityTone: Record<MerchProduct["availability"], string> = {
@@ -498,18 +496,6 @@ function Field({ label, optional, error, children }: { label: string; optional?:
   );
 }
 
-function PaymentNotice() {
-  return (
-    <div className="rounded-[6px] border border-or/40 bg-or/10 p-4 text-sm leading-relaxed text-congo-night">
-      <p className="font-semibold">Le paiement en ligne sera activé bientôt.</p>
-      <p className="mt-1 text-slate-700">
-        Après validation, notre équipe vous contactera pour finaliser le paiement. Une question ? Appelez ou écrivez au{" "}
-        <a href={`tel:${MERCH_CONTACT_PHONE}`} className="whitespace-nowrap font-bold text-congo underline underline-offset-2">{PHONE_DISPLAY}</a>.
-      </p>
-    </div>
-  );
-}
-
 function WhatsappIcon() {
   return (
     <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
@@ -708,7 +694,7 @@ function CheckoutPanel({
               autoComplete="tel-national"
               aria-labelledby="lbl-phone"
               aria-invalid={!!errors.phone || undefined}
-              placeholder="850 620 014"
+              placeholder="Votre numéro"
               onChange={() => errors.phone && setErrors((e) => ({ ...e, phone: undefined }))}
               className={`${inputCls} mt-0 min-w-0 flex-1 ${errors.phone ? "border-feu" : ""}`}
             />
@@ -744,7 +730,6 @@ function CheckoutPanel({
           <textarea name="notes" rows={3} className={`${inputCls} min-h-[5.5rem] py-3`} placeholder="Point de repère, horaires de livraison…" />
         </Field>
 
-        <PaymentNotice />
       </div>
 
       <footer className="border-t border-slate-100 p-5">
