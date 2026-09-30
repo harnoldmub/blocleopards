@@ -233,27 +233,30 @@ function ProductCard({ product, onAdd }: { product: MerchProduct; onAdd: (p: Mer
   }
 
   return (
-    <article className="group flex flex-col overflow-hidden rounded-[6px] border border-slate-200 bg-white">
-      <a href={productHref(product)} aria-label={`Voir ${product.name}`}>
-        <ProductImage product={product} />
-      </a>
+    // Toute la carte ouvre la fiche (lien étiré sur le nom) ; tailles et ajout restent au-dessus (z-10).
+    <article className="group relative flex cursor-pointer flex-col overflow-hidden rounded-[6px] border border-slate-200 bg-white transition-shadow hover:shadow-[0_18px_40px_-24px_rgba(5,11,24,0.45)]">
+      <ProductImage product={product} />
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div>
           <div className="flex items-start justify-between gap-3">
             <h3 className="font-display text-2xl uppercase leading-none text-congo-night">
-              <a href={productHref(product)} className="hover:text-congo">{product.name}</a>
+              <a href={productHref(product)} className="after:absolute after:inset-0 after:content-[''] group-hover:text-congo focus-visible:outline-none after:focus-visible:rounded-[6px] after:focus-visible:ring-2 after:focus-visible:ring-congo">{product.name}</a>
             </h3>
             <span className="shrink-0 text-base font-bold tabular-nums text-congo">{formatMerchPrice(product.price)}</span>
           </div>
           <p className="mt-2 text-sm leading-relaxed text-slate-500">{product.description}</p>
         </div>
         <Availability product={product} />
-        {choice.needsSize && <SizePicker sizes={product.sizes!} value={choice.size} onChange={choice.choose} error={choice.error} />}
+        {choice.needsSize && (
+          <div className="relative z-10">
+            <SizePicker sizes={product.sizes!} value={choice.size} onChange={choice.choose} error={choice.error} />
+          </div>
+        )}
         <button
           type="button"
           onClick={add}
           disabled={!purchasable}
-          className="mt-auto inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-congo px-5 text-[0.75rem] font-black uppercase tracking-[0.12em] text-white transition-colors hover:bg-congo-deep disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
+          className="relative z-10 mt-auto inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-congo px-5 text-[0.75rem] font-black uppercase tracking-[0.12em] text-white transition-colors hover:bg-congo-deep disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
         >
           {purchasable ? "Ajouter au panier" : "Épuisé"}
         </button>
