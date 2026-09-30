@@ -483,8 +483,9 @@ function CartPanel({
 
 /* ---------------------------------------------------------------- */
 
-const inputCls =
-  "mt-1.5 block w-full min-h-12 rounded-[6px] border border-slate-200 bg-white px-3.5 text-base text-congo-night placeholder:text-slate-400 focus:border-congo focus:outline-none focus:ring-2 focus:ring-congo/20";
+const inputBase =
+  "block w-full min-h-12 rounded-[6px] border border-slate-200 bg-white px-3.5 text-base text-congo-night placeholder:text-slate-400 focus:border-congo focus:outline-none focus:ring-2 focus:ring-congo/20";
+const inputCls = `mt-1.5 ${inputBase}`;
 
 function Field({ label, optional, error, children }: { label: string; optional?: boolean; error?: string | null; children: ReactNode }) {
   return (
@@ -669,7 +670,7 @@ function CheckoutPanel({
 
         <div>
           <span id="lbl-phone" className="block text-sm font-semibold text-congo-night">Téléphone WhatsApp</span>
-          <div className="mt-1.5 flex gap-2">
+          <div className="mt-1.5 flex items-stretch gap-2">
             <Combobox
               aria-labelledby="lbl-phone"
               className="w-[7.5rem] shrink-0"
@@ -696,7 +697,7 @@ function CheckoutPanel({
               aria-invalid={!!errors.phone || undefined}
               placeholder="Votre numéro"
               onChange={() => errors.phone && setErrors((e) => ({ ...e, phone: undefined }))}
-              className={`${inputCls} mt-0 min-w-0 flex-1 ${errors.phone ? "border-feu" : ""}`}
+              className={`${inputBase} min-w-0 flex-1 ${errors.phone ? "border-feu" : ""}`}
             />
           </div>
           {errors.phone && <p className="mt-1.5 text-xs font-semibold text-feu" role="alert">{errors.phone}</p>}
