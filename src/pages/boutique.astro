@@ -1,8 +1,10 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import MerchShop from "../components/merch/MerchShop.tsx";
-import { MERCH_CONTACT_PHONE } from "../data/merch";
+import { MERCH_CONTACT_PHONE, SHOP_ENABLED } from "../data/merch";
 import { getCountries } from "../lib/geo";
+
+if (!SHOP_ENABLED) return Astro.redirect("/", 302);
 
 const countries = getCountries();
 ---

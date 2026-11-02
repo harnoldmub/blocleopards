@@ -2,6 +2,7 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Can2027GroupTable from "../components/can2027/Can2027GroupTable.astro";
 import { getCollection } from "astro:content";
+import { SHOP_ENABLED } from "../data/merch";
 import {
   FIXTURES,
   TEAMS,
@@ -188,9 +189,9 @@ const consignes = [
               <a href="/rejoindre" class="inline-flex min-h-12 items-center rounded-full bg-congo px-7 text-[0.78rem] font-black uppercase tracking-[0.12em] text-white transition-colors hover:bg-congo-bright">
                 Rejoindre le Bloc
               </a>
-              <a href="/boutique/maillot-supporter" class="inline-flex min-h-12 items-center rounded-full border border-white/25 px-7 text-[0.78rem] font-bold uppercase tracking-[0.12em] text-white transition-colors hover:border-or hover:text-or">
+              {SHOP_ENABLED && <a href="/boutique/maillot-supporter" class="inline-flex min-h-12 items-center rounded-full border border-white/25 px-7 text-[0.78rem] font-bold uppercase tracking-[0.12em] text-white transition-colors hover:border-or hover:text-or">
                 Le maillot supporter
-              </a>
+              </a>}
             </div>
           </div>
           <ol class="grid gap-4 sm:grid-cols-2 lg:col-span-7">

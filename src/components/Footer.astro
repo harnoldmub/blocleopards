@@ -1,11 +1,13 @@
 ---
+import { SHOP_ENABLED } from "../data/merch";
+
 const links = [
   { label: "CAN 2027", href: "/can-2027" },
   { label: "Le mouvement", href: "/mouvement" },
   { label: "Événements", href: "/evenements" },
   { label: "Partenaires", href: "/partenaires" },
   { label: "Media", href: "/media" },
-  { label: "Boutique", href: "/boutique" },
+  ...(SHOP_ENABLED ? [{ label: "Boutique", href: "/boutique" }] : []),
   { label: "Contact", href: "/contact" }
 ];
 const legal = [

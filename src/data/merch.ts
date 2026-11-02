@@ -6,6 +6,12 @@
  * prochain build. Les photos vont dans `public/media/merch/`.
  */
 
+/**
+ * Boutique visible sur le site ? À `false`, les liens disparaissent et
+ * /boutique, /boutique/* et /merch redirigent temporairement vers l'accueil.
+ */
+export const SHOP_ENABLED = false;
+
 export type MerchSize = "S" | "M" | "L" | "XL" | "XXL";
 export const APPAREL_SIZES: MerchSize[] = ["S", "M", "L", "XL", "XXL"];
 

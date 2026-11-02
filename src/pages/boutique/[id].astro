@@ -1,8 +1,10 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import MerchShop from "../../components/merch/MerchShop.tsx";
-import { MERCH_PRODUCTS, formatMerchPrice } from "../../data/merch";
+import { MERCH_PRODUCTS, SHOP_ENABLED, formatMerchPrice } from "../../data/merch";
 import { getCountries } from "../../lib/geo";
+
+if (!SHOP_ENABLED) return Astro.redirect("/", 302);
 
 const product = MERCH_PRODUCTS.find((p) => p.id === Astro.params.id);
 if (!product) return Astro.redirect("/boutique");

@@ -1,3 +1,5 @@
 ---
-return Astro.redirect("/boutique", 301);
+import { SHOP_ENABLED } from "../data/merch";
+
+return SHOP_ENABLED ? Astro.redirect("/boutique", 301) : Astro.redirect("/", 302);
 ---
