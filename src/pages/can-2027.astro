@@ -32,17 +32,11 @@ const shareText = `Éliminatoires CAN 2027 : RDC – Sierra Leone le jeudi 12 no
 const whatsappShare = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
 const poster = "/media/can-2027/affiche-novembre-2026.webp";
 
-const consignes = [
-  { title: "Tous en bleu et jaune", text: "Maillot des Léopards, écharpe, drapeau : la tribune doit parler d'une seule couleur." },
-  { title: "Arrivez tôt", text: "Les abords du Stade des Martyrs se remplissent vite les soirs de match. Prévoyez large." },
-  { title: "Un supporter positif", text: "On chante pour les Léopards, jamais contre l'adversaire. Respect des stewards et des consignes de sécurité." },
-  { title: "Une seule voix", text: "Suivez les animateurs du Bloc pour les chants. Toza bomoko." }
-];
 ---
 
 <BaseLayout
   title="Éliminatoires CAN 2027 · Novembre"
-  description="RDC – Sierra Leone le 12 novembre au Stade des Martyrs, Sierra Leone – RDC le 17 novembre à El Jadida. Programme, classement du groupe E et consignes du Bloc Léopards."
+  description="RDC – Sierra Leone le 12 novembre au Stade des Martyrs, Sierra Leone – RDC le 17 novembre à El Jadida. Programme, classement du groupe E et mobilisation du Bloc Léopards."
 >
   <div class="bg-congo-night text-white">
     <!-- ================= HÉROS ================= -->
@@ -178,8 +172,8 @@ const consignes = [
     <!-- ================= CONSIGNES DU BLOC ================= -->
     <section id="consignes" class="scroll-mt-24 py-20 lg:py-28">
       <div class="mx-auto max-w-[84rem] px-4 lg:px-8">
-        <div class="grid gap-10 lg:grid-cols-12 grid-cols-1">
-          <div class="lg:col-span-5">
+        <div class="max-w-2xl">
+          <div>
             <p data-reveal class="text-xs font-semibold uppercase tracking-[0.18em] text-or">Jeudi 12 novembre · Stade des Martyrs</p>
             <h2 data-reveal class="mt-3 font-mega text-5xl uppercase leading-[0.9] sm:text-6xl">Le Bloc au rendez-vous</h2>
             <p data-reveal class="mt-4 text-white/75">
@@ -194,15 +188,6 @@ const consignes = [
               </a>}
             </div>
           </div>
-          <ol class="grid gap-4 sm:grid-cols-2 lg:col-span-7">
-            {consignes.map((c, i) => (
-              <li data-reveal data-reveal-delay={i * 80} class="rounded-[14px] border border-white/10 bg-white/[0.03] p-6">
-                <span class="font-mega text-3xl text-or">{String(i + 1).padStart(2, "0")}</span>
-                <h3 class="mt-3 font-display text-2xl uppercase leading-none">{c.title}</h3>
-                <p class="mt-2 text-sm leading-relaxed text-white/70">{c.text}</p>
-              </li>
-            ))}
-          </ol>
         </div>
       </div>
     </section>
