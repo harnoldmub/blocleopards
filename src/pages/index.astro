@@ -4,6 +4,7 @@ import NewsletterForm from "../components/NewsletterForm.astro";
 import MatchBanner from "../components/MatchBanner.astro";
 import Marquee from "../components/Marquee.astro";
 import site from "../data/site.json";
+import { TEAMS, formatMatchTime, nextRdcFixture } from "../data/can2027";
 import { getSetting } from "../lib/settings";
 import { requireDatabase } from "../lib/neon";
 
@@ -18,6 +19,20 @@ const partners = [
 ];
 
 const today = new Date().toISOString().slice(0, 10);
+
+// Bandeau match : affiché automatiquement dans les 14 jours qui précèdent un
+// match de la RDC (sinon, `site.json` permet encore de forcer un bandeau).
+const nextMatch = nextRdcFixture();
+const matchSoon = nextMatch && Date.parse(nextMatch.kickoff!) - Date.now() < 14 * 86_400_000;
+const matchBanner = matchSoon
+  ? {
+      label: `Éliminatoires CAN 2027 · ${TEAMS[nextMatch.home].name} – ${TEAMS[nextMatch.away].name} · ${new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "short", timeZone: "Africa/Kinshasa" }).format(new Date(nextMatch.kickoff!))} ${formatMatchTime(nextMatch.kickoff!)}, ${nextMatch.city}`,
+      href: "/can-2027",
+      ctaLabel: "Le programme"
+    }
+  : site.matchDay
+    ? { label: site.matchDayLabel, href: site.matchDayCTA, ctaLabel: site.matchDayCTALabel }
+    : null;
 // Résilient : la home ne doit pas crasher si la table events n'est pas encore migrée.
 let allEvents = [];
 try {
@@ -68,7 +83,7 @@ const homeGallery = [
 ];
 ---
 <BaseLayout title="Accueil" description="Bloc Léopards — supporters des Léopards de la RDC. Un seul bloc, une seule voix. Mobilisation positive, informée et respectueuse.">
-  {site.matchDay && <MatchBanner label={site.matchDayLabel} href={site.matchDayCTA} ctaLabel={site.matchDayCTALabel} />}
+  {matchBanner && <MatchBanner {...matchBanner} />}
 
   <!-- ================= HERO ================= -->
   <!-- Plein écran, vidéo dominante : un seul voile en bas à gauche pour la lisibilité, le reste respire. -->
