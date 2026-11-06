@@ -1,0 +1,2563 @@
+---
+/**
+ * PenaltyMartyrsGame.astro
+ * Expérience 3D plein écran : « Penalty aux Martyrs » (Stade des Martyrs, Kinshasa)
+ * - Gardien 3D articulé réaliste (visage sculpté avec sourcils/eyebrows fins, maillot texturé, gants pro, crampons)
+ * - Stade des Martyrs photo-réaliste avec panneaux publicitaires LED intégrant les vrais logos Partenaires & Bloc Léopards
+ * - Eyebrow UI ultra-compact et discret
+ * - Système de Pause complet (bouton ⏸ + touche P/Espace) qui fige la physique en temps réel
+ * - Séparation stricte entre le Menu (Réglages, Pause, Stade, Partenaires) et la Progression de Niveau
+ */
+---
+
+<div class="relative h-[100dvh] w-screen overflow-hidden bg-[#050811] font-body select-none" id="penalty-root">
+  <!-- CANVAS WEBGL 3D PLEIN ÉCRAN -->
+  <canvas id="penalty-canvas" class="block h-full w-full touch-none cursor-crosshair"></canvas>
+
+  <!-- ================= HUD BROADCAST COMPACT ================= -->
+  <div class="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between p-2.5 sm:p-4">
+    
+    <!-- GAUCHE : SCOREBUG TV & INDICATEURS EN DIRECT -->
+    <div class="flex flex-col gap-1.5">
+      <div class="pointer-events-auto flex items-center overflow-hidden rounded-xl border border-white/15 bg-[#070d1f]/90 shadow-2xl backdrop-blur-md">
+        <!-- Logo Bloc Léopards -->
+        <div class="flex items-center justify-center bg-white/95 px-2 py-1.5">
+          <img src="/brand/logo.png" alt="Bloc Léopards" class="h-6 w-auto object-contain" />
+        </div>
+        <!-- Minute -->
+        <div class="bg-feu px-2 py-1.5 text-center font-display text-xs font-black tracking-wider text-white">
+          90'<span class="animate-pulse">+</span>
+        </div>
+        <!-- Score Série actuelle -->
+        <div class="flex items-center gap-2 px-2.5 py-1">
+          <div class="flex items-center gap-1.5">
+            <img src="/flags/cd.svg" alt="RDC" class="h-3.5 w-5 rounded-[2px] object-cover" onerror="this.style.display='none'" />
+            <span class="font-display text-sm tracking-wider text-white sm:text-base">RDC</span>
+          </div>
+          <div class="flex items-center gap-1 rounded bg-black/65 px-2 py-0.5 font-display text-lg font-black tracking-wider text-or">
+            <span id="hud-streak">0</span>
+            <span class="text-[0.55rem] font-sans font-bold uppercase tracking-wider text-slate-400">BUTS</span>
+          </div>
+        </div>
+        <!-- Record -->
+        <div class="border-l border-white/10 px-2.5 py-1 text-right">
+          <span class="block text-[0.48rem] font-bold uppercase tracking-wider text-slate-400 leading-none">Record</span>
+          <span id="hud-record" class="font-display text-xs font-black text-emerald-400">0 🏆</span>
+        </div>
+      </div>
+
+      <!-- Mini barre Niveau + Vent (eyebrow réduit au minimum) -->
+      <div class="flex items-center gap-1.5">
+        <button
+          type="button"
+          id="btn-open-levels"
+          class="pointer-events-auto flex items-center gap-1.5 rounded-md border border-or/40 bg-[#070d1f]/85 px-2 py-0.5 backdrop-blur-md transition-all hover:border-or active:scale-95"
+          title="Voir les détails des niveaux"
+        >
+          <span class="h-1.5 w-1.5 rounded-full bg-or animate-pulse"></span>
+          <span id="hud-level-badge" class="font-display text-[0.65rem] uppercase tracking-wider text-or">NIV. 1</span>
+        </button>
+
+        <div id="hud-wind-pill" class="flex items-center gap-1 rounded-md border border-white/10 bg-[#070d1f]/85 px-2 py-0.5 text-[0.65rem] font-bold text-sky-300 backdrop-blur-md">
+          <span id="hud-wind-arrow" class="inline-block transition-transform duration-300">→</span>
+          <span id="hud-wind-val">0 km/h</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- DROITE : PAUSE + SON + MENU -->
+    <div class="pointer-events-auto flex items-center gap-1.5">
+      <button
+        type="button"
+        id="btn-pause"
+        class="flex h-9 w-9 items-center justify-center rounded-xl border border-white/15 bg-[#070d1f]/88 text-xs font-bold text-white shadow-lg backdrop-blur-md transition-all hover:bg-slate-800 active:scale-95"
+        aria-label="Mettre en pause"
+        title="Pause (Espace / P)"
+      >
+        <span id="icon-pause">⏸</span>
+      </button>
+
+      <button
+        type="button"
+        id="btn-sound"
+        class="flex h-9 w-9 items-center justify-center rounded-xl border border-white/15 bg-[#070d1f]/88 text-sm text-white shadow-lg backdrop-blur-md transition-all hover:bg-slate-800 active:scale-95"
+        aria-label="Activer ou couper le son"
+      >
+        <span id="icon-sound">🔊</span>
+      </button>
+
+      <button
+        type="button"
+        id="btn-open-menu"
+        class="flex h-9 items-center gap-1.5 rounded-xl border border-white/20 bg-congo px-3 text-[0.7rem] font-black uppercase tracking-wider text-white shadow-lg shadow-congo/30 transition-all hover:bg-congo-bright active:scale-95"
+      >
+        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+        <span>Menu</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= JAUGE DE PUISSANCE IRRÉVERSIBLE (DROITE) ================= -->
+  <div id="power-meter-wrap" class="pointer-events-none absolute right-3.5 top-1/2 z-20 -translate-y-1/2 flex flex-col items-center gap-1 opacity-0 transition-opacity duration-100">
+    <span class="rounded bg-red-600/95 px-1.5 py-0.5 text-[0.52rem] font-black uppercase tracking-wider text-white shadow">MAX</span>
+    <div class="relative h-48 w-4 overflow-hidden rounded-full border-2 border-white/35 bg-slate-950/90 p-0.5 shadow-2xl backdrop-blur-md">
+      <div class="absolute inset-x-0 top-[8%] h-[24%] border-y border-emerald-400/70 bg-emerald-500/20"></div>
+      <div class="absolute inset-x-0 top-0 h-[8%] bg-red-600/60"></div>
+      <div id="power-meter-fill" class="absolute inset-x-0.5 bottom-0.5 rounded-full bg-gradient-to-t from-sky-400 via-emerald-400 to-red-500" style="height: 0%"></div>
+    </div>
+    <span id="power-meter-pct" class="rounded bg-black/90 px-1.5 py-0.5 font-display text-xs tracking-wider text-or shadow">0%</span>
+  </div>
+
+  <!-- ================= INDICATION DISCRÈTE EN BAS ================= -->
+  <div id="aim-instruction" class="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex flex-col items-center justify-center opacity-0 transition-opacity duration-300 px-3">
+    <div class="flex items-center gap-2 rounded-full border border-white/15 bg-[#070d1f]/85 px-3.5 py-1 text-[0.7rem] font-semibold text-slate-200 shadow-xl backdrop-blur-md text-center">
+      <span class="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-or"></span>
+      <span>Appuie & glisse vers le but · La jauge monte sans retour en arrière</span>
+    </div>
+  </div>
+
+  <!-- BOUTON PASSER LA CINÉMATIQUE -->
+  <div id="cinematic-bar" class="pointer-events-none absolute inset-x-0 bottom-5 z-20 flex items-center justify-between px-4 sm:px-8">
+    <div class="rounded-lg border border-white/15 bg-[#070d1f]/85 px-3 py-1.5 backdrop-blur-md">
+      <span id="cinematic-step-label" class="text-[0.65rem] font-bold uppercase tracking-wider text-or">
+        Stade des Martyrs · Kinshasa
+      </span>
+    </div>
+    <button
+      type="button"
+      id="btn-skip-cinematic"
+      class="pointer-events-auto flex items-center gap-1.5 rounded-xl border border-or/40 bg-or px-4 py-2 text-xs font-black uppercase tracking-wider text-slate-950 shadow-xl transition-transform hover:bg-yellow-300 active:scale-95"
+    >
+      <span>Jouer</span>
+      <span>⏭</span>
+    </button>
+  </div>
+
+  <!-- ================= BANDEAU RÉSULTAT DU TIR ================= -->
+  <div id="shot-toast" class="pointer-events-none absolute inset-x-0 top-16 z-30 flex justify-center opacity-0 transition-all duration-200 -translate-y-4 px-3">
+    <div class="flex items-center gap-2.5 rounded-2xl border border-white/20 bg-[#070d1f]/95 px-4 py-2 shadow-2xl backdrop-blur-xl">
+      <span id="toast-emoji" class="text-xl">⚽</span>
+      <div>
+        <h3 id="toast-title" class="font-display text-lg uppercase tracking-wider text-or leading-none">BUT !</h3>
+        <p id="toast-subtitle" class="mt-0.5 text-[0.68rem] font-semibold text-slate-300">104 km/h</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= ÉCRAN DE PAUSE ================= -->
+  <div id="pause-modal" class="pointer-events-none fixed inset-0 z-40 hidden items-center justify-center bg-black/70 p-4 backdrop-blur-md">
+    <div class="pointer-events-auto w-full max-w-xs overflow-hidden rounded-3xl border border-white/20 bg-[#070f22] p-5 text-center shadow-2xl">
+      <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white/95 p-1.5 shadow">
+        <img src="/brand/logo.png" alt="Bloc Léopards" class="h-full w-auto object-contain" />
+      </div>
+      <span class="mt-2.5 block text-[0.55rem] font-bold uppercase tracking-widest text-or">Jeu en Pause</span>
+      <h2 class="mt-0.5 font-display text-2xl uppercase tracking-wide text-white">PAUSE MATCH</h2>
+      <p class="mt-1 text-[0.7rem] text-slate-400">
+        Série en cours : <strong id="pause-streak-val" class="text-or">0</strong> but(s)
+      </p>
+
+      <div class="mt-4 flex flex-col gap-2">
+        <button
+          type="button"
+          id="btn-pause-resume"
+          class="w-full rounded-xl bg-or py-2.5 text-xs font-black uppercase tracking-wider text-slate-950 shadow-lg hover:bg-yellow-300 active:scale-95 transition-transform"
+        >
+          ▶ Reprendre la partie
+        </button>
+        <button
+          type="button"
+          id="btn-pause-restart"
+          class="w-full rounded-xl border border-white/15 bg-white/10 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-white/20"
+        >
+          🔄 Recommencer à 0
+        </button>
+        <button
+          type="button"
+          id="btn-pause-to-menu"
+          class="w-full rounded-xl border border-white/10 bg-white/5 py-2 text-xs font-bold uppercase tracking-wider text-slate-300 hover:bg-white/15 hover:text-white"
+        >
+          ⚙️ Réglages du Stade
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= ÉCRAN FIN DE SÉRIE (PREMIER RATÉ) ================= -->
+  <div id="gameover-modal" class="pointer-events-none fixed inset-0 z-40 hidden items-center justify-center bg-black/75 p-4 backdrop-blur-md">
+    <div class="pointer-events-auto w-full max-w-sm overflow-hidden rounded-3xl border border-white/20 bg-[#081126] p-5 text-center shadow-2xl">
+      <div id="go-badge" class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/20 text-2xl border border-red-500/40">
+        🧤
+      </div>
+      <span id="go-kicker" class="mt-2 block text-[0.55rem] font-bold uppercase tracking-widest text-red-400">Fin de Série</span>
+      <h2 id="go-title" class="mt-0.5 font-display text-2xl uppercase tracking-wide text-white">ARRÊT DU GARDIEN !</h2>
+      <p id="go-desc" class="mt-1 text-xs text-slate-300">
+        Le portier a repoussé ta tentative.
+      </p>
+
+      <div class="mt-4 grid grid-cols-3 gap-2 rounded-2xl border border-white/10 bg-black/40 p-2.5">
+        <div>
+          <span class="block text-[0.55rem] font-bold uppercase tracking-wider text-slate-400">Buts</span>
+          <span id="go-stat-streak" class="font-display text-xl text-or">0</span>
+        </div>
+        <div class="border-x border-white/10">
+          <span class="block text-[0.55rem] font-bold uppercase tracking-wider text-slate-400">Palier</span>
+          <span id="go-stat-level" class="font-display text-xl text-white">Niv. 1</span>
+        </div>
+        <div>
+          <span class="block text-[0.55rem] font-bold uppercase tracking-wider text-slate-400">Record</span>
+          <span id="go-stat-record" class="font-display text-xl text-emerald-400">0</span>
+        </div>
+      </div>
+
+      <div class="mt-4 flex gap-2">
+        <button
+          type="button"
+          id="btn-go-levels"
+          class="rounded-xl border border-white/15 bg-white/10 px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-white/20"
+        >
+          🏆 Niveaux
+        </button>
+        <button
+          type="button"
+          id="btn-go-retry"
+          class="flex-1 rounded-xl bg-or px-4 py-2.5 text-xs font-black uppercase tracking-wider text-slate-950 shadow-lg shadow-or/25 hover:bg-yellow-300 active:scale-95 transition-transform"
+        >
+          🔄 Rejouer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODALE DÉDIÉE UNIQUEMENT AUX NIVEAUX ================= -->
+  <div id="levels-modal-overlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 p-3 sm:p-6 backdrop-blur-lg">
+    <div class="relative flex max-h-[88dvh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-or/30 bg-[#070f22] shadow-2xl">
+      <div class="flex items-center justify-between border-b border-white/10 px-5 py-3.5 bg-[#050a18]">
+        <div>
+          <span class="text-[0.55rem] font-bold uppercase tracking-widest text-or">Progression Sportive</span>
+          <h2 class="font-display text-lg uppercase tracking-wider text-white leading-none">
+            🏆 Paliers de Difficulté & IA Gardien
+          </h2>
+        </div>
+        <button
+          type="button"
+          id="btn-close-levels"
+          class="flex h-8 w-8 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-slate-300 hover:bg-white/15 hover:text-white"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-4 space-y-3">
+        <div class="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-3.5 py-2 text-xs text-slate-300">
+          <span>Le niveau évolue automatiquement à chaque palier de buts marqués :</span>
+          <span class="font-bold text-or">Record : <strong id="levels-best-streak">0</strong> buts</span>
+        </div>
+        <div id="levels-grid" class="grid gap-2.5 sm:grid-cols-2"></div>
+      </div>
+
+      <div class="flex items-center justify-end border-t border-white/10 bg-[#050a18] px-5 py-2.5">
+        <button type="button" id="btn-resume-from-levels" class="rounded-xl bg-or px-4 py-2 text-xs font-black uppercase tracking-wider text-slate-950 hover:bg-yellow-300">
+          Retour au terrain
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MENU GÉNÉRAL (SANS DUPLICATION DES NIVEAUX) ================= -->
+  <div id="game-menu-overlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 p-3 sm:p-6 backdrop-blur-lg">
+    <div class="relative flex max-h-[88dvh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-white/15 bg-[#070f22] shadow-2xl">
+      
+      <!-- En-tête du Menu avec Logo Bloc Léopards & SDM -->
+      <div class="flex items-center justify-between border-b border-white/10 px-5 py-3.5 bg-[#050a18]">
+        <div class="flex items-center gap-3">
+          <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-white p-1">
+            <img src="/brand/logo.png" alt="Bloc Léopards" class="h-full w-auto object-contain" />
+          </div>
+          <div>
+            <span class="text-[0.55rem] font-bold uppercase tracking-widest text-or">Bloc Léopards · Kinshasa</span>
+            <h2 class="font-display text-lg uppercase tracking-wider text-white leading-none">
+              Menu & Réglages du Stade
+            </h2>
+          </div>
+        </div>
+        <button
+          type="button"
+          id="btn-close-menu"
+          class="flex h-8 w-8 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-slate-300 hover:bg-white/15 hover:text-white"
+          aria-label="Fermer le menu"
+        >
+          ✕
+        </button>
+      </div>
+
+      <!-- Onglets du Menu (Réglages / Photos SDM / Partenaires) -->
+      <div class="flex border-b border-white/10 bg-[#050a18]/60 px-5 pt-1.5 gap-2 overflow-x-auto">
+        <button
+          type="button"
+          data-menu-tab="settings"
+          class="menu-tab-btn border-b-2 border-or px-3.5 py-2 text-xs font-black uppercase tracking-wider text-or transition-colors"
+        >
+          ⚙️ Réglages & Stade
+        </button>
+        <button
+          type="button"
+          data-menu-tab="photos"
+          class="menu-tab-btn border-b-2 border-transparent px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-white transition-colors"
+        >
+          📸 Références SDM
+        </button>
+        <button
+          type="button"
+          data-menu-tab="partners"
+          class="menu-tab-btn border-b-2 border-transparent px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-white transition-colors"
+        >
+          🤝 Partenaires
+        </button>
+      </div>
+
+      <!-- Contenu du Menu -->
+      <div class="flex-1 overflow-y-auto p-4">
+        
+        <!-- ONGLET 1 : RÉGLAGES -->
+        <div id="menu-panel-settings" class="space-y-3.5">
+          <div class="grid gap-3.5 sm:grid-cols-2">
+            <div class="rounded-2xl border border-white/10 bg-black/30 p-3.5">
+              <span class="text-[0.58rem] font-bold uppercase tracking-wider text-or">Éclairage Stade des Martyrs</span>
+              <h4 class="mt-0.5 font-display text-base uppercase text-white">Jour / Soir de Match</h4>
+              <p class="mt-1 text-xs text-slate-400">
+                Bascule entre la lumière zénithale de Kinshasa et les 4 mâts de projecteurs nocturnes.
+              </p>
+              <div class="mt-3 flex gap-2">
+                <button type="button" id="btn-set-day" class="flex-1 rounded-xl border border-white/15 bg-white/5 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-white/15">
+                  ☀️ Jour
+                </button>
+                <button type="button" id="btn-set-night" class="flex-1 rounded-xl border border-or/40 bg-congo py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-congo-bright">
+                  🌙 Nuit
+                </button>
+              </div>
+            </div>
+
+            <div class="rounded-2xl border border-white/10 bg-black/30 p-3.5">
+              <span class="text-[0.58rem] font-bold uppercase tracking-wider text-or">Ambiance Sonore</span>
+              <h4 class="mt-0.5 font-display text-base uppercase text-white">Tam-tams & 80 000 Supporters</h4>
+              <p class="mt-1 text-xs text-slate-400">
+                Chants, percussions kinoises, impact des gants et explosion du virage.
+              </p>
+              <button type="button" id="btn-menu-audio-toggle" class="mt-3 w-full rounded-xl border border-emerald-500/40 bg-emerald-500/20 py-2 text-xs font-bold uppercase tracking-wider text-emerald-300">
+                🔊 Son Activé
+              </button>
+            </div>
+          </div>
+
+          <div class="rounded-2xl border border-white/10 bg-black/30 p-3.5">
+            <h4 class="font-display text-sm uppercase tracking-wider text-white">Actions de Partie</h4>
+            <div class="mt-2.5 flex flex-wrap gap-2">
+              <button type="button" id="btn-menu-restart" class="rounded-xl border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-white/20">
+                🔄 Recommencer à 0
+              </button>
+              <button type="button" id="btn-menu-intro" class="rounded-xl border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-white/20">
+                🎬 Caméra d'entrée au stade
+              </button>
+              <a href="/" class="rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-slate-300 hover:bg-white/15 hover:text-white">
+                ← Quitter vers l'accueil
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- ONGLET 2 : PHOTOS OFFICIELLES SDM -->
+        <div id="menu-panel-photos" class="hidden space-y-3">
+          <div class="grid gap-3 sm:grid-cols-2">
+            <figure class="overflow-hidden rounded-2xl border border-white/10 bg-black/40">
+              <img src="/media/martyrs/pelouse-terrain-martyrs.jpg" alt="Pelouse et piste du Stade des Martyrs" class="h-32 w-full object-cover" />
+              <figcaption class="p-2 text-[0.68rem] text-slate-300">
+                <strong class="text-or block">Pelouse & Piste 8 Couloirs</strong>
+                Perspective réelle depuis le point de penalty.
+              </figcaption>
+            </figure>
+            <figure class="overflow-hidden rounded-2xl border border-white/10 bg-black/40">
+              <img src="/media/martyrs/tribunes-couleurs-nationales.jpg" alt="Tribunes aux couleurs nationales" class="h-32 w-full object-cover" />
+              <figcaption class="p-2 text-[0.68rem] text-slate-300">
+                <strong class="text-or block">Gradins Bleu · Jaune · Rouge</strong>
+                Anneau tricolore reproduit dans la cuvette 3D.
+              </figcaption>
+            </figure>
+            <figure class="overflow-hidden rounded-2xl border border-white/10 bg-black/40">
+              <img src="/media/martyrs/stade-nuit-lumieres.jpg" alt="Stade illuminé de nuit" class="h-32 w-full object-cover" />
+              <figcaption class="p-2 text-[0.68rem] text-slate-300">
+                <strong class="text-or block">Projecteurs Nocturnes SDM</strong>
+                Ambiance soir de match à Kinshasa.
+              </figcaption>
+            </figure>
+            <figure class="overflow-hidden rounded-2xl border border-white/10 bg-black/40">
+              <img src="/media/martyrs/supporters-leopards.jpg" alt="Supporters des Léopards" class="h-32 w-full object-cover object-top" />
+              <figcaption class="p-2 text-[0.68rem] text-slate-300">
+                <strong class="text-or block">Tribune Bloc Léopards</strong>
+                Ferveur derrière les buts.
+              </figcaption>
+            </figure>
+          </div>
+        </div>
+
+        <!-- ONGLET 3 : PARTENAIRES OFFICIELS (INTÉGRÉS SUR LES PANNEAUX LED DU STADE) -->
+        <div id="menu-panel-partners" class="hidden space-y-3">
+          <p class="text-xs text-slate-300">
+            Logos officiels affichés sur la panneautique LED autour de la pelouse du Stade des Martyrs :
+          </p>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div class="flex flex-col items-center justify-center rounded-xl bg-white p-3 h-20">
+              <img src="/brand/logo.png" alt="Bloc Léopards" class="max-h-12 w-auto object-contain" />
+            </div>
+            <div class="flex flex-col items-center justify-center rounded-xl bg-white p-3 h-20">
+              <img src="/logo-rdc.png" alt="RDC Cœur de l'Afrique" class="max-h-12 w-auto object-contain" />
+            </div>
+            <div class="flex flex-col items-center justify-center rounded-xl bg-white p-3 h-20">
+              <img src="/media/partenaires/LOGO SONAS.png" alt="SONAS" class="max-h-12 w-auto object-contain" />
+            </div>
+            <div class="flex flex-col items-center justify-center rounded-xl bg-white p-3 h-20">
+              <img src="/media/partenaires/Logo_EquityBCDC.png" alt="Equity BCDC" class="max-h-12 w-auto object-contain" />
+            </div>
+            <div class="flex flex-col items-center justify-center rounded-xl bg-white p-3 h-20">
+              <img src="/media/partenaires/MFS GROUPE.png" alt="MFS Groupe" class="max-h-12 w-auto object-contain" />
+            </div>
+            <div class="flex flex-col items-center justify-center rounded-xl bg-white p-3 h-20">
+              <img src="/media/partenaires/Shalina-Logo-Blue.png" alt="Shalina Healthcare" class="max-h-12 w-auto object-contain" />
+            </div>
+            <div class="flex flex-col items-center justify-center rounded-xl bg-white p-3 h-20">
+              <img src="/media/partenaires/logo-fonarev.webp" alt="Fonarev" class="max-h-12 w-auto object-contain" />
+            </div>
+            <div class="flex flex-col items-center justify-center rounded-xl bg-white p-3 h-20">
+              <img src="/media/partenaires/logo-visa.png" alt="Visa" class="max-h-12 w-auto object-contain" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pied du Menu -->
+      <div class="flex items-center justify-between border-t border-white/10 bg-[#050a18] px-5 py-2.5">
+        <span class="text-[0.65rem] text-slate-400">Raccourci Pause : touche <strong>Espace</strong> ou <strong>P</strong></span>
+        <button type="button" id="btn-resume-game" class="rounded-xl bg-or px-4 py-2 text-xs font-black uppercase tracking-wider text-slate-950 hover:bg-yellow-300">
+          Reprendre
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MOTEUR 3D & GAMEPLAY RÉALISTE ================= -->
+<script>
+  import * as THREE from "three";
+
+  /* -------------------------------------------------------------------------- */
+  /*  NIVEAUX ÉVOLUTIFS AUTOMATIQUES                                            */
+  /* -------------------------------------------------------------------------- */
+  interface LevelTier {
+    id: number;
+    minGoals: number;
+    name: string;
+    desc: string;
+    keeperReactionSec: number;
+    keeperDiveSpeed: number;
+    keeperArmSpan: number;
+    keeperReadProb: number;
+    windMaxKmh: number;
+    wallPlayers: number;
+  }
+
+  const TIERS: LevelTier[] = [
+    {
+      id: 1,
+      minGoals: 0,
+      name: "Échauffement",
+      desc: "Gardien explosif sur sa ligne. Vise près des poteaux pour le battre !",
+      keeperReactionSec: 0.042,
+      keeperDiveSpeed: 10.8,
+      keeperArmSpan: 1.26,
+      keeperReadProb: 0.84,
+      windMaxKmh: 0,
+      wallPlayers: 0
+    },
+    {
+      id: 2,
+      minGoals: 1,
+      name: "Éliminatoires CAN",
+      desc: "Vent léger (14 km/h) + Gardien international aux réflexes rapides.",
+      keeperReactionSec: 0.030,
+      keeperDiveSpeed: 12.4,
+      keeperArmSpan: 1.33,
+      keeperReadProb: 0.88,
+      windMaxKmh: 14,
+      wallPlayers: 0
+    },
+    {
+      id: 3,
+      minGoals: 2,
+      name: "Quart de Finale",
+      desc: "1 défenseur en mur + Vent (22 km/h) + Plongeon haute détente.",
+      keeperReactionSec: 0.022,
+      keeperDiveSpeed: 13.8,
+      keeperArmSpan: 1.38,
+      keeperReadProb: 0.91,
+      windMaxKmh: 22,
+      wallPlayers: 1
+    },
+    {
+      id: 4,
+      minGoals: 3,
+      name: "Demi-Finale",
+      desc: "Mur de 2 défenseurs qui sautent + Vent fort (28 km/h).",
+      keeperReactionSec: 0.015,
+      keeperDiveSpeed: 15.2,
+      keeperArmSpan: 1.44,
+      keeperReadProb: 0.94,
+      windMaxKmh: 28,
+      wallPlayers: 2
+    },
+    {
+      id: 5,
+      minGoals: 5,
+      name: "Finale 90ᵉ · Martyrs",
+      desc: "« Le Mur de Kin » : 3 défenseurs + rafales (36 km/h) + lecture quasi parfaite !",
+      keeperReactionSec: 0.008,
+      keeperDiveSpeed: 16.8,
+      keeperArmSpan: 1.50,
+      keeperReadProb: 0.97,
+      windMaxKmh: 36,
+      wallPlayers: 3
+    }
+  ];
+
+  /* -------------------------------------------------------------------------- */
+  /*  ÉTAT DU JEU (AVEC GESTION PAUSE)                                          */
+  /* -------------------------------------------------------------------------- */
+  const state = {
+    phase: "cinematic" as "cinematic" | "aiming" | "charging" | "shooting" | "result" | "gameover",
+    paused: false,
+    cinematicTime: 0,
+    streak: 0,
+    baseTierIndex: 0,
+    maxUnlockedTier: Number(localStorage.getItem("sdm_max_tier") || 1),
+    bestStreak: Number(localStorage.getItem("sdm_best_streak") || 0),
+    windKmh: 0,
+    wallSide: 1,
+    isNight: true,
+    audioEnabled: true
+  };
+
+  function getActiveTier(): LevelTier {
+    let tier = TIERS[state.baseTierIndex] || TIERS[0];
+    for (const t of TIERS) {
+      if (state.streak >= t.minGoals && t.id > tier.id) {
+        tier = t;
+      }
+    }
+    return tier;
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*  RÉFÉRENCES DOM                                                            */
+  /* -------------------------------------------------------------------------- */
+  const canvas = document.getElementById("penalty-canvas") as HTMLCanvasElement;
+  const hudStreak = document.getElementById("hud-streak");
+  const hudRecord = document.getElementById("hud-record");
+  const hudLevelBadge = document.getElementById("hud-level-badge");
+  const hudWindPill = document.getElementById("hud-wind-pill");
+  const hudWindArrow = document.getElementById("hud-wind-arrow");
+  const hudWindVal = document.getElementById("hud-wind-val");
+
+  const powerMeterWrap = document.getElementById("power-meter-wrap");
+  const powerMeterFill = document.getElementById("power-meter-fill");
+  const powerMeterPct = document.getElementById("power-meter-pct");
+  const aimInstruction = document.getElementById("aim-instruction");
+  const cinematicBar = document.getElementById("cinematic-bar");
+  const cinematicStepLabel = document.getElementById("cinematic-step-label");
+  const btnSkipCinematic = document.getElementById("btn-skip-cinematic");
+
+  const shotToast = document.getElementById("shot-toast");
+  const toastEmoji = document.getElementById("toast-emoji");
+  const toastTitle = document.getElementById("toast-title");
+  const toastSubtitle = document.getElementById("toast-subtitle");
+
+  // Pause DOM
+  const btnPause = document.getElementById("btn-pause");
+  const iconPause = document.getElementById("icon-pause");
+  const pauseModal = document.getElementById("pause-modal");
+  const pauseStreakVal = document.getElementById("pause-streak-val");
+  const btnPauseResume = document.getElementById("btn-pause-resume");
+  const btnPauseRestart = document.getElementById("btn-pause-restart");
+  const btnPauseToMenu = document.getElementById("btn-pause-to-menu");
+
+  // Game Over DOM
+  const gameoverModal = document.getElementById("gameover-modal");
+  const goTitle = document.getElementById("go-title");
+  const goDesc = document.getElementById("go-desc");
+  const goStatStreak = document.getElementById("go-stat-streak");
+  const goStatLevel = document.getElementById("go-stat-level");
+  const goStatRecord = document.getElementById("go-stat-record");
+  const btnGoRetry = document.getElementById("btn-go-retry");
+  const btnGoLevels = document.getElementById("btn-go-levels");
+
+  // Modale Niveaux dédiée (séparée du Menu)
+  const levelsModalOverlay = document.getElementById("levels-modal-overlay");
+  const btnOpenLevels = document.getElementById("btn-open-levels");
+  const btnCloseLevels = document.getElementById("btn-close-levels");
+  const btnResumeFromLevels = document.getElementById("btn-resume-from-levels");
+  const levelsGrid = document.getElementById("levels-grid");
+  const levelsBestStreak = document.getElementById("levels-best-streak");
+
+  // Menu Général DOM
+  const gameMenuOverlay = document.getElementById("game-menu-overlay");
+  const btnOpenMenu = document.getElementById("btn-open-menu");
+  const btnCloseMenu = document.getElementById("btn-close-menu");
+  const btnResumeGame = document.getElementById("btn-resume-game");
+  const btnSetDay = document.getElementById("btn-set-day");
+  const btnSetNight = document.getElementById("btn-set-night");
+  const btnSound = document.getElementById("btn-sound");
+  const iconSound = document.getElementById("icon-sound");
+  const btnMenuAudioToggle = document.getElementById("btn-menu-audio-toggle");
+  const btnMenuRestart = document.getElementById("btn-menu-restart");
+  const btnMenuIntro = document.getElementById("btn-menu-intro");
+
+  /* -------------------------------------------------------------------------- */
+  /*  WEB AUDIO API                                                             */
+  /* -------------------------------------------------------------------------- */
+  let audioCtx: AudioContext | null = null;
+  let drumInterval: number | null = null;
+
+  function initAudio() {
+    if (!audioCtx) {
+      const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (AC) audioCtx = new AC();
+    }
+    if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+  }
+
+  function playTamTam(freq = 105, vol = 0.3) {
+    if (!state.audioEnabled || state.paused || !audioCtx) return;
+    try {
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, now);
+      osc.frequency.exponentialRampToValueAtTime(freq * 0.42, now + 0.15);
+      gain.gain.setValueAtTime(vol, now);
+      gain.gain.exponentialRampToValueAtTime(0.005, now + 0.19);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.19);
+    } catch {}
+  }
+
+  function startDrums() {
+    if (drumInterval) return;
+    let step = 0;
+    drumInterval = window.setInterval(() => {
+      if (state.paused || (state.phase !== "aiming" && state.phase !== "charging") || !state.audioEnabled || !audioCtx) return;
+      const seq = [110, 0, 145, 110, 0, 165, 130, 0];
+      const f = seq[step % seq.length];
+      if (f > 0) playTamTam(f, step % 4 === 0 ? 0.32 : 0.18);
+      step++;
+    }, 220);
+  }
+
+  function stopDrums() {
+    if (drumInterval) {
+      clearInterval(drumInterval);
+      drumInterval = null;
+    }
+  }
+
+  function playKickAudio(powerRatio: number) {
+    if (!state.audioEnabled || !audioCtx) return;
+    try {
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(135 + powerRatio * 55, now);
+      osc.frequency.exponentialRampToValueAtTime(28, now + 0.15);
+      gain.gain.setValueAtTime(0.75, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.17);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.17);
+    } catch {}
+  }
+
+  function playNetSwishAudio() {
+    if (!state.audioEnabled || !audioCtx) return;
+    try {
+      const now = audioCtx.currentTime;
+      const dur = 0.24;
+      const bufSize = Math.floor(audioCtx.sampleRate * dur);
+      const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufSize * 0.35));
+      const src = audioCtx.createBufferSource();
+      src.buffer = buf;
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = "bandpass";
+      filter.frequency.setValueAtTime(1900, now);
+      filter.Q.value = 1.8;
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.45, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + dur);
+      src.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+      src.start(now);
+      src.stop(now + dur);
+    } catch {}
+  }
+
+  function playPostAudio() {
+    if (!state.audioEnabled || !audioCtx) return;
+    try {
+      const now = audioCtx.currentTime;
+      [740, 1210, 2380].forEach((f, i) => {
+        const osc = audioCtx!.createOscillator();
+        const gain = audioCtx!.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(f, now);
+        gain.gain.setValueAtTime(0.32 / (i + 1), now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.48);
+        osc.connect(gain);
+        gain.connect(audioCtx!.destination);
+        osc.start(now);
+        osc.stop(now + 0.48);
+      });
+    } catch {}
+  }
+
+  function playSaveAudio() {
+    if (!state.audioEnabled || !audioCtx) return;
+    try {
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(210, now);
+      osc.frequency.exponentialRampToValueAtTime(55, now + 0.14);
+      gain.gain.setValueAtTime(0.55, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.15);
+    } catch {}
+  }
+
+  function playCrowdRoar(isGoal: boolean) {
+    if (!state.audioEnabled || !audioCtx) return;
+    try {
+      const now = audioCtx.currentTime;
+      const dur = isGoal ? 1.7 : 0.85;
+      const bufSize = Math.floor(audioCtx.sampleRate * dur);
+      const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+      const src = audioCtx.createBufferSource();
+      src.buffer = buf;
+
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = "bandpass";
+      filter.frequency.setValueAtTime(isGoal ? 550 : 310, now);
+      filter.frequency.exponentialRampToValueAtTime(isGoal ? 1320 : 130, now + dur * 0.7);
+      filter.Q.value = 1.5;
+
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.01, now);
+      gain.gain.linearRampToValueAtTime(isGoal ? 0.65 : 0.3, now + 0.18);
+      gain.gain.exponentialRampToValueAtTime(0.008, now + dur);
+
+      src.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+      src.start(now);
+      src.stop(now + dur);
+    } catch {}
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*  SCÈNE 3D DU STADE DES MARTYRS ULTRA-RÉALISTE                              */
+  /* -------------------------------------------------------------------------- */
+  const renderer = new THREE.WebGLRenderer({
+    canvas,
+    antialias: true,
+    powerPreference: "high-performance"
+  });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.08;
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color("#050811");
+  scene.fog = new THREE.FogExp2("#050811", 0.0042);
+
+  const camera = new THREE.PerspectiveCamera(47, window.innerWidth / window.innerHeight, 0.1, 450);
+
+  const hemiLight = new THREE.HemisphereLight(0xdbeafe, 0x0f172a, 0.48);
+  scene.add(hemiLight);
+
+  const sunLight = new THREE.DirectionalLight(0xfffbeb, 1.5);
+  sunLight.position.set(18, 44, 26);
+  sunLight.castShadow = true;
+  sunLight.shadow.mapSize.set(2048, 2048);
+  sunLight.shadow.camera.near = 2;
+  sunLight.shadow.camera.far = 110;
+  sunLight.shadow.camera.left = -20;
+  sunLight.shadow.camera.right = 20;
+  sunLight.shadow.camera.top = 20;
+  sunLight.shadow.camera.bottom = -10;
+  sunLight.shadow.bias = -0.0005;
+  scene.add(sunLight);
+
+  // Projecteur frontal subtil pour éclairer les détails du gardien et des panneaux partenaires
+  const frontSpot = new THREE.DirectionalLight(0xe0f2fe, 0.45);
+  frontSpot.position.set(0, 12, 22);
+  scene.add(frontSpot);
+
+  const texLoader = new THREE.TextureLoader();
+
+  // Pelouse photo-réaliste à brins d'herbe + bandes de tonte + usure surface
+  function createRealisticGrassTexture() {
+    const cv = document.createElement("canvas");
+    cv.width = 1024;
+    cv.height = 1024;
+    const ctx = cv.getContext("2d")!;
+    const stripes = 18;
+    for (let i = 0; i < stripes; i++) {
+      ctx.fillStyle = i % 2 === 0 ? "#1d6b35" : "#247a3f";
+      ctx.fillRect(0, (i * 1024) / stripes, 1024, 1024 / stripes + 1);
+    }
+    // Micro-brins d'herbe pour donner du grain réaliste dans le champ caméra
+    for (let i = 0; i < 28000; i++) {
+      const x = Math.random() * 1024;
+      const y = Math.random() * 1024;
+      ctx.fillStyle = Math.random() > 0.5 ? "rgba(255,255,255,0.035)" : "rgba(0,0,0,0.045)";
+      ctx.fillRect(x, y, 2, 2);
+    }
+    const tex = new THREE.CanvasTexture(cv);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(3, 3);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }
+
+  const pitchMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(74, 112),
+    new THREE.MeshStandardMaterial({ map: createRealisticGrassTexture(), roughness: 0.86, metalness: 0.02 })
+  );
+  pitchMesh.rotation.x = -Math.PI / 2;
+  pitchMesh.position.set(0, 0, 38);
+  pitchMesh.receiveShadow = true;
+  scene.add(pitchMesh);
+
+  // Marquages réglementaires FIFA sur la pelouse
+  const lineMat = new THREE.MeshBasicMaterial({ color: 0xf8fafc });
+  function addPitchLine(w: number, d: number, x: number, z: number) {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), lineMat);
+    m.rotation.x = -Math.PI / 2;
+    m.position.set(x, 0.012, z);
+    scene.add(m);
+  }
+  addPitchLine(68, 0.14, 0, 0); // Ligne de but
+  addPitchLine(40.32, 0.12, 0, 16.5); // Ligne des 16m50
+  addPitchLine(0.12, 16.5, -20.16, 8.25);
+  addPitchLine(0.12, 16.5, 20.16, 8.25);
+  addPitchLine(18.32, 0.12, 0, 5.5); // Surface des 5m50
+  addPitchLine(0.12, 5.5, -9.16, 2.75);
+  addPitchLine(0.12, 5.5, 9.16, 2.75);
+
+  const penSpotMesh = new THREE.Mesh(new THREE.CircleGeometry(0.16, 24), lineMat);
+  penSpotMesh.rotation.x = -Math.PI / 2;
+  penSpotMesh.position.set(0, 0.015, 11.0);
+  scene.add(penSpotMesh);
+
+  // Arc de cercle des 9,15m devant la surface
+  const penArcMesh = new THREE.Mesh(
+    new THREE.RingGeometry(9.08, 9.20, 48, 1, -0.62, 1.24),
+    lineMat
+  );
+  penArcMesh.rotation.x = -Math.PI / 2;
+  penArcMesh.rotation.z = Math.PI / 2;
+  penArcMesh.position.set(0, 0.012, 11.0);
+  scene.add(penArcMesh);
+
+  // Flèche directionnelle au sol pendant la charge
+  const aimArrowGroup = new THREE.Group();
+  const aimLineGeo = new THREE.PlaneGeometry(0.18, 1.0);
+  aimLineGeo.translate(0, 0.5, 0);
+  const aimLineMat = new THREE.MeshBasicMaterial({
+    color: 0xfacc15,
+    transparent: true,
+    opacity: 0.8,
+    side: THREE.DoubleSide
+  });
+  const aimLineMesh = new THREE.Mesh(aimLineGeo, aimLineMat);
+  aimLineMesh.rotation.x = -Math.PI / 2;
+  aimArrowGroup.add(aimLineMesh);
+  aimArrowGroup.position.set(0, 0.03, 11.0);
+  aimArrowGroup.visible = false;
+  scene.add(aimArrowGroup);
+
+  // Piste d'athlétisme 8 couloirs ocre/brique du Stade des Martyrs
+  const trackMesh = new THREE.Mesh(
+    new THREE.RingGeometry(36, 46.8, 84),
+    new THREE.MeshStandardMaterial({ color: "#9c3d2b", roughness: 0.82 })
+  );
+  trackMesh.rotation.x = -Math.PI / 2;
+  trackMesh.position.set(0, -0.01, 20);
+  trackMesh.scale.set(1.12, 1.48, 1);
+  trackMesh.receiveShadow = true;
+  scene.add(trackMesh);
+
+  for (let l = 0; l <= 8; l++) {
+    const r = 36.2 + l * 1.25;
+    const laneMesh = new THREE.Mesh(
+      new THREE.RingGeometry(r, r + 0.06, 84),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.38 })
+    );
+    laneMesh.rotation.x = -Math.PI / 2;
+    laneMesh.position.set(0, 0.002, 20);
+    laneMesh.scale.set(1.12, 1.48, 1);
+    scene.add(laneMesh);
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*  ESPACE PUB LED : LOGOS DES PARTENAIRES & LOGO BLOC LÉOPARDS               */
+  /* -------------------------------------------------------------------------- */
+  const PARTNER_ADS = [
+    { name: "BLOC LÉOPARDS", src: "/brand/logo.png", bg: "#ffffff", accent: "#007fff" },
+    { name: "R.D. CONGO · CŒUR DE L'AFRIQUE", src: "/logo-rdc.png", bg: "#ffffff", accent: "#f7d618" },
+    { name: "EQUITY BCDC", src: "/media/partenaires/Logo_EquityBCDC.png", bg: "#ffffff", accent: "#b3202c" },
+    { name: "SONAS ASSURANCES", src: "/media/partenaires/LOGO SONAS.png", bg: "#ffffff", accent: "#f7d618" },
+    { name: "MFS GROUPE", src: "/media/partenaires/MFS GROUPE.png", bg: "#ffffff", accent: "#007fff" },
+    { name: "SHALINA HEALTHCARE", src: "/media/partenaires/Shalina-Logo-Blue.png", bg: "#ffffff", accent: "#1b4fc4" },
+    { name: "FONAREV RDC", src: "/media/partenaires/logo-fonarev.webp", bg: "#ffffff", accent: "#007fff" },
+    { name: "VISA", src: "/media/partenaires/logo-visa.png", bg: "#ffffff", accent: "#1a1f71" }
+  ];
+
+  // Fonction qui génère la texture d'un panneau publicitaire LED et y dessine les vrais logos chargés
+  function createPartnerBoardTexture(adIndices: number[]) {
+    const cv = document.createElement("canvas");
+    cv.width = 2048;
+    cv.height = 256;
+    const ctx = cv.getContext("2d")!;
+    const tex = new THREE.CanvasTexture(cv);
+    tex.colorSpace = THREE.SRGBColorSpace;
+
+    const slotW = cv.width / adIndices.length;
+
+    function drawBase() {
+      ctx.fillStyle = "#060d1f";
+      ctx.fillRect(0, 0, cv.width, cv.height);
+
+      adIndices.forEach((adIdx, i) => {
+        const ad = PARTNER_ADS[adIdx % PARTNER_ADS.length];
+        const x0 = i * slotW;
+
+        // Liseré tricolore supérieur et inférieur
+        ctx.fillStyle = ad.accent;
+        ctx.fillRect(x0, 0, slotW, 14);
+        ctx.fillStyle = "#f7d618";
+        ctx.fillRect(x0, cv.height - 12, slotW, 12);
+
+        // Cartouche blanc lumineux pour mettre parfaitement en valeur chaque logo partenaire
+        ctx.fillStyle = ad.bg;
+        ctx.fillRect(x0 + 18, 22, slotW - 36, cv.height - 42);
+
+        // Texte de secours avant chargement de l'image
+        ctx.fillStyle = "#081126";
+        ctx.font = "900 30px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(ad.name, x0 + slotW / 2, cv.height / 2);
+      });
+      tex.needsUpdate = true;
+    }
+
+    drawBase();
+
+    // Charger chaque logo réel (PNG/WEBP) et l'incruster proprement dans son espace pub
+    adIndices.forEach((adIdx, i) => {
+      const ad = PARTNER_ADS[adIdx % PARTNER_ADS.length];
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        const x0 = i * slotW;
+        // Nettoyer le cartouche blanc
+        ctx.fillStyle = ad.bg;
+        ctx.fillRect(x0 + 18, 22, slotW - 36, cv.height - 42);
+
+        const maxW = slotW - 80;
+        const maxH = cv.height - 64;
+        const scale = Math.min(maxW / img.width, maxH / img.height);
+        const drawW = img.width * scale;
+        const drawH = img.height * scale;
+        const dx = x0 + (slotW - drawW) / 2;
+        const dy = 22 + (cv.height - 42 - drawH) / 2;
+        ctx.drawImage(img, dx, dy, drawW, drawH);
+        tex.needsUpdate = true;
+      };
+      img.src = ad.src;
+    });
+
+    return tex;
+  }
+
+  // Panneaux publicitaires LED de bord de terrain (proches derrière la cage, très visibles au tir)
+  const adBoardsGroup = new THREE.Group();
+
+  // 1. Panneau LED gauche derrière la ligne de but
+  const leftAdTex = createPartnerBoardTexture([0, 2, 3, 5]);
+  const leftAdBoard = new THREE.Mesh(
+    new THREE.BoxGeometry(11.5, 1.05, 0.18),
+    new THREE.MeshBasicMaterial({ map: leftAdTex })
+  );
+  leftAdBoard.position.set(-10.2, 0.52, -3.2);
+  leftAdBoard.rotation.y = 0.18;
+  adBoardsGroup.add(leftAdBoard);
+
+  // 2. Panneau LED droit derrière la ligne de but
+  const rightAdTex = createPartnerBoardTexture([0, 1, 4, 7]);
+  const rightAdBoard = new THREE.Mesh(
+    new THREE.BoxGeometry(11.5, 1.05, 0.18),
+    new THREE.MeshBasicMaterial({ map: rightAdTex })
+  );
+  rightAdBoard.position.set(10.2, 0.52, -3.2);
+  rightAdBoard.rotation.y = -0.18;
+  adBoardsGroup.add(rightAdBoard);
+
+  // 3. Panneau LED central derrière la cage (Bloc Léopards + FONAREV + Equity BCDC + Visa)
+  const centerAdTex = createPartnerBoardTexture([0, 6, 2, 7, 0]);
+  const centerAdBoard = new THREE.Mesh(
+    new THREE.BoxGeometry(10.0, 0.95, 0.18),
+    new THREE.MeshBasicMaterial({ map: centerAdTex })
+  );
+  centerAdBoard.position.set(0, 0.48, -4.2);
+  adBoardsGroup.add(centerAdBoard);
+
+  // 4. Grand ruban LED panoramique le long de la tribune Bloc Léopards
+  const ribbonAdTex = createPartnerBoardTexture([0, 1, 2, 3, 0, 4, 5, 6, 7, 0]);
+  const ledRibbon = new THREE.Mesh(
+    new THREE.CylinderGeometry(42, 42, 1.45, 48, 1, true, Math.PI * 0.72, Math.PI * 0.56),
+    new THREE.MeshBasicMaterial({ map: ribbonAdTex, side: THREE.DoubleSide })
+  );
+  ledRibbon.position.set(0, 1.1, 22);
+  adBoardsGroup.add(ledRibbon);
+
+  scene.add(adBoardsGroup);
+
+  /* -------------------------------------------------------------------------- */
+  /*  ARCHITECTURE DU STADE DES MARTYRS (CUVETTE, TUNNEL, SIÈGES, BANDEROLES)   */
+  /* -------------------------------------------------------------------------- */
+  const BOWL = { rx: 56, rz: 74, centerZ: 20 };
+  const SECTOR_PATTERN = ["b", "b", "y", "b", "r", "b", "b", "y", "r", "b", "s", "b", "b", "y", "b", "r", "b", "b", "y", "r", "b", "s", "b", "r"];
+  const SDM_COLORS = {
+    seatBlue: "#1b4fc4",
+    seatSky: "#2f86f0",
+    seatYellow: "#f7d618",
+    seatRed: "#b3202c",
+    concrete: "#17181d"
+  };
+
+  interface BowlRow { d: number; h: number }
+  const bowlRows: BowlRow[] = [];
+  for (let i = 0; i < 14; i++) bowlRows.push({ d: i * 1.15, h: 1.6 + i * 0.62 });
+  const baseD = 14 * 1.15 + 3.0;
+  const baseH = 1.6 + 14 * 0.62 + 2.6;
+  for (let i = 0; i < 14; i++) bowlRows.push({ d: baseD + i * 1.1, h: baseH + i * 0.78 });
+
+  function buildMartyrsBowl() {
+    const segments = 96;
+    const profile: [number, number][] = [[-1.5, 0]];
+    bowlRows.forEach((r, i) => {
+      const prevH = i === 0 ? 0 : bowlRows[i - 1].h;
+      profile.push([r.d, prevH], [r.d, r.h]);
+      const next = bowlRows[i + 1];
+      profile.push([next ? next.d : r.d + 2, r.h]);
+    });
+    const last = profile[profile.length - 1];
+    profile.push([last[0] + 0.2, last[1] + 4.5], [last[0] + 2.4, last[1] + 4.5], [last[0] + 2.4, 0]);
+
+    const positions: number[] = [];
+    const indices: number[] = [];
+    for (let s = 0; s <= segments; s++) {
+      const a = (s / segments) * Math.PI * 2;
+      const c = Math.cos(a);
+      const sn = Math.sin(a);
+      for (const [d, h] of profile) {
+        positions.push((BOWL.rx + d) * c, h, BOWL.centerZ + (BOWL.rz + d) * sn);
+      }
+    }
+    const P = profile.length;
+    for (let s = 0; s < segments; s++) {
+      for (let p = 0; p < P - 1; p++) {
+        const a = s * P + p;
+        const b = (s + 1) * P + p;
+        indices.push(a, b, a + 1, b, b + 1, a + 1);
+      }
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    geo.setIndex(indices);
+    geo.computeVertexNormals();
+    return geo;
+  }
+
+  scene.add(
+    new THREE.Mesh(
+      buildMartyrsBowl(),
+      new THREE.MeshStandardMaterial({ color: SDM_COLORS.concrete, roughness: 0.9, side: THREE.DoubleSide })
+    )
+  );
+
+  // Sièges tricolores RDC instanciés
+  const seatItems: { x: number; y: number; z: number; color: THREE.Color }[] = [];
+  let seed = 13;
+  const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+
+  bowlRows.forEach((r, ri) => {
+    const rx = BOWL.rx + r.d + 0.5;
+    const rz = BOWL.rz + r.d + 0.5;
+    const count = 136;
+    for (let i = 0; i < count; i++) {
+      const a = (i / count) * Math.PI * 2;
+      const idx = Math.floor(((a / (Math.PI * 2)) * SECTOR_PATTERN.length) % SECTOR_PATTERN.length);
+      let key = SECTOR_PATTERN[idx];
+      if (ri >= bowlRows.length - 2) key = "y";
+      const hex = key === "y" ? SDM_COLORS.seatYellow : key === "r" ? SDM_COLORS.seatRed : key === "s" ? SDM_COLORS.seatSky : SDM_COLORS.seatBlue;
+      const col = new THREE.Color(hex);
+      col.offsetHSL(0, -0.08 * rand(), (rand() - 0.5) * 0.08);
+      seatItems.push({ x: rx * Math.cos(a), y: r.h + 0.25, z: BOWL.centerZ + rz * Math.sin(a), color: col });
+    }
+  });
+
+  const seatsInstanced = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(1.55, 0.48, 0.7),
+    new THREE.MeshStandardMaterial({ roughness: 0.55, metalness: 0.08 }),
+    seatItems.length
+  );
+  const dummy = new THREE.Object3D();
+  seatItems.forEach((s, i) => {
+    dummy.position.set(s.x, s.y, s.z);
+    dummy.lookAt(0, s.y, BOWL.centerZ);
+    dummy.updateMatrix();
+    seatsInstanced.setMatrixAt(i, dummy.matrix);
+    seatsInstanced.setColorAt(i, s.color);
+  });
+  seatsInstanced.instanceMatrix.needsUpdate = true;
+  if (seatsInstanced.instanceColor) seatsInstanced.instanceColor.needsUpdate = true;
+  scene.add(seatsInstanced);
+
+  // Panorama photo réelle SDM des tribunes
+  const crowdPanoramaTex = texLoader.load("/media/martyrs/tribunes-panorama.jpg");
+  crowdPanoramaTex.wrapS = THREE.RepeatWrapping;
+  crowdPanoramaTex.repeat.set(3, 1);
+  crowdPanoramaTex.colorSpace = THREE.SRGBColorSpace;
+
+  const crowdBackdrop = new THREE.Mesh(
+    new THREE.CylinderGeometry(72, 62, 12, 64, 1, true, Math.PI * 0.65, Math.PI * 0.7),
+    new THREE.MeshBasicMaterial({ map: crowdPanoramaTex, side: THREE.DoubleSide, transparent: true, opacity: 0.9 })
+  );
+  crowdBackdrop.position.set(0, 9.8, 12);
+  scene.add(crowdBackdrop);
+
+  // Écran géant Jumbotron SDM + Logos Bloc Léopards de chaque côté
+  const jumboGroup = new THREE.Group();
+  jumboGroup.position.set(0, 27.5, -58);
+  jumboGroup.add(
+    new THREE.Mesh(
+      new THREE.BoxGeometry(24, 9.8, 1.2),
+      new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.5, roughness: 0.4 })
+    )
+  );
+  const jumboPhotoTex = texLoader.load("/media/martyrs/fecofa-leopards-stade-martyrs.jpg");
+  jumboPhotoTex.colorSpace = THREE.SRGBColorSpace;
+  const jumboScreen = new THREE.Mesh(
+    new THREE.PlaneGeometry(16.5, 8.2),
+    new THREE.MeshBasicMaterial({ map: jumboPhotoTex })
+  );
+  jumboScreen.position.z = 0.65;
+  jumboGroup.add(jumboScreen);
+
+  // Panneaux latéraux du Jumbotron avec le logo Bloc Léopards
+  const blocLogoTex = texLoader.load("/brand/logo.png");
+  blocLogoTex.colorSpace = THREE.SRGBColorSpace;
+  [-9.8, 9.8].forEach((jx) => {
+    const bgWing = new THREE.Mesh(
+      new THREE.PlaneGeometry(2.8, 8.2),
+      new THREE.MeshBasicMaterial({ color: 0xffffff })
+    );
+    bgWing.position.set(jx, 0, 0.64);
+    const logoWing = new THREE.Mesh(
+      new THREE.PlaneGeometry(2.5, 2.5),
+      new THREE.MeshBasicMaterial({ map: blocLogoTex, transparent: true })
+    );
+    logoWing.position.set(jx, 0, 0.66);
+    jumboGroup.add(bgWing, logoWing);
+  });
+  scene.add(jumboGroup);
+
+  // Projecteurs volumétriques SDM
+  const floodBeamMat = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    side: THREE.DoubleSide,
+    uniforms: {
+      uColor: { value: new THREE.Color("#e9f2ff") },
+      uOpacity: { value: 0.14 }
+    },
+    vertexShader: `
+      varying float vY; varying vec3 vN; varying vec3 vV;
+      void main(){
+        vY = uv.y;
+        vec4 mv = modelViewMatrix * vec4(position,1.0);
+        vN = normalize(normalMatrix * normal);
+        vV = normalize(-mv.xyz);
+        gl_Position = projectionMatrix * mv;
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 uColor; uniform float uOpacity;
+      varying float vY; varying vec3 vN; varying vec3 vV;
+      void main(){
+        float core = pow(abs(dot(vN, vV)), 1.8);
+        float fade = pow(vY, 1.5);
+        gl_FragColor = vec4(uColor, core * fade * uOpacity);
+      }
+    `
+  });
+
+  const floodCones: THREE.Mesh[] = [];
+  const mastAngles = [0.65, Math.PI - 0.65, Math.PI + 0.55, -0.55];
+  const mastHeight = 52;
+  mastAngles.forEach((a) => {
+    const bx = (BOWL.rx + 28) * Math.cos(a);
+    const bz = BOWL.centerZ + (BOWL.rz + 28) * Math.sin(a);
+    const mast = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.45, 1.0, mastHeight, 8),
+      new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6 })
+    );
+    mast.position.set(bx, mastHeight / 2, bz);
+    scene.add(mast);
+
+    const headPanel = new THREE.Mesh(
+      new THREE.BoxGeometry(10, 4.8, 0.9),
+      new THREE.MeshBasicMaterial({ color: 0xf8fafc })
+    );
+    headPanel.position.set(bx, mastHeight, bz);
+    headPanel.lookAt(0, 2, 5);
+    scene.add(headPanel);
+
+    const headPos = new THREE.Vector3(bx, mastHeight, bz);
+    const targetPos = new THREE.Vector3(0, 0, 5);
+    const dir = headPos.clone().sub(targetPos);
+    const len = dir.length();
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(26, len, 32, 1, true), floodBeamMat);
+    cone.position.copy(targetPos.clone().add(headPos).multiplyScalar(0.5));
+    cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+    scene.add(cone);
+    floodCones.push(cone);
+  });
+
+  // Flashs supporters SDM
+  const flashCount = 450;
+  const flashPos = new Float32Array(flashCount * 3);
+  const flashSeeds = new Float32Array(flashCount);
+  for (let i = 0; i < flashCount; i++) {
+    const r = bowlRows[Math.floor(Math.random() * bowlRows.length)];
+    const a = Math.random() * Math.PI * 2;
+    flashPos.set(
+      [(BOWL.rx + r.d + 0.4) * Math.cos(a), r.h + 1.1, BOWL.centerZ + (BOWL.rz + r.d + 0.4) * Math.sin(a)],
+      i * 3
+    );
+    flashSeeds[i] = Math.random();
+  }
+  const flashGeo = new THREE.BufferGeometry();
+  flashGeo.setAttribute("position", new THREE.BufferAttribute(flashPos, 3));
+  flashGeo.setAttribute("aSeed", new THREE.BufferAttribute(flashSeeds, 1));
+  const flashMat = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    uniforms: { uTime: { value: 0 } },
+    vertexShader: `
+      uniform float uTime; attribute float aSeed; varying float vA;
+      void main(){
+        float flash = pow(max(0.0, sin(uTime * (0.8 + aSeed * 1.5) + aSeed * 50.0)), 40.0);
+        float torch = 0.25 + 0.2 * sin(uTime * 1.5 + aSeed * 20.0);
+        vA = max(flash, torch * 0.5);
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        gl_PointSize = 7.0 * (180.0 / -mv.z);
+        gl_Position = projectionMatrix * mv;
+      }
+    `,
+    fragmentShader: `
+      varying float vA;
+      void main(){
+        float d = length(gl_PointCoord - 0.5);
+        float a = smoothstep(0.5, 0.0, d);
+        gl_FragColor = vec4(vec3(0.96, 0.98, 1.0), a * vA);
+      }
+    `
+  });
+  const crowdFlashes = new THREE.Points(flashGeo, flashMat);
+  scene.add(crowdFlashes);
+
+  /* -------------------------------------------------------------------------- */
+  /*  CAGE DE BUT & FILET TISSÉ HAUTE DENSITÉ                                   */
+  /* -------------------------------------------------------------------------- */
+  const GOAL = { width: 7.32, height: 2.44, depth: 2.15, postR: 0.068 };
+  const goalGroup = new THREE.Group();
+  const postMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.18, metalness: 0.72 });
+
+  const postLeft = new THREE.Mesh(new THREE.CylinderGeometry(GOAL.postR, GOAL.postR, GOAL.height, 24), postMat);
+  postLeft.position.set(-GOAL.width / 2, GOAL.height / 2, 0);
+  postLeft.castShadow = true;
+  goalGroup.add(postLeft);
+
+  const postRight = postLeft.clone();
+  postRight.position.x = GOAL.width / 2;
+  goalGroup.add(postRight);
+
+  const crossbar = new THREE.Mesh(
+    new THREE.CylinderGeometry(GOAL.postR, GOAL.postR, GOAL.width + GOAL.postR * 2, 24),
+    postMat
+  );
+  crossbar.rotation.z = Math.PI / 2;
+  crossbar.position.set(0, GOAL.height, 0);
+  crossbar.castShadow = true;
+  goalGroup.add(crossbar);
+
+  const frameMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.4, metalness: 0.6 });
+  const groundBackBar = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.04, 0.04, GOAL.width + 0.08, 14),
+    frameMat
+  );
+  groundBackBar.rotation.z = Math.PI / 2;
+  groundBackBar.position.set(0, 0.04, -GOAL.depth);
+  goalGroup.add(groundBackBar);
+
+  const topBackBar = groundBackBar.clone();
+  topBackBar.position.set(0, GOAL.height, -GOAL.depth);
+  goalGroup.add(topBackBar);
+
+  [-GOAL.width / 2, GOAL.width / 2].forEach((xPos) => {
+    const backPillar = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, GOAL.height, 14), frameMat);
+    backPillar.position.set(xPos, GOAL.height / 2, -GOAL.depth);
+    goalGroup.add(backPillar);
+
+    const sideGroundBar = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, GOAL.depth, 12), frameMat);
+    sideGroundBar.rotation.x = Math.PI / 2;
+    sideGroundBar.position.set(xPos, 0.035, -GOAL.depth / 2);
+    goalGroup.add(sideGroundBar);
+
+    const sideTopBar = sideGroundBar.clone();
+    sideTopBar.position.y = GOAL.height;
+    goalGroup.add(sideTopBar);
+  });
+
+  function createWovenNetTexture(repeatX: number, repeatY: number) {
+    const cv = document.createElement("canvas");
+    cv.width = 128;
+    cv.height = 128;
+    const ctx = cv.getContext("2d")!;
+    ctx.clearRect(0, 0, 128, 128);
+
+    ctx.strokeStyle = "rgba(248, 250, 252, 0.92)";
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    ctx.moveTo(0, 0); ctx.lineTo(128, 128);
+    ctx.moveTo(128, 0); ctx.lineTo(0, 128);
+    ctx.stroke();
+
+    ctx.strokeStyle = "rgba(226, 232, 240, 0.65)";
+    ctx.lineWidth = 6;
+    ctx.strokeRect(3, 3, 122, 122);
+
+    const tex = new THREE.CanvasTexture(cv);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(repeatX, repeatY);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }
+
+  const netBackMat = new THREE.MeshStandardMaterial({
+    map: createWovenNetTexture(42, 15),
+    transparent: true,
+    alphaTest: 0.12,
+    roughness: 0.6,
+    side: THREE.DoubleSide
+  });
+
+  const netSideMat = new THREE.MeshStandardMaterial({
+    map: createWovenNetTexture(14, 15),
+    transparent: true,
+    alphaTest: 0.12,
+    roughness: 0.6,
+    side: THREE.DoubleSide
+  });
+
+  const netTopMat = new THREE.MeshStandardMaterial({
+    map: createWovenNetTexture(42, 14),
+    transparent: true,
+    alphaTest: 0.12,
+    roughness: 0.6,
+    side: THREE.DoubleSide
+  });
+
+  const netBackGeo = new THREE.PlaneGeometry(GOAL.width, GOAL.height, 32, 16);
+  const netBackOrigPos = new Float32Array((netBackGeo.attributes.position as THREE.BufferAttribute).array);
+  const netBack = new THREE.Mesh(netBackGeo, netBackMat);
+  netBack.position.set(0, GOAL.height / 2, -GOAL.depth);
+  goalGroup.add(netBack);
+
+  const netSideGeo = new THREE.PlaneGeometry(GOAL.depth, GOAL.height, 14, 14);
+  const netLeft = new THREE.Mesh(netSideGeo, netSideMat);
+  netLeft.rotation.y = Math.PI / 2;
+  netLeft.position.set(-GOAL.width / 2, GOAL.height / 2, -GOAL.depth / 2);
+  goalGroup.add(netLeft);
+
+  const netRight = new THREE.Mesh(netSideGeo, netSideMat);
+  netRight.rotation.y = -Math.PI / 2;
+  netRight.position.set(GOAL.width / 2, GOAL.height / 2, -GOAL.depth / 2);
+  goalGroup.add(netRight);
+
+  const netTop = new THREE.Mesh(new THREE.PlaneGeometry(GOAL.width, GOAL.depth, 24, 10), netTopMat);
+  netTop.rotation.x = Math.PI / 2;
+  netTop.position.set(0, GOAL.height, -GOAL.depth / 2);
+  goalGroup.add(netTop);
+
+  scene.add(goalGroup);
+
+  let netImpactActive = false;
+  let netImpactX = 0;
+  let netImpactY = 1.2;
+  let netImpactStrength = 0;
+
+  function triggerNetDeformation(hitX: number, hitY: number, speed: number) {
+    netImpactActive = true;
+    netImpactX = THREE.MathUtils.clamp(hitX, -GOAL.width / 2 + 0.2, GOAL.width / 2 - 0.2);
+    netImpactY = THREE.MathUtils.clamp(hitY, 0.2, GOAL.height - 0.2) - GOAL.height / 2;
+    netImpactStrength = Math.min(0.75, Math.max(0.28, speed * 0.025));
+    playNetSwishAudio();
+  }
+
+  function updateNetMesh(dt: number) {
+    if (!netImpactActive) return;
+    netImpactStrength = THREE.MathUtils.lerp(netImpactStrength, 0, dt * 5.2);
+    const posAttr = netBackGeo.attributes.position as THREE.BufferAttribute;
+    for (let i = 0; i < posAttr.count; i++) {
+      const ox = netBackOrigPos[i * 3];
+      const oy = netBackOrigPos[i * 3 + 1];
+      const edgeFactorX = 1 - Math.pow(Math.abs(ox) / (GOAL.width / 2), 4);
+      const edgeFactorY = 1 - Math.pow(Math.abs(oy) / (GOAL.height / 2), 4);
+      const dist = Math.hypot(ox - netImpactX, oy - netImpactY);
+      const pull = Math.max(0, 1 - dist / 1.85) * netImpactStrength * edgeFactorX * edgeFactorY;
+      posAttr.setZ(i, -pull);
+    }
+    posAttr.needsUpdate = true;
+    if (netImpactStrength < 0.01) {
+      netImpactActive = false;
+      for (let i = 0; i < posAttr.count; i++) posAttr.setZ(i, 0);
+      posAttr.needsUpdate = true;
+    }
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*  GARDIEN DE BUT 3D ULTRA-RÉALISTE (ANATOMIE ARTICULÉE, VISAGE & MAILLOT)   */
+  /* -------------------------------------------------------------------------- */
+  function createKeeperJerseyTexture() {
+    const cv = document.createElement("canvas");
+    cv.width = 512;
+    cv.height = 512;
+    const ctx = cv.getContext("2d")!;
+
+    // Fond maillot gardien pro vert émeraude / or / motifs géométriques
+    const grad = ctx.createLinearGradient(0, 0, 0, 512);
+    grad.addColorStop(0, "#f97316");
+    grad.addColorStop(1, "#c2410c");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Motifs chevrons subtils sur le torse
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+    ctx.lineWidth = 14;
+    for (let y = 80; y < 440; y += 55) {
+      ctx.beginPath();
+      ctx.moveTo(110, y);
+      ctx.lineTo(256, y + 36);
+      ctx.lineTo(402, y);
+      ctx.stroke();
+    }
+
+    // Bandes épaules
+    ctx.fillStyle = "#0f172a";
+    ctx.fillRect(0, 0, 512, 34);
+
+    // Numéro 1 officiel sur la poitrine
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "900 130px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("1", 256, 235);
+
+    const tex = new THREE.CanvasTexture(cv);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }
+
+  const keeperGroup = new THREE.Group();
+  const kitMat = new THREE.MeshStandardMaterial({ map: createKeeperJerseyTexture(), roughness: 0.45 });
+  const sleeveMat = new THREE.MeshStandardMaterial({ color: 0xea580c, roughness: 0.48 });
+  const shortMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.65 });
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0x5c3a28, roughness: 0.62 });
+  const hairMat = new THREE.MeshStandardMaterial({ color: 0x111115, roughness: 0.85 });
+  const gloveLatexMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.25, metalness: 0.1 });
+  const glovePalmMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.35 });
+  const socksMat = new THREE.MeshStandardMaterial({ color: 0xea580c, roughness: 0.5 });
+  const bootMat = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.3, metalness: 0.2 });
+
+  // Torse anatomique sculpté (poitrine athlétique + taille + bassin)
+  const kChest = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.23, 0.54, 18), kitMat);
+  kChest.scale.set(1.18, 1, 0.68);
+  kChest.position.y = 1.42;
+  kChest.castShadow = true;
+  keeperGroup.add(kChest);
+
+  const kWaist = new THREE.Mesh(new THREE.CylinderGeometry(0.23, 0.24, 0.26, 16), kitMat);
+  kWaist.scale.set(1.12, 1, 0.68);
+  kWaist.position.y = 1.05;
+  kWaist.castShadow = true;
+  keeperGroup.add(kWaist);
+
+  // Col en V noir
+  const kCollar = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.025, 10, 20), shortMat);
+  kCollar.rotation.x = Math.PI / 2;
+  kCollar.position.set(0, 1.69, 0.02);
+  keeperGroup.add(kCollar);
+
+  // Cou + Tête sculptée + Visage réaliste (avec sourcils/eyebrows fins et réduits)
+  const kNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.085, 0.14, 14), skinMat);
+  kNeck.position.y = 1.74;
+  keeperGroup.add(kNeck);
+
+  const headGroup = new THREE.Group();
+  headGroup.position.set(0, 1.91, 0.02);
+
+  const kSkull = new THREE.Mesh(new THREE.SphereGeometry(0.155, 24, 24), skinMat);
+  kSkull.scale.set(0.92, 1.08, 0.98);
+  kSkull.castShadow = true;
+  headGroup.add(kSkull);
+
+  // Coupe de cheveux afro courte dégradée
+  const kHair = new THREE.Mesh(
+    new THREE.SphereGeometry(0.159, 22, 18, 0, Math.PI * 2, 0, Math.PI * 0.58),
+    hairMat
+  );
+  kHair.scale.set(0.93, 1.08, 1.0);
+  kHair.rotation.x = -0.18;
+  kHair.position.y = 0.015;
+  headGroup.add(kHair);
+
+  // Yeux + Pupilles
+  const eyeWhiteMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  const pupilMat = new THREE.MeshBasicMaterial({ color: 0x090d16 });
+  [-0.052, 0.052].forEach((ex) => {
+    const eyeW = new THREE.Mesh(new THREE.SphereGeometry(0.021, 12, 12), eyeWhiteMat);
+    eyeW.scale.set(1.2, 0.85, 0.6);
+    eyeW.position.set(ex, 0.018, 0.138);
+    const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.011, 10, 10), pupilMat);
+    pupil.position.set(ex, 0.018, 0.149);
+    headGroup.add(eyeW, pupil);
+
+    // Sourcil ("eyebrow") réduit, fin et naturel
+    const eyebrow = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.006, 0.008), hairMat);
+    eyebrow.position.set(ex, 0.042, 0.142);
+    eyebrow.rotation.z = ex < 0 ? 0.06 : -0.06;
+    headGroup.add(eyebrow);
+  });
+
+  // Nez & Oreilles
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(0.022, 0.055, 8), skinMat);
+  nose.rotation.x = Math.PI * 0.42;
+  nose.position.set(0, -0.005, 0.152);
+  headGroup.add(nose);
+
+  [-0.142, 0.142].forEach((earX) => {
+    const ear = new THREE.Mesh(new THREE.SphereGeometry(0.028, 10, 10), skinMat);
+    ear.scale.set(0.45, 0.95, 0.65);
+    ear.position.set(earX, 0.0, 0.0);
+    headGroup.add(ear);
+  });
+
+  keeperGroup.add(headGroup);
+
+  // Fonction de création d'un bras articulé réaliste (Épaule -> Bras -> Coude -> Avant-bras -> Gant Pro à doigts)
+  function createArticulatedArm(isLeft: boolean) {
+    const side = isLeft ? -1 : 1;
+    const shoulderPivot = new THREE.Group();
+    shoulderPivot.position.set(side * 0.34, 1.61, 0);
+
+    const shoulderCap = new THREE.Mesh(new THREE.SphereGeometry(0.105, 14, 14), sleeveMat);
+    shoulderPivot.add(shoulderCap);
+
+    const upperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.082, 0.068, 0.34, 14), sleeveMat);
+    upperArm.position.y = -0.17;
+    upperArm.castShadow = true;
+    shoulderPivot.add(upperArm);
+
+    const forearm = new THREE.Mesh(new THREE.CylinderGeometry(0.066, 0.054, 0.34, 14), skinMat);
+    forearm.position.y = -0.49;
+    forearm.castShadow = true;
+    shoulderPivot.add(forearm);
+
+    // Gant de gardien professionnel (poignet + paume + dos du gant + pouce + 4 doigts)
+    const gloveGroup = new THREE.Group();
+    gloveGroup.position.y = -0.74;
+
+    const wristStrap = new THREE.Mesh(new THREE.CylinderGeometry(0.064, 0.064, 0.09, 14), shortMat);
+    wristStrap.position.y = 0.07;
+    gloveGroup.add(wristStrap);
+
+    const palm = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.20, 0.065), glovePalmMat);
+    palm.position.z = 0.015;
+    const backhand = new THREE.Mesh(new THREE.BoxGeometry(0.185, 0.205, 0.05), gloveLatexMat);
+    backhand.position.z = -0.015;
+    gloveGroup.add(palm, backhand);
+
+    // 4 doigts + pouce écarté
+    [-0.065, -0.022, 0.022, 0.065].forEach((fx, fi) => {
+      const len = fi === 1 || fi === 2 ? 0.11 : 0.095;
+      const finger = new THREE.Mesh(new THREE.CapsuleGeometry(0.018, len, 6, 8), gloveLatexMat);
+      finger.position.set(fx, -0.13, 0);
+      gloveGroup.add(finger);
+    });
+    const thumb = new THREE.Mesh(new THREE.CapsuleGeometry(0.02, 0.08, 6, 8), gloveLatexMat);
+    thumb.position.set(side * -0.11, -0.04, 0.02);
+    thumb.rotation.z = side * 0.55;
+    gloveGroup.add(thumb);
+
+    shoulderPivot.add(gloveGroup);
+    return shoulderPivot;
+  }
+
+  const kArmL = createArticulatedArm(true);
+  kArmL.rotation.z = 0.78;
+  keeperGroup.add(kArmL);
+
+  const kArmR = createArticulatedArm(false);
+  kArmR.rotation.z = -0.78;
+  keeperGroup.add(kArmR);
+
+  // Short + Jambes anatomiques (Cuisse -> Genou -> Mollet/Chaussette -> Crampons)
+  const kPelvis = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.24, 0.30), shortMat);
+  kPelvis.position.y = 0.86;
+  kPelvis.castShadow = true;
+  keeperGroup.add(kPelvis);
+
+  function createArticulatedLeg(isLeft: boolean) {
+    const side = isLeft ? -1 : 1;
+    const legGroup = new THREE.Group();
+    legGroup.position.set(side * 0.16, 0.78, 0);
+
+    const thighShort = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.098, 0.28, 14), shortMat);
+    thighShort.position.y = -0.12;
+    thighShort.castShadow = true;
+    legGroup.add(thighShort);
+
+    const knee = new THREE.Mesh(new THREE.SphereGeometry(0.078, 12, 12), skinMat);
+    knee.position.y = -0.30;
+    legGroup.add(knee);
+
+    const calfSock = new THREE.Mesh(new THREE.CylinderGeometry(0.076, 0.056, 0.42, 14), socksMat);
+    calfSock.position.y = -0.52;
+    calfSock.castShadow = true;
+    legGroup.add(calfSock);
+
+    // Chaussure à crampons
+    const boot = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.09, 0.27), bootMat);
+    boot.position.set(0, -0.74, 0.05);
+    boot.castShadow = true;
+    legGroup.add(boot);
+
+    return legGroup;
+  }
+
+  const kLegL = createArticulatedLeg(true);
+  const kLegR = createArticulatedLeg(false);
+  keeperGroup.add(kLegL, kLegR);
+
+  keeperGroup.position.set(0, 0, 0.28);
+  scene.add(keeperGroup);
+
+  /* -------------------------------------------------------------------------- */
+  /*  MUR DÉFENSIF ARTICULÉ                                                     */
+  /* -------------------------------------------------------------------------- */
+  const wallGroup = new THREE.Group();
+  scene.add(wallGroup);
+
+  function buildDefensiveWall(count: number, side: number) {
+    while (wallGroup.children.length > 0) wallGroup.remove(wallGroup.children[0]);
+    if (count <= 0) return;
+
+    const defKit = new THREE.MeshStandardMaterial({ color: 0xbe123c, roughness: 0.55 });
+    const startX = side * 1.1;
+    for (let i = 0; i < count; i++) {
+      const player = new THREE.Group();
+      const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.20, 0.68, 14), defKit);
+      torso.scale.set(1.1, 1, 0.65);
+      torso.position.y = 1.24;
+      torso.castShadow = true;
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.135, 14, 14), skinMat);
+      head.position.y = 1.74;
+      const shorts = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.34, 0.24), shortMat);
+      shorts.position.y = 0.78;
+      const legs = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.62, 0.20), skinMat);
+      legs.position.y = 0.34;
+      legs.castShadow = true;
+      player.add(torso, head, shorts, legs);
+      player.position.set(startX + (i - (count - 1) / 2) * 0.58, 0, 5.2);
+      wallGroup.add(player);
+    }
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*  BALLON OFFICIEL                                                           */
+  /* -------------------------------------------------------------------------- */
+  const BALL_R = 0.115;
+  function createBallTexture() {
+    const cv = document.createElement("canvas");
+    cv.width = 512;
+    cv.height = 256;
+    const ctx = cv.getContext("2d")!;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, 512, 256);
+    ctx.fillStyle = "#1466E0";
+    for (let x = 0; x < 512; x += 128) {
+      ctx.beginPath();
+      ctx.arc(x + 64, 128, 38, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.strokeStyle = "#F4C400";
+    ctx.lineWidth = 10;
+    ctx.strokeRect(10, 40, 492, 176);
+    ctx.fillStyle = "#D81E27";
+    ctx.fillRect(0, 118, 512, 20);
+    const t = new THREE.CanvasTexture(cv);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  }
+
+  const ballMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(BALL_R, 28, 28),
+    new THREE.MeshStandardMaterial({ map: createBallTexture(), roughness: 0.28, metalness: 0.1 })
+  );
+  ballMesh.castShadow = true;
+  scene.add(ballMesh);
+
+  /* -------------------------------------------------------------------------- */
+  /*  GESTION DE L'AMBIANCE, DU HUD & DE LA PAUSE                               */
+  /* -------------------------------------------------------------------------- */
+  function applyLightingMode(night: boolean) {
+    state.isNight = night;
+    if (night) {
+      scene.background = new THREE.Color("#050811");
+      scene.fog = new THREE.FogExp2("#050811", 0.0042);
+      hemiLight.intensity = 0.45;
+      sunLight.intensity = 1.4;
+      sunLight.color.setHex(0xeef6ff);
+      floodCones.forEach((c) => (c.visible = true));
+      crowdFlashes.visible = true;
+      btnSetNight?.classList.add("bg-congo", "border-or/40");
+      btnSetDay?.classList.remove("bg-congo", "border-or/40");
+    } else {
+      scene.background = new THREE.Color("#60a5fa");
+      scene.fog = new THREE.FogExp2("#93c5fd", 0.0025);
+      hemiLight.intensity = 0.88;
+      sunLight.intensity = 1.95;
+      sunLight.color.setHex(0xfffbeb);
+      floodCones.forEach((c) => (c.visible = false));
+      crowdFlashes.visible = false;
+      btnSetDay?.classList.add("bg-congo", "border-or/40");
+      btnSetNight?.classList.remove("bg-congo", "border-or/40");
+    }
+  }
+
+  function updateHud() {
+    const tier = getActiveTier();
+    if (hudStreak) hudStreak.textContent = String(state.streak);
+    if (hudRecord) hudRecord.textContent = `${state.bestStreak} 🏆`;
+    if (hudLevelBadge) hudLevelBadge.textContent = `NIV. ${tier.id} · ${tier.name.toUpperCase()}`;
+    if (levelsBestStreak) levelsBestStreak.textContent = String(state.bestStreak);
+    if (pauseStreakVal) pauseStreakVal.textContent = String(state.streak);
+
+    if (hudWindPill && hudWindVal && hudWindArrow) {
+      if (state.windKmh === 0) {
+        hudWindVal.textContent = "0 km/h";
+        hudWindArrow.style.transform = "rotate(0deg)";
+        hudWindPill.classList.add("opacity-55");
+      } else {
+        hudWindPill.classList.remove("opacity-55");
+        hudWindVal.textContent = `${Math.abs(state.windKmh)} km/h`;
+        hudWindArrow.style.transform = state.windKmh > 0 ? "rotate(0deg)" : "rotate(180deg)";
+      }
+    }
+  }
+
+  // Fonctionnalité Pause complète
+  function setPaused(pauseState: boolean) {
+    if (state.phase === "gameover") return;
+    state.paused = pauseState;
+    if (iconPause) iconPause.textContent = state.paused ? "▶" : "⏸";
+    if (state.paused) {
+      updateHud();
+      pauseModal?.classList.remove("hidden");
+      pauseModal?.classList.add("flex");
+    } else {
+      pauseModal?.classList.add("hidden");
+      pauseModal?.classList.remove("flex");
+      prevTime = performance.now();
+    }
+  }
+
+  function togglePause() {
+    setPaused(!state.paused);
+  }
+
+  btnPause?.addEventListener("click", togglePause);
+  btnPauseResume?.addEventListener("click", () => setPaused(false));
+  btnPauseRestart?.addEventListener("click", () => {
+    setPaused(false);
+    restartSeries(0);
+  });
+  btnPauseToMenu?.addEventListener("click", () => {
+    pauseModal?.classList.add("hidden");
+    pauseModal?.classList.remove("flex");
+    openMenu("settings");
+  });
+
+  window.addEventListener("keydown", (e) => {
+    if (e.code === "Space" || e.key === "p" || e.key === "P" || e.key === "Escape") {
+      e.preventDefault();
+      togglePause();
+    }
+  });
+
+  function setupNextKick() {
+    const tier = getActiveTier();
+    if (tier.id > state.maxUnlockedTier) {
+      state.maxUnlockedTier = tier.id;
+      localStorage.setItem("sdm_max_tier", String(state.maxUnlockedTier));
+    }
+
+    if (tier.windMaxKmh === 0) {
+      state.windKmh = 0;
+    } else {
+      const dir = Math.random() < 0.5 ? -1 : 1;
+      state.windKmh = Math.round(dir * (tier.windMaxKmh * 0.55 + Math.random() * tier.windMaxKmh * 0.45));
+    }
+
+    state.wallSide = Math.random() < 0.5 ? -1 : 1;
+    buildDefensiveWall(tier.wallPlayers, state.wallSide);
+
+    ballMesh.position.set(0, BALL_R, 11.0);
+    ballMesh.rotation.set(0, 0, 0);
+    keeperGroup.position.set(0, 0, 0.28);
+    keeperGroup.rotation.set(0, 0, 0);
+    kArmL.rotation.z = 0.78;
+    kArmR.rotation.z = -0.78;
+    aimArrowGroup.visible = false;
+
+    if (powerMeterWrap) powerMeterWrap.classList.add("opacity-0");
+    if (powerMeterFill) powerMeterFill.style.height = "0%";
+
+    state.phase = "aiming";
+    camera.position.set(0, 1.38, 13.7);
+    camera.lookAt(0, 1.25, 0);
+    cinematicBar?.classList.add("hidden");
+    aimInstruction?.classList.remove("opacity-0");
+    updateHud();
+    startDrums();
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*  SYSTÈME DE FRAPPE IRRÉVERSIBLE                                            */
+  /* -------------------------------------------------------------------------- */
+  let chargeActive = false;
+  let chargeStartX = 0;
+  let chargeStartY = 0;
+  let chargeMidX = 0;
+  let chargeCurrX = 0;
+  let chargePeakPushY = 0;
+  let lockedPowerPct = 0;
+
+  const shotPhys = {
+    active: false,
+    inGoalCage: false,
+    flightElapsed: 0,
+    vx: 0,
+    vy: 0,
+    vz: 0,
+    spinY: 0,
+    spinX: 0,
+    speedKmh: 0,
+    keeperTargetX: 0,
+    keeperTargetY: 0,
+    keeperDiveDir: 0,
+    keeperReadsRight: true,
+    wallJumping: false,
+    resolved: false
+  };
+
+  function updateChargeGauge(dt: number) {
+    if (!chargeActive || state.phase !== "charging" || state.paused) return;
+
+    const h = window.innerHeight;
+    const pushRatio = Math.max(0, chargePeakPushY / (h * 0.34));
+    const pushPower = pushRatio * 100;
+
+    lockedPowerPct = Math.max(lockedPowerPct + dt * 58, pushPower);
+
+    const displayPct = Math.min(Math.round(lockedPowerPct), 115);
+    if (powerMeterFill) powerMeterFill.style.height = `${Math.min(displayPct, 100)}%`;
+    if (powerMeterPct) {
+      powerMeterPct.textContent = displayPct > 93 ? "MAX !" : `${displayPct}%`;
+      powerMeterPct.className =
+        displayPct > 93
+          ? "rounded bg-red-600 px-1.5 py-0.5 font-display text-xs tracking-wider text-white shadow"
+          : "rounded bg-black/90 px-1.5 py-0.5 font-display text-xs tracking-wider text-or shadow";
+    }
+
+    const w = window.innerWidth;
+    const dx = (chargeCurrX - chargeStartX) / Math.min(w, 440);
+    aimArrowGroup.visible = true;
+    aimArrowGroup.rotation.y = Math.PI - dx * 0.45;
+    aimLineMesh.scale.set(1, 1.2 + (Math.min(lockedPowerPct, 105) / 100) * 6.5, 1);
+    if (lockedPowerPct > 93) {
+      aimLineMat.color.setHex(0xef4444);
+    } else if (lockedPowerPct >= 68) {
+      aimLineMat.color.setHex(0x10b981);
+    } else {
+      aimLineMat.color.setHex(0xfacc15);
+    }
+
+    if (lockedPowerPct >= 110) {
+      commitShotRelease();
+    }
+  }
+
+  function commitShotRelease() {
+    if (!chargeActive) return;
+    chargeActive = false;
+    aimArrowGroup.visible = false;
+
+    const w = window.innerWidth;
+    const dx = (chargeCurrX - chargeStartX) / Math.min(w, 440);
+    const midExpectedX = (chargeStartX + chargeCurrX) * 0.5;
+    const curveDelta = (chargeMidX - midExpectedX) / Math.min(w, 400);
+
+    const finalPower = Math.max(22, Math.min(lockedPowerPct, 115));
+    const normP = finalPower / 100;
+
+    const speedMs = 16.5 + normP * 17.5;
+    const targetX = THREE.MathUtils.clamp(dx * 5.5, -4.6, 4.6);
+    const targetY = normP <= 0.93
+      ? Math.pow(normP / 0.93, 1.2) * 2.30
+      : 2.48 + (normP - 0.93) * 9.8;
+    const spinCurve = -curveDelta * 16.0;
+
+    setTimeout(() => {
+      if (powerMeterWrap) powerMeterWrap.classList.add("opacity-0");
+    }, 350);
+
+    fireShot(finalPower, speedMs, targetX, targetY, spinCurve);
+  }
+
+  canvas.addEventListener("pointerdown", (e) => {
+    if (state.phase !== "aiming" || state.paused) return;
+    initAudio();
+    state.phase = "charging";
+    chargeActive = true;
+    chargeStartX = e.clientX;
+    chargeStartY = e.clientY;
+    chargeMidX = e.clientX;
+    chargeCurrX = e.clientX;
+    chargePeakPushY = 0;
+    lockedPowerPct = 16;
+
+    aimInstruction?.classList.add("opacity-0");
+    powerMeterWrap?.classList.remove("opacity-0");
+  });
+
+  window.addEventListener("pointermove", (e) => {
+    if (!chargeActive || state.phase !== "charging" || state.paused) return;
+    chargeCurrX = e.clientX;
+    const currentPushY = Math.max(0, chargeStartY - e.clientY);
+    if (currentPushY > chargePeakPushY) {
+      chargePeakPushY = currentPushY;
+    }
+    if (currentPushY > 20 && currentPushY < 130) {
+      chargeMidX = e.clientX;
+    }
+  });
+
+  window.addEventListener("pointerup", () => {
+    if (chargeActive && state.phase === "charging" && !state.paused) commitShotRelease();
+  });
+  window.addEventListener("pointercancel", () => {
+    if (chargeActive && state.phase === "charging" && !state.paused) commitShotRelease();
+  });
+
+  function fireShot(powerPct: number, speedMs: number, targetX: number, targetY: number, spinCurve: number) {
+    state.phase = "shooting";
+    stopDrums();
+
+    const flightTime = 11.0 / speedMs;
+    shotPhys.active = true;
+    shotPhys.inGoalCage = false;
+    shotPhys.resolved = false;
+    shotPhys.flightElapsed = 0;
+    shotPhys.vz = -speedMs;
+    shotPhys.vx = (targetX - spinCurve * 0.22) / flightTime;
+    shotPhys.vy = (targetY + 0.5 * 9.81 * flightTime * flightTime) / flightTime;
+    shotPhys.spinY = spinCurve;
+    shotPhys.spinX = speedMs * 0.6;
+    shotPhys.speedKmh = Math.round(speedMs * 3.6);
+    shotPhys.wallJumping = true;
+
+    playKickAudio(powerPct / 100);
+
+    const tier = getActiveTier();
+    const windAccel = state.windKmh * 0.09;
+    const tKeeper = (11.0 - 0.28) / speedMs;
+    const predX = shotPhys.vx * tKeeper + 0.5 * (shotPhys.spinY + windAccel) * tKeeper * tKeeper;
+    const predY = Math.max(BALL_R, BALL_R + shotPhys.vy * tKeeper - 0.5 * 9.81 * tKeeper * tKeeper);
+
+    const isCentralShot = Math.abs(predX) < 1.35;
+    const curveBonus = Math.min(Math.abs(spinCurve) * 0.012, 0.12);
+    shotPhys.keeperReadsRight = isCentralShot || Math.random() < (tier.keeperReadProb - curveBonus);
+
+    if (shotPhys.keeperReadsRight) {
+      shotPhys.keeperTargetX = THREE.MathUtils.clamp(predX, -3.55, 3.55);
+      shotPhys.keeperTargetY = THREE.MathUtils.clamp(predY, 0.35, 2.35);
+      shotPhys.keeperDiveDir = Math.sign(predX);
+    } else {
+      const wrongDir = predX >= 0 ? -1 : 1;
+      shotPhys.keeperTargetX = wrongDir * (1.6 + Math.random() * 1.4);
+      shotPhys.keeperTargetY = 0.65 + Math.random() * 1.1;
+      shotPhys.keeperDiveDir = wrongDir;
+    }
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*  PHYSIQUE PAR SOUS-PAS (SUB-STEPPING)                                      */
+  /* -------------------------------------------------------------------------- */
+  function updatePhysics(dt: number) {
+    const tier = getActiveTier();
+
+    if (shotPhys.wallJumping && wallGroup.children.length > 0) {
+      wallGroup.children.forEach((p) => {
+        if (ballMesh.position.z > 4.2) {
+          p.position.y = Math.min(0.66, p.position.y + dt * 4.2);
+        } else {
+          p.position.y = Math.max(0, p.position.y - dt * 2.5);
+        }
+      });
+    }
+
+    if (!shotPhys.active) return;
+
+    shotPhys.flightElapsed += dt;
+
+    if (shotPhys.flightElapsed >= tier.keeperReactionSec) {
+      const desiredTorsoX = THREE.MathUtils.clamp(
+        shotPhys.keeperTargetX - shotPhys.keeperDiveDir * (tier.keeperArmSpan * 0.55),
+        -2.55,
+        2.55
+      );
+      const desiredTorsoY = THREE.MathUtils.clamp(shotPhys.keeperTargetY - 0.95, 0, 1.05);
+
+      keeperGroup.position.x = THREE.MathUtils.lerp(
+        keeperGroup.position.x,
+        desiredTorsoX,
+        Math.min(1, dt * tier.keeperDiveSpeed)
+      );
+      keeperGroup.position.y = THREE.MathUtils.lerp(
+        keeperGroup.position.y,
+        desiredTorsoY,
+        Math.min(1, dt * tier.keeperDiveSpeed * 0.95)
+      );
+
+      const diveTilt = THREE.MathUtils.clamp(-shotPhys.keeperTargetX * 0.46, -1.35, 1.35);
+      keeperGroup.rotation.z = THREE.MathUtils.lerp(keeperGroup.rotation.z, diveTilt, dt * 18);
+      kArmL.rotation.z = THREE.MathUtils.lerp(kArmL.rotation.z, 2.75, dt * 20);
+      kArmR.rotation.z = THREE.MathUtils.lerp(kArmR.rotation.z, -2.75, dt * 20);
+    }
+
+    const SUBSTEPS = 6;
+    const subDt = dt / SUBSTEPS;
+
+    for (let step = 0; step < SUBSTEPS; step++) {
+      const prevX = ballMesh.position.x;
+      const prevY = ballMesh.position.y;
+      const prevZ = ballMesh.position.z;
+
+      const windAccel = shotPhys.inGoalCage ? 0 : state.windKmh * 0.09;
+      shotPhys.vy -= 9.81 * subDt;
+      if (!shotPhys.inGoalCage) {
+        shotPhys.vx += (shotPhys.spinY + windAccel) * subDt;
+      }
+
+      ballMesh.position.x += shotPhys.vx * subDt;
+      ballMesh.position.y += shotPhys.vy * subDt;
+      ballMesh.position.z += shotPhys.vz * subDt;
+
+      ballMesh.rotation.x += (shotPhys.vz * subDt) / BALL_R;
+      ballMesh.rotation.y += shotPhys.spinY * subDt * 0.5;
+
+      if (ballMesh.position.y < BALL_R) {
+        ballMesh.position.y = BALL_R;
+        shotPhys.vy = Math.abs(shotPhys.vy) * (shotPhys.inGoalCage ? 0.35 : 0.52);
+        shotPhys.vx *= shotPhys.inGoalCage ? 0.72 : 0.85;
+        shotPhys.vz *= shotPhys.inGoalCage ? 0.72 : 0.85;
+      }
+
+      if (shotPhys.inGoalCage) {
+        const maxSideX = GOAL.width / 2 - BALL_R - 0.08;
+        const minBackZ = -GOAL.depth + BALL_R + 0.12;
+        const maxTopY = GOAL.height - BALL_R - 0.08;
+
+        if (ballMesh.position.z <= minBackZ) {
+          const hitSpeed = Math.abs(shotPhys.vz);
+          ballMesh.position.z = minBackZ;
+          shotPhys.vz = Math.min(2.8, hitSpeed * 0.18);
+          shotPhys.vx *= 0.28;
+          shotPhys.vy = Math.min(0.5, shotPhys.vy * 0.25);
+          shotPhys.spinX = 0;
+          shotPhys.spinY = 0;
+          if (hitSpeed > 1.2) {
+            triggerNetDeformation(ballMesh.position.x, ballMesh.position.y, hitSpeed);
+          }
+        }
+        if (ballMesh.position.x < -maxSideX) {
+          ballMesh.position.x = -maxSideX;
+          shotPhys.vx = Math.abs(shotPhys.vx) * 0.22;
+          shotPhys.vz *= 0.45;
+        }
+        if (ballMesh.position.x > maxSideX) {
+          ballMesh.position.x = maxSideX;
+          shotPhys.vx = -Math.abs(shotPhys.vx) * 0.22;
+          shotPhys.vz *= 0.45;
+        }
+        if (ballMesh.position.y > maxTopY) {
+          ballMesh.position.y = maxTopY;
+          shotPhys.vy = -Math.abs(shotPhys.vy) * 0.22;
+        }
+        if (ballMesh.position.z > -0.18) {
+          ballMesh.position.z = -0.18;
+          if (shotPhys.vz > 0) shotPhys.vz = 0;
+        }
+        continue;
+      }
+
+      if (shotPhys.resolved) {
+        if (ballMesh.position.z < -3.2) {
+          ballMesh.position.z = -3.2;
+          shotPhys.vz = Math.abs(shotPhys.vz) * 0.3;
+          shotPhys.vx *= 0.5;
+        }
+        continue;
+      }
+
+      // 1. Mur défensif
+      if (wallGroup.children.length > 0 && prevZ >= 5.2 && ballMesh.position.z <= 5.2) {
+        const alpha = (prevZ - 5.2) / Math.max(0.00001, prevZ - ballMesh.position.z);
+        const crossX = THREE.MathUtils.lerp(prevX, ballMesh.position.x, alpha);
+        const crossY = THREE.MathUtils.lerp(prevY, ballMesh.position.y, alpha);
+
+        let blockedByWall = false;
+        for (const p of wallGroup.children) {
+          if (Math.abs(crossX - p.position.x) < 0.38 && crossY < 1.88 + p.position.y) {
+            blockedByWall = true;
+            break;
+          }
+        }
+        if (blockedByWall) {
+          ballMesh.position.set(crossX, crossY, 5.25);
+          shotPhys.vz = Math.abs(shotPhys.vz) * 0.38;
+          shotPhys.vx += (Math.random() - 0.5) * 5;
+          shotPhys.vy = 2.8;
+          playSaveAudio();
+          resolveShot(false, "CONTRÉ PAR LE MUR !", "Contourne le mur avec un effet brossé !");
+          break;
+        }
+      }
+
+      // 2. Gardien
+      if (prevZ >= 0.28 && ballMesh.position.z <= 0.28) {
+        const alpha = (prevZ - 0.28) / Math.max(0.00001, prevZ - ballMesh.position.z);
+        const crossX = THREE.MathUtils.lerp(prevX, ballMesh.position.x, alpha);
+        const crossY = THREE.MathUtils.lerp(prevY, ballMesh.position.y, alpha);
+
+        const torsoX = keeperGroup.position.x;
+        const diveDir = shotPhys.keeperDiveDir;
+        const minCoverX = Math.min(torsoX - 0.65, torsoX + diveDir * tier.keeperArmSpan - 0.35);
+        const maxCoverX = Math.max(torsoX + 0.65, torsoX + diveDir * tier.keeperArmSpan + 0.35);
+        const maxCoverY = keeperGroup.position.y + 1.98;
+
+        if (crossX >= minCoverX && crossX <= maxCoverX && crossY >= 0 && crossY <= maxCoverY) {
+          ballMesh.position.set(crossX, crossY, 0.34);
+          shotPhys.vz = Math.abs(shotPhys.vz) * 0.42;
+          shotPhys.vx = (diveDir || 1) * 6.8;
+          shotPhys.vy = 3.0;
+          playSaveAudio();
+          resolveShot(false, "ARRÊT DU GARDIEN !", "Parade décisive du portier !");
+          break;
+        }
+      }
+
+      // 3. Ligne de but
+      if (prevZ >= 0 && ballMesh.position.z <= 0) {
+        const alpha = prevZ / Math.max(0.00001, prevZ - ballMesh.position.z);
+        const crossX = THREE.MathUtils.lerp(prevX, ballMesh.position.x, alpha);
+        const crossY = THREE.MathUtils.lerp(prevY, ballMesh.position.y, alpha);
+        const halfW = GOAL.width / 2;
+
+        const hitLeftPost = Math.abs(crossX + halfW) < 0.16 && crossY <= GOAL.height + 0.14;
+        const hitRightPost = Math.abs(crossX - halfW) < 0.16 && crossY <= GOAL.height + 0.14;
+        const hitBar = Math.abs(crossY - GOAL.height) < 0.16 && Math.abs(crossX) <= halfW + 0.14;
+
+        if (hitLeftPost || hitRightPost || hitBar) {
+          ballMesh.position.set(crossX, crossY, 0.1);
+          shotPhys.vz = Math.abs(shotPhys.vz) * 0.45;
+          if (hitBar) shotPhys.vy = Math.abs(shotPhys.vy) * 0.55;
+          else shotPhys.vx = -shotPhys.vx * 0.65;
+          playPostAudio();
+          resolveShot(false, hitBar ? "BARRE TRANSVERSALE !" : "POTEAU SORTANT !", "Le montant repousse ta frappe !");
+          break;
+        }
+
+        const insideX = Math.abs(crossX) < halfW - 0.08;
+        const insideY = crossY > 0 && crossY < GOAL.height - 0.06;
+
+        if (insideX && insideY) {
+          shotPhys.inGoalCage = true;
+          ballMesh.position.x = THREE.MathUtils.clamp(crossX, -halfW + BALL_R + 0.1, halfW - BALL_R - 0.1);
+          ballMesh.position.y = THREE.MathUtils.clamp(crossY, BALL_R, GOAL.height - BALL_R - 0.1);
+          ballMesh.position.z = Math.max(ballMesh.position.z, -GOAL.depth + BALL_R + 0.15);
+          resolveShot(true, "BUT AUX MARTYRS ! ⚽", `${shotPhys.speedKmh} km/h · Le Bloc Léopards explose !`);
+        } else {
+          if (Math.abs(ballMesh.position.x) < halfW + 0.25 && ballMesh.position.y < GOAL.height + 0.2) {
+            ballMesh.position.x = Math.sign(ballMesh.position.x || 1) * (halfW + 0.3);
+          }
+          const msg = crossY >= GOAL.height ? "AU-DESSUS DE LA BARRE !" : "À CÔTÉ DU CADRE !";
+          resolveShot(false, msg, crossY >= GOAL.height ? "Trop de puissance !" : "Ajuste ta visée");
+          break;
+        }
+      }
+    }
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*  RÉSOLUTION DU TIR                                                         */
+  /* -------------------------------------------------------------------------- */
+  function resolveShot(isGoal: boolean, title: string, subtitle: string) {
+    shotPhys.resolved = true;
+    state.phase = "result";
+
+    const prevTierId = getActiveTier().id;
+
+    if (isGoal) {
+      state.streak++;
+      if (state.streak > state.bestStreak) {
+        state.bestStreak = state.streak;
+        localStorage.setItem("sdm_best_streak", String(state.bestStreak));
+      }
+    }
+
+    const newTier = getActiveTier();
+    const leveledUp = isGoal && newTier.id > prevTierId;
+
+    playCrowdRoar(isGoal);
+    updateHud();
+
+    if (shotToast && toastTitle && toastSubtitle && toastEmoji) {
+      toastEmoji.textContent = leveledUp ? "🔥🆙" : isGoal ? "⚽" : "🧤";
+      toastTitle.textContent = leveledUp
+        ? `BUT ! PASSAGE NIVEAU ${newTier.id} (${newTier.name.toUpperCase()})`
+        : title;
+      toastTitle.className = isGoal
+        ? "font-display text-lg uppercase tracking-wider text-or leading-none"
+        : "font-display text-lg uppercase tracking-wider text-red-400 leading-none";
+      toastSubtitle.textContent = leveledUp ? newTier.desc : subtitle;
+      shotToast.classList.remove("opacity-0", "-translate-y-4");
+    }
+
+    if (isGoal) {
+      setTimeout(() => {
+        shotToast?.classList.add("opacity-0", "-translate-y-4");
+        shotPhys.active = false;
+        setupNextKick();
+      }, 1700);
+    } else {
+      setTimeout(() => {
+        shotToast?.classList.add("opacity-0", "-translate-y-4");
+        shotPhys.active = false;
+        showGameOverModal(title, subtitle, prevTierId);
+      }, 1350);
+    }
+  }
+
+  function showGameOverModal(title: string, subtitle: string, reachedTierId: number) {
+    state.phase = "gameover";
+    stopDrums();
+
+    if (goTitle) goTitle.textContent = title;
+    if (goDesc) goDesc.textContent = subtitle;
+    if (goStatStreak) goStatStreak.textContent = String(state.streak);
+    if (goStatLevel) goStatLevel.textContent = `Niv. ${reachedTierId}`;
+    if (goStatRecord) goStatRecord.textContent = String(state.bestStreak);
+
+    gameoverModal?.classList.remove("hidden");
+    gameoverModal?.classList.add("flex");
+    renderLevelsModal();
+  }
+
+  function restartSeries(startTierIdx = 0) {
+    state.paused = false;
+    if (iconPause) iconPause.textContent = "⏸";
+    state.baseTierIndex = startTierIdx;
+    state.streak = TIERS[startTierIdx]?.minGoals || 0;
+    gameoverModal?.classList.add("hidden");
+    gameoverModal?.classList.remove("flex");
+    levelsModalOverlay?.classList.add("hidden");
+    levelsModalOverlay?.classList.remove("flex");
+    gameMenuOverlay?.classList.add("hidden");
+    gameMenuOverlay?.classList.remove("flex");
+    setupNextKick();
+    renderLevelsModal();
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*  SÉPARATION STRICTE : MODALE NIVEAUX VS MENU GÉNÉRAL                       */
+  /* -------------------------------------------------------------------------- */
+  function renderLevelsModal() {
+    if (!levelsGrid) return;
+    levelsGrid.innerHTML = "";
+    const activeTier = getActiveTier();
+
+    TIERS.forEach((t, idx) => {
+      const unlocked = t.id <= state.maxUnlockedTier;
+      const isCurrent = t.id === activeTier.id;
+      const card = document.createElement("button");
+      card.type = "button";
+      card.disabled = !unlocked;
+      card.className = `flex flex-col justify-between rounded-2xl border p-3.5 text-left transition-all ${
+        isCurrent
+          ? "border-or bg-or/15 shadow-lg"
+          : unlocked
+            ? "border-white/15 bg-black/40 hover:border-white/35 hover:bg-white/5"
+            : "border-white/5 bg-black/20 opacity-45 cursor-not-allowed"
+      }`;
+
+      card.innerHTML = `
+        <div>
+          <div class="flex items-center justify-between gap-2">
+            <span class="rounded ${isCurrent ? "bg-or text-slate-950" : "bg-white/10 text-or"} px-2 py-0.5 font-display text-xs uppercase tracking-wider font-black">
+              Niveau ${t.id}
+            </span>
+            <span class="text-[0.68rem] font-bold ${unlocked ? "text-emerald-400" : "text-slate-500"}">
+              ${unlocked ? (isCurrent ? "● En cours" : "✓ Débloqué") : `🔒 Dès ${t.minGoals} but${t.minGoals > 1 ? "s" : ""}`}
+            </span>
+          </div>
+          <h4 class="mt-1.5 font-display text-lg uppercase tracking-wide text-white">${t.name}</h4>
+          <p class="mt-0.5 text-xs text-slate-300 leading-relaxed">${t.desc}</p>
+        </div>
+        <div class="mt-2.5 flex items-center justify-between border-t border-white/10 pt-2 text-[0.62rem] font-bold uppercase tracking-wider text-slate-400">
+          <span>Réaction IA : <strong class="text-white">${Math.round(t.keeperReactionSec * 1000)} ms</strong></span>
+          <span>Mur : <strong class="text-or">${t.wallPlayers}</strong> · Vent : <strong class="text-sky-300">${t.windMaxKmh} km/h</strong></span>
+        </div>
+      `;
+
+      if (unlocked) {
+        card.addEventListener("click", () => restartSeries(idx));
+      }
+      levelsGrid.appendChild(card);
+    });
+  }
+
+  function openLevelsModal() {
+    state.paused = true;
+    if (iconPause) iconPause.textContent = "▶";
+    renderLevelsModal();
+    levelsModalOverlay?.classList.remove("hidden");
+    levelsModalOverlay?.classList.add("flex");
+  }
+
+  function closeLevelsModal() {
+    levelsModalOverlay?.classList.add("hidden");
+    levelsModalOverlay?.classList.remove("flex");
+    state.paused = false;
+    if (iconPause) iconPause.textContent = "⏸";
+    prevTime = performance.now();
+  }
+
+  btnOpenLevels?.addEventListener("click", openLevelsModal);
+  btnCloseLevels?.addEventListener("click", closeLevelsModal);
+  btnResumeFromLevels?.addEventListener("click", closeLevelsModal);
+  btnGoLevels?.addEventListener("click", () => {
+    gameoverModal?.classList.add("hidden");
+    gameoverModal?.classList.remove("flex");
+    openLevelsModal();
+  });
+
+  // Onglets du Menu Général (Réglages / Photos SDM / Partenaires)
+  const tabBtns = document.querySelectorAll<HTMLButtonElement>(".menu-tab-btn");
+  const panelSettings = document.getElementById("menu-panel-settings");
+  const panelPhotos = document.getElementById("menu-panel-photos");
+  const panelPartners = document.getElementById("menu-panel-partners");
+
+  function switchMenuTab(tabName: string) {
+    tabBtns.forEach((b) => {
+      const active = b.dataset.menuTab === tabName;
+      b.classList.toggle("border-or", active);
+      b.classList.toggle("text-or", active);
+      b.classList.toggle("border-transparent", !active);
+      b.classList.toggle("text-slate-400", !active);
+    });
+    panelSettings?.classList.toggle("hidden", tabName !== "settings");
+    panelPhotos?.classList.toggle("hidden", tabName !== "photos");
+    panelPartners?.classList.toggle("hidden", tabName !== "partners");
+  }
+
+  tabBtns.forEach((b) => b.addEventListener("click", () => switchMenuTab(b.dataset.menuTab || "settings")));
+
+  function openMenu(tab = "settings") {
+    state.paused = true;
+    if (iconPause) iconPause.textContent = "▶";
+    switchMenuTab(tab);
+    gameMenuOverlay?.classList.remove("hidden");
+    gameMenuOverlay?.classList.add("flex");
+  }
+
+  function closeMenu() {
+    gameMenuOverlay?.classList.add("hidden");
+    gameMenuOverlay?.classList.remove("flex");
+    state.paused = false;
+    if (iconPause) iconPause.textContent = "⏸";
+    prevTime = performance.now();
+  }
+
+  btnOpenMenu?.addEventListener("click", () => openMenu("settings"));
+  btnCloseMenu?.addEventListener("click", closeMenu);
+  btnResumeGame?.addEventListener("click", closeMenu);
+  btnGoRetry?.addEventListener("click", () => restartSeries(0));
+  btnMenuRestart?.addEventListener("click", () => restartSeries(0));
+
+  btnSetDay?.addEventListener("click", () => applyLightingMode(false));
+  btnSetNight?.addEventListener("click", () => applyLightingMode(true));
+
+  function toggleAudio() {
+    initAudio();
+    state.audioEnabled = !state.audioEnabled;
+    if (iconSound) iconSound.textContent = state.audioEnabled ? "🔊" : "🔇";
+    if (btnMenuAudioToggle) {
+      btnMenuAudioToggle.textContent = state.audioEnabled ? "🔊 Son Activé" : "🔇 Son Coupé";
+    }
+  }
+  btnSound?.addEventListener("click", toggleAudio);
+  btnMenuAudioToggle?.addEventListener("click", toggleAudio);
+
+  btnSkipCinematic?.addEventListener("click", () => {
+    initAudio();
+    restartSeries(0);
+  });
+
+  btnMenuIntro?.addEventListener("click", () => {
+    closeMenu();
+    state.phase = "cinematic";
+    state.cinematicTime = 0;
+    cinematicBar?.classList.remove("hidden");
+    aimInstruction?.classList.add("opacity-0");
+  });
+
+  /* -------------------------------------------------------------------------- */
+  /*  BOUCLE PRINCIPALE D'ANIMATION                                             */
+  /* -------------------------------------------------------------------------- */
+  let prevTime = performance.now();
+
+  function animate() {
+    requestAnimationFrame(animate);
+    const now = performance.now();
+    const dt = Math.min((now - prevTime) / 1000, 0.05);
+    prevTime = now;
+
+    if (state.paused) {
+      renderer.render(scene, camera);
+      return;
+    }
+
+    const elapsed = now * 0.001;
+    flashMat.uniforms.uTime.value = elapsed;
+    updateNetMesh(dt);
+
+    if (state.phase === "cinematic") {
+      state.cinematicTime += dt;
+      const t = state.cinematicTime;
+      if (t < 2.2) {
+        const p = t / 2.2;
+        camera.position.set(Math.sin(p * 0.5) * 42, 36 - p * 20, 64 - p * 28);
+        camera.lookAt(0, 6, -10);
+        if (cinematicStepLabel) cinematicStepLabel.textContent = "1/2 · Stade des Martyrs · 80 000 places";
+      } else if (t < 4.0) {
+        const p = (t - 2.2) / 1.8;
+        camera.position.set(-12 * (1 - p), 1.55 - p * 0.17, 21 - p * 7.3);
+        camera.lookAt(0, 1.3, 0);
+        if (cinematicStepLabel) cinematicStepLabel.textContent = "2/2 · 90ᵉ Minute · Point de Penalty";
+      } else {
+        restartSeries(0);
+      }
+    } else if (state.phase === "aiming" || state.phase === "charging") {
+      const tier = getActiveTier();
+      const swayFreq = 4.2 + tier.id * 0.95;
+      const swayAmp = 0.34 + tier.id * 0.09;
+      keeperGroup.position.x = Math.sin(elapsed * swayFreq) * swayAmp;
+      keeperGroup.position.y = Math.abs(Math.sin(elapsed * swayFreq * 2)) * 0.09;
+      kArmL.rotation.z = 0.78 + Math.sin(elapsed * 7.5) * 0.16;
+      kArmR.rotation.z = -0.78 - Math.sin(elapsed * 7.5) * 0.16;
+
+      if (state.phase === "charging") {
+        updateChargeGauge(dt);
+      }
+    } else if (state.phase === "shooting" || state.phase === "result") {
+      updatePhysics(dt);
+    }
+
+    renderer.render(scene, camera);
+  }
+
+  window.addEventListener("resize", () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  applyLightingMode(true);
+  updateHud();
+  renderLevelsModal();
+  animate();
+</script>

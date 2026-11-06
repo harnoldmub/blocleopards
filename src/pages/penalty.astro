@@ -1,0 +1,21 @@
+---
+import "../styles/global.css";
+import SEO from "../components/SEO.astro";
+import PenaltyMartyrsGame from "../components/PenaltyMartyrsGame.astro";
+
+const pageTitle = "Penalty aux Martyrs 3D | Bloc Léopards";
+const pageDescription = "90ᵉ minute au Stade des Martyrs de Kinshasa. 5 niveaux de difficulté, physique d'effet Magnus et ambiance des 80 000 supporters.";
+---
+
+<!doctype html>
+<html lang="fr" class="h-full w-full overflow-hidden bg-[#050811]">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <SEO title={pageTitle} description={pageDescription} />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  </head>
+  <body class="h-[100dvh] w-screen overflow-hidden bg-[#050811] text-white select-none antialiased">
+    <PenaltyMartyrsGame />
+  </body>
+</html>

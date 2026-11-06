@@ -31,6 +31,7 @@
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
     "@types/react-is": "^19.2.0",
+    "@types/three": "^0.187.0",
     "astro": "^4.16.2",
     "aws4fetch": "^1.0.20",
     "country-state-city": "^3.2.1",
@@ -45,7 +46,8 @@
     "resend": "^6.12.4",
     "sanity": "^5.26.0",
     "sharp": "^0.34.5",
-    "styled-components": "^6.4.2"
+    "styled-components": "^6.4.2",
+    "three": "^0.187.0"
   },
   "devDependencies": {
     "@astrojs/tailwind": "^5.1.0",
