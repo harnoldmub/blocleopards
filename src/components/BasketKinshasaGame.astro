@@ -64,19 +64,24 @@
       </div>
 
       <!-- Bandeau Spot & Niveau -->
-      <div class="flex items-center gap-1.5">
+      <div class="flex items-center gap-1.5 flex-wrap">
         <button
           type="button"
           id="btn-open-levels"
           class="pointer-events-auto flex items-center gap-1.5 rounded-lg border border-or bg-[#09142e] px-2.5 py-1 transition-all hover:bg-[#0c1b3a] active:scale-95 shadow-md"
         >
           <span class="h-1.5 w-1.5 rounded-full bg-or animate-pulse"></span>
-          <span id="hud-level-badge" class="font-display text-[0.65rem] uppercase tracking-wider text-or font-black">NIV. 1 · LANCER FRANC</span>
+          <span id="hud-level-badge" class="font-display text-[0.65rem] uppercase tracking-wider text-or font-black">NIV. 1 · ÉCHAUFFEMENT LF</span>
         </button>
 
         <div class="flex items-center gap-1 rounded-lg border border-[#1e3a6e] bg-[#071024] px-2.5 py-1 text-[0.65rem] font-bold text-sky-300 shadow-md">
           <span>📍</span>
           <span id="hud-spot-label">Tir 1/5 · Lancer Franc (4.6m)</span>
+        </div>
+
+        <div id="hud-wind-badge" class="flex items-center gap-1 rounded-lg border border-[#1e3a6e] bg-[#040917] px-2 py-1 text-[0.62rem] font-bold text-slate-300 shadow-md">
+          <span>💨</span>
+          <span id="hud-wind-val">Vent : 0 km/h</span>
         </div>
       </div>
     </div>
@@ -392,39 +397,109 @@
   interface BasketTier {
     id: number;
     name: string;
+    subtitle: string;
     desc: string;
+    targetGoals: number; // Buts requis pour valider le niveau (sur 5)
     tolerancePct: number;
-    windKmh: number;
+    gaugeSpeed: number; // Vitesse de montée de la jauge
+    shotClockSec: number; // Temps limite par tir
+    windMaxKmh: number;
+    spots: CourtSpot[];
   }
+
+  // Spots spécifiques selon les niveaux
+  const SPOTS_WARMUP: CourtSpot[] = [
+    { name: "Lancer Franc", x: 0, z: 4.6, distLabel: "4.6m" },
+    { name: "Raquette Milieu", x: -1.2, z: 4.2, distLabel: "4.4m" },
+    { name: "Lancer Franc", x: 0, z: 4.6, distLabel: "4.6m" },
+    { name: "Raquette Droite", x: 1.2, z: 4.2, distLabel: "4.4m" },
+    { name: "Lancer Franc", x: 0, z: 4.6, distLabel: "4.6m" }
+  ];
+
+  const SPOTS_STANDARD: CourtSpot[] = [
+    { name: "Lancer Franc", x: 0, z: 4.6, distLabel: "4.6m" },
+    { name: "Aile Gauche 45°", x: -4.1, z: 4.5, distLabel: "6.1m" },
+    { name: "Tête de Raquette 3pts", x: 0, z: 6.75, distLabel: "6.75m" },
+    { name: "Aile Droite 45°", x: 4.1, z: 4.5, distLabel: "6.1m" },
+    { name: "Corner Droit", x: 5.6, z: 2.2, distLabel: "6.0m" }
+  ];
+
+  const SPOTS_CLUTCH: CourtSpot[] = [
+    { name: "Aile Gauche 3pts", x: -4.5, z: 5.8, distLabel: "7.3m" },
+    { name: "Corner Gauche", x: -5.6, z: 2.2, distLabel: "6.0m" },
+    { name: "Tête de Raquette Loin", x: 0, z: 7.2, distLabel: "7.2m" },
+    { name: "Corner Droit", x: 5.6, z: 2.2, distLabel: "6.0m" },
+    { name: "Aile Droite 3pts", x: 4.5, z: 5.8, distLabel: "7.3m" }
+  ];
+
+  const SPOTS_LOGO: CourtSpot[] = [
+    { name: "Corner Gauche", x: -5.6, z: 2.2, distLabel: "6.0m" },
+    { name: "Aile Gauche Pro", x: -4.8, z: 6.2, distLabel: "7.8m" },
+    { name: "Logo Buzzer Limete", x: 0, z: 8.4, distLabel: "8.4m" },
+    { name: "Aile Droite Pro", x: 4.8, z: 6.2, distLabel: "7.8m" },
+    { name: "Logo Buzzer Distance", x: 0, z: 9.2, distLabel: "9.2m" }
+  ];
 
   const TIERS: BasketTier[] = [
     {
       id: 1,
-      name: "Shootaround Limete",
-      desc: "5 tirs pour régler la mécanique du poignet sans vent.",
-      tolerancePct: 9.5,
-      windKmh: 0
+      name: "Échauffement 7ᵉ Rue",
+      subtitle: "Lancers francs & tirs ouverts",
+      desc: "5 lancers francs pour caler le poignet. 24 secondes, vent nul, tolérance large.",
+      targetGoals: 2,
+      tolerancePct: 10.5,
+      gaugeSpeed: 48,
+      shotClockSec: 24,
+      windMaxKmh: 0,
+      spots: SPOTS_WARMUP
     },
     {
       id: 2,
-      name: "Playground 7ᵉ Rue",
-      desc: "Précision renforcée sur les ailes et à mi-distance.",
-      tolerancePct: 8.0,
-      windKmh: 4
+      name: "Playground Limete",
+      subtitle: "Tour de l'arc classique",
+      desc: "Rotation 45° et tirs à mi-distance. Jauge plus dynamique et légère brise.",
+      targetGoals: 3,
+      tolerancePct: 8.8,
+      gaugeSpeed: 56,
+      shotClockSec: 18,
+      windMaxKmh: 5,
+      spots: SPOTS_STANDARD
     },
     {
       id: 3,
-      name: "Money Time Kinshasa",
-      desc: "Tirs lointains avec brise urbaine et tolérance resserrée.",
-      tolerancePct: 6.8,
-      windKmh: 8
+      name: "Tournoi Urbain Kin",
+      subtitle: "Tirs primés & chrono 14s",
+      desc: "3 points dans les corners et à 45°. Chrono offensif FIBA 14s et vent latéral sensible.",
+      targetGoals: 3,
+      tolerancePct: 7.2,
+      gaugeSpeed: 64,
+      shotClockSec: 14,
+      windMaxKmh: 10,
+      spots: SPOTS_CLUTCH
     },
     {
       id: 4,
+      name: "Money Time Léopards",
+      subtitle: "Chrono 10s sous pression",
+      desc: "Lancers ultra serrés, 10s avant le buzzer et rafales de vent à Limete. 4/5 exigés !",
+      targetGoals: 4,
+      tolerancePct: 5.8,
+      gaugeSpeed: 72,
+      shotClockSec: 10,
+      windMaxKmh: 16,
+      spots: SPOTS_CLUTCH
+    },
+    {
+      id: 5,
       name: "Légende Buzzer Beater",
-      desc: "Tolérance chirurgicale pour faire swisher le filet à la sirène !",
-      tolerancePct: 5.2,
-      windKmh: 12
+      subtitle: "Logo 8m+ & Chrono éclair 7s",
+      desc: "Du logo du terrain à plus de 8 mètres ! 7 secondes par tir, tolérance chirurgicale.",
+      targetGoals: 4,
+      tolerancePct: 4.6,
+      gaugeSpeed: 82,
+      shotClockSec: 7,
+      windMaxKmh: 22,
+      spots: SPOTS_LOGO
     }
   ];
 
@@ -435,6 +510,8 @@
     shotIndex: 0, // 0..4 (5 tirs par série)
     shotsHistory: [] as boolean[],
     goalsInSeries: 0,
+    shotClockRemaining: 24.0,
+    currentWindKmh: 0,
     maxUnlockedTier: Number(localStorage.getItem("kin_basket_max_tier") || 1),
     bestScore: Number(localStorage.getItem("kin_basket_best_score") || 0),
     isNight: true,
@@ -456,6 +533,7 @@
   const hudScoreMade = document.getElementById("hud-score-made");
   const hudLevelBadge = document.getElementById("hud-level-badge");
   const hudSpotLabel = document.getElementById("hud-spot-label");
+  const hudWindVal = document.getElementById("hud-wind-val");
   const hudKickDots = document.querySelectorAll<HTMLSpanElement>(".dot-shot");
 
   const powerMeterWrap = document.getElementById("power-meter-wrap");
@@ -884,8 +962,14 @@
   /* -------------------------------------------------------------------------- */
   /*  CADRAGE & GESTION DE LA SÉANCE DE 5 TIRS                                  */
   /* -------------------------------------------------------------------------- */
+  function getCurrentSpot(): CourtSpot {
+    const tier = getActiveTier();
+    const spots = tier.spots && tier.spots.length > 0 ? tier.spots : SPOTS_STANDARD;
+    return spots[state.shotIndex % spots.length];
+  }
+
   function applyPlayableFraming() {
-    const spot = SPOTS_5[state.shotIndex % SPOTS_5.length];
+    const spot = getCurrentSpot();
     const dirToHoop = new THREE.Vector3(0 - spot.x, 0, HOOP.rimZ - spot.z).normalize();
     const aspect = window.innerWidth / Math.max(1, window.innerHeight);
     const isPortrait = aspect < 0.95;
@@ -901,11 +985,17 @@
 
   function updateHud() {
     const tier = getActiveTier();
-    const spot = SPOTS_5[state.shotIndex % SPOTS_5.length];
+    const spot = getCurrentSpot();
 
     if (hudScoreMade) hudScoreMade.textContent = String(state.goalsInSeries);
     if (hudLevelBadge) hudLevelBadge.textContent = `NIV. ${tier.id} · ${tier.name.toUpperCase()}`;
     if (hudSpotLabel) hudSpotLabel.textContent = `Tir ${state.shotIndex + 1}/5 · ${spot.name} (${spot.distLabel})`;
+    if (hudShotclock) hudShotclock.textContent = Math.max(0, state.shotClockRemaining).toFixed(1);
+    if (hudWindVal) {
+      hudWindVal.textContent = state.currentWindKmh === 0
+        ? "Vent : 0 km/h"
+        : `${state.currentWindKmh > 0 ? "Vent Droit ➔" : "Vent Gauche ⬅"} ${Math.abs(state.currentWindKmh)} km/h`;
+    }
     if (levelsBestStreak) levelsBestStreak.textContent = `${state.bestScore}/5`;
     if (pauseStreakVal) pauseStreakVal.textContent = `${state.goalsInSeries}/5`;
 
@@ -925,6 +1015,16 @@
     if (state.shotIndex >= 5) {
       endSeries();
       return;
+    }
+
+    const tier = getActiveTier();
+    state.shotClockRemaining = tier.shotClockSec;
+    // Tirage du vent selon le niveau
+    if (tier.windMaxKmh > 0) {
+      const dir = Math.random() < 0.5 ? -1 : 1;
+      state.currentWindKmh = Math.round(dir * (tier.windMaxKmh * 0.45 + Math.random() * tier.windMaxKmh * 0.55));
+    } else {
+      state.currentWindKmh = 0;
     }
 
     state.phase = "aiming";
@@ -967,17 +1067,17 @@
       localStorage.setItem("kin_basket_best_score", String(state.bestScore));
     }
 
-    const passed = state.goalsInSeries >= 3;
+    const passed = state.goalsInSeries >= tier.targetGoals;
     if (passed && tier.id === state.maxUnlockedTier && state.maxUnlockedTier < TIERS.length) {
       state.maxUnlockedTier++;
       localStorage.setItem("kin_basket_max_tier", String(state.maxUnlockedTier));
     }
 
-    if (goTitle) goTitle.textContent = passed ? "VICTOIRE À LIMETE ! 🔥" : "SÉANCE TERMINÉE";
+    if (goTitle) goTitle.textContent = passed ? "VICTOIRE À LIMETE ! 🔥" : "SÉANCE NON VALIDÉE";
     if (goDesc) {
       goDesc.textContent = passed
-        ? `Magnifique performance ! ${state.goalsInSeries}/5 tirs rentrés. Niveau suivant débloqué !`
-        : `Tu as inscrit ${state.goalsInSeries}/5 tirs. Entraîne-toi pour valider au moins 3/5 !`;
+        ? `Magnifique performance ! ${state.goalsInSeries}/5 tirs rentrés (objectif ${tier.targetGoals}/5 atteint). Niveau ${tier.id + 1 <= TIERS.length ? tier.id + 1 : "Max"} débloqué !`
+        : `Tu as inscrit ${state.goalsInSeries}/5 tirs (objectif : ${tier.targetGoals}/5 pour valider ce niveau). Retente ta chance !`;
     }
     if (goStatStreak) goStatStreak.textContent = `${state.goalsInSeries}/5`;
     if (goStatLevel) goStatLevel.textContent = `Niv. ${tier.id}`;
@@ -1012,7 +1112,8 @@
   function updateChargeGauge(dt: number) {
     if (!chargeActive || state.phase !== "charging" || state.paused) return;
 
-    lockedPowerPct = Math.min(100, lockedPowerPct + dt * 56);
+    const tier = getActiveTier();
+    lockedPowerPct = Math.min(100, lockedPowerPct + dt * tier.gaugeSpeed);
     const displayPct = Math.round(lockedPowerPct);
 
     if (powerMeterFill) powerMeterFill.style.height = `${displayPct}%`;
@@ -1045,7 +1146,7 @@
     }
 
     // Le ballon monte légèrement dans la phase d'armé du shoot
-    const spot = SPOTS_5[state.shotIndex % SPOTS_5.length];
+    const spot = getCurrentSpot();
     ballMesh.position.y = 1.55 + Math.min(0.35, (lockedPowerPct / 100) * 0.35);
 
     drawSwipeTrail();
@@ -1090,7 +1191,7 @@
     }, 280);
 
     const tier = getActiveTier();
-    const spot = SPOTS_5[state.shotIndex % SPOTS_5.length];
+    const spot = getCurrentSpot();
     const isOverload = lockedPowerPct >= 92;
     const isPerfect = lockedPowerPct >= 72 && lockedPowerPct < 92;
 
@@ -1191,8 +1292,12 @@
     const SUBSTEPS = 6;
     const subDt = dt / SUBSTEPS;
 
+    // Dérive due au vent latéral sur le vol du ballon
+    const windAccelX = (state.currentWindKmh / 3.6) * 0.18;
+
     for (let s = 0; s < SUBSTEPS; s++) {
       ballPhys.vy -= 9.81 * subDt;
+      ballPhys.vx += windAccelX * subDt;
       ballMesh.position.x += ballPhys.vx * subDt;
       ballMesh.position.y += ballPhys.vy * subDt;
       ballMesh.position.z += ballPhys.vz * subDt;
@@ -1308,14 +1413,18 @@
         <div>
           <div class="flex items-center justify-between gap-2">
             <span class="rounded ${isCurrent ? "bg-or text-slate-950 font-black" : "bg-[#0c1b3a] text-or"} px-2 py-0.5 font-display text-xs uppercase">
-              Niveau ${t.id}
+              Niveau ${t.id} · ${t.subtitle}
             </span>
             <span class="text-[0.68rem] font-bold ${unlocked ? "text-emerald-400" : "text-slate-500"}">
               ${unlocked ? (isCurrent ? "● En cours" : "✓ Débloqué") : "🔒 Verrouillé"}
             </span>
           </div>
           <h4 class="mt-1.5 font-display text-lg uppercase text-white">${t.name}</h4>
-          <p class="mt-0.5 text-xs text-slate-300">${t.desc}</p>
+          <p class="mt-0.5 text-xs text-slate-300 leading-relaxed">${t.desc}</p>
+        </div>
+        <div class="mt-2.5 flex items-center justify-between border-t border-[#1e3a6e] pt-2 text-[0.62rem] font-bold uppercase tracking-wider text-slate-400">
+          <span>Objectif : <strong class="text-emerald-400">${t.targetGoals}/5 tirs</strong></span>
+          <span>Chrono : <strong class="text-feu">${t.shotClockSec}s</strong> · Vent : <strong class="text-sky-300">${t.windMaxKmh} km/h</strong></span>
         </div>
       `;
       if (unlocked) card.addEventListener("click", () => startSeries(idx));
@@ -1449,6 +1558,19 @@
     const sScale = 1 + h * 0.4;
     ballContactShadow.scale.set(sScale, sScale, 1);
     (ballContactShadow.material as THREE.MeshBasicMaterial).opacity = Math.max(0.08, 0.65 * Math.exp(-h * 0.9));
+
+    // Décompte de l'horloge des 24 secondes (ou chrono réduit selon le niveau)
+    if (state.phase === "aiming" || state.phase === "charging") {
+      state.shotClockRemaining -= dt;
+      if (hudShotclock) {
+        hudShotclock.textContent = Math.max(0, state.shotClockRemaining).toFixed(1);
+      }
+      if (state.shotClockRemaining <= 0) {
+        // Violation des 24s / Buzzer expiré : tir annulé & raté !
+        playRimClangAudio();
+        onShotResolved(false, "BUZZER EXPIRÉ (0.0s) ! 🚨");
+      }
+    }
 
     if (state.phase === "charging") {
       updateChargeGauge(dt);
