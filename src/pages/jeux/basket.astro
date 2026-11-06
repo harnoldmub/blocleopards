@@ -1,5 +1,21 @@
 ---
-import ShootPage from "../shoot.astro";
----
-<ShootPage />
+import "../../styles/global.css";
+import SEO from "../../components/SEO.astro";
+import BasketKinshasaGame from "../../components/BasketKinshasaGame.astro";
 
+const pageTitle = "Shoot à la Sirène · Limete 7ᵉ Rue (Kinshasa) | Jeux Bloc Léopards";
+const pageDescription = "Jeu 3D Streetball sur le playground de la 7ᵉ Rue à Limete, Kinshasa. 8 niveaux évolutifs, shot clock et vent physique.";
+---
+
+<!doctype html>
+<html lang="fr" class="dark overflow-hidden">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <SEO title={pageTitle} description={pageDescription} />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+  </head>
+  <body class="m-0 h-[100dvh] w-screen overflow-hidden bg-[#070b16] text-white antialiased select-none">
+    <BasketKinshasaGame />
+  </body>
+</html>

@@ -672,7 +672,7 @@
               <button type="button" id="btn-menu-intro" class="rounded-xl border border-[#1e3a6e] bg-[#0c1b3a] px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#132854]">
                 🎬 Caméra d'entrée au stade
               </button>
-              <a href="/shoot" class="rounded-xl border border-or bg-congo px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-congo-bright">
+              <a href="/jeux/basket" class="rounded-xl border border-or bg-congo px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-congo-bright">
                 🏀 Mode Basket · Shoot à la Sirène
               </a>
             </div>
@@ -4704,7 +4704,7 @@
     const activeKeeper = getActiveKeeper();
     const pseudo = (challengePlayerName?.value || "").trim() || "UnSupporter";
     const origin = window.location.origin || "https://blocleopards.com";
-    const path = window.location.pathname.includes("penalty") ? window.location.pathname : "/penalty";
+    const path = window.location.pathname.includes("penalty") ? window.location.pathname : "/jeux/penalty";
     const params = new URLSearchParams({
       defie_par: pseudo,
       niveau: String(state.currentTierIndex + 1),

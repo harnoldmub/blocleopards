@@ -1,7 +1,7 @@
 ---
 /**
- * Redirection / alias /martyrs -> /penalty
+ * Redirection /martyrs -> /jeux/penalty
  */
-return Astro.redirect("/penalty");
+const search = Astro.url.search || "";
+return Astro.redirect(`/jeux/penalty${search}`, 301);
 ---
-
