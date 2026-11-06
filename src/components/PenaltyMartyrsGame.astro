@@ -57,7 +57,7 @@
         </div>
       </div>
 
-      <!-- Mini barre Niveau + Vent + Effet Enroulé -->
+      <!-- Mini barre Niveau + Joueurs Choisis + Vent + Effet Enroulé -->
       <div class="flex flex-wrap items-center gap-1">
         <button
           type="button"
@@ -67,6 +67,16 @@
         >
           <span class="h-1.5 w-1.5 rounded-full bg-or animate-pulse"></span>
           <span id="hud-level-badge" class="font-display text-[0.62rem] uppercase tracking-wider text-or">NIV. 1 · ÉCHAUFFEMENT</span>
+        </button>
+
+        <button
+          type="button"
+          id="btn-open-selection-hud"
+          class="pointer-events-auto flex items-center gap-1 rounded-md border border-sky-400/45 bg-[#060c1d]/90 px-2 py-0.5 text-[0.6rem] font-bold text-sky-200 backdrop-blur-md transition-all hover:border-sky-300 active:scale-95"
+          title="Changer le tireur Léopard ou le gardien"
+        >
+          <span>👕</span>
+          <span id="hud-matchup-label">#20 WISSA vs #1 MPASI</span>
         </button>
 
         <div id="hud-wind-pill" class="flex items-center gap-1 rounded-md border border-white/10 bg-[#060c1d]/85 px-1.5 py-0.5 text-[0.6rem] font-bold text-sky-300 backdrop-blur-md">
@@ -153,11 +163,37 @@
     <span id="power-meter-pct" class="rounded bg-black/90 px-1.5 py-0.5 font-display text-xs tracking-wider text-or shadow">0%</span>
   </div>
 
-  <!-- ================= INDICATION DISCRÈTE EN BAS ================= -->
-  <div id="aim-instruction" class="pointer-events-none absolute inset-x-0 bottom-2.5 z-20 flex flex-col items-center justify-center opacity-0 transition-opacity duration-300 px-3">
+  <!-- ================= INDICATION DISCRÈTE EN BAS + BOUTONS TEMPS RÉEL ================= -->
+  <div id="aim-instruction" class="pointer-events-none absolute inset-x-0 bottom-2.5 z-20 flex flex-col items-center justify-center gap-1.5 opacity-0 transition-opacity duration-300 px-3">
+    <div class="pointer-events-auto flex flex-wrap items-center justify-center gap-1.5">
+      <button
+        type="button"
+        data-demo-case="catch"
+        class="btn-demo-case flex items-center gap-1 rounded-full border border-sky-400/45 bg-[#060c1d]/90 px-2.5 py-1 text-[0.58rem] font-bold uppercase tracking-wider text-sky-200 shadow-lg backdrop-blur-md hover:bg-sky-900/60 active:scale-95"
+      >
+        <span>🧤</span>
+        <span>Démo Arrêt Capté</span>
+      </button>
+      <button
+        type="button"
+        data-demo-case="deflect_goal"
+        class="btn-demo-case flex items-center gap-1 rounded-full border border-emerald-400/45 bg-[#060c1d]/90 px-2.5 py-1 text-[0.58rem] font-bold uppercase tracking-wider text-emerald-200 shadow-lg backdrop-blur-md hover:bg-emerald-900/60 active:scale-95"
+      >
+        <span>🥅</span>
+        <span>Démo Dévié au Fond</span>
+      </button>
+      <button
+        type="button"
+        id="btn-bottom-change-players"
+        class="flex items-center gap-1 rounded-full border border-or/45 bg-[#060c1d]/90 px-2.5 py-1 text-[0.58rem] font-bold uppercase tracking-wider text-or shadow-lg backdrop-blur-md hover:bg-slate-800 active:scale-95"
+      >
+        <span>👕</span>
+        <span>Changer Joueurs</span>
+      </button>
+    </div>
     <div class="flex items-center gap-1.5 rounded-full border border-white/15 bg-[#060c1d]/85 px-3 py-1 text-[0.63rem] font-semibold text-slate-200 shadow-xl backdrop-blur-md text-center">
       <span class="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-or"></span>
-      <span>Glisse ton doigt en courbe 🌀 depuis le ballon pour enrouler ta frappe !</span>
+      <span>Glisse en courbe 🌀 et relâche dans la zone verte (70–91%) !</span>
     </div>
   </div>
 
@@ -173,7 +209,7 @@
       id="btn-skip-cinematic"
       class="pointer-events-auto flex items-center gap-1.5 rounded-xl border border-or/40 bg-or px-4 py-2 text-xs font-black uppercase tracking-wider text-slate-950 shadow-xl transition-transform hover:bg-yellow-300 active:scale-95"
     >
-      <span>Jouer</span>
+      <span>Choisir Tireur & Gardien</span>
       <span>⏭</span>
     </button>
   </div>
@@ -229,7 +265,14 @@
           id="btn-pause-restart"
           class="w-full rounded-xl border border-white/15 bg-white/10 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-white/20"
         >
-          🔄 Recommencer ce niveau (5 tirs)
+          🔄 Rejouer (Mêmes joueurs)
+        </button>
+        <button
+          type="button"
+          id="btn-pause-change-players"
+          class="w-full rounded-xl border border-sky-400/35 bg-sky-500/15 py-2 text-xs font-bold uppercase tracking-wider text-sky-200 hover:bg-sky-500/25"
+        >
+          👕 Changer les joueurs
         </button>
         <button
           type="button"
@@ -272,20 +315,103 @@
         </div>
       </div>
 
-      <div class="mt-4 flex gap-2">
+      <div class="mt-4 flex flex-col gap-2">
+        <div class="flex gap-2">
+          <button
+            type="button"
+            id="btn-go-levels"
+            class="rounded-xl border border-white/15 bg-white/10 px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-white/20"
+          >
+            🏆 Niveaux
+          </button>
+          <button
+            type="button"
+            id="btn-go-primary"
+            class="flex-1 rounded-xl bg-or px-4 py-2.5 text-xs font-black uppercase tracking-wider text-slate-950 shadow-lg shadow-or/25 hover:bg-yellow-300 active:scale-95 transition-transform"
+          >
+            🔥 Rejouer
+          </button>
+        </div>
         <button
           type="button"
-          id="btn-go-levels"
-          class="rounded-xl border border-white/15 bg-white/10 px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-white/20"
+          id="btn-go-change-players"
+          class="w-full rounded-xl border border-sky-400/40 bg-sky-500/15 py-2.5 text-xs font-bold uppercase tracking-wider text-sky-200 hover:bg-sky-500/25"
         >
-          🏆 Niveaux
+          👕 Changer les joueurs (Tireur & Gardien)
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= ÉTAPE DE SÉLECTION : CHOIX DU TIREUR LÉOPARD & DU GARDIEN ================= -->
+  <div id="selection-modal-overlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 p-2.5 sm:p-5 backdrop-blur-lg">
+    <div class="relative flex max-h-[92dvh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-or/35 bg-[#070f22] shadow-2xl">
+      <!-- En-tête -->
+      <div class="flex items-center justify-between border-b border-white/10 bg-[#050a18] px-4 py-3 sm:px-6">
+        <div class="flex items-center gap-2.5">
+          <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white p-1 shadow">
+            <img src="/brand/logo.png" alt="Bloc Léopards" class="h-full w-auto object-contain" />
+          </div>
+          <div>
+            <span class="block text-[0.52rem] font-bold uppercase tracking-widest text-or">La Série de Kin · Stade des Martyrs</span>
+            <h2 class="font-display text-base sm:text-xl uppercase tracking-wider text-white leading-none">
+              Choisis ton Léopard & ton Gardien
+            </h2>
+          </div>
+        </div>
         <button
           type="button"
-          id="btn-go-primary"
-          class="flex-1 rounded-xl bg-or px-4 py-2.5 text-xs font-black uppercase tracking-wider text-slate-950 shadow-lg shadow-or/25 hover:bg-yellow-300 active:scale-95 transition-transform"
+          id="btn-close-selection"
+          class="flex h-8 w-8 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-slate-300 hover:bg-white/15 hover:text-white"
+          title="Fermer"
         >
-          🔥 Niveau Suivant
+          ✕
+        </button>
+      </div>
+
+      <!-- Corps défilant : 1. Tireur Léopard + 2. Gardien -->
+      <div class="flex-1 overflow-y-auto p-3.5 sm:p-5 space-y-4">
+        <!-- 1. Choisir son tireur parmi les Léopards -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-display text-sm sm:text-base uppercase tracking-wider text-sky-300">
+              1. Choisis ton tireur parmi les Léopards (Maillot Bleu Ciel RDC)
+            </h3>
+            <span id="selected-shooter-pill" class="rounded-full bg-sky-500/20 border border-sky-400/40 px-2.5 py-0.5 text-[0.62rem] font-bold text-sky-200">
+              #20 Yoane Wissa
+            </span>
+          </div>
+          <div id="shooters-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5"></div>
+        </div>
+
+        <!-- 2. Choisir le gardien à affronter -->
+        <div class="border-t border-white/10 pt-3.5">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-display text-sm sm:text-base uppercase tracking-wider text-or">
+              2. Choisis ton adversaire dans les cages (Gardien)
+            </h3>
+            <span id="selected-keeper-pill" class="rounded-full bg-or/20 border border-or/40 px-2.5 py-0.5 text-[0.62rem] font-bold text-or">
+              #1 Lionel Mpasi
+            </span>
+          </div>
+          <div id="keepers-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5"></div>
+        </div>
+      </div>
+
+      <!-- Pied de modale : Résumé + Bouton Entrer sur le terrain -->
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-2.5 border-t border-white/10 bg-[#050a18] px-4 py-3 sm:px-6">
+        <div class="text-center sm:text-left">
+          <span class="block text-[0.52rem] uppercase tracking-widest text-slate-400">Duel sélectionné aux Martyrs</span>
+          <p id="selection-duel-summary" class="text-xs font-bold text-white">
+            👕 #20 Yoane Wissa <span class="text-or">vs</span> 🧤 #1 Lionel Mpasi
+          </p>
+        </div>
+        <button
+          type="button"
+          id="btn-enter-pitch"
+          class="w-full sm:w-auto rounded-xl bg-or px-6 py-3 text-xs sm:text-sm font-black uppercase tracking-wider text-slate-950 shadow-xl shadow-or/25 transition-transform hover:bg-yellow-300 active:scale-95"
+        >
+          ⚽ Entrer sur le terrain
         </button>
       </div>
     </div>
@@ -498,19 +624,25 @@
           </div>
 
           <div class="rounded-2xl border border-white/10 bg-white/5 p-3.5">
-            <span class="block text-[0.65rem] font-black uppercase tracking-widest text-or mb-2">Démonstrations Physiques 3D (4 Cas Officiels)</span>
-            <div class="grid grid-cols-2 gap-2">
+            <span class="block text-[0.65rem] font-black uppercase tracking-widest text-or mb-2">Démonstrations Physiques 3D en Temps Réel</span>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <button type="button" data-demo-case="catch" class="btn-demo-case rounded-xl border border-sky-400/45 bg-sky-500/20 px-3 py-2 text-[0.68rem] font-bold uppercase tracking-wider text-sky-200 hover:bg-sky-500/30">
+                🧤 1. Arrêt capté (Mains)
+              </button>
+              <button type="button" data-demo-case="deflect_goal" class="btn-demo-case rounded-xl border border-emerald-400/45 bg-emerald-500/20 px-3 py-2 text-[0.68rem] font-bold uppercase tracking-wider text-emerald-200 hover:bg-emerald-500/30">
+                🥅 2. Dévié au fond ⚽
+              </button>
               <button type="button" data-demo-case="goal" class="btn-demo-case rounded-xl border border-emerald-400/35 bg-emerald-500/15 px-3 py-2 text-[0.68rem] font-bold uppercase tracking-wider text-emerald-200 hover:bg-emerald-500/25">
-                ⚽ 1. But dans le filet
+                ⚽ 3. But lucarne
               </button>
               <button type="button" data-demo-case="save" class="btn-demo-case rounded-xl border border-sky-400/35 bg-sky-500/15 px-3 py-2 text-[0.68rem] font-bold uppercase tracking-wider text-sky-200 hover:bg-sky-500/25">
-                🧤 2. Arrêt du gardien
+                🧤 4. Parade plongeon
               </button>
               <button type="button" data-demo-case="post_in" class="btn-demo-case rounded-xl border border-amber-400/35 bg-amber-500/15 px-3 py-2 text-[0.68rem] font-bold uppercase tracking-wider text-amber-200 hover:bg-amber-500/25">
-                🥅 3. Poteau rentrant
+                🥅 5. Poteau rentrant
               </button>
               <button type="button" data-demo-case="post_out" class="btn-demo-case rounded-xl border border-rose-400/35 bg-rose-500/15 px-3 py-2 text-[0.68rem] font-bold uppercase tracking-wider text-rose-200 hover:bg-rose-500/25">
-                💥 4. Poteau sortant
+                💥 6. Poteau sortant
               </button>
             </div>
           </div>
@@ -746,14 +878,174 @@
   ];
 
   /* -------------------------------------------------------------------------- */
+  /*  CATALOGUE CONFIGURABLE DES TIREURS LÉOPARDS & DES GARDIENS                */
+  /* -------------------------------------------------------------------------- */
+  interface LeopardShooter {
+    id: string;
+    name: string;
+    backName: string;
+    number: number;
+    position: string;
+    specialty: string;
+    photo: string;
+    skinHex: number;
+  }
+
+  interface GoalkeeperProfile {
+    id: string;
+    name: string;
+    shortName: string;
+    number: number;
+    kitName: string;
+    photo: string;
+    shirtPrimary: string;
+    shirtSecondary: string;
+    shortsColor: string;
+    socksColor: string;
+    gloveColor: string;
+    accentColor: string;
+    skinHex: number;
+  }
+
+  const LEOPARD_SHOOTERS: LeopardShooter[] = [
+    {
+      id: "wissa-20",
+      name: "Yoane Wissa",
+      backName: "WISSA",
+      number: 20,
+      position: "Attaquant · Léopards RDC",
+      specialty: "Enroulé & Lucarne",
+      photo: "/media/can-2027/poster-wissa-gold-thumb.webp",
+      skinHex: 0x3b2314
+    },
+    {
+      id: "mbemba-22",
+      name: "Chancel Mbemba",
+      backName: "MBEMBA",
+      number: 22,
+      position: "Capitaine · Défenseur RDC",
+      specialty: "Frappe de Capitaine",
+      photo: "/media/can-2027/poster-equipe-bleu-thumb.webp",
+      skinHex: 0x422717
+    },
+    {
+      id: "bakambu-17",
+      name: "Cédric Bakambu",
+      backName: "BAKAMBU",
+      number: 17,
+      position: "Avant-centre · Léopards RDC",
+      specialty: "Sang-froid Buteur",
+      photo: "/media/martyrs/fecofa-leopards-match.webp",
+      skinHex: 0x52321c
+    },
+    {
+      id: "banza-9",
+      name: "Simon Banza",
+      backName: "BANZA",
+      number: 9,
+      position: "Attaquant · Léopards RDC",
+      specialty: "Puissance Pure",
+      photo: "/media/martyrs/lf-leopards-warriors.webp",
+      skinHex: 0x4a2c18
+    },
+    {
+      id: "bongonda-10",
+      name: "Théo Bongonda",
+      backName: "BONGONDA",
+      number: 10,
+      position: "Milieu offensif · Léopards RDC",
+      specialty: "Patte Gauche Enroulée",
+      photo: "/media/martyrs/fecofa-rdc-sierra-leone.webp",
+      skinHex: 0x4f301b
+    },
+    {
+      id: "wan-bissaka-2",
+      name: "Aaron Wan-Bissaka",
+      backName: "WAN-BISSAKA",
+      number: 2,
+      position: "Latéral droit · Léopards RDC",
+      specialty: "Précision Ras-de-terre",
+      photo: "/media/can-2027/poster-trio-rouge-thumb.webp",
+      skinHex: 0x3d2415
+    }
+  ];
+
+  const GOALKEEPERS_CATALOG: GoalkeeperProfile[] = [
+    {
+      id: "mpasi-1",
+      name: "Lionel Mpasi",
+      shortName: "MPASI",
+      number: 1,
+      kitName: "Tenue Orange Fluo & Noir",
+      photo: "/media/liste-officielle-leopards-2026.jpg",
+      shirtPrimary: "#ea580c",
+      shirtSecondary: "#9a3412",
+      shortsColor: "#0f172a",
+      socksColor: "#ea580c",
+      gloveColor: "#facc15",
+      accentColor: "#facc15",
+      skinHex: 0x3d2516
+    },
+    {
+      id: "fayulu-16",
+      name: "Timothy Fayulu",
+      shortName: "FAYULU",
+      number: 16,
+      kitName: "Tenue Émeraude & Anthracite",
+      photo: "/media/martyrs/fecofa-leopards-stade-martyrs.webp",
+      shirtPrimary: "#10b981",
+      shirtSecondary: "#065f46",
+      shortsColor: "#0f172a",
+      socksColor: "#10b981",
+      gloveColor: "#f8fafc",
+      accentColor: "#facc15",
+      skinHex: 0x4a2e1b
+    },
+    {
+      id: "epolo-23",
+      name: "Matthieu Epolo",
+      shortName: "EPOLO",
+      number: 23,
+      kitName: "Tenue Or Royal & Marine",
+      photo: "/media/martyrs/lf-match-action.webp",
+      shirtPrimary: "#eab308",
+      shirtSecondary: "#a16207",
+      shortsColor: "#09152b",
+      socksColor: "#facc15",
+      gloveColor: "#38bdf8",
+      accentColor: "#ffffff",
+      skinHex: 0x52341e
+    },
+    {
+      id: "rival-caf-1",
+      name: "Gardien Adverse CAF",
+      shortName: "GARDIEN ADV",
+      number: 1,
+      kitName: "Tenue Violet Impérial & Or",
+      photo: "/media/martyrs/fecofa-as-maniema.webp",
+      shirtPrimary: "#7c3aed",
+      shirtSecondary: "#4c1d95",
+      shortsColor: "#1e1b4b",
+      socksColor: "#8b5cf6",
+      gloveColor: "#facc15",
+      accentColor: "#facc15",
+      skinHex: 0x362012
+    }
+  ];
+
+  /* -------------------------------------------------------------------------- */
   /*  ÉTAT DU JEU (SÉANCE DE 5 TIRS PAR NIVEAU)                                 */
   /* -------------------------------------------------------------------------- */
   const TOTAL_KICKS_PER_SERIES = 5;
 
   const state = {
-    phase: "cinematic" as "cinematic" | "aiming" | "charging" | "shooting" | "result" | "gameover",
+    phase: "cinematic" as "cinematic" | "selecting" | "aiming" | "charging" | "runup" | "shooting" | "result" | "gameover",
     paused: false,
     cinematicTime: 0,
+    runupElapsed: 0,
+    selectedShooterIndex: 0,
+    selectedKeeperIndex: 0,
+    hasConfirmedSelection: false,
     currentTierIndex: 0,
     maxUnlockedTier: Number(localStorage.getItem("sdm_max_tier") || 1),
     kickIndex: 0,                      // 0..4 (5 tirs par séance)
@@ -771,6 +1063,12 @@
   function getActiveTier(): LevelTier {
     return TIERS[state.currentTierIndex] || TIERS[0];
   }
+  function getActiveShooter(): LeopardShooter {
+    return LEOPARD_SHOOTERS[state.selectedShooterIndex] || LEOPARD_SHOOTERS[0];
+  }
+  function getActiveKeeper(): GoalkeeperProfile {
+    return GOALKEEPERS_CATALOG[state.selectedKeeperIndex] || GOALKEEPERS_CATALOG[0];
+  }
 
   /* -------------------------------------------------------------------------- */
   /*  RÉFÉRENCES DOM                                                            */
@@ -784,6 +1082,9 @@
   const hudKickCounter = document.getElementById("hud-kick-counter");
   const hudFiveDots = document.getElementById("hud-five-dots");
   const hudLevelBadge = document.getElementById("hud-level-badge");
+  const hudMatchupLabel = document.getElementById("hud-matchup-label");
+  const btnOpenSelectionHud = document.getElementById("btn-open-selection-hud");
+  const btnBottomChangePlayers = document.getElementById("btn-bottom-change-players");
   const hudWindPill = document.getElementById("hud-wind-pill");
   const hudWindArrow = document.getElementById("hud-wind-arrow");
   const hudWindVal = document.getElementById("hud-wind-val");
@@ -818,6 +1119,7 @@
   const btnPauseNextTrack = document.getElementById("btn-pause-next-track");
   const btnPauseResume = document.getElementById("btn-pause-resume");
   const btnPauseRestart = document.getElementById("btn-pause-restart");
+  const btnPauseChangePlayers = document.getElementById("btn-pause-change-players");
   const btnPauseToMenu = document.getElementById("btn-pause-to-menu");
 
   // Bilan de Séance DOM
@@ -832,6 +1134,17 @@
   const goStatMade = document.getElementById("go-stat-made");
   const btnGoPrimary = document.getElementById("btn-go-primary");
   const btnGoLevels = document.getElementById("btn-go-levels");
+  const btnGoChangePlayers = document.getElementById("btn-go-change-players");
+
+  // Modale Sélection Tireur Léopard & Gardien
+  const selectionModalOverlay = document.getElementById("selection-modal-overlay");
+  const btnCloseSelection = document.getElementById("btn-close-selection");
+  const shootersGrid = document.getElementById("shooters-grid");
+  const keepersGrid = document.getElementById("keepers-grid");
+  const selectedShooterPill = document.getElementById("selected-shooter-pill");
+  const selectedKeeperPill = document.getElementById("selected-keeper-pill");
+  const selectionDuelSummary = document.getElementById("selection-duel-summary");
+  const btnEnterPitch = document.getElementById("btn-enter-pitch");
 
   // Modale Niveaux dédiée
   const levelsModalOverlay = document.getElementById("levels-modal-overlay");
@@ -1903,21 +2216,21 @@
   /* -------------------------------------------------------------------------- */
   /*  GARDIEN ARTICULÉ : APPUIS AU SOL, CRAMPONS, GANTS & 8 ANIMATIONS          */
   /* -------------------------------------------------------------------------- */
-  function createKeeperJerseyTexture() {
+  function createKeeperJerseyTexture(keeper: GoalkeeperProfile = getActiveKeeper()) {
     const cv = document.createElement("canvas");
     cv.width = 512;
     cv.height = 512;
     const ctx = cv.getContext("2d")!;
 
     const grad = ctx.createLinearGradient(0, 0, 0, 512);
-    grad.addColorStop(0, "#10b981");
-    grad.addColorStop(0.55, "#059669");
-    grad.addColorStop(1, "#065f46");
+    grad.addColorStop(0, keeper.shirtPrimary);
+    grad.addColorStop(0.65, keeper.shirtSecondary);
+    grad.addColorStop(1, "#090d16");
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 512, 512);
 
     // Motifs chevrons dynamiques de maillot gardien pro
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.16)";
     ctx.lineWidth = 10;
     for (let y = 64; y < 440; y += 48) {
       ctx.beginPath();
@@ -1927,13 +2240,13 @@
       ctx.stroke();
     }
 
-    // Liserés épaules or & numéro 1 dorsal/pectoral
-    ctx.fillStyle = "#facc15";
-    ctx.fillRect(0, 0, 512, 24);
-    ctx.fillStyle = "rgba(255, 255, 255, 0.88)";
-    ctx.font = "900 110px Impact, sans-serif";
+    // Liserés épaules & numéro officiel du gardien sélectionné
+    ctx.fillStyle = keeper.accentColor;
+    ctx.fillRect(0, 0, 512, 26);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.92)";
+    ctx.font = "900 105px Impact, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("1", 256, 250);
+    ctx.fillText(String(keeper.number), 256, 255);
 
     const tex = new THREE.CanvasTexture(cv);
     tex.colorSpace = THREE.SRGBColorSpace;
@@ -1942,15 +2255,26 @@
 
   const keeperGroup = new THREE.Group();
   const kitMat = new THREE.MeshStandardMaterial({ map: createKeeperJerseyTexture(), roughness: 0.44 });
-  const sleeveMat = new THREE.MeshStandardMaterial({ color: 0x047857, roughness: 0.46 });
+  const sleeveMat = new THREE.MeshStandardMaterial({ color: 0xea580c, roughness: 0.46 });
   const shortMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.62 });
-  const skinMat = new THREE.MeshStandardMaterial({ color: 0x4e3020, roughness: 0.56 });
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0x3d2516, roughness: 0.56 });
   const hairMat = new THREE.MeshStandardMaterial({ color: 0x0f1117, roughness: 0.85 });
   const gloveLatexMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.24, metalness: 0.08 });
   const glovePalmMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.32 });
-  const socksMat = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.5 });
+  const socksMat = new THREE.MeshStandardMaterial({ color: 0xea580c, roughness: 0.5 });
   const bootMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.28, metalness: 0.22 });
   const studMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.2, metalness: 0.85 });
+
+  function applyGoalkeeperKit(keeper: GoalkeeperProfile) {
+    if (kitMat.map) kitMat.map.dispose();
+    kitMat.map = createKeeperJerseyTexture(keeper);
+    kitMat.needsUpdate = true;
+    sleeveMat.color.set(keeper.shirtPrimary);
+    shortMat.color.set(keeper.shortsColor);
+    socksMat.color.set(keeper.socksColor);
+    gloveLatexMat.color.set(keeper.gloveColor);
+    skinMat.color.setHex(keeper.skinHex);
+  }
 
   // Ombres d'appui au sol sous les crampons du gardien (ancrage GTA V au sol)
   const keeperGroundShadow = new THREE.Mesh(
@@ -2152,6 +2476,360 @@
 
   keeperGroup.position.set(0, 0, 0.28);
   scene.add(keeperGroup);
+
+  /* -------------------------------------------------------------------------- */
+  /*  TIREUR LÉOPARD 3D DE DOS EN TROIS-QUARTS (MAILLOT BLEU CIEL RDC + NUMÉRO) */
+  /* -------------------------------------------------------------------------- */
+  function createShooterJerseyBackTexture(shooter: LeopardShooter = getActiveShooter()) {
+    const cv = document.createElement("canvas");
+    cv.width = 512;
+    cv.height = 512;
+    const ctx = cv.getContext("2d")!;
+
+    // Fond Bleu Ciel officiel des Léopards RDC (avec tombé de tissu ombré)
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, 512);
+    bgGrad.addColorStop(0, "#38bdf8");
+    bgGrad.addColorStop(0.55, "#0ea5e9");
+    bgGrad.addColorStop(1, "#0284c7");
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Plis subtils du tombé du maillot dans le dos
+    ctx.strokeStyle = "rgba(3, 105, 161, 0.26)";
+    ctx.lineWidth = 14;
+    for (let i = 0; i < 5; i++) {
+      ctx.beginPath();
+      ctx.moveTo(90 + i * 80, 70);
+      ctx.quadraticCurveTo(130 + i * 75, 260, 85 + i * 82, 480);
+      ctx.stroke();
+    }
+
+    // Motifs pelage Léopard / zébrures Umbro RDC sur les flancs et le bas du dos
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.16)";
+    ctx.lineWidth = 7;
+    for (let y = 260; y < 495; y += 28) {
+      ctx.beginPath();
+      ctx.moveTo(40, y);
+      ctx.quadraticCurveTo(256, y - 36, 472, y);
+      ctx.stroke();
+    }
+
+    // Col tricolore RDC (Rouge / Or / Bleu) en haut du dos
+    ctx.fillStyle = "#dc2626";
+    ctx.fillRect(0, 0, 512, 22);
+    ctx.fillStyle = "#facc15";
+    ctx.fillRect(0, 22, 512, 10);
+
+    // Mini drapeau RDC sous la nuque
+    ctx.fillStyle = "#007fff";
+    ctx.fillRect(232, 42, 48, 28);
+    ctx.strokeStyle = "#facc15";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(232, 42, 48, 28);
+    ctx.fillStyle = "#ce1126";
+    ctx.beginPath();
+    ctx.moveTo(232, 68);
+    ctx.lineTo(280, 44);
+    ctx.lineTo(280, 52);
+    ctx.lineTo(232, 70);
+    ctx.fill();
+
+    // Nom du joueur en haut du dos (ex. WISSA, MBEMBA, BAKAMBU)
+    ctx.save();
+    ctx.font = "900 54px Impact, 'Arial Black', sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.lineWidth = 8;
+    ctx.strokeStyle = "#082f49";
+    ctx.strokeText(shooter.backName, 256, 118);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(shooter.backName, 256, 118);
+    ctx.restore();
+
+    // Grand Numéro officiel dans le dos (style officiel Léopards : Rouge-Orangé bordé de Blanc & Or)
+    ctx.save();
+    ctx.font = "900 235px Impact, 'Arial Black', sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.lineWidth = 18;
+    ctx.strokeStyle = "#ffffff";
+    ctx.strokeText(String(shooter.number), 256, 295);
+    ctx.lineWidth = 8;
+    ctx.strokeStyle = "#facc15";
+    ctx.strokeText(String(shooter.number), 256, 295);
+    const numGrad = ctx.createLinearGradient(0, 175, 0, 410);
+    numGrad.addColorStop(0, "#f97316");
+    numGrad.addColorStop(0.5, "#ea580c");
+    numGrad.addColorStop(1, "#dc2626");
+    ctx.fillStyle = numGrad;
+    ctx.fillText(String(shooter.number), 256, 295);
+    ctx.restore();
+
+    const tex = new THREE.CanvasTexture(cv);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 4;
+    return tex;
+  }
+
+  const shooterGroup = new THREE.Group();
+  const shooterSkyMat = new THREE.MeshStandardMaterial({ color: 0x0ea5e9, roughness: 0.48 });
+  const shooterBackMat = new THREE.MeshStandardMaterial({
+    map: createShooterJerseyBackTexture(),
+    roughness: 0.44
+  });
+  const shooterShortsMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.54 });
+  const shooterSocksMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.5 });
+  const shooterTrimRedMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.45 });
+  const shooterTrimGoldMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4 });
+  const shooterSkinMat = new THREE.MeshStandardMaterial({ color: 0x3b2314, roughness: 0.55 });
+  const shooterBootMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.25, metalness: 0.28 });
+
+  // Ombre d'ancrage au sol sous les crampons du tireur Léopard
+  const shooterGroundShadow = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.85, 0.52),
+    new THREE.MeshBasicMaterial({ color: 0x020604, transparent: true, opacity: 0.54, depthWrite: false })
+  );
+  shooterGroundShadow.rotation.x = -Math.PI / 2;
+  shooterGroundShadow.position.set(-0.34, 0.013, PENALTY_Z + 0.48);
+  scene.add(shooterGroundShadow);
+
+  const sUpperBody = new THREE.Group();
+  sUpperBody.position.set(0, 0.88, 0);
+  sUpperBody.rotation.x = -0.10; // Légèrement penché vers le ballon
+
+  const sTorsoCore = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.21, 0.54, 18), shooterSkyMat);
+  sTorsoCore.scale.set(1.22, 1, 0.66);
+  sTorsoCore.position.y = 0.42;
+  sTorsoCore.castShadow = true;
+  sUpperBody.add(sTorsoCore);
+
+  // Panneau dorsal galbé affichant le NOM et le NUMÉRO face à la caméra (vers +Z)
+  const sBackPlate = new THREE.Mesh(new THREE.PlaneGeometry(0.54, 0.55, 8, 8), shooterBackMat);
+  const sBackPos = sBackPlate.geometry.attributes.position as THREE.BufferAttribute;
+  for (let i = 0; i < sBackPos.count; i++) {
+    const bx = sBackPos.getX(i);
+    const by = sBackPos.getY(i);
+    // Galbe anatomique du dos et tombé du maillot
+    const curveZ = -Math.pow(bx / 0.28, 2) * 0.045 + Math.sin((by + 0.27) * 9) * 0.005;
+    sBackPos.setZ(i, curveZ);
+  }
+  sBackPlate.geometry.computeVertexNormals();
+  sBackPlate.position.set(0, 0.42, 0.168);
+  sUpperBody.add(sBackPlate);
+
+  // Col rouge & or RDC
+  const sCollar = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.024, 10, 20), shooterTrimRedMat);
+  sCollar.rotation.x = Math.PI / 2;
+  sCollar.position.set(0, 0.70, 0);
+  sUpperBody.add(sCollar);
+
+  const sNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.072, 0.082, 0.12, 14), shooterSkinMat);
+  sNeck.position.y = 0.76;
+  sUpperBody.add(sNeck);
+
+  const sHeadGroup = new THREE.Group();
+  sHeadGroup.position.set(0, 0.91, -0.01);
+  const sSkull = new THREE.Mesh(new THREE.SphereGeometry(0.142, 22, 22), shooterSkinMat);
+  sSkull.scale.set(0.92, 1.08, 0.96);
+  sSkull.castShadow = true;
+  sHeadGroup.add(sSkull);
+
+  const sHair = new THREE.Mesh(
+    new THREE.SphereGeometry(0.145, 20, 16, 0, Math.PI * 2, 0, Math.PI * 0.56),
+    hairMat
+  );
+  sHair.rotation.x = 0.25;
+  sHair.position.set(0, 0.02, 0.01);
+  sHeadGroup.add(sHair);
+  sUpperBody.add(sHeadGroup);
+
+  function createShooterArm(isLeft: boolean) {
+    const side = isLeft ? -1 : 1;
+    const shoulderPivot = new THREE.Group();
+    shoulderPivot.position.set(side * 0.32, 0.63, 0);
+
+    const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.082, 0.072, 0.24, 14), shooterSkyMat);
+    sleeve.position.y = -0.10;
+    sleeve.castShadow = true;
+    shoulderPivot.add(sleeve);
+
+    const cuffRed = new THREE.Mesh(new THREE.CylinderGeometry(0.074, 0.073, 0.028, 14), shooterTrimRedMat);
+    cuffRed.position.y = -0.21;
+    shoulderPivot.add(cuffRed);
+
+    const forearm = new THREE.Mesh(new THREE.CylinderGeometry(0.064, 0.050, 0.34, 14), shooterSkinMat);
+    forearm.position.set(0, -0.36, -0.04);
+    forearm.rotation.x = 0.32;
+    forearm.castShadow = true;
+    shoulderPivot.add(forearm);
+
+    const wristTape = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.052, 0.045, 12), postMat);
+    wristTape.position.set(0, -0.50, -0.09);
+    shoulderPivot.add(wristTape);
+
+    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.054, 12, 12), shooterSkinMat);
+    hand.position.set(0, -0.55, -0.11);
+    shoulderPivot.add(hand);
+
+    return shoulderPivot;
+  }
+
+  const sArmL = createShooterArm(true);
+  const sArmR = createShooterArm(false);
+  sUpperBody.add(sArmL, sArmR);
+  shooterGroup.add(sUpperBody);
+
+  // Short Bleu Ciel RDC avec bandes latérales Rouge/Or
+  const sPelvis = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.24, 0.29), shooterShortsMat);
+  sPelvis.position.y = 0.82;
+  sPelvis.castShadow = true;
+  shooterGroup.add(sPelvis);
+
+  function createShooterLeg(isLeft: boolean) {
+    const side = isLeft ? -1 : 1;
+    const hipPivot = new THREE.Group();
+    hipPivot.position.set(side * 0.16, 0.78, 0);
+
+    const shortLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.118, 0.104, 0.28, 14), shooterShortsMat);
+    shortLeg.position.y = -0.13;
+    shortLeg.castShadow = true;
+    hipPivot.add(shortLeg);
+
+    const stripeGold = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.26, 0.04), shooterTrimGoldMat);
+    stripeGold.position.set(side * 0.108, -0.13, 0);
+    hipPivot.add(stripeGold);
+
+    const thighSkin = new THREE.Mesh(new THREE.CylinderGeometry(0.096, 0.082, 0.14, 14), shooterSkinMat);
+    thighSkin.position.y = -0.30;
+    hipPivot.add(thighSkin);
+
+    const kneePivot = new THREE.Group();
+    kneePivot.position.set(0, -0.35, 0);
+
+    const sock = new THREE.Mesh(new THREE.CylinderGeometry(0.080, 0.058, 0.38, 14), shooterSocksMat);
+    sock.position.y = -0.19;
+    sock.castShadow = true;
+    kneePivot.add(sock);
+
+    const sockTurnover = new THREE.Mesh(new THREE.CylinderGeometry(0.083, 0.082, 0.05, 14), shooterTrimRedMat);
+    sockTurnover.position.y = -0.04;
+    kneePivot.add(sockTurnover);
+
+    const anklePivot = new THREE.Group();
+    anklePivot.position.set(0, -0.40, 0);
+
+    // Chaussure orientée vers -Z (vers le but)
+    const boot = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.085, 0.28), shooterBootMat);
+    boot.position.set(0, -0.02, -0.05);
+    boot.castShadow = true;
+    anklePivot.add(boot);
+
+    // 6 crampons métalliques sous chaque chaussure du tireur
+    [
+      [-0.038, -0.068, 0.04],
+      [0.038, -0.068, 0.04],
+      [-0.038, -0.068, -0.08],
+      [0.038, -0.068, -0.08],
+      [-0.032, -0.068, -0.15],
+      [0.032, -0.068, -0.15]
+    ].forEach(([sx, sy, sz]) => {
+      const stud = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.006, 0.028, 6), studMat);
+      stud.position.set(sx, sy, sz);
+      anklePivot.add(stud);
+    });
+
+    kneePivot.add(anklePivot);
+    hipPivot.add(kneePivot);
+    return { hipPivot, kneePivot, anklePivot };
+  }
+
+  const sLegL = createShooterLeg(true);
+  const sLegR = createShooterLeg(false);
+  shooterGroup.add(sLegL.hipPivot, sLegR.hipPivot);
+
+  // Échelle et posture en trois-quarts dos pour que tireur (avec son numéro), ballon, gardien et but soient tous visibles en portrait
+  shooterGroup.scale.setScalar(0.84);
+  scene.add(shooterGroup);
+
+  function applyShooterProfile(shooter: LeopardShooter) {
+    if (shooterBackMat.map) shooterBackMat.map.dispose();
+    shooterBackMat.map = createShooterJerseyBackTexture(shooter);
+    shooterBackMat.needsUpdate = true;
+    shooterSkinMat.color.setHex(shooter.skinHex);
+  }
+
+  function setShooterIdlePose(elapsed: number) {
+    const breath = Math.sin(elapsed * 2.8) * 0.012;
+    // Placé à gauche/arrière du ballon en trois-quarts dos : le numéro dans le dos est parfaitement tourné vers la caméra
+    shooterGroup.position.set(-0.35, 0, PENALTY_Z + 0.50);
+    shooterGroup.rotation.set(0, -0.34, 0);
+    sUpperBody.position.set(0, 0.88 + breath, 0);
+    sUpperBody.rotation.set(-0.10, 0.08, 0);
+
+    sArmL.rotation.set(0.12, 0, 0.24 + Math.sin(elapsed * 2.8) * 0.03);
+    sArmR.rotation.set(-0.08, 0, -0.22 - Math.sin(elapsed * 2.8) * 0.03);
+
+    // Jambe gauche légèrement fléchie en appui, jambe droite prête derrière
+    sLegL.hipPivot.rotation.set(0.14, 0, 0.05);
+    sLegL.kneePivot.rotation.set(-0.22, 0, 0);
+    sLegL.anklePivot.rotation.set(0.08, 0, 0);
+
+    sLegR.hipPivot.rotation.set(-0.16, 0, -0.05);
+    sLegR.kneePivot.rotation.set(-0.28, 0, 0);
+    sLegR.anklePivot.rotation.set(0.12, 0, 0);
+
+    shooterGroundShadow.position.set(shooterGroup.position.x, 0.013, shooterGroup.position.z);
+  }
+
+  // Animation de course d'élan (p = 0..1 avant l'impact du pied à p = 1.0, puis p > 1.0 pour le suivi de jambe)
+  function updateShooterRunupPose(p: number) {
+    const approach = Math.min(1, p);
+    // Le tireur s'avance de (-0.35, 11.50) jusqu'à poser son pied gauche d'appui à (-0.20, 11.02) juste à côté du ballon
+    shooterGroup.position.x = THREE.MathUtils.lerp(-0.35, -0.20, approach);
+    shooterGroup.position.z = THREE.MathUtils.lerp(PENALTY_Z + 0.50, PENALTY_Z + 0.02, approach);
+    shooterGroup.rotation.y = THREE.MathUtils.lerp(-0.34, -0.16, approach);
+    shooterGroup.rotation.z = THREE.MathUtils.lerp(0, 0.14, approach); // Inclinaison athlétique sur la jambe d'appui
+
+    if (p <= 0.55) {
+      // Phase 1 (0 -> 0.55) : foulée d'appui gauche et armé puissant de la jambe droite vers l'arrière
+      const w = p / 0.55;
+      sUpperBody.rotation.x = THREE.MathUtils.lerp(-0.10, -0.24, w);
+      sArmL.rotation.set(-0.45 * w, 0, 0.24 + 0.55 * w); // Bras gauche s'ouvre pour équilibrer
+      sArmR.rotation.set(0.35 * w, 0, -0.22 - 0.15 * w);
+
+      // Jambe gauche s'avance vers le ballon
+      sLegL.hipPivot.rotation.set(THREE.MathUtils.lerp(0.14, 0.42, w), 0, 0.05);
+      sLegL.kneePivot.rotation.set(THREE.MathUtils.lerp(-0.22, -0.35, w), 0, 0);
+
+      // Jambe droite s'arme franchement en arrière (rotation.x négative tire la cuisse vers +Z, pli du genou vers le haut)
+      sLegR.hipPivot.rotation.set(THREE.MathUtils.lerp(-0.16, -0.78, w), 0, -0.06);
+      sLegR.kneePivot.rotation.set(THREE.MathUtils.lerp(-0.28, -1.18, w), 0, 0);
+      sLegR.anklePivot.rotation.set(-0.35 * w, 0, 0);
+    } else if (p <= 1.0) {
+      // Phase 2 (0.55 -> 1.0) : déclenchement explosif de la jambe droite jusqu'au contact exact pied-ballon à p = 1.0 !
+      const s = (p - 0.55) / 0.45;
+      sUpperBody.rotation.x = THREE.MathUtils.lerp(-0.24, 0.08, s);
+      sArmL.rotation.set(-0.45, 0, 0.79);
+      sArmR.rotation.set(THREE.MathUtils.lerp(0.35, -0.30, s), 0, -0.32);
+
+      // Jambe gauche plantée au sol à côté du ballon
+      sLegL.hipPivot.rotation.set(0.28, 0, 0.06);
+      sLegL.kneePivot.rotation.set(-0.26, 0, 0);
+
+      // Fouetté de la jambe droite qui traverse le ballon
+      sLegR.hipPivot.rotation.set(THREE.MathUtils.lerp(-0.78, 0.52, s), 0, -0.04);
+      sLegR.kneePivot.rotation.set(THREE.MathUtils.lerp(-1.18, -0.06, s), 0, 0);
+      sLegR.anklePivot.rotation.set(THREE.MathUtils.lerp(-0.35, -0.45, s), 0, 0);
+    } else {
+      // Phase 3 (p > 1.0) : Accompagnement (follow-through) après le départ du ballon
+      const f = Math.min(1, (p - 1.0) / 0.8);
+      sUpperBody.rotation.x = THREE.MathUtils.lerp(0.08, 0.16, f);
+      sLegR.hipPivot.rotation.set(THREE.MathUtils.lerp(0.52, 0.76, f), 0, 0.08 * f);
+      sLegR.kneePivot.rotation.set(THREE.MathUtils.lerp(-0.06, -0.22, f), 0, 0);
+    }
+
+    shooterGroundShadow.position.set(shooterGroup.position.x, 0.013, shooterGroup.position.z);
+  }
 
   /* -------------------------------------------------------------------------- */
   /*  MUR DÉFENSIF ARTICULÉ                                                     */
@@ -2458,9 +3136,14 @@
 
   function updateHud() {
     const tier = getActiveTier();
+    const shooter = getActiveShooter();
+    const keeper = getActiveKeeper();
     if (hudRdcScore) hudRdcScore.textContent = String(state.goalsInSeries);
     if (hudOppScore) hudOppScore.textContent = String(tier.oppScore);
     if (hudLevelBadge) hudLevelBadge.textContent = `NIV. ${tier.id} · ${tier.name.toUpperCase()}`;
+    if (hudMatchupLabel) {
+      hudMatchupLabel.textContent = `#${shooter.number} ${shooter.backName} vs #${keeper.number} ${keeper.shortName}`;
+    }
 
     const currentShotNum = Math.min(state.kickIndex + 1, TOTAL_KICKS_PER_SERIES);
     if (hudKickCounter) {
@@ -2578,6 +3261,8 @@
     legL.anklePivot.rotation.set(-0.20, 0, 0);
     legR.anklePivot.rotation.set(-0.20, 0, 0);
 
+    setShooterIdlePose(0);
+
     swipeCtx.clearRect(0, 0, swipeCanvas.width, swipeCanvas.height);
     hudCurvePill?.classList.add("hidden");
     hudCurvePill?.classList.remove("flex");
@@ -2657,6 +3342,7 @@
     parriedByKeeper: false,
     touchedGlove: false,
     touchedPost: "" as "" | "in" | "out" | "bar",
+    forceOutcome: "" as "" | "catch" | "deflect_goal",
     gaugeZone: "perfect" as "weak" | "medium" | "perfect" | "overload",
     powerPct: 78,
     postContactElapsed: 0,
@@ -3015,7 +3701,30 @@
     if (chargeActive && state.phase === "charging" && !state.paused) commitShotRelease();
   });
 
-  function fireShot(powerPct: number, traj: ExactShotTrajectory, forceKeeperSave?: boolean) {
+  const RUNUP_DURATION = 0.25;
+  let pendingShotConfig: {
+    powerPct: number;
+    traj: ExactShotTrajectory;
+    forceKeeperSave?: boolean;
+    forceOutcome?: "" | "catch" | "deflect_goal";
+  } | null = null;
+
+  function fireShot(
+    powerPct: number,
+    traj: ExactShotTrajectory,
+    forceKeeperSave?: boolean,
+    forceOutcome: "" | "catch" | "deflect_goal" = ""
+  ) {
+    pendingShotConfig = { powerPct, traj, forceKeeperSave, forceOutcome };
+    state.phase = "runup";
+    state.runupElapsed = 0;
+  }
+
+  function executeBallLaunch() {
+    if (!pendingShotConfig) return;
+    const { powerPct, traj, forceKeeperSave, forceOutcome } = pendingShotConfig;
+    pendingShotConfig = null;
+
     state.phase = "shooting";
 
     shotPhys.active = true;
@@ -3025,6 +3734,7 @@
     shotPhys.parriedByKeeper = false;
     shotPhys.touchedGlove = false;
     shotPhys.touchedPost = "";
+    shotPhys.forceOutcome = forceOutcome || "";
     shotPhys.gaugeZone = traj.gaugeZone;
     shotPhys.powerPct = Math.round(powerPct);
     shotPhys.postContactElapsed = 0;
@@ -3090,27 +3800,49 @@
     }
   }
 
-  // Permet de déclencher à la demande les 4 cas physiques exigés (But, Arrêt, Poteau rentrant, Poteau sortant)
+  // Permet de déclencher à la demande les 6 cas physiques (Arrêt capté, Dévié au fond, But, Parade, Poteau rentrant, Poteau sortant)
   (window as unknown as Record<string, unknown>).triggerPenaltyDemoCase = (
-    demoCase: "goal" | "save" | "post_in" | "post_out"
+    demoCase: "catch" | "deflect_goal" | "goal" | "save" | "post_in" | "post_out"
   ) => {
     initAudio();
     setupNextKick();
-    const speedMs = 26.5;
-    const flightTime = PENALTY_Z / speedMs;
+    let speedMs = 28.5;
+    let powerPct = 82;
+    let gaugeZone: "weak" | "medium" | "perfect" | "overload" = "perfect";
     let targetX = -2.85;
     let targetY = 1.72;
     let midWorldX = -1.85;
     let forceSave: boolean | undefined = false;
+    let forceOutcome: "" | "catch" | "deflect_goal" = "";
 
-    if (demoCase === "goal") {
+    if (demoCase === "catch") {
+      // Arrêt capté (Prise franche entre les deux gants du gardien)
+      speedMs = 21.8;
+      powerPct = 58;
+      gaugeZone = "medium";
+      targetX = 0.34;
+      targetY = 1.12;
+      midWorldX = 0.16;
+      forceSave = true;
+      forceOutcome = "catch";
+    } else if (demoCase === "deflect_goal") {
+      // Frappe puissante touchée/déviée du bout du gant mais qui finit quand même au fond des filets !
+      speedMs = 30.2;
+      powerPct = 85;
+      gaugeZone = "perfect";
+      targetX = -2.18;
+      targetY = 1.46;
+      midWorldX = -1.35;
+      forceSave = true;
+      forceOutcome = "deflect_goal";
+    } else if (demoCase === "goal") {
       // Lucarne gauche enroulée dans le filet
       targetX = -2.92;
       targetY = 1.88;
       midWorldX = -1.95;
       forceSave = false;
     } else if (demoCase === "save") {
-      // Frappe cadrée à mi-hauteur interceptée par le plongeon du gardien
+      // Frappe cadrée à mi-hauteur repoussée par le plongeon du gardien
       targetX = 1.85;
       targetY = 1.18;
       midWorldX = 0.92;
@@ -3129,6 +3861,7 @@
       forceSave = false;
     }
 
+    const flightTime = PENALTY_Z / speedMs;
     const totalAx = (4 * (targetX - 2 * midWorldX)) / (flightTime * flightTime);
     const vx0 = (targetX - 0.5 * totalAx * flightTime * flightTime) / flightTime;
     const vy0 = ((targetY - BALL_R) + 0.5 * FLIGHT_GRAVITY * flightTime * flightTime) / flightTime;
@@ -3136,7 +3869,7 @@
     aimInstruction?.classList.add("opacity-0");
     ballGlowRing.visible = false;
     fireShot(
-      80,
+      powerPct,
       {
         targetX,
         targetY,
@@ -3147,9 +3880,10 @@
         vx0,
         vy0,
         totalAx,
-        gaugeZone: "perfect"
+        gaugeZone
       },
-      forceSave
+      forceSave,
+      forceOutcome
     );
   };
 
@@ -3389,7 +4123,20 @@
         const maxCoverX = Math.max(torsoX + 0.62, torsoX + diveDir * tier.keeperArmSpan + 0.32);
         const maxCoverY = keeperGroup.position.y + 1.98;
 
-        if (crossY >= 0 && crossY <= maxCoverY) {
+        if (shotPhys.forceOutcome === "catch") {
+          shotPhys.caughtByKeeper = true;
+          playSaveAudio();
+          break;
+        } else if (shotPhys.forceOutcome === "deflect_goal") {
+          // Déviation du bout des gants qui finit quand même au fond des filets !
+          shotPhys.touchedGlove = true;
+          shotPhys.vx *= 0.82;
+          shotPhys.vy += 0.55;
+          shotPhys.vz *= 0.80;
+          spawnTurfBurst(crossX, crossY, 0.30, 14, true);
+          cameraShakeAmp = 0.04;
+          playSaveAudio();
+        } else if (crossY >= 0 && crossY <= maxCoverY) {
           // Cas A : Prise franche près du buste / entre les deux gants
           if (Math.abs(crossX - torsoX) < 0.32 && crossY >= 0.55 && crossY <= 1.58 && Math.abs(shotPhys.vz) < 25.5) {
             shotPhys.caughtByKeeper = true;
@@ -3763,6 +4510,144 @@
     openLevelsModal();
   });
 
+  /* -------------------------------------------------------------------------- */
+  /*  MODALE DE SÉLECTION DU TIREUR LÉOPARD & DU GARDIEN ADVERSE                */
+  /* -------------------------------------------------------------------------- */
+  function renderSelectionModal() {
+    const activeShooter = getActiveShooter();
+    const activeKeeper = getActiveKeeper();
+
+    if (selectionSummaryText) {
+      selectionSummaryText.innerHTML = `<span class="text-sky-300 font-black">#${activeShooter.number} ${activeShooter.name}</span> face à <span class="text-or font-black">#${activeKeeper.number} ${activeKeeper.name}</span> (${activeKeeper.kitName})`;
+    }
+    if (hudShooterBadge) {
+      hudShooterBadge.textContent = `#${activeShooter.number} ${activeShooter.backLabel} vs #${activeKeeper.number} ${activeKeeper.name.split(" ").pop()?.toUpperCase()}`;
+    }
+
+    if (shootersGrid) {
+      shootersGrid.innerHTML = "";
+      LEOPARD_SHOOTERS.forEach((s) => {
+        const isSelected = s.id === state.selectedShooterId;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = `group relative flex flex-col overflow-hidden rounded-2xl border text-left transition-all ${
+          isSelected
+            ? "border-sky-400 bg-sky-500/20 shadow-[0_0_20px_rgba(56,189,248,0.28)] ring-1 ring-sky-300"
+            : "border-white/15 bg-black/45 hover:border-sky-400/50 hover:bg-white/5"
+        }`;
+        btn.innerHTML = `
+          <div class="relative h-24 sm:h-28 w-full overflow-hidden bg-slate-900">
+            <img src="${s.photo}" alt="${s.name}" class="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-105" loading="lazy" />
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/25 to-transparent"></div>
+            <span class="absolute top-2 left-2 rounded-lg bg-sky-500 px-2 py-0.5 font-display text-xs font-black text-slate-950 shadow">
+              #${s.number}
+            </span>
+            ${
+              isSelected
+                ? `<span class="absolute top-2 right-2 rounded-full bg-emerald-400 px-2 py-0.5 text-[0.55rem] font-black uppercase tracking-wider text-slate-950 shadow">✓ Tireur</span>`
+                : ""
+            }
+            <div class="absolute bottom-1.5 left-2.5 right-2">
+              <p class="font-display text-sm sm:text-base uppercase tracking-wider text-white leading-tight drop-shadow">${s.name}</p>
+            </div>
+          </div>
+          <div class="flex items-center justify-between px-2.5 py-1.5 text-[0.62rem] font-bold text-slate-300">
+            <span class="text-sky-300">${s.role}</span>
+            <span class="text-slate-400">${s.specialty}</span>
+          </div>
+        `;
+        btn.addEventListener("click", () => {
+          state.selectedShooterId = s.id;
+          applyShooterProfile(s);
+          renderSelectionModal();
+        });
+        shootersGrid.appendChild(btn);
+      });
+    }
+
+    if (keepersGrid) {
+      keepersGrid.innerHTML = "";
+      GOALKEEPERS_CATALOG.forEach((k) => {
+        const isSelected = k.id === state.selectedKeeperId;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = `group relative flex flex-col overflow-hidden rounded-2xl border text-left transition-all ${
+          isSelected
+            ? "border-or bg-or/20 shadow-[0_0_20px_rgba(245,158,11,0.28)] ring-1 ring-or"
+            : "border-white/15 bg-black/45 hover:border-or/50 hover:bg-white/5"
+        }`;
+        btn.innerHTML = `
+          <div class="relative h-24 sm:h-28 w-full overflow-hidden bg-slate-900">
+            <img src="${k.photo}" alt="${k.name}" class="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-105" loading="lazy" />
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent"></div>
+            <span class="absolute top-2 left-2 rounded-lg bg-or px-2 py-0.5 font-display text-xs font-black text-slate-950 shadow">
+              #${k.number}
+            </span>
+            ${
+              isSelected
+                ? `<span class="absolute top-2 right-2 rounded-full bg-emerald-400 px-2 py-0.5 text-[0.55rem] font-black uppercase tracking-wider text-slate-950 shadow">✓ Gardien</span>`
+                : ""
+            }
+            <div class="absolute bottom-1.5 left-2.5 right-2">
+              <p class="font-display text-sm sm:text-base uppercase tracking-wider text-white leading-tight drop-shadow">${k.name}</p>
+            </div>
+          </div>
+          <div class="flex items-center justify-between gap-1 px-2.5 py-1.5 text-[0.6rem] font-bold text-slate-300">
+            <span class="inline-flex items-center gap-1 text-amber-300">
+              <span class="inline-block h-2.5 w-2.5 rounded-full border border-white/40" style="background:${k.badgeColor}"></span>
+              ${k.kitName}
+            </span>
+            <span class="text-slate-400 truncate">${k.style}</span>
+          </div>
+        `;
+        btn.addEventListener("click", () => {
+          state.selectedKeeperId = k.id;
+          applyGoalkeeperKit(k);
+          renderSelectionModal();
+        });
+        keepersGrid.appendChild(btn);
+      });
+    }
+  }
+
+  function openSelectionModal() {
+    initAudio();
+    state.paused = true;
+    if (iconPause) iconPause.textContent = "▶";
+    pauseModal?.classList.add("hidden");
+    pauseModal?.classList.remove("flex");
+    gameoverModal?.classList.add("hidden");
+    gameoverModal?.classList.remove("flex");
+    gameMenuOverlay?.classList.add("hidden");
+    gameMenuOverlay?.classList.remove("flex");
+    renderSelectionModal();
+    selectionModalOverlay?.classList.remove("hidden");
+    selectionModalOverlay?.classList.add("flex");
+  }
+
+  function closeSelectionModalAndEnterPitch() {
+    state.hasConfirmedSelection = true;
+    applyShooterProfile(getActiveShooter());
+    applyGoalkeeperKit(getActiveKeeper());
+    selectionModalOverlay?.classList.add("hidden");
+    selectionModalOverlay?.classList.remove("flex");
+    state.paused = false;
+    if (iconPause) iconPause.textContent = "⏸";
+    prevTime = performance.now();
+    if (state.phase === "cinematic" || state.phase === "gameover") {
+      startLevelSeries(state.currentTierIndex);
+    } else {
+      setupNextKick();
+    }
+  }
+
+  btnOpenSelectionHud?.addEventListener("click", openSelectionModal);
+  btnBottomChangePlayers?.addEventListener("click", openSelectionModal);
+  btnPauseChangePlayers?.addEventListener("click", openSelectionModal);
+  btnGoChangePlayers?.addEventListener("click", openSelectionModal);
+  btnCloseSelection?.addEventListener("click", closeSelectionModalAndEnterPitch);
+  btnEnterPitch?.addEventListener("click", closeSelectionModalAndEnterPitch);
+
   const tabBtns = document.querySelectorAll<HTMLButtonElement>(".menu-tab-btn");
   const panelMusic = document.getElementById("menu-panel-music");
   const panelSettings = document.getElementById("menu-panel-settings");
@@ -3830,6 +4715,9 @@
   btnSkipCinematic?.addEventListener("click", () => {
     initAudio();
     startLevelSeries(0);
+    if (!state.hasConfirmedSelection) {
+      openSelectionModal();
+    }
   });
 
   btnMenuIntro?.addEventListener("click", () => {
@@ -3842,9 +4730,21 @@
 
   document.querySelectorAll(".btn-demo-case").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const demoCase = (btn as HTMLElement).dataset.demoCase as "goal" | "save" | "post_in" | "post_out";
+      const demoCase = (btn as HTMLElement).dataset.demoCase as
+        | "goal"
+        | "save"
+        | "catch"
+        | "deflect_goal"
+        | "post_in"
+        | "post_out";
       closeMenu();
-      const fn = (window as unknown as { triggerPenaltyDemoCase?: (c: "goal" | "save" | "post_in" | "post_out") => void }).triggerPenaltyDemoCase;
+      const fn = (
+        window as unknown as {
+          triggerPenaltyDemoCase?: (
+            c: "goal" | "save" | "catch" | "deflect_goal" | "post_in" | "post_out"
+          ) => void;
+        }
+      ).triggerPenaltyDemoCase;
       if (fn && demoCase) fn(demoCase);
     });
   });
@@ -3891,6 +4791,7 @@
     if (state.phase === "cinematic") {
       state.cinematicTime += dt;
       const t = state.cinematicTime;
+      setShooterIdlePose(elapsed);
       if (t < 2.2) {
         const p = t / 2.2;
         camera.position.set(Math.sin(p * 0.5) * 42, 36 - p * 20, 64 - p * 28);
@@ -3903,8 +4804,12 @@
         if (cinematicStepLabel) cinematicStepLabel.textContent = "2/2 · Mode Mené · Séance de 5 Tirs";
       } else {
         startLevelSeries(0);
+        if (!state.hasConfirmedSelection) {
+          openSelectionModal();
+        }
       }
     } else if (state.phase === "aiming" || state.phase === "charging") {
+      setShooterIdlePose(elapsed);
       const tier = getActiveTier();
       const swayFreq = 3.8 + tier.id * 0.85;
       const swayAmp = 0.28 + tier.id * 0.08;
@@ -3944,7 +4849,25 @@
       if (state.phase === "charging") {
         updateChargeGauge(dt);
       }
+    } else if (state.phase === "runup") {
+      // Course d'élan du tireur Léopard synchronisée avec le départ du ballon
+      state.runupElapsed += dt;
+      const p = Math.min(1, state.runupElapsed / RUNUP_DURATION);
+      updateShooterRunupPose(p);
+
+      // Pendant la course d'élan, le gardien fléchit les genoux et prépare son impulsion
+      keeperGroup.position.y = -0.06 - p * 0.05;
+      keeperGroup.rotation.x = 0.12 + p * 0.05;
+      legL.hipPivot.rotation.x = -0.26 - p * 0.18;
+      legL.kneePivot.rotation.x = 0.48 + p * 0.28;
+      legR.hipPivot.rotation.x = -0.26 - p * 0.18;
+      legR.kneePivot.rotation.x = 0.48 + p * 0.28;
+
+      if (state.runupElapsed >= RUNUP_DURATION) {
+        executeBallLaunch();
+      }
     } else if (state.phase === "shooting" || state.phase === "result") {
+      updateShooterRunupPose(1 + shotPhys.flightElapsed * 2.2);
       updatePhysics(dt);
 
       // Suivi caméra dynamique léger type EA FC + tremblement d'impact (Camera Shake)
@@ -3978,6 +4901,9 @@
 
   applyLightingMode(true);
   applyPlayableCameraFraming();
+  applyShooterProfile(getActiveShooter());
+  applyGoalkeeperKit(getActiveKeeper());
+  renderSelectionModal();
   updateHud();
   updateMusicUi();
   renderLevelsModal();
