@@ -428,24 +428,17 @@
             <div class="flex flex-wrap gap-1.5">
               <button
                 type="button"
-                data-loop-mode="top3"
+                data-loop-mode="single"
                 class="loop-mode-btn rounded-lg border border-or bg-or/20 px-2.5 py-1 text-[0.68rem] font-bold text-or"
               >
-                🔁 Boucle 3 Hits (Défaut)
+                🔂 1 Musique Aléatoire en Boucle (Défaut)
               </button>
               <button
                 type="button"
                 data-loop-mode="all"
                 class="loop-mode-btn rounded-lg border border-white/15 bg-white/5 px-2.5 py-1 text-[0.68rem] font-bold text-slate-300 hover:text-white"
               >
-                🔁 Toutes (5 titres)
-              </button>
-              <button
-                type="button"
-                data-loop-mode="single"
-                class="loop-mode-btn rounded-lg border border-white/15 bg-white/5 px-2.5 py-1 text-[0.68rem] font-bold text-slate-300 hover:text-white"
-              >
-                🔂 Répéter 1 titre
+                🔁 Enchaîner les 5 titres
               </button>
             </div>
           </div>
@@ -748,8 +741,8 @@
     wallSide: 1,
     isNight: true,
     audioEnabled: true,
-    currentTrackIndex: 0,
-    loopMode: "top3" as "top3" | "all" | "single",
+    currentTrackIndex: Math.floor(Math.random() * PLAYLIST.length),
+    loopMode: "single" as "top3" | "all" | "single",
     musicStarted: false
   };
 
@@ -845,11 +838,12 @@
   const btnMusicNext = document.getElementById("btn-music-next");
 
   /* -------------------------------------------------------------------------- */
-  /*  LECTEUR MUSICAL HTML5 (BOUCLE AUTO 3 CHANSONS + CHANGEMENT DE PISTE)      */
+  /*  LECTEUR MUSICAL HTML5 (1 MUSIQUE ALÉATOIRE EN BOUCLE PAR DÉFAUT)          */
   /* -------------------------------------------------------------------------- */
   const bgMusic = new Audio();
   bgMusic.preload = "auto";
   bgMusic.volume = 0.58;
+  bgMusic.loop = state.loopMode === "single";
 
   function getTrackUrl(track: SongTrack): string {
     return `/audio/jeu/${encodeURIComponent(track.filename)}`;
@@ -857,17 +851,16 @@
 
   function updateMusicUi() {
     const current = PLAYLIST[state.currentTrackIndex] || PLAYLIST[0];
+    bgMusic.loop = state.loopMode === "single";
     if (hudTrackShort) hudTrackShort.textContent = current.shortTitle;
     if (hudTrackMobile) hudTrackMobile.textContent = current.shortTitle;
     if (pauseTrackName) pauseTrackName.textContent = current.title;
     if (menuNowPlaying) menuNowPlaying.textContent = current.title;
     if (menuLoopModeDesc) {
       menuLoopModeDesc.textContent =
-        state.loopMode === "top3"
-          ? "🔁 Mode actif : Rotation en boucle des 3 chansons phares"
-          : state.loopMode === "all"
-            ? "🔁 Mode actif : Boucle sur les 5 chansons du dossier"
-            : "🔂 Mode actif : Répétition de cette chanson en boucle";
+        state.loopMode === "single"
+          ? "🔂 Mode actif : 1 musique choisie aléatoirement tourne en boucle"
+          : "🔁 Mode actif : Boucle sur les 5 chansons du dossier";
     }
     renderPlaylistMenu();
   }
@@ -876,6 +869,7 @@
     state.currentTrackIndex = ((index % PLAYLIST.length) + PLAYLIST.length) % PLAYLIST.length;
     const track = PLAYLIST[state.currentTrackIndex];
     bgMusic.src = getTrackUrl(track);
+    bgMusic.loop = state.loopMode === "single";
     updateMusicUi();
 
     if (state.audioEnabled) {
@@ -888,12 +882,21 @@
       toastEmoji.textContent = "🎵";
       toastTitle.textContent = track.shortTitle.toUpperCase();
       toastTitle.className = "font-display text-base sm:text-lg uppercase tracking-wider text-or leading-none";
-      toastSubtitle.textContent = track.subtitle;
+      toastSubtitle.textContent = `${track.subtitle} · En boucle`;
       shotToast.classList.remove("opacity-0", "-translate-y-4");
       setTimeout(() => {
         if (state.phase === "aiming") shotToast.classList.add("opacity-0", "-translate-y-4");
       }, 1500);
     }
+  }
+
+  function pickRandomOtherTrackIndex(): number {
+    if (PLAYLIST.length <= 1) return 0;
+    let candidate = state.currentTrackIndex;
+    while (candidate === state.currentTrackIndex) {
+      candidate = Math.floor(Math.random() * PLAYLIST.length);
+    }
+    return candidate;
   }
 
   function playNextTrack(manual = false) {
@@ -903,12 +906,11 @@
       return;
     }
 
-    if (!manual && state.loopMode === "top3") {
-      const nextTop3 = (state.currentTrackIndex + 1) % 3;
-      loadAndPlayTrack(nextTop3, false);
+    if (manual && state.loopMode === "single") {
+      // Choisit aléatoirement une autre chanson et la met en boucle
+      loadAndPlayTrack(pickRandomOtherTrackIndex(), true);
     } else {
-      const poolSize = state.loopMode === "top3" && !manual ? 3 : PLAYLIST.length;
-      const nextIdx = (state.currentTrackIndex + 1) % poolSize;
+      const nextIdx = (state.currentTrackIndex + 1) % PLAYLIST.length;
       loadAndPlayTrack(nextIdx, manual);
     }
   }
@@ -922,7 +924,7 @@
     playNextTrack(false);
   });
 
-  bgMusic.src = getTrackUrl(PLAYLIST[0]);
+  bgMusic.src = getTrackUrl(PLAYLIST[state.currentTrackIndex]);
 
   function ensureMusicPlaying() {
     if (!state.audioEnabled) return;
@@ -2100,43 +2102,183 @@
   }
 
   /* -------------------------------------------------------------------------- */
-  /*  BALLON OFFICIEL 3D (BIEN VISIBLE AU PREMIER PLAN AVANT LE TIR)            */
+  /*  BALLON OFFICIEL 3D + OMBRE DE CONTACT + PARTICULES DE PELOUSE & RUBAN 3D  */
   /* -------------------------------------------------------------------------- */
-  const BALL_R = 0.142; // Rayon légèrement majoré pour que le ballon soit parfaitement lisible sous le pouce
+  const BALL_R = 0.142;
   function createBallTexture() {
     const cv = document.createElement("canvas");
-    cv.width = 512;
-    cv.height = 256;
+    cv.width = 1024;
+    cv.height = 512;
     const ctx = cv.getContext("2d")!;
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, 512, 256);
 
-    // Pentagones / Panneaux FIFA aux couleurs RDC
-    ctx.fillStyle = "#0f172a";
-    for (let x = 0; x < 512; x += 128) {
+    // Base cuir perlé haute réflectance
+    const baseGrad = ctx.createLinearGradient(0, 0, 0, 512);
+    baseGrad.addColorStop(0, "#ffffff");
+    baseGrad.addColorStop(0.5, "#f8fafc");
+    baseGrad.addColorStop(1, "#e2e8f0");
+    ctx.fillStyle = baseGrad;
+    ctx.fillRect(0, 0, 1024, 512);
+
+    // Micro-grain de surface thermocollée
+    ctx.fillStyle = "rgba(15, 23, 42, 0.035)";
+    for (let i = 0; i < 1800; i++) {
+      ctx.fillRect((i * 73) % 1024, (i * 41) % 512, 2, 2);
+    }
+
+    // Sillons des panneaux thermocollés
+    ctx.strokeStyle = "rgba(30, 41, 59, 0.28)";
+    ctx.lineWidth = 4;
+    for (let x = 0; x <= 1024; x += 128) {
       ctx.beginPath();
-      ctx.arc(x + 64, 128, 34, 0, Math.PI * 2);
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, 512);
+      ctx.stroke();
+    }
+
+    // Motifs étoiles / pentagones officiels CAF/FIFA aux couleurs des Léopards RDC
+    for (let x = 0; x < 1024; x += 256) {
+      // Anneau extérieur bleu Congo
+      ctx.strokeStyle = "#007fff";
+      ctx.lineWidth = 16;
+      ctx.beginPath();
+      ctx.arc(x + 128, 256, 76, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Ruban rouge & or dynamique
+      ctx.strokeStyle = "#ce1021";
+      ctx.lineWidth = 10;
+      ctx.beginPath();
+      ctx.arc(x + 128, 256, 56, 0.3, Math.PI * 1.4);
+      ctx.stroke();
+
+      ctx.strokeStyle = "#f7d618";
+      ctx.lineWidth = 10;
+      ctx.beginPath();
+      ctx.arc(x + 128, 256, 56, Math.PI * 1.4, Math.PI * 2.3);
+      ctx.stroke();
+
+      // Noyau carbone sombre pour lire la rotation (spin) en plein vol
+      ctx.fillStyle = "#0f172a";
+      ctx.beginPath();
+      ctx.arc(x + 128, 256, 36, 0, Math.PI * 2);
       ctx.fill();
     }
-    ctx.strokeStyle = "#007fff";
-    ctx.lineWidth = 12;
-    ctx.strokeRect(10, 36, 492, 184);
+
+    // Bande équatoriale tricolore pour bien lire l'effet Magnus en vol
+    ctx.fillStyle = "#007fff";
+    ctx.fillRect(0, 230, 1024, 16);
     ctx.fillStyle = "#f7d618";
-    ctx.fillRect(0, 114, 512, 14);
+    ctx.fillRect(0, 246, 1024, 18);
     ctx.fillStyle = "#ce1021";
-    ctx.fillRect(0, 128, 512, 14);
+    ctx.fillRect(0, 264, 1024, 16);
 
     const t = new THREE.CanvasTexture(cv);
     t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = 4;
     return t;
   }
 
   const ballMesh = new THREE.Mesh(
-    new THREE.SphereGeometry(BALL_R, 32, 32),
-    new THREE.MeshStandardMaterial({ map: createBallTexture(), roughness: 0.24, metalness: 0.12 })
+    new THREE.SphereGeometry(BALL_R, 36, 36),
+    new THREE.MeshStandardMaterial({ map: createBallTexture(), roughness: 0.22, metalness: 0.14 })
   );
   ballMesh.castShadow = true;
   scene.add(ballMesh);
+
+  // Ombre de contact douce au sol sous le ballon (indispensable pour lire la hauteur réelle du ballon)
+  const ballContactShadow = new THREE.Mesh(
+    new THREE.CircleGeometry(BALL_R * 1.35, 24),
+    new THREE.MeshBasicMaterial({
+      color: 0x020604,
+      transparent: true,
+      opacity: 0.62,
+      depthWrite: false
+    })
+  );
+  ballContactShadow.rotation.x = -Math.PI / 2;
+  ballContactShadow.position.set(0, 0.014, PENALTY_Z);
+  scene.add(ballContactShadow);
+
+  // Ruban aérodynamique 3D derrière le ballon en vol
+  const TRAIL_MAX_PTS = 18;
+  const trailPositions = new Float32Array(TRAIL_MAX_PTS * 3);
+  const trailGeo = new THREE.BufferGeometry();
+  trailGeo.setAttribute("position", new THREE.BufferAttribute(trailPositions, 3));
+  const trailMat = new THREE.LineBasicMaterial({
+    color: 0xfacc15,
+    transparent: true,
+    opacity: 0.65
+  });
+  const ballTrailLine = new THREE.Line(trailGeo, trailMat);
+  ballTrailLine.visible = false;
+  scene.add(ballTrailLine);
+  const trailHistory: THREE.Vector3[] = [];
+
+  // Particules 3D de pelouse / terre / craie lors de la frappe et des impacts
+  interface TurfParticle {
+    mesh: THREE.Mesh;
+    vx: number;
+    vy: number;
+    vz: number;
+    life: number;
+    maxLife: number;
+  }
+  const turfParticles: TurfParticle[] = [];
+  const particleGroup = new THREE.Group();
+  scene.add(particleGroup);
+  const partGeo = new THREE.BoxGeometry(0.032, 0.018, 0.048);
+
+  function spawnTurfBurst(originX: number, originY: number, originZ: number, count = 24, isPostSpark = false) {
+    const palette = isPostSpark
+      ? [0xffffff, 0xfacc15, 0xe2e8f0]
+      : [0x15803d, 0x166534, 0x3f2e21, 0xffffff, 0x22c55e];
+
+    for (let i = 0; i < count; i++) {
+      const col = palette[i % palette.length];
+      const mat = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.92 });
+      const m = new THREE.Mesh(partGeo, mat);
+      m.position.set(
+        originX + (Math.random() - 0.5) * 0.18,
+        originY + Math.random() * 0.06,
+        originZ + (Math.random() - 0.5) * 0.14
+      );
+      m.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
+      particleGroup.add(m);
+
+      turfParticles.push({
+        mesh: m,
+        vx: (Math.random() - 0.5) * (isPostSpark ? 4.5 : 2.6),
+        vy: 1.4 + Math.random() * (isPostSpark ? 3.2 : 2.6),
+        vz: isPostSpark ? (Math.random() - 0.5) * 3.5 : 0.8 + Math.random() * 2.4,
+        life: 0,
+        maxLife: 0.38 + Math.random() * 0.32
+      });
+    }
+  }
+
+  function updateTurfParticles(dt: number) {
+    for (let i = turfParticles.length - 1; i >= 0; i--) {
+      const p = turfParticles[i];
+      p.life += dt;
+      if (p.life >= p.maxLife) {
+        particleGroup.remove(p.mesh);
+        (p.mesh.material as THREE.Material).dispose();
+        turfParticles.splice(i, 1);
+        continue;
+      }
+      p.vy -= 9.81 * dt;
+      p.mesh.position.x += p.vx * dt;
+      p.mesh.position.y = Math.max(0.01, p.mesh.position.y + p.vy * dt);
+      p.mesh.position.z += p.vz * dt;
+      p.mesh.rotation.x += dt * 8;
+      p.mesh.rotation.z += dt * 6;
+      (p.mesh.material as THREE.MeshBasicMaterial).opacity = 1 - p.life / p.maxLife;
+    }
+  }
+
+  // Impulsion de caméra (Camera Shake) et vibration de la cage sur poteau/filet
+  let cameraShakeAmp = 0;
+  let goalFrameVibration = 0;
 
   /* -------------------------------------------------------------------------- */
   /*  GESTION DU HUD (SÉANCE DE 5 TIRS EN MODE MENÉ)                            */
@@ -2262,7 +2404,13 @@
 
     ballMesh.position.set(0, BALL_R, PENALTY_Z);
     ballMesh.rotation.set(0, 0, 0);
+    ballContactShadow.position.set(0, 0.014, PENALTY_Z);
+    ballContactShadow.scale.set(1, 1, 1);
+    (ballContactShadow.material as THREE.MeshBasicMaterial).opacity = 0.62;
     ballGlowRing.visible = true;
+    ballTrailLine.visible = false;
+    trailHistory.length = 0;
+    goalGroup.position.x = 0;
 
     keeperGroup.position.set(0, 0, 0.28);
     keeperGroup.rotation.set(0, 0, 0);
@@ -2286,7 +2434,7 @@
   }
 
   /* -------------------------------------------------------------------------- */
-  /*  GESTE COURBE AU DOIGT (EFFET ENROULÉ) + JAUGE DE PUISSANCE IRRÉVERSIBLE   */
+  /*  PROJECTION 3D <-> ÉCRAN & TRAJECTOIRE EXACTE CALÉE SUR LE DOIGT           */
   /* -------------------------------------------------------------------------- */
   interface SwipePoint {
     x: number;
@@ -2297,7 +2445,38 @@
   let swipePoints: SwipePoint[] = [];
   let chargePeakPushY = 0;
   let lockedPowerPct = 0;
-  let currentCurveSpin = 0; // Intensité de l'effet enroulé dessiné par le doigt
+  let currentCurveSpin = 0;
+
+  const raycaster = new THREE.Raycaster();
+  const ndcVec = new THREE.Vector2();
+  const projVec = new THREE.Vector3();
+
+  function worldToScreen(x: number, y: number, z: number): { x: number; y: number } {
+    projVec.set(x, y, z);
+    projVec.project(camera);
+    return {
+      x: (projVec.x * 0.5 + 0.5) * window.innerWidth,
+      y: (-projVec.y * 0.5 + 0.5) * window.innerHeight
+    };
+  }
+
+  function screenToPlaneZ(screenX: number, screenY: number, planeZ: number): THREE.Vector3 {
+    ndcVec.set(
+      (screenX / Math.max(1, window.innerWidth)) * 2 - 1,
+      -(screenY / Math.max(1, window.innerHeight)) * 2 + 1
+    );
+    raycaster.setFromCamera(ndcVec, camera);
+    const originZ = raycaster.ray.origin.z;
+    const dirZ = raycaster.ray.direction.z;
+    const t = (planeZ - originZ) / (Math.abs(dirZ) < 0.0001 ? -0.0001 : dirZ);
+    return new THREE.Vector3(
+      raycaster.ray.origin.x + raycaster.ray.direction.x * t,
+      raycaster.ray.origin.y + raycaster.ray.direction.y * t,
+      planeZ
+    );
+  }
+
+  const FLIGHT_GRAVITY = 6.8; // Gravité calibrée pour un arc tendu sans rebond prématuré
 
   const shotPhys = {
     active: false,
@@ -2306,6 +2485,7 @@
     vx: 0,
     vy: 0,
     vz: 0,
+    totalAx: 0,
     spinY: 0,
     spinX: 0,
     speedKmh: 0,
@@ -2317,75 +2497,178 @@
     resolved: false
   };
 
-  // Calcule l'effet enroulé (courbure de l'arc tracé avec le doigt)
-  function computeSwipeCurve(): { targetX: number; spinCurve: number } {
-    const w = window.innerWidth;
+  interface ExactShotTrajectory {
+    targetX: number;
+    targetY: number;
+    midWorldX: number;
+    spinCurve: number;
+    speedMs: number;
+    flightTime: number;
+    vx0: number;
+    vy0: number;
+    totalAx: number;
+  }
+
+  // Calcule la trajectoire 3D EXACTE correspondant au tracé du doigt sur l'écran
+  function computeExactTrajectory(powerPct: number): ExactShotTrajectory {
+    const finalPower = Math.max(28, Math.min(powerPct, 112));
+    const normP = finalPower / 100;
+    const speedMs = 18.0 + normP * 15.5;
+    const flightTime = PENALTY_Z / speedMs;
+
     if (swipePoints.length < 2) {
-      return { targetX: 0, spinCurve: 0 };
+      const defaultY = 1.15;
+      const vy0 = ((defaultY - BALL_R) + 0.5 * FLIGHT_GRAVITY * flightTime * flightTime) / flightTime;
+      return {
+        targetX: 0,
+        targetY: defaultY,
+        midWorldX: 0,
+        spinCurve: 0,
+        speedMs,
+        flightTime,
+        vx0: 0,
+        vy0,
+        totalAx: 0
+      };
     }
 
     const start = swipePoints[0];
     const end = swipePoints[swipePoints.length - 1];
-    const scaleW = Math.min(w, 420);
+    const ballScreen = worldToScreen(0, BALL_R, PENALTY_Z);
+    const goalBotScreen = worldToScreen(0, 0.16, 0);
+    const goalTopScreen = worldToScreen(0, GOAL.height, 0);
 
-    // Direction finale visée par le bout du doigt
-    const dxEnd = (end.x - start.x) / scaleW;
-    const targetX = THREE.MathUtils.clamp(dxEnd * 5.2, -4.4, 4.4);
+    // Si le joueur commence son geste un peu à côté du ballon, on translate le tracé pour qu'il parte du ballon
+    const distFromBall = Math.hypot(start.x - ballScreen.x, start.y - ballScreen.y);
+    const offsetScale = distFromBall > 95 ? 0.65 : 0.0;
+    const effEndX = end.x + (ballScreen.x - start.x) * offsetScale;
 
-    // Mesure de la courbure ("ventre" de la courbe entre le départ et l'arrivée)
-    // Si le joueur bombe son geste vers la droite puis revient à gauche -> effet enroulé rentrant vers la gauche !
-    let maxSignedDeviation = 0;
+    // Si le bout du doigt arrive dans la zone écran du but, on prend directement la position exacte sous le doigt !
+    // Sinon (petit swipe court en bas de l'écran), on projette proportionnellement la poussée verticale vers le but.
+    let effEndY = end.y;
+    if (end.y > goalBotScreen.y + 12) {
+      const pushUpPx = Math.max(10, start.y - end.y);
+      const goalSpanPx = Math.max(80, goalBotScreen.y - goalTopScreen.y);
+      const ratioY = Math.min(1.22, pushUpPx / (goalSpanPx * 1.45));
+      effEndY = goalBotScreen.y - ratioY * goalSpanPx;
+    }
+
+    // Légère pénalité uniquement si la jauge dépasse 100% (zone rouge de surcharge)
+    const overloadLiftM = finalPower > 100 ? (finalPower - 100) * 0.035 : 0;
+
+    const goalHit3D = screenToPlaneZ(effEndX, effEndY, 0);
+    const targetX = THREE.MathUtils.clamp(goalHit3D.x, -4.35, 4.35);
+    const targetY = THREE.MathUtils.clamp(goalHit3D.y + overloadLiftM, BALL_R + 0.04, 3.15);
+
+    // Mesure de la courbure ("ventre" du tracé du doigt entre start et end)
+    let maxSignedDevX = 0;
     const chordX = end.x - start.x;
     const chordY = end.y - start.y;
     const chordLen = Math.hypot(chordX, chordY);
 
-    if (chordLen > 24 && swipePoints.length >= 4) {
+    if (chordLen > 20 && swipePoints.length >= 4) {
       for (let i = 1; i < swipePoints.length - 1; i++) {
         const pt = swipePoints[i];
         const t = Math.max(0, Math.min(1, ((pt.x - start.x) * chordX + (pt.y - start.y) * chordY) / (chordLen * chordLen)));
         const projX = start.x + t * chordX;
-        const devX = pt.x - projX; // > 0 si le doigt est passé par la droite avant de rabattre à gauche
-        if (Math.abs(devX) > Math.abs(maxSignedDeviation)) {
-          maxSignedDeviation = devX;
+        const devX = pt.x - projX;
+        if (Math.abs(devX) > Math.abs(maxSignedDevX)) {
+          maxSignedDevX = devX;
         }
       }
     }
 
-    // Si le doigt est passé par la droite (devX > 0) pour finir à gauche, la balle part à droite et s'enroule vers la gauche (spinCurve < 0)
-    const spinCurve = THREE.MathUtils.clamp(-(maxSignedDeviation / (scaleW * 0.22)) * 24.0, -28.0, 28.0);
-    return { targetX, spinCurve };
+    // Conversion exacte du ventre écran à mi-parcours (Z = 5.5m) en coordonnée 3D midWorldX
+    const midZ = PENALTY_Z * 0.5;
+    const straightMidScreen = worldToScreen(targetX * 0.5, (BALL_R + targetY) * 0.5, midZ);
+    const midWorld3D = screenToPlaneZ(straightMidScreen.x + maxSignedDevX, straightMidScreen.y, midZ);
+    const midWorldX = THREE.MathUtils.clamp(midWorld3D.x, -5.6, 5.6);
+
+    // Cinématique exacte : X(0) = 0, X(T/2) = midWorldX, X(T) = targetX
+    const totalAx = THREE.MathUtils.clamp(
+      (4 * (targetX - 2 * midWorldX)) / (flightTime * flightTime),
+      -34.0,
+      34.0
+    );
+    const vx0 = (targetX - 0.5 * totalAx * flightTime * flightTime) / flightTime;
+    const vy0 = ((targetY - BALL_R) + 0.5 * FLIGHT_GRAVITY * flightTime * flightTime) / flightTime;
+
+    return {
+      targetX,
+      targetY,
+      midWorldX,
+      spinCurve: totalAx,
+      speedMs,
+      flightTime,
+      vx0,
+      vy0,
+      totalAx
+    };
   }
 
   function drawSwipeTrail() {
     swipeCtx.clearRect(0, 0, swipeCanvas.width, swipeCanvas.height);
     if (swipePoints.length < 2) return;
 
+    const traj = computeExactTrajectory(lockedPowerPct);
+    const isCurved = Math.abs(traj.spinCurve) > 3.2;
+
     swipeCtx.save();
     swipeCtx.lineCap = "round";
     swipeCtx.lineJoin = "round";
 
-    // Halo externe doré/cyan selon l'effet enroulé
-    const isCurved = Math.abs(currentCurveSpin) > 3.5;
-    swipeCtx.strokeStyle = isCurved ? "rgba(16, 185, 129, 0.45)" : "rgba(250, 204, 21, 0.4)";
-    swipeCtx.lineWidth = 14;
+    // 1. Tracé discret du geste brut sous le doigt
+    swipeCtx.strokeStyle = "rgba(255, 255, 255, 0.18)";
+    swipeCtx.lineWidth = 4;
+    swipeCtx.setLineDash([6, 6]);
     swipeCtx.beginPath();
     swipeCtx.moveTo(swipePoints[0].x, swipePoints[0].y);
     for (let i = 1; i < swipePoints.length; i++) {
       swipeCtx.lineTo(swipePoints[i].x, swipePoints[i].y);
     }
     swipeCtx.stroke();
+    swipeCtx.setLineDash([]);
 
-    // Trait central lumineux
-    swipeCtx.strokeStyle = isCurved ? "#34d399" : "#facc15";
-    swipeCtx.lineWidth = 5;
+    // 2. Projection 2D de la VRAIE trajectoire 3D (X(t), Y(t), Z(t)) que le ballon va suivre exactement !
+    const SAMPLES = 24;
+    const screenPts: { x: number; y: number }[] = [];
+    for (let i = 0; i <= SAMPLES; i++) {
+      const u = i / SAMPLES;
+      const t = u * traj.flightTime;
+      const x = traj.vx0 * t + 0.5 * traj.totalAx * t * t;
+      const y = BALL_R + traj.vy0 * t - 0.5 * FLIGHT_GRAVITY * t * t;
+      const z = PENALTY_Z - traj.speedMs * t;
+      screenPts.push(worldToScreen(x, y, z));
+    }
+
+    // Halo externe de la trajectoire 3D projetée
+    swipeCtx.strokeStyle = isCurved ? "rgba(16, 185, 129, 0.45)" : "rgba(250, 204, 21, 0.42)";
+    swipeCtx.lineWidth = 13;
+    swipeCtx.beginPath();
+    swipeCtx.moveTo(screenPts[0].x, screenPts[0].y);
+    for (let i = 1; i < screenPts.length; i++) {
+      swipeCtx.lineTo(screenPts[i].x, screenPts[i].y);
+    }
     swipeCtx.stroke();
 
-    // Point de visée au bout du doigt
-    const last = swipePoints[swipePoints.length - 1];
+    // Ligne principale lumineuse de la trajectoire exacte
+    swipeCtx.strokeStyle = isCurved ? "#34d399" : "#facc15";
+    swipeCtx.lineWidth = 4.5;
+    swipeCtx.stroke();
+
+    // 3. Cible exacte d'impact sur le plan de but (Z = 0)
+    const targetScreen = screenPts[screenPts.length - 1];
+    swipeCtx.strokeStyle = isCurved ? "#34d399" : "#facc15";
+    swipeCtx.lineWidth = 2.5;
+    swipeCtx.beginPath();
+    swipeCtx.arc(targetScreen.x, targetScreen.y, 12, 0, Math.PI * 2);
+    swipeCtx.stroke();
+
     swipeCtx.fillStyle = "#ffffff";
     swipeCtx.beginPath();
-    swipeCtx.arc(last.x, last.y, 7, 0, Math.PI * 2);
+    swipeCtx.arc(targetScreen.x, targetScreen.y, 4.5, 0, Math.PI * 2);
     swipeCtx.fill();
+
     swipeCtx.restore();
   }
 
@@ -2393,35 +2676,39 @@
     if (!chargeActive || state.phase !== "charging" || state.paused) return;
 
     const h = window.innerHeight;
-    const pushRatio = Math.max(0, chargePeakPushY / (h * 0.34));
-    const pushPower = pushRatio * 100;
+    const pushRatio = Math.max(0, chargePeakPushY / (h * 0.36));
+    const pushPower = Math.min(96, pushRatio * 96);
 
     // La jauge monte de manière strictement irréversible (ne redescend jamais)
-    lockedPowerPct = Math.max(lockedPowerPct + dt * 56, pushPower);
+    // Montée progressive (dt * 28) pour laisser le temps de dessiner une belle courbe avec le doigt
+    lockedPowerPct = Math.max(lockedPowerPct + dt * 28, pushPower);
 
-    const displayPct = Math.min(Math.round(lockedPowerPct), 115);
+    const displayPct = Math.min(Math.round(lockedPowerPct), 112);
     if (powerMeterFill) powerMeterFill.style.height = `${Math.min(displayPct, 100)}%`;
     if (powerMeterPct) {
-      powerMeterPct.textContent = displayPct > 93 ? "MAX !" : `${displayPct}%`;
+      powerMeterPct.textContent = displayPct > 100 ? "MAX !" : `${displayPct}%`;
       powerMeterPct.className =
-        displayPct > 93
+        displayPct > 100
           ? "rounded bg-red-600 px-1.5 py-0.5 font-display text-xs tracking-wider text-white shadow"
           : "rounded bg-black/90 px-1.5 py-0.5 font-display text-xs tracking-wider text-or shadow";
     }
 
-    const { spinCurve } = computeSwipeCurve();
-    currentCurveSpin = spinCurve;
-    if (Math.abs(spinCurve) > 3.5) {
+    const traj = computeExactTrajectory(lockedPowerPct);
+    currentCurveSpin = traj.spinCurve;
+    if (Math.abs(traj.spinCurve) > 3.2) {
       hudCurvePill?.classList.remove("hidden");
       hudCurvePill?.classList.add("flex");
       if (hudCurveLabel) {
-        hudCurveLabel.textContent = spinCurve < 0 ? "ENROULÉ GAUCHE ↶" : "ENROULÉ DROIT ↷";
+        hudCurveLabel.textContent = traj.spinCurve < 0 ? "ENROULÉ GAUCHE ↶" : "ENROULÉ DROIT ↷";
       }
+    } else {
+      hudCurvePill?.classList.add("hidden");
+      hudCurvePill?.classList.remove("flex");
     }
 
     drawSwipeTrail();
 
-    if (lockedPowerPct >= 110) {
+    if (lockedPowerPct >= 112) {
       commitShotRelease();
     }
   }
@@ -2431,21 +2718,13 @@
     chargeActive = false;
     ballGlowRing.visible = false;
 
-    const { targetX, spinCurve } = computeSwipeCurve();
+    const traj = computeExactTrajectory(lockedPowerPct);
     setTimeout(() => {
       swipeCtx.clearRect(0, 0, swipeCanvas.width, swipeCanvas.height);
       if (powerMeterWrap) powerMeterWrap.classList.add("opacity-0");
     }, 320);
 
-    const finalPower = Math.max(24, Math.min(lockedPowerPct, 115));
-    const normP = finalPower / 100;
-
-    const speedMs = 16.5 + normP * 17.5;
-    const targetY = normP <= 0.93
-      ? Math.pow(normP / 0.93, 1.2) * 2.30
-      : 2.48 + (normP - 0.93) * 9.8;
-
-    fireShot(finalPower, speedMs, targetX, targetY, spinCurve);
+    fireShot(lockedPowerPct, traj);
   }
 
   canvas.addEventListener("pointerdown", (e) => {
@@ -2455,7 +2734,7 @@
     chargeActive = true;
     swipePoints = [{ x: e.clientX, y: e.clientY }];
     chargePeakPushY = 0;
-    lockedPowerPct = 18;
+    lockedPowerPct = 26;
     currentCurveSpin = 0;
 
     aimInstruction?.classList.add("opacity-0");
@@ -2482,39 +2761,43 @@
     if (chargeActive && state.phase === "charging" && !state.paused) commitShotRelease();
   });
 
-  function fireShot(powerPct: number, speedMs: number, targetX: number, targetY: number, spinCurve: number) {
+  function fireShot(powerPct: number, traj: ExactShotTrajectory) {
     state.phase = "shooting";
 
-    const flightTime = PENALTY_Z / speedMs;
     shotPhys.active = true;
     shotPhys.inGoalCage = false;
     shotPhys.resolved = false;
     shotPhys.flightElapsed = 0;
-    shotPhys.vz = -speedMs;
-    // Compensation initiale pour que la balle parte dans l'axe extérieur puis s'enroule vers targetX !
-    shotPhys.vx = (targetX - 0.5 * spinCurve * flightTime * flightTime) / flightTime;
-    shotPhys.vy = (targetY + 0.5 * 9.81 * flightTime * flightTime) / flightTime;
-    shotPhys.spinY = spinCurve;
-    shotPhys.spinX = speedMs * 0.6;
-    shotPhys.speedKmh = Math.round(speedMs * 3.6);
+    shotPhys.vz = -traj.speedMs;
+    shotPhys.vx = traj.vx0;
+    shotPhys.vy = traj.vy0;
+    shotPhys.totalAx = traj.totalAx;
+    shotPhys.spinY = traj.spinCurve;
+    shotPhys.spinX = traj.speedMs * 0.65;
+    shotPhys.speedKmh = Math.round(traj.speedMs * 3.6);
     shotPhys.wallJumping = true;
+
+    // Ruban aérodynamique 3D et particules d'herbe/craie à l'impact du pied
+    trailHistory.length = 0;
+    trailMat.color.setHex(Math.abs(traj.spinCurve) > 3.2 ? 0x34d399 : 0xfacc15);
+    ballTrailLine.visible = true;
+    spawnTurfBurst(0, BALL_R * 0.5, PENALTY_Z, 26, false);
+    cameraShakeAmp = 0.032;
 
     playKickAudio(powerPct / 100);
 
     const tier = getActiveTier();
-    const windAccel = state.windKmh * 0.09;
-    const tKeeper = (PENALTY_Z - 0.28) / speedMs;
-    const predX = shotPhys.vx * tKeeper + 0.5 * (shotPhys.spinY + windAccel) * tKeeper * tKeeper;
-    const predY = Math.max(BALL_R, BALL_R + shotPhys.vy * tKeeper - 0.5 * 9.81 * tKeeper * tKeeper);
+    const tKeeper = (PENALTY_Z - 0.28) / traj.speedMs;
+    const predX = shotPhys.vx * tKeeper + 0.5 * shotPhys.totalAx * tKeeper * tKeeper;
+    const predY = Math.max(BALL_R, BALL_R + shotPhys.vy * tKeeper - 0.5 * FLIGHT_GRAVITY * tKeeper * tKeeper);
 
     // Un fort effet enroulé (spinCurve) trompe davantage le gardien !
-    const isCentralShot = Math.abs(predX) < 1.25;
-    const curveDeception = Math.min(Math.abs(spinCurve) * 0.014, 0.28);
+    const isCentralShot = Math.abs(predX) < 1.15;
+    const curveDeception = Math.min(Math.abs(traj.spinCurve) * 0.015, 0.30);
     shotPhys.keeperReadsRight = isCentralShot || Math.random() < (tier.keeperReadProb - curveDeception);
 
     if (shotPhys.keeperReadsRight) {
-      // Si la balle est très enroulée, le gardien est légèrement surpris par la trajectoire finale
-      const spinOffset = -Math.sign(spinCurve) * Math.min(0.42, Math.abs(spinCurve) * 0.018);
+      const spinOffset = -Math.sign(traj.spinCurve) * Math.min(0.46, Math.abs(traj.spinCurve) * 0.02);
       shotPhys.keeperTargetX = THREE.MathUtils.clamp(predX + spinOffset, -3.55, 3.55);
       shotPhys.keeperTargetY = THREE.MathUtils.clamp(predY, 0.35, 2.35);
       shotPhys.keeperDiveDir = Math.sign(predX || 1);
@@ -2527,7 +2810,7 @@
   }
 
   /* -------------------------------------------------------------------------- */
-  /*  PHYSIQUE PAR SOUS-PAS (SUB-STEPPING)                                      */
+  /*  PHYSIQUE PAR SOUS-PAS (SUB-STEPPING FIDÈLE À 100% AU TRACÉ)               */
   /* -------------------------------------------------------------------------- */
   function updatePhysics(dt: number) {
     const tier = getActiveTier();
@@ -2581,10 +2864,11 @@
       const prevY = ballMesh.position.y;
       const prevZ = ballMesh.position.z;
 
-      const windAccel = shotPhys.inGoalCage ? 0 : state.windKmh * 0.09;
-      shotPhys.vy -= 9.81 * subDt;
-      if (!shotPhys.inGoalCage) {
-        shotPhys.vx += (shotPhys.spinY + windAccel) * subDt;
+      // Tant que le ballon est en vol vers le but (non résolu), il suit EXACTEMENT la cinématique de la courbe tracée
+      const grav = shotPhys.inGoalCage || shotPhys.resolved ? 9.81 : FLIGHT_GRAVITY;
+      shotPhys.vy -= grav * subDt;
+      if (!shotPhys.inGoalCage && !shotPhys.resolved) {
+        shotPhys.vx += shotPhys.totalAx * subDt;
       }
 
       ballMesh.position.x += shotPhys.vx * subDt;
@@ -2592,13 +2876,19 @@
       ballMesh.position.z += shotPhys.vz * subDt;
 
       ballMesh.rotation.x += (shotPhys.vz * subDt) / BALL_R;
-      ballMesh.rotation.y += shotPhys.spinY * subDt * 0.7;
+      ballMesh.rotation.y += shotPhys.spinY * subDt * 0.78;
+      ballMesh.rotation.z -= shotPhys.spinY * subDt * 0.35;
 
+      // Pas de rebond parasite avant la ligne de but (le ballon rase l'herbe sans freiner)
       if (ballMesh.position.y < BALL_R) {
         ballMesh.position.y = BALL_R;
-        shotPhys.vy = Math.abs(shotPhys.vy) * (shotPhys.inGoalCage ? 0.35 : 0.52);
-        shotPhys.vx *= shotPhys.inGoalCage ? 0.72 : 0.85;
-        shotPhys.vz *= shotPhys.inGoalCage ? 0.72 : 0.85;
+        if (shotPhys.inGoalCage || shotPhys.resolved) {
+          shotPhys.vy = Math.abs(shotPhys.vy) * (shotPhys.inGoalCage ? 0.35 : 0.52);
+          shotPhys.vx *= shotPhys.inGoalCage ? 0.72 : 0.85;
+          shotPhys.vz *= shotPhys.inGoalCage ? 0.72 : 0.85;
+        } else if (shotPhys.vy < 0) {
+          shotPhys.vy = 0;
+        }
       }
 
       if (shotPhys.inGoalCage) {
@@ -2616,6 +2906,7 @@
           shotPhys.spinY = 0;
           if (hitSpeed > 1.2) {
             triggerNetDeformation(ballMesh.position.x, ballMesh.position.y, hitSpeed);
+            cameraShakeAmp = Math.max(cameraShakeAmp, 0.055);
           }
         }
         if (ballMesh.position.x < -maxSideX) {
@@ -2666,6 +2957,7 @@
           shotPhys.vz = Math.abs(shotPhys.vz) * 0.38;
           shotPhys.vx += (Math.random() - 0.5) * 5;
           shotPhys.vy = 2.8;
+          spawnTurfBurst(crossX, crossY, 5.25, 14, true);
           playSaveAudio();
           resolveShot(false, "CONTRÉ PAR LE MUR !", "Enroule ton geste avec le doigt pour contourner le mur !");
           break;
@@ -2689,6 +2981,8 @@
           shotPhys.vz = Math.abs(shotPhys.vz) * 0.42;
           shotPhys.vx = (diveDir || 1) * 6.8;
           shotPhys.vy = 3.0;
+          spawnTurfBurst(crossX, crossY, 0.34, 16, true);
+          cameraShakeAmp = 0.045;
           playSaveAudio();
           resolveShot(false, "ARRÊT DU GARDIEN !", "Parade du portier · Continue ta séance de 5 tirs !");
           break;
@@ -2711,6 +3005,9 @@
           shotPhys.vz = Math.abs(shotPhys.vz) * 0.45;
           if (hitBar) shotPhys.vy = Math.abs(shotPhys.vy) * 0.55;
           else shotPhys.vx = -shotPhys.vx * 0.65;
+          spawnTurfBurst(crossX, crossY, 0.08, 22, true);
+          cameraShakeAmp = 0.08;
+          goalFrameVibration = 0.22;
           playPostAudio();
           resolveShot(false, hitBar ? "BARRE TRANSVERSALE !" : "POTEAU SORTANT !", "Le montant repousse ta frappe !");
           break;
@@ -2724,18 +3021,28 @@
           ballMesh.position.x = THREE.MathUtils.clamp(crossX, -halfW + BALL_R + 0.1, halfW - BALL_R - 0.1);
           ballMesh.position.y = THREE.MathUtils.clamp(crossY, BALL_R, GOAL.height - BALL_R - 0.1);
           ballMesh.position.z = Math.max(ballMesh.position.z, -GOAL.depth + BALL_R + 0.15);
-          const curvedTag = Math.abs(shotPhys.spinY) > 5 ? " · FRAPPE ENROULÉE 🌀" : "";
+          const curvedTag = Math.abs(shotPhys.spinY) > 3.2 ? " · FRAPPE ENROULÉE 🌀" : "";
           resolveShot(true, "BUT AUX MARTYRS ! ⚽", `${shotPhys.speedKmh} km/h${curvedTag}`);
         } else {
           if (Math.abs(ballMesh.position.x) < halfW + 0.25 && ballMesh.position.y < GOAL.height + 0.2) {
             ballMesh.position.x = Math.sign(ballMesh.position.x || 1) * (halfW + 0.3);
           }
           const msg = crossY >= GOAL.height ? "AU-DESSUS DE LA BARRE !" : "À CÔTÉ DU CADRE !";
-          resolveShot(false, msg, crossY >= GOAL.height ? "Trop de puissance !" : "Ajuste ta courbe de tir");
+          resolveShot(false, msg, crossY >= GOAL.height ? "Vise un peu plus bas dans le but" : "Place le cercle de visée dans le cadre");
           break;
         }
       }
     }
+
+    // Mise à jour du ruban aérodynamique 3D derrière le ballon
+    trailHistory.unshift(ballMesh.position.clone());
+    if (trailHistory.length > TRAIL_MAX_PTS) trailHistory.pop();
+    const posAttr = trailGeo.getAttribute("position") as THREE.BufferAttribute;
+    for (let i = 0; i < TRAIL_MAX_PTS; i++) {
+      const pt = trailHistory[Math.min(i, trailHistory.length - 1)] || ballMesh.position;
+      posAttr.setXYZ(i, pt.x, pt.y, pt.z);
+    }
+    posAttr.needsUpdate = true;
   }
 
   /* -------------------------------------------------------------------------- */
@@ -3041,6 +3348,25 @@
     const elapsed = now * 0.001;
     flashMat.uniforms.uTime.value = elapsed;
     updateNetMesh(dt);
+    updateTurfParticles(dt);
+
+    // Ombre de contact sous le ballon (s'étale et s'estompe avec l'altitude Y du ballon)
+    const heightAboveGround = Math.max(0, ballMesh.position.y - BALL_R);
+    ballContactShadow.position.set(ballMesh.position.x, 0.014, ballMesh.position.z);
+    const shadowScale = 1 + heightAboveGround * 0.45;
+    ballContactShadow.scale.set(shadowScale, shadowScale, 1);
+    (ballContactShadow.material as THREE.MeshBasicMaterial).opacity = Math.max(
+      0.12,
+      0.62 * Math.exp(-heightAboveGround * 0.85)
+    );
+
+    // Vibration physique des poteaux/barre en cas de frappe sur le montant
+    if (goalFrameVibration > 0.001) {
+      goalGroup.position.x = Math.sin(elapsed * 95) * goalFrameVibration * 0.09;
+      goalFrameVibration = Math.max(0, goalFrameVibration - dt * 0.55);
+    } else {
+      goalGroup.position.x = 0;
+    }
 
     if (state.phase === "cinematic") {
       state.cinematicTime += dt;
@@ -3064,6 +3390,7 @@
       const swayAmp = 0.34 + tier.id * 0.09;
       keeperGroup.position.x = Math.sin(elapsed * swayFreq) * swayAmp;
       keeperGroup.position.y = Math.abs(Math.sin(elapsed * swayFreq * 2)) * 0.08;
+      keeperGroup.rotation.z = -Math.sin(elapsed * swayFreq) * 0.05;
       kArmL.rotation.z = 0.52 + Math.sin(elapsed * 7.5) * 0.10;
       kArmR.rotation.z = -0.52 - Math.sin(elapsed * 7.5) * 0.10;
 
@@ -3076,6 +3403,25 @@
       }
     } else if (state.phase === "shooting" || state.phase === "result") {
       updatePhysics(dt);
+
+      // Suivi caméra dynamique léger type EA FC + tremblement d'impact (Camera Shake)
+      const aspect = window.innerWidth / Math.max(1, window.innerHeight);
+      const isPortrait = aspect < 0.95;
+      const baseZ = isPortrait ? 13.15 : 13.35;
+      const baseY = isPortrait ? 0.96 : 1.18;
+      const lookY = isPortrait ? 1.04 : 1.15;
+      const pushIn = Math.min(0.65, shotPhys.flightElapsed * 1.1);
+
+      const shakeX = cameraShakeAmp > 0.001 ? (Math.random() - 0.5) * cameraShakeAmp : 0;
+      const shakeY = cameraShakeAmp > 0.001 ? (Math.random() - 0.5) * cameraShakeAmp : 0;
+      cameraShakeAmp = Math.max(0, cameraShakeAmp - dt * 0.18);
+
+      camera.position.set(
+        ballMesh.position.x * 0.08 + shakeX,
+        baseY + shakeY,
+        baseZ - pushIn
+      );
+      camera.lookAt(ballMesh.position.x * 0.18, lookY, 0);
     }
 
     renderer.render(scene, camera);
