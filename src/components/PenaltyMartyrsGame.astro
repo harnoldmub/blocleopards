@@ -1527,18 +1527,15 @@
 
   const PENALTY_Z = 11.0;
 
-  // Cadrage fidèle à la photo de référence (type Roberto Baggio #10) :
-  // Caméra légèrement surélevée (1.66m) et reculée (14.35m) pour voir :
-  // - Le tireur en entier de la tête aux crampons (mains sur les hanches, numéro dans le dos)
-  // - Le ballon seul posé sur le gazon avec son ombre noire nette (et de la pelouse sous le ballon)
-  // - Le gardien fléchi sur ses appuis et les deux poteaux du but complets sur mobile
+  // Cadrage pur et dégagé : ballon parfaitement centré en premier plan face au but et au gardien
   function applyPlayableCameraFraming() {
     const aspect = window.innerWidth / Math.max(1, window.innerHeight);
     const isPortrait = aspect < 0.95;
 
-    const camZ = isPortrait ? 14.35 : 14.15;
-    const camY = isPortrait ? 1.66 : 1.62;
-    const lookY = isPortrait ? 0.90 : 0.96;
+    // Ballon net au premier plan avec vue intégrale sur le gardien, les deux poteaux et la barre
+    const camZ = isPortrait ? 13.65 : 13.45;
+    const camY = isPortrait ? 1.25 : 1.28;
+    const lookY = isPortrait ? 1.10 : 1.15;
 
     const minGoalLineHalfWidth = isPortrait ? 5.65 : 7.4;
     const tanHalfHoriz = minGoalLineHalfWidth / camZ;
@@ -2744,6 +2741,7 @@
   shooterGroup.add(sLegL.hipPivot, sLegR.hipPivot);
 
   shooterGroup.scale.setScalar(0.78);
+  shooterGroup.visible = false; // Caché : on ne voit que le ballon, le gardien et le but
   scene.add(shooterGroup);
 
   function applyShooterProfile(shooter: LeopardShooter) {
@@ -2781,6 +2779,7 @@
     sLegR.anklePivot.rotation.set(0.10, 0, 0);
 
     shooterGroundShadow.position.set(shooterGroup.position.x + 0.08, 0.013, shooterGroup.position.z - 0.04);
+    shooterGroundShadow.visible = false;
   }
 
   // Course d'élan réaliste en 3 foulées + grand armé + fouetté de frappe + suivi de jambe (follow-through)
@@ -5022,9 +5021,9 @@
       // Suivi caméra dynamique léger type EA FC + tremblement d'impact (Camera Shake)
       const aspect = window.innerWidth / Math.max(1, window.innerHeight);
       const isPortrait = aspect < 0.95;
-      const baseZ = isPortrait ? 14.35 : 14.15;
-      const baseY = isPortrait ? 1.66 : 1.62;
-      const lookY = isPortrait ? 0.90 : 0.96;
+      const baseZ = isPortrait ? 13.65 : 13.45;
+      const baseY = isPortrait ? 1.25 : 1.28;
+      const lookY = isPortrait ? 1.10 : 1.15;
       const pushIn = Math.min(0.85, shotPhys.flightElapsed * 1.35);
 
       const shakeX = cameraShakeAmp > 0.001 ? (Math.random() - 0.5) * cameraShakeAmp : 0;
