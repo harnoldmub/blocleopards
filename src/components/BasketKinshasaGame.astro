@@ -42,24 +42,22 @@
         <div class="bg-[#b91c1c] px-2.5 py-1.5 text-center font-display text-xs font-black tracking-wider text-white border-r border-[#1e3a6e]">
           <span id="hud-shotclock">24.0</span>s
         </div>
-        <!-- Série en cours / 5 tirs -->
+        <!-- Score arcade : Paniers marqués & Objectif -->
         <div class="flex items-center gap-2 px-3 py-1 bg-[#071024]">
           <div class="flex items-center gap-1.5">
             <img src="/flags/cd.svg" alt="RDC" class="h-3.5 w-5 rounded-[2px] object-cover" onerror="this.style.display='none'" />
             <span class="font-display text-sm tracking-wider text-white">KIN</span>
           </div>
-          <div class="flex items-center gap-1 rounded bg-[#030712] px-2 py-0.5 font-display text-lg font-black tracking-wider text-or border border-[#1e3a6e]">
+          <div class="flex items-center gap-1 rounded bg-[#030712] px-2.5 py-0.5 font-display text-base font-black tracking-wider text-or border border-[#1e3a6e]">
             <span id="hud-score-made">0</span>
-            <span class="text-[0.6rem] font-sans font-bold text-slate-400">/ 5</span>
+            <span class="text-[0.6rem] font-sans font-bold text-slate-400">pts</span>
           </div>
         </div>
-        <!-- Pastilles des 5 tirs -->
-        <div class="flex items-center gap-1 border-l border-[#1e3a6e] bg-[#040917] px-2.5 py-1" id="hud-kick-dots">
-          <span class="dot-shot inline-block h-2 w-2 rounded-full border border-white/40 bg-slate-700"></span>
-          <span class="dot-shot inline-block h-2 w-2 rounded-full border border-white/40 bg-slate-700"></span>
-          <span class="dot-shot inline-block h-2 w-2 rounded-full border border-white/40 bg-slate-700"></span>
-          <span class="dot-shot inline-block h-2 w-2 rounded-full border border-white/40 bg-slate-700"></span>
-          <span class="dot-shot inline-block h-2 w-2 rounded-full border border-white/40 bg-slate-700"></span>
+        <!-- Objectif du niveau & Tirs tentés -->
+        <div class="flex items-center gap-2 border-l border-[#1e3a6e] bg-[#040917] px-3 py-1 text-[0.65rem] font-bold text-slate-300">
+          <span>Obj : <strong id="hud-target-goals" class="text-emerald-400 font-display text-xs">4</strong></span>
+          <span class="text-slate-600">|</span>
+          <span>Tirs : <strong id="hud-shots-attempted" class="text-sky-300">0</strong></span>
         </div>
       </div>
 
@@ -391,7 +389,7 @@
 
       <div class="flex-1 overflow-y-auto p-4 space-y-3">
         <div class="flex items-center justify-between rounded-xl border border-[#1e3a6e] bg-[#040917] px-3.5 py-2 text-xs text-slate-300">
-          <span>Chaque niveau propose une séance de 5 tirs avec difficulté et distances accrues :</span>
+          <span>Chaque niveau propose un défi chrono avec difficulté et distances accrues :</span>
           <span class="font-bold text-or">Record : <strong id="levels-best-streak">0</strong> paniers</span>
         </div>
         <div id="levels-grid" class="grid gap-2.5 sm:grid-cols-2"></div>
@@ -606,105 +604,105 @@
     {
       id: 1,
       name: "Échauffement 7ᵉ Rue",
-      subtitle: "Lancers francs & tirs ouverts",
-      desc: "5 lancers francs tranquilles pour s'échauffer. Timer 32s, vent nul, tolérance large. 3/5 exigés.",
-      targetGoals: 3,
-      tolerancePct: 11.0,
-      gaugeSpeed: 44,
+      subtitle: "Mode Arcade 30s · Tirs Illimités",
+      desc: "Shoote un max de lancers francs en 30s sans limite de tirs ! Vitesse douce et vent nul. Objectif : 4 paniers !",
+      targetGoals: 4,
+      tolerancePct: 10.0,
+      gaugeSpeed: 42,
       shotClockSec: 15,
-      levelTimerSec: 32,
+      levelTimerSec: 30,
       windMaxKmh: 0,
       spots: SPOTS_WARMUP
     },
     {
       id: 2,
       name: "Playground Limete",
-      subtitle: "Chrono 18s & Tolérance Serrée",
-      desc: "Attention, le défi commence ! Seulement 18s au chrono pour 5 tirs, jauge accélérée et brise 8 km/h. 3/5 !",
-      targetGoals: 3,
-      tolerancePct: 4.8,
-      gaugeSpeed: 78,
-      shotClockSec: 5.5,
-      levelTimerSec: 18,
-      windMaxKmh: 8,
+      subtitle: "Chrono 28s · Rotation Raquette",
+      desc: "28s au chrono ! Les spots tournent à mi-distance. Jauge agréable et légère brise. Rentre au moins 5 paniers !",
+      targetGoals: 5,
+      tolerancePct: 7.5,
+      gaugeSpeed: 54,
+      shotClockSec: 6,
+      levelTimerSec: 28,
+      windMaxKmh: 6,
       spots: SPOTS_STANDARD
     },
     {
       id: 3,
       name: "Tournoi Urbain Kin",
-      subtitle: "Tirs primés 3pts & Chrono 14s",
-      desc: "3 points sous pression : 14 secondes pour 5 tirs ! Rafales 14 km/h, jauge vive et 4/5 obligatoires.",
-      targetGoals: 4,
-      tolerancePct: 3.8,
-      gaugeSpeed: 96,
-      shotClockSec: 4.5,
-      levelTimerSec: 14,
-      windMaxKmh: 14,
+      subtitle: "3 Points FIBA · Chrono 26s",
+      desc: "Arc des 3 points (6.75m) ! 26 secondes pour claquer au moins 6 paniers primés avec rafales 10 km/h.",
+      targetGoals: 6,
+      tolerancePct: 6.2,
+      gaugeSpeed: 66,
+      shotClockSec: 5,
+      levelTimerSec: 26,
+      windMaxKmh: 10,
       spots: SPOTS_CLUTCH
     },
     {
       id: 4,
       name: "Money Time Léopards",
-      subtitle: "Chrono Éclair 11.5s",
-      desc: "Clutch shot ! 11.5s chrono, tirs à 7.3m, vent 18 km/h et zone verte millimétrée. 4/5 exigés !",
-      targetGoals: 4,
-      tolerancePct: 3.0,
-      gaugeSpeed: 118,
-      shotClockSec: 3.8,
-      levelTimerSec: 11.5,
-      windMaxKmh: 18,
+      subtitle: "Longue Distance · Chrono 24s",
+      desc: "24s sous pression ! Tirs à 7.3m, vent 14 km/h et jauge vive. Objectif : 7 paniers avant le buzzer !",
+      targetGoals: 7,
+      tolerancePct: 5.2,
+      gaugeSpeed: 78,
+      shotClockSec: 4.5,
+      levelTimerSec: 24,
+      windMaxKmh: 14,
       spots: SPOTS_CLUTCH
     },
     {
       id: 5,
       name: "Légende Buzzer Beater",
-      subtitle: "Logo 8.4m & Chrono 9.8s",
-      desc: "Du logo à 8.4m : 9.8s au total, rafales 22 km/h et jauge ultra rapide. 4/5 obligatoires !",
-      targetGoals: 4,
-      tolerancePct: 2.4,
-      gaugeSpeed: 138,
-      shotClockSec: 3.2,
-      levelTimerSec: 9.8,
-      windMaxKmh: 22,
+      subtitle: "Tirs du Logo 8.4m · 24s",
+      desc: "Du logo du playground ! 24s chrono, vent 18 km/h et 7 paniers longue distance pour enflammer Limete.",
+      targetGoals: 7,
+      tolerancePct: 4.5,
+      gaugeSpeed: 90,
+      shotClockSec: 4,
+      levelTimerSec: 24,
+      windMaxKmh: 18,
       spots: SPOTS_LOGO
     },
     {
       id: 6,
       name: "Shootout Matonge",
-      subtitle: "Corners Zéro Degré & 8.5s",
-      desc: "Corners 0° ras de ligne. 8.5s au chrono global, vent 26 km/h. Pas le droit à l'erreur !",
-      targetGoals: 4,
-      tolerancePct: 1.9,
-      gaugeSpeed: 158,
-      shotClockSec: 2.8,
-      levelTimerSec: 8.5,
-      windMaxKmh: 26,
+      subtitle: "Corners Zéro Degré · 22s",
+      desc: "Corners au ras de la ligne de touche. 22s d'enchaînement non-stop, vent 20 km/h. Rentre 8 paniers !",
+      targetGoals: 8,
+      tolerancePct: 3.8,
+      gaugeSpeed: 102,
+      shotClockSec: 3.5,
+      levelTimerSec: 22,
+      windMaxKmh: 20,
       spots: SPOTS_MATONGE
     },
     {
       id: 7,
       name: "Finale Boulevard Triomphal",
-      subtitle: "Distance Parking 8.8m & 7.5s",
-      desc: "8.8m du cercle. 7.5s chrono total, vent 30 km/h et 5/5 parfait exigé !",
-      targetGoals: 5,
-      tolerancePct: 1.5,
-      gaugeSpeed: 178,
-      shotClockSec: 2.5,
-      levelTimerSec: 7.5,
-      windMaxKmh: 30,
+      subtitle: "Distance Parking 8.8m · 22s",
+      desc: "Distance 8.8 mètres ! 22s au chrono et 8 paniers pour accéder au niveau ultime.",
+      targetGoals: 8,
+      tolerancePct: 3.2,
+      gaugeSpeed: 115,
+      shotClockSec: 3.2,
+      levelTimerSec: 22,
+      windMaxKmh: 24,
       spots: SPOTS_BOULEVARD
     },
     {
       id: 8,
       name: "Roi du Playground Léopards",
-      subtitle: "Le Défi Suprême · 6.8s · 5/5 !",
-      desc: "Milieu de terrain à 10.2m, 6.8s au chrono et vent 34 km/h. Seuls les dieux du shoot réussissent le 5/5 !",
-      targetGoals: 5,
-      tolerancePct: 1.2,
-      gaugeSpeed: 200,
-      shotClockSec: 2.2,
-      levelTimerSec: 6.8,
-      windMaxKmh: 34,
+      subtitle: "Milieu de Terrain 10.2m · 20s",
+      desc: "Du milieu de terrain à 10.2m ! 20s chrono et 9 paniers d'anthologie pour devenir la Légende absolue !",
+      targetGoals: 9,
+      tolerancePct: 2.8,
+      gaugeSpeed: 128,
+      shotClockSec: 3,
+      levelTimerSec: 20,
+      windMaxKmh: 28,
       spots: SPOTS_LEOPARDS_ROYAL
     }
   ];
@@ -713,12 +711,12 @@
     phase: "aiming" as "aiming" | "charging" | "flying" | "result" | "gameover",
     paused: false,
     currentTierIndex: 0,
-    shotIndex: 0, // 0..4 (5 tirs par série)
-    shotsHistory: [] as boolean[],
-    goalsInSeries: 0,
-    shotClockRemaining: 32.0,
-    levelTimeRemaining: 32.0,
-    levelTotalTime: 32.0,
+    spotIndex: 0, // Index du spot courant dans tier.spots
+    shotsAttempted: 0, // Nombre total de shoots tentés (arcade)
+    goalsInSeries: 0, // Nombre de paniers réussis
+    shotClockRemaining: 30.0,
+    levelTimeRemaining: 30.0,
+    levelTotalTime: 30.0,
     currentWindKmh: 0,
     maxUnlockedTier: Number(localStorage.getItem("kin_basket_max_tier") || 1),
     bestScore: Number(localStorage.getItem("kin_basket_best_score") || 0),
@@ -767,10 +765,11 @@
   const hudLevelTimerBar = document.getElementById("hud-level-timer-bar");
   const hudLevelTimerPill = document.getElementById("hud-level-timer-pill");
   const hudScoreMade = document.getElementById("hud-score-made");
+  const hudTargetGoals = document.getElementById("hud-target-goals");
+  const hudShotsAttempted = document.getElementById("hud-shots-attempted");
   const hudLevelBadge = document.getElementById("hud-level-badge");
   const hudSpotLabel = document.getElementById("hud-spot-label");
   const hudWindVal = document.getElementById("hud-wind-val");
-  const hudKickDots = document.querySelectorAll<HTMLSpanElement>(".dot-shot");
 
   const powerMeterWrap = document.getElementById("power-meter-wrap");
   const powerMeterTargetZone = document.getElementById("power-meter-target-zone");
@@ -933,6 +932,27 @@
       gain.connect(audioCtx.destination);
       src.start(now);
       src.stop(now + dur);
+    } catch {}
+  }
+
+  function playBuzzerAudio() {
+    if (!state.audioEnabled || !audioCtx) return;
+    try {
+      const now = audioCtx.currentTime;
+      const dur = 0.85;
+      [220, 226, 440].forEach((f, i) => {
+        const osc = audioCtx!.createOscillator();
+        const gain = audioCtx!.createGain();
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(f, now);
+        gain.gain.setValueAtTime(0.24 / (i + 1), now);
+        gain.gain.linearRampToValueAtTime(0.35 / (i + 1), now + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.005, now + dur);
+        osc.connect(gain);
+        gain.connect(audioCtx!.destination);
+        osc.start(now);
+        osc.stop(now + dur);
+      });
     } catch {}
   }
 
@@ -1211,12 +1231,12 @@
   scene.add(ballContactShadow);
 
   /* -------------------------------------------------------------------------- */
-  /*  CADRAGE & GESTION DE LA SÉANCE DE 5 TIRS                                  */
+  /*  CADRAGE & GESTION DU MODE ARCADE (TIRS ILLIMITÉS SOUS CHRONO)             */
   /* -------------------------------------------------------------------------- */
   function getCurrentSpot(): CourtSpot {
     const tier = getActiveTier();
     const spots = tier.spots && tier.spots.length > 0 ? tier.spots : SPOTS_STANDARD;
-    return spots[state.shotIndex % spots.length];
+    return spots[state.spotIndex % spots.length];
   }
 
   function applyPlayableFraming() {
@@ -1239,37 +1259,27 @@
     const spot = getCurrentSpot();
 
     if (hudScoreMade) hudScoreMade.textContent = String(state.goalsInSeries);
+    if (hudTargetGoals) hudTargetGoals.textContent = String(tier.targetGoals);
+    if (hudShotsAttempted) hudShotsAttempted.textContent = String(state.shotsAttempted);
     if (hudLevelBadge) hudLevelBadge.textContent = `NIV. ${tier.id} · ${tier.name.toUpperCase()}`;
-    if (hudSpotLabel) hudSpotLabel.textContent = `Tir ${state.shotIndex + 1}/5 · ${spot.name} (${spot.distLabel})`;
-    if (hudShotclock) hudShotclock.textContent = Math.max(0, state.shotClockRemaining).toFixed(1);
+    if (hudSpotLabel) hudSpotLabel.textContent = `${spot.name} (${spot.distLabel})`;
+    if (hudShotclock) hudShotclock.textContent = Math.max(0, state.levelTimeRemaining).toFixed(1);
     if (hudWindVal) {
       hudWindVal.textContent = state.currentWindKmh === 0
         ? "Vent : 0 km/h"
         : `${state.currentWindKmh > 0 ? "Vent Droit ➔" : "Vent Gauche ⬅"} ${Math.abs(state.currentWindKmh)} km/h`;
     }
-    if (levelsBestStreak) levelsBestStreak.textContent = `${state.bestScore}/5`;
-    if (pauseStreakVal) pauseStreakVal.textContent = `${state.goalsInSeries}/5`;
-
-    hudKickDots.forEach((dot, idx) => {
-      dot.className = "dot-shot inline-block h-2 w-2 rounded-full border border-white/40 transition-all";
-      if (idx < state.shotsHistory.length) {
-        dot.classList.add(state.shotsHistory[idx] ? "bg-emerald-400" : "bg-red-500");
-      } else if (idx === state.shotIndex) {
-        dot.classList.add("bg-or", "animate-pulse");
-      } else {
-        dot.classList.add("bg-slate-700");
-      }
-    });
+    if (levelsBestStreak) levelsBestStreak.textContent = `${state.bestScore} pts`;
+    if (pauseStreakVal) pauseStreakVal.textContent = `${state.goalsInSeries} pts (Obj: ${tier.targetGoals})`;
   }
 
   function setupNextShot() {
-    if (state.shotIndex >= 5) {
-      endSeries();
+    if (state.levelTimeRemaining <= 0) {
+      endSeries(true);
       return;
     }
 
     const tier = getActiveTier();
-    state.shotClockRemaining = tier.shotClockSec;
     // Tirage du vent selon le niveau
     if (tier.windMaxKmh > 0) {
       const dir = Math.random() < 0.5 ? -1 : 1;
@@ -1300,8 +1310,8 @@
 
   function startSeries(tierIdx = 0) {
     state.currentTierIndex = THREE.MathUtils.clamp(tierIdx, 0, TIERS.length - 1);
-    state.shotIndex = 0;
-    state.shotsHistory = [];
+    state.spotIndex = 0;
+    state.shotsAttempted = 0;
     state.goalsInSeries = 0;
     state.paused = false;
 
@@ -1325,7 +1335,7 @@
     setupNextShot();
   }
 
-  function endSeries(timeExpired = false) {
+  function endSeries(timeExpired = true) {
     state.phase = "gameover";
     const tier = getActiveTier();
 
@@ -1343,24 +1353,22 @@
     const hasNextTier = state.currentTierIndex + 1 < TIERS.length;
 
     if (goTitle) {
-      if (timeExpired && !passed) {
-        goTitle.textContent = "TEMPS DU NIVEAU ÉCOULÉ ! ⏱️🚨";
+      if (passed) {
+        goTitle.textContent = "VICTOIRE À LIMETE ! 🔥";
       } else {
-        goTitle.textContent = passed ? "VICTOIRE À LIMETE ! 🔥" : "SÉANCE NON VALIDÉE";
+        goTitle.textContent = "TEMPS ÉCOULÉ ! ⏱️";
       }
     }
     if (goDesc) {
-      if (timeExpired && !passed) {
-        goDesc.textContent = `Chronomètre de ${tier.levelTimerSec}s expiré (0.0s) ! Tu as réussi ${state.goalsInSeries}/5 tirs (objectif : ${tier.targetGoals}/5 pour valider le Niveau ${tier.id}). Enchaîne plus rapidement dès le coup d'envoi !`;
+      if (passed) {
+        goDesc.textContent = `Superbe chrono ! Tu as inscrit ${state.goalsInSeries} paniers sur ${state.shotsAttempted} tirs tentés en ${tier.levelTimerSec}s (objectif ${tier.targetGoals} atteint). ${hasNextTier ? `Niveau ${tier.id + 1} débloqué !` : "Tu as conquis tous les niveaux du playground !"}`;
       } else {
-        goDesc.textContent = passed
-          ? `Magnifique performance ! ${state.goalsInSeries}/5 tirs rentrés (objectif ${tier.targetGoals}/5 atteint). ${hasNextTier ? `Niveau ${tier.id + 1} débloqué !` : "Tu as conquis tous les niveaux du playground !"}`
-          : `Tu as inscrit ${state.goalsInSeries}/5 tirs (objectif : ${tier.targetGoals}/5 pour valider ce niveau). Retente ta chance !`;
+        goDesc.textContent = `Buzzer final (${tier.levelTimerSec}s) ! Tu as marqué ${state.goalsInSeries} paniers sur ${state.shotsAttempted} tirs tentés. Il fallait ${tier.targetGoals} paniers pour valider le Niveau ${tier.id}. Retente ta chance pour faire mieux !`;
       }
     }
-    if (goStatStreak) goStatStreak.textContent = `${state.goalsInSeries}/5`;
+    if (goStatStreak) goStatStreak.textContent = `${state.goalsInSeries} pts`;
     if (goStatLevel) goStatLevel.textContent = `Niv. ${tier.id}`;
-    if (goStatRecord) goStatRecord.textContent = `${state.bestScore}/5 🏆`;
+    if (goStatRecord) goStatRecord.textContent = `${state.bestScore} pts 🏆`;
 
     if (btnGoNextLevel) {
       if (passed && hasNextTier) {
@@ -1601,7 +1609,7 @@
     state.phase = "charging";
     chargeActive = true;
     swipePoints = [{ x: e.clientX, y: e.clientY }];
-    lockedPowerPct = 10;
+    lockedPowerPct = 18;
 
     powerMeterWrap?.classList.remove("opacity-0");
   });
@@ -1711,11 +1719,12 @@
 
   function onShotResolved(made: boolean, title: string) {
     state.phase = "result";
-    state.shotsHistory.push(made);
     if (made) state.goalsInSeries++;
+    state.shotsAttempted++;
 
     updateHud();
 
+    const tier = getActiveTier();
     if (shotToast && toastTitle && toastSubtitle && toastEmoji) {
       toastEmoji.textContent = made ? "🏀" : "❌";
       toastTitle.textContent = title;
@@ -1723,16 +1732,20 @@
         ? "font-display text-lg uppercase tracking-wider text-or leading-none font-black"
         : "font-display text-lg uppercase tracking-wider text-red-500 leading-none font-black";
       toastSubtitle.textContent = made
-        ? `Tir ${state.shotIndex + 1}/5 réussi · En route vers le prochain spot !`
-        : `Tir ${state.shotIndex + 1}/5 manqué · Ajuste ton dosage !`;
+        ? `Panier validé ! ${state.goalsInSeries}/${tier.targetGoals} pts (${state.shotsAttempted}e shoot)`
+        : `Tir manqué (${state.shotsAttempted}e shoot) · Enchaîne vite !`;
       shotToast.classList.remove("opacity-0", "-translate-y-4");
     }
 
     setTimeout(() => {
       shotToast?.classList.add("opacity-0", "-translate-y-4");
-      state.shotIndex++;
-      setupNextShot();
-    }, 1500);
+      if (state.levelTimeRemaining > 0) {
+        state.spotIndex++;
+        setupNextShot();
+      } else {
+        endSeries(true);
+      }
+    }, 600);
   }
 
   /* -------------------------------------------------------------------------- */
@@ -1768,7 +1781,7 @@
           <p class="mt-0.5 text-xs text-slate-300 leading-relaxed">${t.desc}</p>
         </div>
         <div class="mt-2.5 flex items-center justify-between border-t border-[#1e3a6e] pt-2 text-[0.62rem] font-bold uppercase tracking-wider text-slate-400">
-          <span>Objectif : <strong class="text-emerald-400">${t.targetGoals}/5 tirs</strong></span>
+          <span>Objectif : <strong class="text-emerald-400">${t.targetGoals} paniers</strong></span>
           <span>Timer Niveau : <strong class="text-red-400 font-black">${t.levelTimerSec}s</strong> · Vent : <strong class="text-sky-300">${t.windMaxKmh} km/h</strong></span>
         </div>
       `;
@@ -1889,15 +1902,16 @@
   /*  DÉFI MULTIJOUEUR EN LIGNE (WHATSAPP & LIEN DIRECT)                        */
   /* -------------------------------------------------------------------------- */
   function generateChallengeShareLink(): string {
-    const activeTier = getActiveTier();
-    const pseudo = (challengePlayerName?.value || "").trim() || "ShooteurDeKin";
+    const pseudo = (challengePlayerName?.value || "").trim();
     const origin = window.location.origin || "https://blocleopards.com";
     const path = window.location.pathname.includes("basket") ? window.location.pathname : "/jeux/basket";
     const params = new URLSearchParams({
-      defie_par: pseudo,
       niveau: String(state.currentTierIndex + 1),
-      score: String(state.scoreMadeInSeries)
+      score: String(state.goalsInSeries)
     });
+    if (pseudo) {
+      params.set("defie_par", pseudo);
+    }
     return `${origin}${path}?${params.toString()}#experience-3d`;
   }
 
@@ -1905,15 +1919,16 @@
     const url = generateChallengeShareLink();
     if (challengeShareUrl) challengeShareUrl.value = url;
     const activeTier = getActiveTier();
-    const pseudo = (challengePlayerName?.value || "").trim() || "Un shooteur de Kinshasa";
+    const pseudo = (challengePlayerName?.value || "").trim();
+    const displayName = pseudo || "Un supporter des Léopards";
     if (challengePreviewText) {
-      challengePreviewText.textContent = `Niveau ${state.currentTierIndex + 1} (${activeTier.name}) · Score : ${state.scoreMadeInSeries}/5 paniers`;
+      challengePreviewText.textContent = `Niveau ${state.currentTierIndex + 1} (${activeTier.name}) · Score : ${state.goalsInSeries} panier${state.goalsInSeries > 1 ? "s" : ""} en ${activeTier.levelTimerSec}s (${state.shotsAttempted} tir${state.shotsAttempted > 1 ? "s" : ""})`;
     }
     const textMsg = encodeURIComponent(
       `🏀 *DÉFI STREETBALL KINSHASA (LIMETE 7ᵉ RUE) !*\n` +
-      `${pseudo} te défie sur le playground officiel du Bloc Léopards !\n` +
+      `${displayName} te défie sur le playground officiel du Bloc Léopards !\n` +
       `🔥 Niveau : ${activeTier.name} (Niv. ${state.currentTierIndex + 1})\n` +
-      `🎯 Score à battre : ${state.scoreMadeInSeries}/5 paniers\n` +
+      `🎯 Score à battre : ${state.goalsInSeries} panier${state.goalsInSeries > 1 ? "s" : ""} en ${activeTier.levelTimerSec}s (${state.shotsAttempted} tirs)\n` +
       `Fais parler ton poignet et rentre les swishs !\n\n` +
       `👉 Relève le défi ici : ${url}`
     );
@@ -1936,7 +1951,7 @@
     gameMenuOverlay?.classList.remove("flex");
 
     if (challengePlayerName && !challengePlayerName.value) {
-      challengePlayerName.value = localStorage.getItem("kin_basket_player_pseudo") || "ShooteurDeKin";
+      challengePlayerName.value = localStorage.getItem("kin_basket_player_pseudo") || "";
     }
     updateChallengeModalContent();
     if (challengeCopyFeedback) challengeCopyFeedback.classList.add("hidden");
@@ -2062,7 +2077,7 @@
       setTimeout(() => {
         toastEmoji.textContent = "⚔️";
         toastTitle.textContent = `DÉFI REÇU DE ${challenger.toUpperCase()} !`;
-        const scoreTxt = challengedScore !== null ? `Score à battre : ${challengedScore}/5` : "Viens claquer des swishs !";
+        const scoreTxt = challengedScore !== null ? `Score à battre : ${challengedScore} panier${Number(challengedScore) > 1 ? "s" : ""}` : "Viens claquer des swishs !";
         toastSubtitle.textContent = `Niveau ${initialTier + 1} (${TIERS[initialTier].name}) · ${scoreTxt}`;
         shotToast.classList.remove("opacity-0", "-translate-y-4");
         setTimeout(() => shotToast.classList.add("opacity-0", "-translate-y-4"), 4500);
