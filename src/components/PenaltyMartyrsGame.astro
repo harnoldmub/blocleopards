@@ -17,12 +17,12 @@
   <!-- CANVAS 2D OVERLAY POUR LE TRACÉ COURBE DU DOIGT (EFFET ENROULÉ) -->
   <canvas id="swipe-trail-canvas" class="pointer-events-none absolute inset-0 z-10 block h-full w-full"></canvas>
 
-  <!-- ================= HUD BROADCAST COMPACT (SÉANCE DE 5 TIRS EN MODE MENÉ) ================= -->
+  <!-- ================= HUD BROADCAST COMPACT (100% OPAQUE, ZÉRO GLASSMORPHISME) ================= -->
   <div class="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-2 p-2.5 sm:p-4">
     
     <!-- GAUCHE : SCOREBUG TV MODE MENÉ + 5 PASTILLES DE TIRS -->
     <div class="flex flex-col gap-1.5 min-w-0">
-      <div class="pointer-events-auto inline-flex items-center overflow-hidden rounded-xl border border-white/15 bg-[#060c1d]/92 shadow-2xl backdrop-blur-md">
+      <div class="pointer-events-auto inline-flex items-center overflow-hidden rounded-xl border-2 border-[#1e3a6e] bg-[#060d1f] shadow-2xl">
         <!-- Logo Bloc Léopards -->
         <div class="flex h-8 sm:h-9 items-center justify-center bg-white px-2">
           <img src="/brand/logo.png" alt="Bloc Léopards" class="h-5 sm:h-6 w-auto object-contain" />
@@ -32,10 +32,10 @@
           90'<span class="animate-pulse">+</span>
         </div>
         <!-- Score Mode Mené (RDC vs ADV) -->
-        <div class="flex items-center gap-1.5 px-2 sm:px-2.5 py-1">
+        <div class="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 bg-[#060d1f]">
           <img src="/flags/cd.svg" alt="RDC" class="h-3.5 w-4.5 rounded-[2px] object-cover" onerror="this.style.display='none'" />
           <span class="font-display text-xs sm:text-sm tracking-wider text-white">RDC</span>
-          <div class="flex items-center gap-1 rounded bg-black/75 px-2 py-0.5 font-display text-sm sm:text-base font-black tracking-wider">
+          <div class="flex items-center gap-1 rounded bg-[#020611] border border-[#1e3a6e] px-2 py-0.5 font-display text-sm sm:text-base font-black tracking-wider">
             <span id="hud-rdc-score" class="text-or">0</span>
             <span class="text-slate-500">-</span>
             <span id="hud-opp-score" class="text-red-400">2</span>
@@ -43,48 +43,48 @@
           <span class="font-display text-[0.68rem] sm:text-xs tracking-wider text-slate-300">ADV</span>
         </div>
         <!-- 5 Pastilles de la séance de 5 tirs -->
-        <div class="border-l border-white/10 px-2 sm:px-2.5 py-1 flex flex-col items-center justify-center">
-          <span id="hud-kick-counter" class="block text-[0.44rem] font-bold uppercase tracking-wider text-slate-400 leading-none mb-1">
+        <div class="border-l-2 border-[#1e3a6e] bg-[#09142e] px-2 sm:px-2.5 py-1 flex flex-col items-center justify-center">
+          <span id="hud-kick-counter" class="block text-[0.44rem] font-bold uppercase tracking-wider text-slate-300 leading-none mb-1">
             TIR 1/5 · OBJECTIF 3 BUTS
           </span>
           <div id="hud-five-dots" class="flex items-center gap-1">
-            <span class="h-2.5 w-2.5 rounded-full border border-or bg-or/30 animate-pulse"></span>
-            <span class="h-2.5 w-2.5 rounded-full border border-white/25 bg-white/10"></span>
-            <span class="h-2.5 w-2.5 rounded-full border border-white/25 bg-white/10"></span>
-            <span class="h-2.5 w-2.5 rounded-full border border-white/25 bg-white/10"></span>
-            <span class="h-2.5 w-2.5 rounded-full border border-white/25 bg-white/10"></span>
+            <span class="h-2.5 w-2.5 rounded-full border-2 border-or bg-or animate-pulse"></span>
+            <span class="h-2.5 w-2.5 rounded-full border border-slate-600 bg-[#040917]"></span>
+            <span class="h-2.5 w-2.5 rounded-full border border-slate-600 bg-[#040917]"></span>
+            <span class="h-2.5 w-2.5 rounded-full border border-slate-600 bg-[#040917]"></span>
+            <span class="h-2.5 w-2.5 rounded-full border border-slate-600 bg-[#040917]"></span>
           </div>
         </div>
       </div>
 
-      <!-- Mini barre Niveau + Joueurs Choisis + Vent + Effet Enroulé -->
+      <!-- Mini barre Niveau + Joueurs Choisis + Vent + Effet Enroulé (100% Solide) -->
       <div class="flex flex-wrap items-center gap-1">
         <button
           type="button"
           id="btn-open-levels"
-          class="pointer-events-auto flex items-center gap-1 rounded-md border border-or/45 bg-[#060c1d]/85 px-2 py-0.5 backdrop-blur-md transition-all hover:border-or active:scale-95"
+          class="pointer-events-auto flex items-center gap-1 rounded-md border border-or bg-[#071024] px-2 py-0.5 shadow-md transition-all hover:bg-[#0c1b3a] active:scale-95"
           title="Voir les niveaux en mode mené"
         >
-          <span class="h-1.5 w-1.5 rounded-full bg-or animate-pulse"></span>
+          <span class="h-1.5 w-1.5 rounded-full bg-or"></span>
           <span id="hud-level-badge" class="font-display text-[0.62rem] uppercase tracking-wider text-or">NIV. 1 · ÉCHAUFFEMENT</span>
         </button>
 
         <button
           type="button"
           id="btn-open-selection-hud"
-          class="pointer-events-auto flex items-center gap-1 rounded-md border border-sky-400/45 bg-[#060c1d]/90 px-2 py-0.5 text-[0.6rem] font-bold text-sky-200 backdrop-blur-md transition-all hover:border-sky-300 active:scale-95"
+          class="pointer-events-auto flex items-center gap-1 rounded-md border border-sky-400 bg-[#071024] px-2 py-0.5 text-[0.6rem] font-bold text-sky-200 shadow-md transition-all hover:bg-[#0c1b3a] active:scale-95"
           title="Changer le tireur Léopard ou le gardien"
         >
           <span>👕</span>
           <span id="hud-matchup-label">#20 WISSA vs #1 MPASI</span>
         </button>
 
-        <div id="hud-wind-pill" class="flex items-center gap-1 rounded-md border border-white/10 bg-[#060c1d]/85 px-1.5 py-0.5 text-[0.6rem] font-bold text-sky-300 backdrop-blur-md">
+        <div id="hud-wind-pill" class="flex items-center gap-1 rounded-md border border-[#1e3a6e] bg-[#071024] px-1.5 py-0.5 text-[0.6rem] font-bold text-sky-300 shadow-md">
           <span id="hud-wind-arrow" class="inline-block transition-transform duration-300">→</span>
           <span id="hud-wind-val">0 km/h</span>
         </div>
 
-        <div id="hud-curve-pill" class="hidden items-center gap-1 rounded-md border border-emerald-400/40 bg-emerald-950/85 px-1.5 py-0.5 text-[0.6rem] font-bold text-emerald-300 backdrop-blur-md">
+        <div id="hud-curve-pill" class="hidden items-center gap-1 rounded-md border border-emerald-400 bg-[#052e24] px-1.5 py-0.5 text-[0.6rem] font-bold text-emerald-300 shadow-md">
           <span>🌀</span>
           <span id="hud-curve-label">ENROULÉ</span>
         </div>
@@ -97,7 +97,7 @@
         <button
           type="button"
           id="btn-next-track-hud"
-          class="flex h-8 sm:h-9 items-center gap-1 rounded-xl border border-or/35 bg-[#060c1d]/90 px-2 sm:px-2.5 text-[0.65rem] font-bold text-or shadow-lg backdrop-blur-md transition-all hover:bg-slate-800 active:scale-95"
+          class="flex h-8 sm:h-9 items-center gap-1 rounded-xl border border-or bg-[#071024] px-2 sm:px-2.5 text-[0.65rem] font-bold text-or shadow-lg transition-all hover:bg-[#0c1b3a] active:scale-95"
           title="Changer de chanson"
         >
           <span>🎵</span>
@@ -108,7 +108,7 @@
         <button
           type="button"
           id="btn-sound"
-          class="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl border border-white/15 bg-[#060c1d]/90 text-xs sm:text-sm text-white shadow-lg backdrop-blur-md transition-all hover:bg-slate-800 active:scale-95"
+          class="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl border border-[#1e3a6e] bg-[#071024] text-xs sm:text-sm text-white shadow-lg transition-all hover:bg-[#0c1b3a] active:scale-95"
           aria-label="Activer ou couper le son"
         >
           <span id="icon-sound">🔊</span>
@@ -117,7 +117,7 @@
         <button
           type="button"
           id="btn-pause"
-          class="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl border border-white/15 bg-[#060c1d]/90 text-xs font-bold text-white shadow-lg backdrop-blur-md transition-all hover:bg-slate-800 active:scale-95"
+          class="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl border border-[#1e3a6e] bg-[#071024] text-xs font-bold text-white shadow-lg transition-all hover:bg-[#0c1b3a] active:scale-95"
           aria-label="Mettre en pause"
         >
           <span id="icon-pause">⏸</span>
@@ -126,7 +126,7 @@
         <button
           type="button"
           id="btn-open-menu"
-          class="flex h-8 sm:h-9 items-center gap-1 rounded-xl border border-white/20 bg-congo px-2.5 sm:px-3 text-[0.65rem] sm:text-[0.7rem] font-black uppercase tracking-wider text-white shadow-lg shadow-congo/30 transition-all hover:bg-congo-bright active:scale-95"
+          class="flex h-8 sm:h-9 items-center gap-1 rounded-xl border border-sky-300 bg-congo px-2.5 sm:px-3 text-[0.65rem] sm:text-[0.7rem] font-black uppercase tracking-wider text-white shadow-lg transition-all hover:bg-congo-bright active:scale-95"
         >
           <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
@@ -139,67 +139,33 @@
       <button
         type="button"
         id="btn-mobile-track-pill"
-        class="flex sm:hidden items-center gap-1 rounded-md border border-white/10 bg-[#060c1d]/80 px-2 py-0.5 text-[0.55rem] text-slate-300 backdrop-blur-md active:scale-95"
+        class="flex sm:hidden items-center gap-1 rounded-md border border-[#1e3a6e] bg-[#071024] px-2 py-0.5 text-[0.55rem] text-slate-200 shadow-md active:scale-95"
       >
-        <span class="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+        <span class="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
         <span id="hud-track-mobile" class="max-w-[130px] truncate font-semibold text-white">Oh Yaya · Nos Léopards</span>
         <span class="text-or font-bold">⏭</span>
       </button>
     </div>
   </div>
 
-  <!-- ================= JAUGE DE PUISSANCE IRRÉVERSIBLE (DROITE) ================= -->
+  <!-- ================= JAUGE DE PUISSANCE IRRÉVERSIBLE (DROITE, 100% SOLIDE) ================= -->
   <div id="power-meter-wrap" class="pointer-events-none absolute right-3 top-1/2 z-20 -translate-y-1/2 flex flex-col items-center gap-1 opacity-0 transition-opacity duration-100">
-    <span id="power-meter-zone-badge" class="rounded bg-red-600/95 px-1.5 py-0.5 text-[0.5rem] font-black uppercase tracking-wider text-white shadow">MAX = RATÉ</span>
-    <div class="relative h-44 sm:h-48 w-4 sm:w-4.5 overflow-hidden rounded-full border-2 border-white/35 bg-slate-950/90 p-0.5 shadow-2xl backdrop-blur-md">
+    <span id="power-meter-zone-badge" class="rounded bg-red-600 border border-red-300 px-1.5 py-0.5 text-[0.5rem] font-black uppercase tracking-wider text-white shadow">MAX = RATÉ</span>
+    <div class="relative h-44 sm:h-48 w-4 sm:w-4.5 overflow-hidden rounded-full border-2 border-slate-300 bg-[#050a16] p-0.5 shadow-2xl">
       <!-- Zone Rouge MAX (92% - 100%) : Surcharge = Tir au-dessus -->
-      <div class="absolute inset-x-0 top-0 h-[9%] border-b border-red-400/80 bg-red-600/75 z-10"></div>
+      <div class="absolute inset-x-0 top-0 h-[9%] border-b border-red-400 bg-red-700 z-10"></div>
       <!-- Zone Verte Optimale (70% - 91%) : La plus belle frappe -->
-      <div class="absolute inset-x-0 top-[9%] h-[22%] border-y-2 border-emerald-300 bg-emerald-400/30 z-10 flex items-center justify-center">
-        <span class="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_6px_#6ee7b7]"></span>
+      <div class="absolute inset-x-0 top-[9%] h-[22%] border-y-2 border-emerald-300 bg-emerald-900 z-10 flex items-center justify-center">
+        <span class="h-1.5 w-1.5 rounded-full bg-emerald-300"></span>
       </div>
       <div id="power-meter-fill" class="absolute inset-x-0.5 bottom-0.5 rounded-full bg-gradient-to-t from-sky-400 via-emerald-400 to-red-500 transition-none" style="height: 0%"></div>
     </div>
-    <span id="power-meter-pct" class="rounded bg-black/90 px-1.5 py-0.5 font-display text-xs tracking-wider text-or shadow">0%</span>
+    <span id="power-meter-pct" class="rounded bg-[#050a16] border border-[#1e3a6e] px-1.5 py-0.5 font-display text-xs tracking-wider text-or shadow">0%</span>
   </div>
 
-  <!-- ================= INDICATION DISCRÈTE EN BAS + BOUTONS TEMPS RÉEL ================= -->
-  <div id="aim-instruction" class="pointer-events-none absolute inset-x-0 bottom-2.5 z-20 flex flex-col items-center justify-center gap-1.5 opacity-0 transition-opacity duration-300 px-3">
-    <div class="pointer-events-auto flex flex-wrap items-center justify-center gap-1.5">
-      <button
-        type="button"
-        data-demo-case="catch"
-        class="btn-demo-case flex items-center gap-1 rounded-full border border-sky-400/45 bg-[#060c1d]/90 px-2.5 py-1 text-[0.58rem] font-bold uppercase tracking-wider text-sky-200 shadow-lg backdrop-blur-md hover:bg-sky-900/60 active:scale-95"
-      >
-        <span>🧤</span>
-        <span>Démo Arrêt Capté</span>
-      </button>
-      <button
-        type="button"
-        data-demo-case="deflect_goal"
-        class="btn-demo-case flex items-center gap-1 rounded-full border border-emerald-400/45 bg-[#060c1d]/90 px-2.5 py-1 text-[0.58rem] font-bold uppercase tracking-wider text-emerald-200 shadow-lg backdrop-blur-md hover:bg-emerald-900/60 active:scale-95"
-      >
-        <span>🥅</span>
-        <span>Démo Dévié au Fond</span>
-      </button>
-      <button
-        type="button"
-        id="btn-bottom-change-players"
-        class="flex items-center gap-1 rounded-full border border-or/45 bg-[#060c1d]/90 px-2.5 py-1 text-[0.58rem] font-bold uppercase tracking-wider text-or shadow-lg backdrop-blur-md hover:bg-slate-800 active:scale-95"
-      >
-        <span>👕</span>
-        <span>Changer Joueurs</span>
-      </button>
-    </div>
-    <div class="flex items-center gap-1.5 rounded-full border border-white/15 bg-[#060c1d]/85 px-3 py-1 text-[0.63rem] font-semibold text-slate-200 shadow-xl backdrop-blur-md text-center">
-      <span class="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-or"></span>
-      <span>Glisse en courbe 🌀 et relâche dans la zone verte (70–91%) !</span>
-    </div>
-  </div>
-
-  <!-- BOUTON PASSER LA CINÉMATIQUE -->
+  <!-- BOUTON PASSER LA CINÉMATIQUE (SOLIDE) -->
   <div id="cinematic-bar" class="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex items-center justify-between px-4 sm:px-8">
-    <div class="rounded-lg border border-white/15 bg-[#060c1d]/85 px-3 py-1.5 backdrop-blur-md">
+    <div class="rounded-lg border-2 border-[#1e3a6e] bg-[#060d1f] px-3 py-1.5 shadow-lg">
       <span id="cinematic-step-label" class="text-[0.62rem] font-bold uppercase tracking-wider text-or">
         Stade des Martyrs · Kinshasa
       </span>
@@ -207,27 +173,27 @@
     <button
       type="button"
       id="btn-skip-cinematic"
-      class="pointer-events-auto flex items-center gap-1.5 rounded-xl border border-or/40 bg-or px-4 py-2 text-xs font-black uppercase tracking-wider text-slate-950 shadow-xl transition-transform hover:bg-yellow-300 active:scale-95"
+      class="pointer-events-auto flex items-center gap-1.5 rounded-xl border-2 border-yellow-200 bg-or px-4 py-2 text-xs font-black uppercase tracking-wider text-slate-950 shadow-xl transition-transform hover:bg-yellow-300 active:scale-95"
     >
       <span>Choisir Tireur & Gardien</span>
       <span>⏭</span>
     </button>
   </div>
 
-  <!-- ================= BANDEAU RÉSULTAT DU TIR ================= -->
+  <!-- ================= BANDEAU RÉSULTAT DU TIR (100% SOLIDE) ================= -->
   <div id="shot-toast" class="pointer-events-none absolute inset-x-0 top-16 z-30 flex justify-center opacity-0 transition-all duration-200 -translate-y-4 px-3">
-    <div class="flex items-center gap-2.5 rounded-2xl border border-white/20 bg-[#060c1d]/95 px-4 py-2 shadow-2xl backdrop-blur-xl">
+    <div class="flex items-center gap-2.5 rounded-2xl border-2 border-or bg-[#060d1f] px-4 py-2 shadow-2xl">
       <span id="toast-emoji" class="text-xl">⚽</span>
       <div>
         <h3 id="toast-title" class="font-display text-base sm:text-lg uppercase tracking-wider text-or leading-none">BUT !</h3>
-        <p id="toast-subtitle" class="mt-0.5 text-[0.65rem] font-semibold text-slate-300">104 km/h</p>
+        <p id="toast-subtitle" class="mt-0.5 text-[0.65rem] font-semibold text-slate-200">104 km/h</p>
       </div>
     </div>
   </div>
 
-  <!-- ================= ÉCRAN DE PAUSE ================= -->
-  <div id="pause-modal" class="pointer-events-none fixed inset-0 z-40 hidden items-center justify-center bg-black/70 p-4 backdrop-blur-md">
-    <div class="pointer-events-auto w-full max-w-xs overflow-hidden rounded-3xl border border-white/20 bg-[#070f22] p-5 text-center shadow-2xl">
+  <!-- ================= ÉCRAN DE PAUSE (100% SOLIDE) ================= -->
+  <div id="pause-modal" class="pointer-events-none fixed inset-0 z-40 hidden items-center justify-center bg-[#030712]/95 p-4">
+    <div class="pointer-events-auto w-full max-w-xs overflow-hidden rounded-3xl border-2 border-[#1e3a6e] bg-[#071024] p-5 text-center shadow-2xl">
       <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white p-1.5 shadow">
         <img src="/brand/logo.png" alt="Bloc Léopards" class="h-full w-auto object-contain" />
       </div>
@@ -238,7 +204,7 @@
       </p>
 
       <!-- Contrôle rapide de la chanson en pause -->
-      <div class="mt-3 flex items-center justify-between rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-left">
+      <div class="mt-3 flex items-center justify-between rounded-xl border border-[#1e3a6e] bg-[#040917] px-3 py-2 text-left">
         <div class="min-w-0 pr-2">
           <span class="block text-[0.5rem] uppercase tracking-wider text-or font-bold">Chanson en cours</span>
           <p id="pause-track-name" class="truncate text-xs font-semibold text-white">Oh Yaya ! Nos Léopards</p>
@@ -246,7 +212,7 @@
         <button
           type="button"
           id="btn-pause-next-track"
-          class="shrink-0 rounded-lg bg-white/10 px-2.5 py-1.5 text-xs font-bold text-or hover:bg-white/20"
+          class="shrink-0 rounded-lg border border-or bg-[#0c1b3a] px-2.5 py-1.5 text-xs font-bold text-or hover:bg-[#132854]"
         >
           ⏭ Changer
         </button>
@@ -263,21 +229,21 @@
         <button
           type="button"
           id="btn-pause-restart"
-          class="w-full rounded-xl border border-white/15 bg-white/10 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-white/20"
+          class="w-full rounded-xl border border-[#1e3a6e] bg-[#0c1b3a] py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#132854]"
         >
           🔄 Rejouer (Mêmes joueurs)
         </button>
         <button
           type="button"
           id="btn-pause-change-players"
-          class="w-full rounded-xl border border-sky-400/35 bg-sky-500/15 py-2 text-xs font-bold uppercase tracking-wider text-sky-200 hover:bg-sky-500/25"
+          class="w-full rounded-xl border border-sky-400 bg-[#082240] py-2 text-xs font-bold uppercase tracking-wider text-sky-200 hover:bg-[#0c315c]"
         >
           👕 Changer les joueurs
         </button>
         <button
           type="button"
           id="btn-pause-to-menu"
-          class="w-full rounded-xl border border-white/10 bg-white/5 py-2 text-xs font-bold uppercase tracking-wider text-slate-300 hover:bg-white/15 hover:text-white"
+          class="w-full rounded-xl border border-[#1e3a6e] bg-[#040917] py-2 text-xs font-bold uppercase tracking-wider text-slate-300 hover:bg-[#0c1b3a] hover:text-white"
         >
           🎵 Playlist & Réglages
         </button>
@@ -285,10 +251,10 @@
     </div>
   </div>
 
-  <!-- ================= BILAN DE LA SÉANCE DE 5 TIRS (VICTOIRE OU DÉFAITE) ================= -->
-  <div id="gameover-modal" class="pointer-events-none fixed inset-0 z-40 hidden items-center justify-center bg-black/75 p-4 backdrop-blur-md">
-    <div class="pointer-events-auto w-full max-w-sm overflow-hidden rounded-3xl border border-white/20 bg-[#081126] p-5 text-center shadow-2xl">
-      <div id="go-badge" class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-or/20 text-2xl border border-or/40">
+  <!-- ================= BILAN DE LA SÉANCE DE 5 TIRS (100% SOLIDE) ================= -->
+  <div id="gameover-modal" class="pointer-events-none fixed inset-0 z-40 hidden items-center justify-center bg-[#030712]/95 p-4">
+    <div class="pointer-events-auto w-full max-w-sm overflow-hidden rounded-3xl border-2 border-[#1e3a6e] bg-[#071024] p-5 text-center shadow-2xl">
+      <div id="go-badge" class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#122244] text-2xl border-2 border-or">
         🏆
       </div>
       <span id="go-kicker" class="mt-2 block text-[0.52rem] font-bold uppercase tracking-widest text-or">Bilan de la Séance (5 Tirs)</span>
@@ -300,12 +266,12 @@
       <!-- Récap visuel des 5 tirs -->
       <div id="go-five-recap" class="mt-3 flex items-center justify-center gap-2"></div>
 
-      <div class="mt-3.5 grid grid-cols-3 gap-2 rounded-2xl border border-white/10 bg-black/40 p-2.5">
+      <div class="mt-3.5 grid grid-cols-3 gap-2 rounded-2xl border border-[#1e3a6e] bg-[#040917] p-2.5">
         <div>
           <span class="block text-[0.52rem] font-bold uppercase tracking-wider text-slate-400">Score Final</span>
           <span id="go-stat-score" class="font-display text-lg text-or">3 - 2</span>
         </div>
-        <div class="border-x border-white/10">
+        <div class="border-x border-[#1e3a6e]">
           <span class="block text-[0.52rem] font-bold uppercase tracking-wider text-slate-400">Niveau</span>
           <span id="go-stat-level" class="font-display text-lg text-white">Niv. 1</span>
         </div>
@@ -320,14 +286,14 @@
           <button
             type="button"
             id="btn-go-levels"
-            class="rounded-xl border border-white/15 bg-white/10 px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-white/20"
+            class="rounded-xl border border-[#1e3a6e] bg-[#0c1b3a] px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#132854]"
           >
             🏆 Niveaux
           </button>
           <button
             type="button"
             id="btn-go-primary"
-            class="flex-1 rounded-xl bg-or px-4 py-2.5 text-xs font-black uppercase tracking-wider text-slate-950 shadow-lg shadow-or/25 hover:bg-yellow-300 active:scale-95 transition-transform"
+            class="flex-1 rounded-xl bg-or px-4 py-2.5 text-xs font-black uppercase tracking-wider text-slate-950 shadow-lg hover:bg-yellow-300 active:scale-95 transition-transform"
           >
             🔥 Rejouer
           </button>
@@ -335,7 +301,7 @@
         <button
           type="button"
           id="btn-go-change-players"
-          class="w-full rounded-xl border border-sky-400/40 bg-sky-500/15 py-2.5 text-xs font-bold uppercase tracking-wider text-sky-200 hover:bg-sky-500/25"
+          class="w-full rounded-xl border border-sky-400 bg-[#082240] py-2.5 text-xs font-bold uppercase tracking-wider text-sky-200 hover:bg-[#0c315c]"
         >
           👕 Changer les joueurs (Tireur & Gardien)
         </button>
@@ -343,11 +309,11 @@
     </div>
   </div>
 
-  <!-- ================= ÉTAPE DE SÉLECTION : CHOIX DU TIREUR LÉOPARD & DU GARDIEN ================= -->
-  <div id="selection-modal-overlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 p-2.5 sm:p-5 backdrop-blur-lg">
-    <div class="relative flex max-h-[92dvh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-or/35 bg-[#070f22] shadow-2xl">
+  <!-- ================= ÉTAPE DE SÉLECTION : CHOIX DU TIREUR LÉOPARD & DU GARDIEN (100% SOLIDE) ================= -->
+  <div id="selection-modal-overlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-[#030712]/95 p-2.5 sm:p-5">
+    <div class="relative flex max-h-[92dvh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border-2 border-or bg-[#071024] shadow-2xl">
       <!-- En-tête -->
-      <div class="flex items-center justify-between border-b border-white/10 bg-[#050a18] px-4 py-3 sm:px-6">
+      <div class="flex items-center justify-between border-b border-[#1e3a6e] bg-[#040917] px-4 py-3 sm:px-6">
         <div class="flex items-center gap-2.5">
           <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white p-1 shadow">
             <img src="/brand/logo.png" alt="Bloc Léopards" class="h-full w-auto object-contain" />
@@ -362,7 +328,7 @@
         <button
           type="button"
           id="btn-close-selection"
-          class="flex h-8 w-8 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-slate-300 hover:bg-white/15 hover:text-white"
+          class="flex h-8 w-8 items-center justify-center rounded-xl border border-[#1e3a6e] bg-[#0c1b3a] text-slate-200 hover:bg-[#132854] hover:text-white"
           title="Fermer"
         >
           ✕
@@ -370,46 +336,46 @@
       </div>
 
       <!-- Corps défilant : 1. Tireur Léopard + 2. Gardien -->
-      <div class="flex-1 overflow-y-auto p-3.5 sm:p-5 space-y-4">
+      <div class="flex-1 overflow-y-auto p-3.5 sm:p-5 space-y-4 bg-[#071024]">
         <!-- 1. Choisir son tireur parmi les Léopards -->
         <div>
           <div class="flex items-center justify-between mb-2">
             <h3 class="font-display text-sm sm:text-base uppercase tracking-wider text-sky-300">
               1. Choisis ton tireur parmi les Léopards (Maillot Bleu Ciel RDC)
             </h3>
-            <span id="selected-shooter-pill" class="rounded-full bg-sky-500/20 border border-sky-400/40 px-2.5 py-0.5 text-[0.62rem] font-bold text-sky-200">
+            <span id="selected-shooter-pill" class="rounded-full bg-[#082240] border border-sky-400 px-2.5 py-0.5 text-[0.62rem] font-bold text-sky-200">
               #20 Yoane Wissa
             </span>
           </div>
-          <div id="shooters-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5"></div>
+          <div id="shooters-grid" class="grid grid-cols-3 gap-2.5"></div>
         </div>
 
         <!-- 2. Choisir le gardien à affronter -->
-        <div class="border-t border-white/10 pt-3.5">
+        <div class="border-t border-[#1e3a6e] pt-3.5">
           <div class="flex items-center justify-between mb-2">
             <h3 class="font-display text-sm sm:text-base uppercase tracking-wider text-or">
               2. Choisis ton adversaire dans les cages (Gardien)
             </h3>
-            <span id="selected-keeper-pill" class="rounded-full bg-or/20 border border-or/40 px-2.5 py-0.5 text-[0.62rem] font-bold text-or">
+            <span id="selected-keeper-pill" class="rounded-full bg-[#1a1608] border border-or px-2.5 py-0.5 text-[0.62rem] font-bold text-or">
               #1 Lionel Mpasi
             </span>
           </div>
-          <div id="keepers-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5"></div>
+          <div id="keepers-grid" class="grid grid-cols-3 gap-2.5"></div>
         </div>
       </div>
 
       <!-- Pied de modale : Résumé + Bouton Entrer sur le terrain -->
-      <div class="flex flex-col sm:flex-row items-center justify-between gap-2.5 border-t border-white/10 bg-[#050a18] px-4 py-3 sm:px-6">
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-2.5 border-t border-[#1e3a6e] bg-[#040917] px-4 py-3 sm:px-6">
         <div class="text-center sm:text-left">
           <span class="block text-[0.52rem] uppercase tracking-widest text-slate-400">Duel sélectionné aux Martyrs</span>
           <p id="selection-duel-summary" class="text-xs font-bold text-white">
-            👕 #20 Yoane Wissa <span class="text-or">vs</span> 🧤 #1 Lionel Mpasi
+            👕 #20 Yoane Wissa vs 🧤 #1 Lionel Mpasi
           </p>
         </div>
         <button
           type="button"
           id="btn-enter-pitch"
-          class="w-full sm:w-auto rounded-xl bg-or px-6 py-3 text-xs sm:text-sm font-black uppercase tracking-wider text-slate-950 shadow-xl shadow-or/25 transition-transform hover:bg-yellow-300 active:scale-95"
+          class="w-full sm:w-auto rounded-xl bg-or px-6 py-3 text-xs sm:text-sm font-black uppercase tracking-wider text-slate-950 shadow-xl transition-transform hover:bg-yellow-300 active:scale-95"
         >
           ⚽ Entrer sur le terrain
         </button>
@@ -417,10 +383,10 @@
     </div>
   </div>
 
-  <!-- ================= MODALE DÉDIÉE UNIQUEMENT AUX NIVEAUX (MODE MENÉ) ================= -->
-  <div id="levels-modal-overlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 p-3 sm:p-6 backdrop-blur-lg">
-    <div class="relative flex max-h-[88dvh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-or/30 bg-[#070f22] shadow-2xl">
-      <div class="flex items-center justify-between border-b border-white/10 px-5 py-3.5 bg-[#050a18]">
+  <!-- ================= MODALE DÉDIÉE UNIQUEMENT AUX NIVEAUX (100% SOLIDE) ================= -->
+  <div id="levels-modal-overlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-[#030712]/95 p-3 sm:p-6">
+    <div class="relative flex max-h-[88dvh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border-2 border-or bg-[#071024] shadow-2xl">
+      <div class="flex items-center justify-between border-b border-[#1e3a6e] px-5 py-3.5 bg-[#040917]">
         <div>
           <span class="text-[0.52rem] font-bold uppercase tracking-widest text-or">Mode Mené · Séances de 5 Tirs</span>
           <h2 class="font-display text-lg uppercase tracking-wider text-white leading-none">
@@ -430,20 +396,20 @@
         <button
           type="button"
           id="btn-close-levels"
-          class="flex h-8 w-8 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-slate-300 hover:bg-white/15 hover:text-white"
+          class="flex h-8 w-8 items-center justify-center rounded-xl border border-[#1e3a6e] bg-[#0c1b3a] text-slate-200 hover:bg-[#132854] hover:text-white"
         >
           ✕
         </button>
       </div>
 
-      <div class="flex-1 overflow-y-auto p-4 space-y-3">
-        <div class="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-3.5 py-2 text-xs text-slate-300">
+      <div class="flex-1 overflow-y-auto p-4 space-y-3 bg-[#071024]">
+        <div class="flex items-center justify-between rounded-xl border border-[#1e3a6e] bg-[#040917] px-3.5 py-2 text-xs text-slate-300">
           <span>Dans chaque niveau, la RDC est menée à la 90ᵉ : marque le nombre de buts requis sur 5 tirs pour passer au niveau suivant !</span>
         </div>
         <div id="levels-grid" class="grid gap-2.5 sm:grid-cols-2"></div>
       </div>
 
-      <div class="flex items-center justify-end border-t border-white/10 bg-[#050a18] px-5 py-2.5">
+      <div class="flex items-center justify-end border-t border-[#1e3a6e] bg-[#040917] px-5 py-2.5">
         <button type="button" id="btn-resume-from-levels" class="rounded-xl bg-or px-4 py-2 text-xs font-black uppercase tracking-wider text-slate-950 hover:bg-yellow-300">
           Retour au terrain
         </button>
@@ -451,12 +417,12 @@
     </div>
   </div>
 
-  <!-- ================= MENU GÉNÉRAL (MUSIQUE, RÉGLAGES, PHOTOS SDM, PARTENAIRES) ================= -->
-  <div id="game-menu-overlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 p-3 sm:p-6 backdrop-blur-lg">
-    <div class="relative flex max-h-[88dvh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-white/15 bg-[#070f22] shadow-2xl">
+  <!-- ================= MENU GÉNÉRAL (100% SOLIDE, ZÉRO GLASSMORPHISME) ================= -->
+  <div id="game-menu-overlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-[#030712]/95 p-3 sm:p-6">
+    <div class="relative flex max-h-[88dvh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border-2 border-[#1e3a6e] bg-[#071024] shadow-2xl">
       
       <!-- En-tête du Menu -->
-      <div class="flex items-center justify-between border-b border-white/10 px-5 py-3.5 bg-[#050a18]">
+      <div class="flex items-center justify-between border-b border-[#1e3a6e] px-5 py-3.5 bg-[#040917]">
         <div class="flex items-center gap-3">
           <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-white p-1">
             <img src="/brand/logo.png" alt="Bloc Léopards" class="h-full w-auto object-contain" />
@@ -471,7 +437,7 @@
         <button
           type="button"
           id="btn-close-menu"
-          class="flex h-8 w-8 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-slate-300 hover:bg-white/15 hover:text-white"
+          class="flex h-8 w-8 items-center justify-center rounded-xl border border-[#1e3a6e] bg-[#0c1b3a] text-slate-200 hover:bg-[#132854] hover:text-white"
           aria-label="Fermer le menu"
         >
           ✕
@@ -479,7 +445,7 @@
       </div>
 
       <!-- Onglets du Menu -->
-      <div class="flex border-b border-white/10 bg-[#050a18]/60 px-4 pt-1.5 gap-1.5 overflow-x-auto">
+      <div class="flex border-b border-[#1e3a6e] bg-[#040917] px-4 pt-1.5 gap-1.5 overflow-x-auto">
         <button
           type="button"
           data-menu-tab="music"
@@ -511,25 +477,25 @@
       </div>
 
       <!-- Contenu du Menu -->
-      <div class="flex-1 overflow-y-auto p-4">
+      <div class="flex-1 overflow-y-auto p-4 bg-[#071024]">
         
         <!-- ONGLET 1 : LECTEUR MUSICAL & CHANSONS DU DOSSIER -->
         <div id="menu-panel-music" class="space-y-3.5">
-          <div class="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-or/30 bg-black/40 p-3.5">
+          <div class="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-or bg-[#040917] p-3.5">
             <div class="min-w-0">
               <span class="text-[0.55rem] font-bold uppercase tracking-widest text-or">En écoute dans le stade</span>
               <h4 id="menu-now-playing" class="mt-0.5 font-display text-lg uppercase text-white truncate">
                 Oh Yaya ! Nos Léopards célèbrent la qualification
               </h4>
               <p id="menu-loop-mode-desc" class="text-[0.68rem] text-emerald-400 font-semibold">
-                🔁 Mode actif : Rotation en boucle des 3 chansons phares
+                🔂 Mode actif : 1 musique choisie aléatoirement tourne en boucle
               </p>
             </div>
             <div class="flex items-center gap-2">
               <button
                 type="button"
                 id="btn-music-prev"
-                class="flex h-9 w-9 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-xs font-bold text-white hover:bg-white/20"
+                class="flex h-9 w-9 items-center justify-center rounded-xl border border-[#1e3a6e] bg-[#0c1b3a] text-xs font-bold text-white hover:bg-[#132854]"
                 title="Chanson précédente"
               >
                 ⏮
@@ -544,7 +510,7 @@
               <button
                 type="button"
                 id="btn-music-next"
-                class="flex h-9 w-9 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-xs font-bold text-white hover:bg-white/20"
+                class="flex h-9 w-9 items-center justify-center rounded-xl border border-[#1e3a6e] bg-[#0c1b3a] text-xs font-bold text-white hover:bg-[#132854]"
                 title="Chanson suivante"
               >
                 ⏭
@@ -553,20 +519,20 @@
           </div>
 
           <!-- Sélecteur du mode de boucle -->
-          <div class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-black/25 px-3.5 py-2.5">
+          <div class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#1e3a6e] bg-[#040917] px-3.5 py-2.5">
             <span class="text-xs font-bold text-slate-300">Mode de lecture :</span>
             <div class="flex flex-wrap gap-1.5">
               <button
                 type="button"
                 data-loop-mode="single"
-                class="loop-mode-btn rounded-lg border border-or bg-or/20 px-2.5 py-1 text-[0.68rem] font-bold text-or"
+                class="loop-mode-btn rounded-lg border border-or bg-[#1a1608] px-2.5 py-1 text-[0.68rem] font-bold text-or"
               >
                 🔂 1 Musique Aléatoire en Boucle (Défaut)
               </button>
               <button
                 type="button"
                 data-loop-mode="all"
-                class="loop-mode-btn rounded-lg border border-white/15 bg-white/5 px-2.5 py-1 text-[0.68rem] font-bold text-slate-300 hover:text-white"
+                class="loop-mode-btn rounded-lg border border-[#1e3a6e] bg-[#0c1b3a] px-2.5 py-1 text-[0.68rem] font-bold text-slate-300 hover:text-white"
               >
                 🔁 Enchaîner les 5 titres
               </button>
@@ -580,68 +546,68 @@
         <!-- ONGLET 2 : RÉGLAGES DU STADE & AUTRES MODES -->
         <div id="menu-panel-settings" class="hidden space-y-3.5">
           <div class="grid gap-3.5 sm:grid-cols-2">
-            <div class="rounded-2xl border border-white/10 bg-black/30 p-3.5">
+            <div class="rounded-2xl border border-[#1e3a6e] bg-[#040917] p-3.5">
               <span class="text-[0.55rem] font-bold uppercase tracking-wider text-or">Éclairage Stade des Martyrs</span>
               <h4 class="mt-0.5 font-display text-base uppercase text-white">Jour / Soir de Match</h4>
               <p class="mt-1 text-xs text-slate-400">
                 Bascule entre la lumière de jour à Kinshasa et les projecteurs nocturnes.
               </p>
               <div class="mt-3 flex gap-2">
-                <button type="button" id="btn-set-day" class="flex-1 rounded-xl border border-white/15 bg-white/5 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-white/15">
+                <button type="button" id="btn-set-day" class="flex-1 rounded-xl border border-[#1e3a6e] bg-[#0c1b3a] py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#132854]">
                   ☀️ Jour
                 </button>
-                <button type="button" id="btn-set-night" class="flex-1 rounded-xl border border-or/40 bg-congo py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-congo-bright">
+                <button type="button" id="btn-set-night" class="flex-1 rounded-xl border border-or bg-congo py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-congo-bright">
                   🌙 Nuit
                 </button>
               </div>
             </div>
 
-            <div class="rounded-2xl border border-white/10 bg-black/30 p-3.5">
+            <div class="rounded-2xl border border-[#1e3a6e] bg-[#040917] p-3.5">
               <span class="text-[0.55rem] font-bold uppercase tracking-wider text-or">Audio Général</span>
               <h4 class="mt-0.5 font-display text-base uppercase text-white">Chansons & Public</h4>
               <p class="mt-1 text-xs text-slate-400">
                 Active ou coupe la musique des Léopards et les effets sonores du stade.
               </p>
-              <button type="button" id="btn-menu-audio-toggle" class="mt-3 w-full rounded-xl border border-emerald-500/40 bg-emerald-500/20 py-2 text-xs font-bold uppercase tracking-wider text-emerald-300">
+              <button type="button" id="btn-menu-audio-toggle" class="mt-3 w-full rounded-xl border border-emerald-500 bg-[#052e24] py-2 text-xs font-bold uppercase tracking-wider text-emerald-300">
                 🔊 Son Activé
               </button>
             </div>
           </div>
 
-          <div class="rounded-2xl border border-white/10 bg-black/30 p-3.5">
+          <div class="rounded-2xl border border-[#1e3a6e] bg-[#040917] p-3.5">
             <h4 class="font-display text-sm uppercase tracking-wider text-white">Actions & Modes de Jeu</h4>
             <div class="mt-2.5 flex flex-wrap gap-2">
-              <button type="button" id="btn-menu-restart" class="rounded-xl border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-white/20">
+              <button type="button" id="btn-menu-restart" class="rounded-xl border border-[#1e3a6e] bg-[#0c1b3a] px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#132854]">
                 🔄 Recommencer cette séance (5 tirs)
               </button>
-              <button type="button" id="btn-menu-intro" class="rounded-xl border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-white/20">
+              <button type="button" id="btn-menu-intro" class="rounded-xl border border-[#1e3a6e] bg-[#0c1b3a] px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#132854]">
                 🎬 Caméra d'entrée au stade
               </button>
-              <a href="/shoot" class="rounded-xl border border-or/40 bg-congo/60 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-congo">
+              <a href="/shoot" class="rounded-xl border border-or bg-congo px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-congo-bright">
                 🏀 Mode Basket · Shoot à la Sirène
               </a>
             </div>
           </div>
 
-          <div class="rounded-2xl border border-white/10 bg-white/5 p-3.5">
+          <div class="rounded-2xl border border-[#1e3a6e] bg-[#040917] p-3.5">
             <span class="block text-[0.65rem] font-black uppercase tracking-widest text-or mb-2">Démonstrations Physiques 3D en Temps Réel</span>
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              <button type="button" data-demo-case="catch" class="btn-demo-case rounded-xl border border-sky-400/45 bg-sky-500/20 px-3 py-2 text-[0.68rem] font-bold uppercase tracking-wider text-sky-200 hover:bg-sky-500/30">
+              <button type="button" data-demo-case="catch" class="btn-demo-case rounded-xl border border-sky-400 bg-[#082240] px-3 py-2 text-[0.68rem] font-bold uppercase tracking-wider text-sky-200 hover:bg-[#0c315c]">
                 🧤 1. Arrêt capté (Mains)
               </button>
-              <button type="button" data-demo-case="deflect_goal" class="btn-demo-case rounded-xl border border-emerald-400/45 bg-emerald-500/20 px-3 py-2 text-[0.68rem] font-bold uppercase tracking-wider text-emerald-200 hover:bg-emerald-500/30">
+              <button type="button" data-demo-case="deflect_goal" class="btn-demo-case rounded-xl border border-emerald-400 bg-[#052e24] px-3 py-2 text-[0.68rem] font-bold uppercase tracking-wider text-emerald-200 hover:bg-[#084536]">
                 🥅 2. Dévié au fond ⚽
               </button>
-              <button type="button" data-demo-case="goal" class="btn-demo-case rounded-xl border border-emerald-400/35 bg-emerald-500/15 px-3 py-2 text-[0.68rem] font-bold uppercase tracking-wider text-emerald-200 hover:bg-emerald-500/25">
+              <button type="button" data-demo-case="goal" class="btn-demo-case rounded-xl border border-emerald-400 bg-[#052e24] px-3 py-2 text-[0.68rem] font-bold uppercase tracking-wider text-emerald-200 hover:bg-[#084536]">
                 ⚽ 3. But lucarne
               </button>
-              <button type="button" data-demo-case="save" class="btn-demo-case rounded-xl border border-sky-400/35 bg-sky-500/15 px-3 py-2 text-[0.68rem] font-bold uppercase tracking-wider text-sky-200 hover:bg-sky-500/25">
+              <button type="button" data-demo-case="save" class="btn-demo-case rounded-xl border border-sky-400 bg-[#082240] px-3 py-2 text-[0.68rem] font-bold uppercase tracking-wider text-sky-200 hover:bg-[#0c315c]">
                 🧤 4. Parade plongeon
               </button>
-              <button type="button" data-demo-case="post_in" class="btn-demo-case rounded-xl border border-amber-400/35 bg-amber-500/15 px-3 py-2 text-[0.68rem] font-bold uppercase tracking-wider text-amber-200 hover:bg-amber-500/25">
+              <button type="button" data-demo-case="post_in" class="btn-demo-case rounded-xl border border-amber-400 bg-[#2b1c06] px-3 py-2 text-[0.68rem] font-bold uppercase tracking-wider text-amber-200 hover:bg-[#3f2909]">
                 🥅 5. Poteau rentrant
               </button>
-              <button type="button" data-demo-case="post_out" class="btn-demo-case rounded-xl border border-rose-400/35 bg-rose-500/15 px-3 py-2 text-[0.68rem] font-bold uppercase tracking-wider text-rose-200 hover:bg-rose-500/25">
+              <button type="button" data-demo-case="post_out" class="btn-demo-case rounded-xl border border-rose-400 bg-[#330b19] px-3 py-2 text-[0.68rem] font-bold uppercase tracking-wider text-rose-200 hover:bg-[#4c1026]">
                 💥 6. Poteau sortant
               </button>
             </div>
@@ -651,28 +617,28 @@
         <!-- ONGLET 3 : PHOTOS OFFICIELLES SDM -->
         <div id="menu-panel-photos" class="hidden space-y-3">
           <div class="grid gap-3 sm:grid-cols-2">
-            <figure class="overflow-hidden rounded-2xl border border-white/10 bg-black/40">
+            <figure class="overflow-hidden rounded-2xl border border-[#1e3a6e] bg-[#040917]">
               <img src="/media/martyrs/pelouse-terrain-martyrs.jpg" alt="Pelouse et piste du Stade des Martyrs" class="h-32 w-full object-cover" />
               <figcaption class="p-2 text-[0.68rem] text-slate-300">
                 <strong class="text-or block">Pelouse & Piste 8 Couloirs</strong>
                 Perspective réelle depuis le point de penalty.
               </figcaption>
             </figure>
-            <figure class="overflow-hidden rounded-2xl border border-white/10 bg-black/40">
+            <figure class="overflow-hidden rounded-2xl border border-[#1e3a6e] bg-[#040917]">
               <img src="/media/martyrs/tribunes-couleurs-nationales.jpg" alt="Tribunes aux couleurs nationales" class="h-32 w-full object-cover" />
               <figcaption class="p-2 text-[0.68rem] text-slate-300">
                 <strong class="text-or block">Gradins Bleu · Jaune · Rouge</strong>
                 Anneau tricolore reproduit dans la cuvette 3D.
               </figcaption>
             </figure>
-            <figure class="overflow-hidden rounded-2xl border border-white/10 bg-black/40">
+            <figure class="overflow-hidden rounded-2xl border border-[#1e3a6e] bg-[#040917]">
               <img src="/media/martyrs/stade-nuit-lumieres.jpg" alt="Stade illuminé de nuit" class="h-32 w-full object-cover" />
               <figcaption class="p-2 text-[0.68rem] text-slate-300">
                 <strong class="text-or block">Projecteurs Nocturnes SDM</strong>
                 Ambiance soir de match à Kinshasa.
               </figcaption>
             </figure>
-            <figure class="overflow-hidden rounded-2xl border border-white/10 bg-black/40">
+            <figure class="overflow-hidden rounded-2xl border border-[#1e3a6e] bg-[#040917]">
               <img src="/media/martyrs/supporters-leopards.jpg" alt="Supporters des Léopards" class="h-32 w-full object-cover object-top" />
               <figcaption class="p-2 text-[0.68rem] text-slate-300">
                 <strong class="text-or block">Tribune Bloc Léopards</strong>
@@ -717,7 +683,7 @@
       </div>
 
       <!-- Pied du Menu -->
-      <div class="flex items-center justify-between border-t border-white/10 bg-[#050a18] px-5 py-2.5">
+      <div class="flex items-center justify-between border-t border-[#1e3a6e] bg-[#040917] px-5 py-2.5">
         <span class="text-[0.62rem] text-slate-400">Raccourci Pause : <strong>Espace</strong> ou <strong>P</strong></span>
         <button type="button" id="btn-resume-game" class="rounded-xl bg-or px-4 py-2 text-xs font-black uppercase tracking-wider text-slate-950 hover:bg-yellow-300">
           Reprendre
@@ -839,13 +805,13 @@
       deficitLabel: "RDC menée 0 – 3",
       oppScore: 3,
       targetGoals: 4,
-      desc: "Séance de 5 tirs : RDC menée 0–3 ! Marque 4 buts sur 5 (1 joueur en mur + vent 22 km/h).",
+      desc: "Séance de 5 tirs : RDC menée 0–3 ! Marque 4 buts sur 5 face à un gardien ultra-réactif.",
       keeperReactionSec: 0.024,
       keeperDiveSpeed: 13.6,
       keeperArmSpan: 1.37,
       keeperReadProb: 0.90,
       windMaxKmh: 22,
-      wallPlayers: 1
+      wallPlayers: 0
     },
     {
       id: 4,
@@ -853,13 +819,13 @@
       deficitLabel: "RDC menée 0 – 3",
       oppScore: 3,
       targetGoals: 4,
-      desc: "Séance de 5 tirs : Mur de 2 défenseurs qui sautent + vent fort (28 km/h). Enroule tes tirs (4/5) !",
+      desc: "Séance de 5 tirs : Vent fort (28 km/h) et détente maximale du portier. Enroule tes tirs (4/5) !",
       keeperReactionSec: 0.016,
       keeperDiveSpeed: 15.0,
       keeperArmSpan: 1.43,
       keeperReadProb: 0.93,
       windMaxKmh: 28,
-      wallPlayers: 2
+      wallPlayers: 0
     },
     {
       id: 5,
@@ -867,18 +833,18 @@
       deficitLabel: "RDC menée 0 – 4",
       oppScore: 4,
       targetGoals: 5,
-      desc: "Séance de 5 tirs : Sans-faute exigé (5/5) face au « Mur de Kin » (3 défenseurs + rafales 36 km/h) !",
+      desc: "Séance de 5 tirs : Sans-faute exigé (5/5) sous la pression des 80 000 supporters (rafales 36 km/h) !",
       keeperReactionSec: 0.009,
       keeperDiveSpeed: 16.5,
       keeperArmSpan: 1.48,
       keeperReadProb: 0.96,
       windMaxKmh: 36,
-      wallPlayers: 3
+      wallPlayers: 0
     }
   ];
 
   /* -------------------------------------------------------------------------- */
-  /*  CATALOGUE CONFIGURABLE DES TIREURS LÉOPARDS & DES GARDIENS                */
+  /*  CATALOGUE OFFICIEL DES TIREURS LÉOPARDS & GARDIENS (/media/joueurs/)      */
   /* -------------------------------------------------------------------------- */
   interface LeopardShooter {
     id: string;
@@ -915,7 +881,7 @@
       number: 20,
       position: "Attaquant · Léopards RDC",
       specialty: "Enroulé & Lucarne",
-      photo: "/media/can-2027/poster-wissa-gold-thumb.webp",
+      photo: "/media/joueurs/wissa.avif",
       skinHex: 0x3b2314
     },
     {
@@ -925,7 +891,7 @@
       number: 22,
       position: "Capitaine · Défenseur RDC",
       specialty: "Frappe de Capitaine",
-      photo: "/media/can-2027/poster-equipe-bleu-thumb.webp",
+      photo: "/media/joueurs/Mbemba.jpg",
       skinHex: 0x422717
     },
     {
@@ -935,38 +901,8 @@
       number: 17,
       position: "Avant-centre · Léopards RDC",
       specialty: "Sang-froid Buteur",
-      photo: "/media/martyrs/fecofa-leopards-match.webp",
+      photo: "/media/joueurs/bakambu.avif",
       skinHex: 0x52321c
-    },
-    {
-      id: "banza-9",
-      name: "Simon Banza",
-      backName: "BANZA",
-      number: 9,
-      position: "Attaquant · Léopards RDC",
-      specialty: "Puissance Pure",
-      photo: "/media/martyrs/lf-leopards-warriors.webp",
-      skinHex: 0x4a2c18
-    },
-    {
-      id: "bongonda-10",
-      name: "Théo Bongonda",
-      backName: "BONGONDA",
-      number: 10,
-      position: "Milieu offensif · Léopards RDC",
-      specialty: "Patte Gauche Enroulée",
-      photo: "/media/martyrs/fecofa-rdc-sierra-leone.webp",
-      skinHex: 0x4f301b
-    },
-    {
-      id: "wan-bissaka-2",
-      name: "Aaron Wan-Bissaka",
-      backName: "WAN-BISSAKA",
-      number: 2,
-      position: "Latéral droit · Léopards RDC",
-      specialty: "Précision Ras-de-terre",
-      photo: "/media/can-2027/poster-trio-rouge-thumb.webp",
-      skinHex: 0x3d2415
     }
   ];
 
@@ -976,8 +912,8 @@
       name: "Lionel Mpasi",
       shortName: "MPASI",
       number: 1,
-      kitName: "Tenue Orange Fluo & Noir",
-      photo: "/media/liste-officielle-leopards-2026.jpg",
+      kitName: "Tenue Orange & Noir",
+      photo: "/media/joueurs/mpasi.avif",
       shirtPrimary: "#ea580c",
       shirtSecondary: "#9a3412",
       shortsColor: "#0f172a",
@@ -991,8 +927,8 @@
       name: "Timothy Fayulu",
       shortName: "FAYULU",
       number: 16,
-      kitName: "Tenue Émeraude & Anthracite",
-      photo: "/media/martyrs/fecofa-leopards-stade-martyrs.webp",
+      kitName: "Tenue Émeraude & Noir",
+      photo: "/media/joueurs/Fayulu.avif",
       shirtPrimary: "#10b981",
       shirtSecondary: "#065f46",
       shortsColor: "#0f172a",
@@ -1007,7 +943,7 @@
       shortName: "EPOLO",
       number: 23,
       kitName: "Tenue Or Royal & Marine",
-      photo: "/media/martyrs/lf-match-action.webp",
+      photo: "/media/joueurs/epolo.avif",
       shirtPrimary: "#eab308",
       shirtSecondary: "#a16207",
       shortsColor: "#09152b",
@@ -1015,21 +951,6 @@
       gloveColor: "#38bdf8",
       accentColor: "#ffffff",
       skinHex: 0x52341e
-    },
-    {
-      id: "rival-caf-1",
-      name: "Gardien Adverse CAF",
-      shortName: "GARDIEN ADV",
-      number: 1,
-      kitName: "Tenue Violet Impérial & Or",
-      photo: "/media/martyrs/fecofa-as-maniema.webp",
-      shirtPrimary: "#7c3aed",
-      shirtSecondary: "#4c1d95",
-      shortsColor: "#1e1b4b",
-      socksColor: "#8b5cf6",
-      gloveColor: "#facc15",
-      accentColor: "#facc15",
-      skinHex: 0x362012
     }
   ];
 
@@ -1281,14 +1202,14 @@
       row.type = "button";
       row.className = `flex w-full items-center justify-between gap-3 rounded-xl border p-3 text-left transition-all ${
         isCurrent
-          ? "border-or bg-or/15 shadow-md"
-          : "border-white/10 bg-black/35 hover:border-white/30 hover:bg-white/5"
+          ? "border-or bg-[#122244] shadow-md"
+          : "border-[#1e3a6e] bg-[#040917] hover:border-sky-400 hover:bg-[#0c1b3a]"
       }`;
 
       row.innerHTML = `
         <div class="flex items-center gap-3 min-w-0">
           <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-            isCurrent ? "bg-or text-slate-950 font-black" : "bg-white/10 text-slate-300 font-bold"
+            isCurrent ? "bg-or text-slate-950 font-black" : "bg-[#0c1b3a] text-slate-200 font-bold"
           } text-xs">
             ${isCurrent ? "▶" : idx + 1}
           </div>
@@ -1297,7 +1218,7 @@
               <p class="truncate text-xs sm:text-sm font-bold ${isCurrent ? "text-or" : "text-white"}">${track.title}</p>
               ${
                 track.inDefaultLoop
-                  ? `<span class="shrink-0 rounded bg-emerald-500/20 border border-emerald-400/30 px-1.5 py-0.5 text-[0.52rem] font-bold uppercase text-emerald-300">Boucle 3 Hits</span>`
+                  ? `<span class="shrink-0 rounded bg-[#052e24] border border-emerald-400 px-1.5 py-0.5 text-[0.52rem] font-bold uppercase text-emerald-300">Hit</span>`
                   : ""
               }
             </div>
@@ -1355,8 +1276,8 @@
       loopModeBtns.forEach((b) => {
         const active = b.dataset.loopMode === m;
         b.className = active
-          ? "loop-mode-btn rounded-lg border border-or bg-or/20 px-2.5 py-1 text-[0.68rem] font-bold text-or"
-          : "loop-mode-btn rounded-lg border border-white/15 bg-white/5 px-2.5 py-1 text-[0.68rem] font-bold text-slate-300 hover:text-white";
+          ? "loop-mode-btn rounded-lg border border-or bg-[#1a1608] px-2.5 py-1 text-[0.68rem] font-bold text-or"
+          : "loop-mode-btn rounded-lg border border-[#1e3a6e] bg-[#0c1b3a] px-2.5 py-1 text-[0.68rem] font-bold text-slate-300 hover:text-white";
       });
       updateMusicUi();
     });
@@ -1383,14 +1304,14 @@
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.type = "triangle";
-      osc.frequency.setValueAtTime(135 + powerRatio * 55, now);
-      osc.frequency.exponentialRampToValueAtTime(28, now + 0.15);
-      gain.gain.setValueAtTime(0.75, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.17);
+      osc.frequency.setValueAtTime(155 + powerRatio * 65, now);
+      osc.frequency.exponentialRampToValueAtTime(26, now + 0.16);
+      gain.gain.setValueAtTime(0.85, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
       osc.connect(gain);
       gain.connect(audioCtx.destination);
       osc.start(now);
-      osc.stop(now + 0.17);
+      osc.stop(now + 0.18);
     } catch {}
   }
 
@@ -1489,7 +1410,7 @@
   }
 
   /* -------------------------------------------------------------------------- */
-  /*  SCÈNE 3D : BALLON BIEN VISIBLE AU PREMIER PLAN + BUT ENTIER SUR MOBILE    */
+  /*  SCÈNE 3D : CADRAGE TIREUR EN PIED + BALLON SEUL + GARDIEN + BUT ENTIER    */
   /* -------------------------------------------------------------------------- */
   const renderer = new THREE.WebGLRenderer({
     canvas,
@@ -1515,21 +1436,21 @@
 
   const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 450);
 
-  // Position du ballon au point de penalty (11.0m) et caméra rapprochée à 13.15m (seulement 2.15m derrière le ballon !)
-  // Cela rend le ballon 2x plus grand et bien visible au premier plan tout en gardant les deux poteaux et côtés dans le cadre !
   const PENALTY_Z = 11.0;
 
+  // Cadrage fidèle à la photo de référence (type Roberto Baggio #10) :
+  // Caméra légèrement surélevée (1.66m) et reculée (14.35m) pour voir :
+  // - Le tireur en entier de la tête aux crampons (mains sur les hanches, numéro dans le dos)
+  // - Le ballon seul posé sur le gazon avec son ombre noire nette (et de la pelouse sous le ballon)
+  // - Le gardien fléchi sur ses appuis et les deux poteaux du but complets sur mobile
   function applyPlayableCameraFraming() {
     const aspect = window.innerWidth / Math.max(1, window.innerHeight);
     const isPortrait = aspect < 0.95;
 
-    // Caméra placée juste derrière le ballon (2.15m derrière) et un peu plus basse (0.98m)
-    // pour que le ballon soit grand et net dans le tiers inférieur de l'écran !
-    const camZ = isPortrait ? 13.15 : 13.35;
-    const camY = isPortrait ? 0.96 : 1.18;
-    const lookY = isPortrait ? 1.04 : 1.15;
+    const camZ = isPortrait ? 14.35 : 14.15;
+    const camY = isPortrait ? 1.66 : 1.62;
+    const lookY = isPortrait ? 0.90 : 0.96;
 
-    // On garantit au moins 11.2m de largeur visible sur la ligne de but (le but fait 7.32m -> ~2m de marge de chaque côté)
     const minGoalLineHalfWidth = isPortrait ? 5.65 : 7.4;
     const tanHalfHoriz = minGoalLineHalfWidth / camZ;
     const tanHalfVert = tanHalfHoriz / aspect;
@@ -1539,7 +1460,7 @@
     camera.aspect = aspect;
     camera.updateProjectionMatrix();
 
-    if (state.phase === "aiming" || state.phase === "charging" || state.phase === "shooting" || state.phase === "result") {
+    if (state.phase === "aiming" || state.phase === "charging" || state.phase === "runup" || state.phase === "shooting" || state.phase === "result") {
       camera.position.set(0, camY, camZ);
       camera.lookAt(0, lookY, 0);
     }
@@ -1617,19 +1538,22 @@
   addPitchLine(0.12, 5.5, -9.16, 2.75);
   addPitchLine(0.12, 5.5, 9.16, 2.75);
 
-  // Point de penalty blanc + Halo doré sous le ballon pour bien le mettre en évidence avant le tir
-  const penSpotMesh = new THREE.Mesh(new THREE.CircleGeometry(0.22, 32), lineMat);
+  // Point de penalty discret sous le ballon — aucun anneau jaune autour du ballon ("garde juste le ballon")
+  const penSpotMesh = new THREE.Mesh(new THREE.CircleGeometry(0.075, 20), lineMat);
   penSpotMesh.rotation.x = -Math.PI / 2;
-  penSpotMesh.position.set(0, 0.014, PENALTY_Z);
+  penSpotMesh.position.set(0, 0.012, PENALTY_Z);
   scene.add(penSpotMesh);
 
+  // Onde d'impact fugitive au moment exact où le pied frappe le ballon (cachée au repos)
   const ballGlowRing = new THREE.Mesh(
-    new THREE.RingGeometry(0.23, 0.31, 36),
-    new THREE.MeshBasicMaterial({ color: 0xfacc15, transparent: true, opacity: 0.85, side: THREE.DoubleSide })
+    new THREE.RingGeometry(0.14, 0.22, 32),
+    new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, side: THREE.DoubleSide })
   );
   ballGlowRing.rotation.x = -Math.PI / 2;
-  ballGlowRing.position.set(0, 0.016, PENALTY_Z);
+  ballGlowRing.position.set(0, 0.018, PENALTY_Z);
+  ballGlowRing.visible = false;
   scene.add(ballGlowRing);
+  let strikeShockTimer = 0;
 
   const penArcMesh = new THREE.Mesh(
     new THREE.RingGeometry(9.08, 9.20, 48, 1, -0.62, 1.24),
@@ -2486,16 +2410,16 @@
     cv.height = 512;
     const ctx = cv.getContext("2d")!;
 
-    // Fond Bleu Ciel officiel des Léopards RDC (avec tombé de tissu ombré)
+    // Fond Bleu Roi / Bleu Ciel officiel RDC (fidèle à la référence #10)
     const bgGrad = ctx.createLinearGradient(0, 0, 0, 512);
-    bgGrad.addColorStop(0, "#38bdf8");
-    bgGrad.addColorStop(0.55, "#0ea5e9");
-    bgGrad.addColorStop(1, "#0284c7");
+    bgGrad.addColorStop(0, "#0284c7");
+    bgGrad.addColorStop(0.55, "#0369a1");
+    bgGrad.addColorStop(1, "#075985");
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, 512, 512);
 
     // Plis subtils du tombé du maillot dans le dos
-    ctx.strokeStyle = "rgba(3, 105, 161, 0.26)";
+    ctx.strokeStyle = "rgba(7, 45, 86, 0.35)";
     ctx.lineWidth = 14;
     for (let i = 0; i < 5; i++) {
       ctx.beginPath();
@@ -2504,65 +2428,37 @@
       ctx.stroke();
     }
 
-    // Motifs pelage Léopard / zébrures Umbro RDC sur les flancs et le bas du dos
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.16)";
-    ctx.lineWidth = 7;
-    for (let y = 260; y < 495; y += 28) {
-      ctx.beginPath();
-      ctx.moveTo(40, y);
-      ctx.quadraticCurveTo(256, y - 36, 472, y);
-      ctx.stroke();
-    }
-
-    // Col tricolore RDC (Rouge / Or / Bleu) en haut du dos
+    // Col tricolore RDC (Rouge / Or / Blanc) en haut du dos
     ctx.fillStyle = "#dc2626";
-    ctx.fillRect(0, 0, 512, 22);
+    ctx.fillRect(0, 0, 512, 18);
     ctx.fillStyle = "#facc15";
-    ctx.fillRect(0, 22, 512, 10);
+    ctx.fillRect(0, 18, 512, 10);
 
-    // Mini drapeau RDC sous la nuque
-    ctx.fillStyle = "#007fff";
-    ctx.fillRect(232, 42, 48, 28);
-    ctx.strokeStyle = "#facc15";
-    ctx.lineWidth = 3;
-    ctx.strokeRect(232, 42, 48, 28);
-    ctx.fillStyle = "#ce1126";
-    ctx.beginPath();
-    ctx.moveTo(232, 68);
-    ctx.lineTo(280, 44);
-    ctx.lineTo(280, 52);
-    ctx.lineTo(232, 70);
-    ctx.fill();
-
-    // Nom du joueur en haut du dos (ex. WISSA, MBEMBA, BAKAMBU)
+    // Nom du joueur en haut du dos (ex. WISSA, MBEMBA, BAKAMBU) en blanc franc
     ctx.save();
-    ctx.font = "900 54px Impact, 'Arial Black', sans-serif";
+    ctx.font = "900 58px Impact, 'Arial Black', sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.lineWidth = 8;
-    ctx.strokeStyle = "#082f49";
-    ctx.strokeText(shooter.backName, 256, 118);
+    ctx.lineWidth = 10;
+    ctx.strokeStyle = "#042f4e";
+    ctx.strokeText(shooter.backName, 256, 108);
     ctx.fillStyle = "#ffffff";
-    ctx.fillText(shooter.backName, 256, 118);
+    ctx.fillText(shooter.backName, 256, 108);
     ctx.restore();
 
-    // Grand Numéro officiel dans le dos (style officiel Léopards : Rouge-Orangé bordé de Blanc & Or)
+    // Grand Numéro officiel dans le dos en Blanc Pur bordé d'Or & Bleu Nuit (ultra-lisible comme le #10 de référence)
     ctx.save();
-    ctx.font = "900 235px Impact, 'Arial Black', sans-serif";
+    ctx.font = "900 245px Impact, 'Arial Black', sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.lineWidth = 18;
-    ctx.strokeStyle = "#ffffff";
-    ctx.strokeText(String(shooter.number), 256, 295);
+    ctx.lineWidth = 20;
+    ctx.strokeStyle = "#042f4e";
+    ctx.strokeText(String(shooter.number), 256, 292);
     ctx.lineWidth = 8;
     ctx.strokeStyle = "#facc15";
-    ctx.strokeText(String(shooter.number), 256, 295);
-    const numGrad = ctx.createLinearGradient(0, 175, 0, 410);
-    numGrad.addColorStop(0, "#f97316");
-    numGrad.addColorStop(0.5, "#ea580c");
-    numGrad.addColorStop(1, "#dc2626");
-    ctx.fillStyle = numGrad;
-    ctx.fillText(String(shooter.number), 256, 295);
+    ctx.strokeText(String(shooter.number), 256, 292);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(String(shooter.number), 256, 292);
     ctx.restore();
 
     const tex = new THREE.CanvasTexture(cv);
@@ -2572,30 +2468,32 @@
   }
 
   const shooterGroup = new THREE.Group();
-  const shooterSkyMat = new THREE.MeshStandardMaterial({ color: 0x0ea5e9, roughness: 0.48 });
+  const shooterSkyMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.48 });
   const shooterBackMat = new THREE.MeshStandardMaterial({
     map: createShooterJerseyBackTexture(),
     roughness: 0.44
   });
-  const shooterShortsMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.54 });
-  const shooterSocksMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.5 });
+  // Short Blanc contrasté (comme sur la photo de référence #10) avec liseré RDC
+  const shooterShortsMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.50 });
+  const shooterSocksMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.5 });
   const shooterTrimRedMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.45 });
   const shooterTrimGoldMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4 });
   const shooterSkinMat = new THREE.MeshStandardMaterial({ color: 0x3b2314, roughness: 0.55 });
-  const shooterBootMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.25, metalness: 0.28 });
+  const shooterBootMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.25, metalness: 0.22 });
 
-  // Ombre d'ancrage au sol sous les crampons du tireur Léopard
+  // Ombre portée noire franche sur le gazon sous les crampons du tireur (comme la référence)
   const shooterGroundShadow = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.85, 0.52),
-    new THREE.MeshBasicMaterial({ color: 0x020604, transparent: true, opacity: 0.54, depthWrite: false })
+    new THREE.CircleGeometry(0.42, 24),
+    new THREE.MeshBasicMaterial({ color: 0x031206, transparent: true, opacity: 0.68, depthWrite: false })
   );
   shooterGroundShadow.rotation.x = -Math.PI / 2;
-  shooterGroundShadow.position.set(-0.34, 0.013, PENALTY_Z + 0.48);
+  shooterGroundShadow.scale.set(1.15, 0.78, 1);
+  shooterGroundShadow.position.set(-0.56, 0.013, PENALTY_Z + 0.72);
   scene.add(shooterGroundShadow);
 
   const sUpperBody = new THREE.Group();
   sUpperBody.position.set(0, 0.88, 0);
-  sUpperBody.rotation.x = -0.10; // Légèrement penché vers le ballon
+  sUpperBody.rotation.x = -0.06;
 
   const sTorsoCore = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.21, 0.54, 18), shooterSkyMat);
   sTorsoCore.scale.set(1.22, 1, 0.66);
@@ -2609,7 +2507,6 @@
   for (let i = 0; i < sBackPos.count; i++) {
     const bx = sBackPos.getX(i);
     const by = sBackPos.getY(i);
-    // Galbe anatomique du dos et tombé du maillot
     const curveZ = -Math.pow(bx / 0.28, 2) * 0.045 + Math.sin((by + 0.27) * 9) * 0.005;
     sBackPos.setZ(i, curveZ);
   }
@@ -2635,7 +2532,7 @@
   sHeadGroup.add(sSkull);
 
   const sHair = new THREE.Mesh(
-    new THREE.SphereGeometry(0.145, 20, 16, 0, Math.PI * 2, 0, Math.PI * 0.56),
+    new THREE.SphereGeometry(0.146, 20, 16, 0, Math.PI * 2, 0, Math.PI * 0.58),
     hairMat
   );
   sHair.rotation.x = 0.25;
@@ -2643,44 +2540,51 @@
   sHeadGroup.add(sHair);
   sUpperBody.add(sHeadGroup);
 
+  // Bras articulés en 2 segments (épaule + coude) pour la posture iconique "mains sur les hanches" et le balancier de tir
   function createShooterArm(isLeft: boolean) {
     const side = isLeft ? -1 : 1;
     const shoulderPivot = new THREE.Group();
-    shoulderPivot.position.set(side * 0.32, 0.63, 0);
+    shoulderPivot.position.set(side * 0.31, 0.63, 0);
 
-    const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.082, 0.072, 0.24, 14), shooterSkyMat);
-    sleeve.position.y = -0.10;
+    const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.082, 0.070, 0.24, 14), shooterSkyMat);
+    sleeve.position.y = -0.11;
     sleeve.castShadow = true;
     shoulderPivot.add(sleeve);
 
-    const cuffRed = new THREE.Mesh(new THREE.CylinderGeometry(0.074, 0.073, 0.028, 14), shooterTrimRedMat);
-    cuffRed.position.y = -0.21;
-    shoulderPivot.add(cuffRed);
+    const cuffGold = new THREE.Mesh(new THREE.CylinderGeometry(0.072, 0.071, 0.026, 14), shooterTrimGoldMat);
+    cuffGold.position.y = -0.22;
+    shoulderPivot.add(cuffGold);
 
-    const forearm = new THREE.Mesh(new THREE.CylinderGeometry(0.064, 0.050, 0.34, 14), shooterSkinMat);
-    forearm.position.set(0, -0.36, -0.04);
-    forearm.rotation.x = 0.32;
+    const elbowPivot = new THREE.Group();
+    elbowPivot.position.set(0, -0.24, 0);
+
+    const elbowJoint = new THREE.Mesh(new THREE.SphereGeometry(0.062, 12, 12), shooterSkinMat);
+    elbowPivot.add(elbowJoint);
+
+    const forearm = new THREE.Mesh(new THREE.CylinderGeometry(0.060, 0.048, 0.28, 14), shooterSkinMat);
+    forearm.position.set(0, -0.14, 0);
     forearm.castShadow = true;
-    shoulderPivot.add(forearm);
+    elbowPivot.add(forearm);
 
-    const wristTape = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.052, 0.045, 12), postMat);
-    wristTape.position.set(0, -0.50, -0.09);
-    shoulderPivot.add(wristTape);
+    const wristTape = new THREE.Mesh(new THREE.CylinderGeometry(0.050, 0.050, 0.04, 12), postMat);
+    wristTape.position.set(0, -0.27, 0);
+    elbowPivot.add(wristTape);
 
-    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.054, 12, 12), shooterSkinMat);
-    hand.position.set(0, -0.55, -0.11);
-    shoulderPivot.add(hand);
+    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.052, 12, 12), shooterSkinMat);
+    hand.position.set(0, -0.31, 0);
+    elbowPivot.add(hand);
 
-    return shoulderPivot;
+    shoulderPivot.add(elbowPivot);
+    return { shoulderPivot, elbowPivot };
   }
 
   const sArmL = createShooterArm(true);
   const sArmR = createShooterArm(false);
-  sUpperBody.add(sArmL, sArmR);
+  sUpperBody.add(sArmL.shoulderPivot, sArmR.shoulderPivot);
   shooterGroup.add(sUpperBody);
 
-  // Short Bleu Ciel RDC avec bandes latérales Rouge/Or
-  const sPelvis = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.24, 0.29), shooterShortsMat);
+  // Short Blanc avec bandes latérales Or/Bleu
+  const sPelvis = new THREE.Mesh(new THREE.BoxGeometry(0.49, 0.25, 0.28), shooterShortsMat);
   sPelvis.position.y = 0.82;
   sPelvis.castShadow = true;
   shooterGroup.add(sPelvis);
@@ -2690,41 +2594,44 @@
     const hipPivot = new THREE.Group();
     hipPivot.position.set(side * 0.16, 0.78, 0);
 
-    const shortLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.118, 0.104, 0.28, 14), shooterShortsMat);
+    const shortLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.118, 0.102, 0.27, 14), shooterShortsMat);
     shortLeg.position.y = -0.13;
     shortLeg.castShadow = true;
     hipPivot.add(shortLeg);
 
-    const stripeGold = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.26, 0.04), shooterTrimGoldMat);
-    stripeGold.position.set(side * 0.108, -0.13, 0);
+    const stripeGold = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.25, 0.04), shooterTrimGoldMat);
+    stripeGold.position.set(side * 0.106, -0.13, 0);
     hipPivot.add(stripeGold);
 
-    const thighSkin = new THREE.Mesh(new THREE.CylinderGeometry(0.096, 0.082, 0.14, 14), shooterSkinMat);
+    const thighSkin = new THREE.Mesh(new THREE.CylinderGeometry(0.094, 0.080, 0.15, 14), shooterSkinMat);
     thighSkin.position.y = -0.30;
     hipPivot.add(thighSkin);
 
     const kneePivot = new THREE.Group();
     kneePivot.position.set(0, -0.35, 0);
 
-    const sock = new THREE.Mesh(new THREE.CylinderGeometry(0.080, 0.058, 0.38, 14), shooterSocksMat);
+    const sock = new THREE.Mesh(new THREE.CylinderGeometry(0.078, 0.056, 0.38, 14), shooterSocksMat);
     sock.position.y = -0.19;
     sock.castShadow = true;
     kneePivot.add(sock);
 
-    const sockTurnover = new THREE.Mesh(new THREE.CylinderGeometry(0.083, 0.082, 0.05, 14), shooterTrimRedMat);
-    sockTurnover.position.y = -0.04;
+    const sockTurnover = new THREE.Mesh(new THREE.CylinderGeometry(0.081, 0.080, 0.045, 14), shooterShortsMat);
+    sockTurnover.position.y = -0.035;
     kneePivot.add(sockTurnover);
 
     const anklePivot = new THREE.Group();
     anklePivot.position.set(0, -0.40, 0);
 
-    // Chaussure orientée vers -Z (vers le but)
+    // Crampons noirs avec languette/détails blancs & or (comme sur l'image de référence)
     const boot = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.085, 0.28), shooterBootMat);
     boot.position.set(0, -0.02, -0.05);
     boot.castShadow = true;
     anklePivot.add(boot);
 
-    // 6 crampons métalliques sous chaque chaussure du tireur
+    const bootStripe = new THREE.Mesh(new THREE.BoxGeometry(0.124, 0.03, 0.11), shooterTrimGoldMat);
+    bootStripe.position.set(0, -0.01, -0.04);
+    anklePivot.add(bootStripe);
+
     [
       [-0.038, -0.068, 0.04],
       [0.038, -0.068, 0.04],
@@ -2747,8 +2654,7 @@
   const sLegR = createShooterLeg(false);
   shooterGroup.add(sLegL.hipPivot, sLegR.hipPivot);
 
-  // Échelle et posture en trois-quarts dos pour que tireur (avec son numéro), ballon, gardien et but soient tous visibles en portrait
-  shooterGroup.scale.setScalar(0.84);
+  shooterGroup.scale.setScalar(0.78);
   scene.add(shooterGroup);
 
   function applyShooterProfile(shooter: LeopardShooter) {
@@ -2758,77 +2664,149 @@
     shooterSkinMat.color.setHex(shooter.skinHex);
   }
 
+  // Posture d'attente fidèle à la photo de référence (#10 Baggio) :
+  // - Debout en entier de dos/trois-quarts à gauche du ballon (-0.56m, Z = 11.72m)
+  // - Les deux mains posées sur les hanches (coudes écartés en diamant)
+  // - Jambe gauche en appui, jambe droite légèrement décalée prête à lancer la course d'élan
   function setShooterIdlePose(elapsed: number) {
-    const breath = Math.sin(elapsed * 2.8) * 0.012;
-    // Placé à gauche/arrière du ballon en trois-quarts dos : le numéro dans le dos est parfaitement tourné vers la caméra
-    shooterGroup.position.set(-0.35, 0, PENALTY_Z + 0.50);
-    shooterGroup.rotation.set(0, -0.34, 0);
+    const breath = Math.sin(elapsed * 2.6) * 0.010;
+    shooterGroup.position.set(-0.56, 0, PENALTY_Z + 0.72);
+    shooterGroup.rotation.set(0, -0.22, 0);
     sUpperBody.position.set(0, 0.88 + breath, 0);
-    sUpperBody.rotation.set(-0.10, 0.08, 0);
+    sUpperBody.rotation.set(-0.06, 0.04, 0);
 
-    sArmL.rotation.set(0.12, 0, 0.24 + Math.sin(elapsed * 2.8) * 0.03);
-    sArmR.rotation.set(-0.08, 0, -0.22 - Math.sin(elapsed * 2.8) * 0.03);
+    // Mains sur les hanches : épaules écartées et coudes pliés vers la taille
+    sArmL.shoulderPivot.rotation.set(0.08, 0, 0.56 + breath * 0.5);
+    sArmL.elbowPivot.rotation.set(0.18, 0, -1.16);
 
-    // Jambe gauche légèrement fléchie en appui, jambe droite prête derrière
-    sLegL.hipPivot.rotation.set(0.14, 0, 0.05);
-    sLegL.kneePivot.rotation.set(-0.22, 0, 0);
-    sLegL.anklePivot.rotation.set(0.08, 0, 0);
+    sArmR.shoulderPivot.rotation.set(0.08, 0, -0.56 - breath * 0.5);
+    sArmR.elbowPivot.rotation.set(0.18, 0, 1.16);
 
-    sLegR.hipPivot.rotation.set(-0.16, 0, -0.05);
-    sLegR.kneePivot.rotation.set(-0.28, 0, 0);
-    sLegR.anklePivot.rotation.set(0.12, 0, 0);
+    // Appui naturel asymétrique (jambe gauche tendue, jambe droite légèrement avancée/écartée)
+    sLegL.hipPivot.rotation.set(-0.04, 0, -0.06);
+    sLegL.kneePivot.rotation.set(-0.08, 0, 0);
+    sLegL.anklePivot.rotation.set(0.06, 0, 0);
 
-    shooterGroundShadow.position.set(shooterGroup.position.x, 0.013, shooterGroup.position.z);
+    sLegR.hipPivot.rotation.set(0.12, 0, 0.12);
+    sLegR.kneePivot.rotation.set(-0.24, 0, 0);
+    sLegR.anklePivot.rotation.set(0.10, 0, 0);
+
+    shooterGroundShadow.position.set(shooterGroup.position.x + 0.08, 0.013, shooterGroup.position.z - 0.04);
   }
 
-  // Animation de course d'élan (p = 0..1 avant l'impact du pied à p = 1.0, puis p > 1.0 pour le suivi de jambe)
+  // Course d'élan réaliste en 3 foulées + grand armé + fouetté de frappe + suivi de jambe (follow-through)
   function updateShooterRunupPose(p: number) {
     const approach = Math.min(1, p);
-    // Le tireur s'avance de (-0.35, 11.50) jusqu'à poser son pied gauche d'appui à (-0.20, 11.02) juste à côté du ballon
-    shooterGroup.position.x = THREE.MathUtils.lerp(-0.35, -0.20, approach);
-    shooterGroup.position.z = THREE.MathUtils.lerp(PENALTY_Z + 0.50, PENALTY_Z + 0.02, approach);
-    shooterGroup.rotation.y = THREE.MathUtils.lerp(-0.34, -0.16, approach);
-    shooterGroup.rotation.z = THREE.MathUtils.lerp(0, 0.14, approach); // Inclinaison athlétique sur la jambe d'appui
+    // Courbe d'accélération progressive de (-0.56, 11.72) jusqu'au pied d'appui gauche à côté du ballon (-0.21, 11.02)
+    const easeIn = approach * approach * (3 - 2 * approach);
+    shooterGroup.position.x = THREE.MathUtils.lerp(-0.56, -0.21, easeIn);
+    shooterGroup.position.z = THREE.MathUtils.lerp(PENALTY_Z + 0.72, PENALTY_Z + 0.02, easeIn);
 
-    if (p <= 0.55) {
-      // Phase 1 (0 -> 0.55) : foulée d'appui gauche et armé puissant de la jambe droite vers l'arrière
-      const w = p / 0.55;
-      sUpperBody.rotation.x = THREE.MathUtils.lerp(-0.10, -0.24, w);
-      sArmL.rotation.set(-0.45 * w, 0, 0.24 + 0.55 * w); // Bras gauche s'ouvre pour équilibrer
-      sArmR.rotation.set(0.35 * w, 0, -0.22 - 0.15 * w);
+    if (p <= 0.34) {
+      // Phase 1 (0 -> 0.34) : Décrochage des mains des hanches + 1re foulée dynamique du pied droit
+      const u = p / 0.34;
+      shooterGroup.position.y = Math.sin(u * Math.PI) * 0.045;
+      shooterGroup.rotation.y = THREE.MathUtils.lerp(-0.22, -0.28, u);
+      shooterGroup.rotation.z = THREE.MathUtils.lerp(0, -0.05, u);
+      sUpperBody.rotation.x = THREE.MathUtils.lerp(-0.06, -0.20, u);
 
-      // Jambe gauche s'avance vers le ballon
-      sLegL.hipPivot.rotation.set(THREE.MathUtils.lerp(0.14, 0.42, w), 0, 0.05);
-      sLegL.kneePivot.rotation.set(THREE.MathUtils.lerp(-0.22, -0.35, w), 0, 0);
+      // Les bras quittent les hanches et se mettent en mouvement de course
+      sArmL.shoulderPivot.rotation.set(THREE.MathUtils.lerp(0.08, 0.35, u), 0, THREE.MathUtils.lerp(0.56, 0.32, u));
+      sArmL.elbowPivot.rotation.set(THREE.MathUtils.lerp(0.18, 0.65, u), 0, THREE.MathUtils.lerp(-1.16, -0.15, u));
 
-      // Jambe droite s'arme franchement en arrière (rotation.x négative tire la cuisse vers +Z, pli du genou vers le haut)
-      sLegR.hipPivot.rotation.set(THREE.MathUtils.lerp(-0.16, -0.78, w), 0, -0.06);
-      sLegR.kneePivot.rotation.set(THREE.MathUtils.lerp(-0.28, -1.18, w), 0, 0);
-      sLegR.anklePivot.rotation.set(-0.35 * w, 0, 0);
+      sArmR.shoulderPivot.rotation.set(THREE.MathUtils.lerp(0.08, -0.35, u), 0, THREE.MathUtils.lerp(-0.56, -0.28, u));
+      sArmR.elbowPivot.rotation.set(THREE.MathUtils.lerp(0.18, 0.55, u), 0, THREE.MathUtils.lerp(1.16, 0.12, u));
+
+      // Foulée droite vers l'avant, poussée gauche derrière
+      sLegR.hipPivot.rotation.set(THREE.MathUtils.lerp(0.12, 0.48, u), 0, 0.06);
+      sLegR.kneePivot.rotation.set(THREE.MathUtils.lerp(-0.24, -0.42, u), 0, 0);
+
+      sLegL.hipPivot.rotation.set(THREE.MathUtils.lerp(-0.04, -0.42, u), 0, -0.04);
+      sLegL.kneePivot.rotation.set(THREE.MathUtils.lerp(-0.08, -0.55, u), 0, 0);
+    } else if (p <= 0.72) {
+      // Phase 2 (0.34 -> 0.72) : Bond d'appui gauche à côté du ballon + Grand armé de la jambe droite très haut en arrière !
+      const w = (p - 0.34) / 0.38;
+      shooterGroup.position.y = Math.sin(w * Math.PI) * 0.055;
+      shooterGroup.rotation.y = THREE.MathUtils.lerp(-0.28, -0.18, w);
+      shooterGroup.rotation.z = THREE.MathUtils.lerp(-0.05, 0.16, w); // Inclinaison latérale typique d'un tireur de coup franc/penalty
+      sUpperBody.rotation.x = THREE.MathUtils.lerp(-0.20, -0.26, w);
+      sUpperBody.rotation.y = THREE.MathUtils.lerp(0.04, -0.18, w);
+
+      // Bras gauche grand ouvert sur le côté pour équilibrer la frappe
+      sArmL.shoulderPivot.rotation.set(THREE.MathUtils.lerp(0.35, -0.48, w), 0, THREE.MathUtils.lerp(0.32, 0.96, w));
+      sArmL.elbowPivot.rotation.set(THREE.MathUtils.lerp(0.65, 0.22, w), 0, -0.10);
+
+      // Bras droit tiré en arrière
+      sArmR.shoulderPivot.rotation.set(THREE.MathUtils.lerp(-0.35, 0.42, w), 0, -0.35);
+      sArmR.elbowPivot.rotation.set(0.48, 0, 0.15);
+
+      // Jambe gauche vient se planter fermement à gauche du ballon
+      sLegL.hipPivot.rotation.set(THREE.MathUtils.lerp(-0.42, 0.38, w), 0, 0.06);
+      sLegL.kneePivot.rotation.set(THREE.MathUtils.lerp(-0.55, -0.32, w), 0, 0);
+      sLegL.anklePivot.rotation.set(0.14, 0, 0);
+
+      // Jambe droite s'arme très haut en arrière (cuisse en extension arrière, genou fléchi à 110°)
+      sLegR.hipPivot.rotation.set(THREE.MathUtils.lerp(0.48, -0.92, w), 0, -0.08);
+      sLegR.kneePivot.rotation.set(THREE.MathUtils.lerp(-0.42, -1.35, w), 0, 0);
+      sLegR.anklePivot.rotation.set(-0.38 * w, 0, 0);
     } else if (p <= 1.0) {
-      // Phase 2 (0.55 -> 1.0) : déclenchement explosif de la jambe droite jusqu'au contact exact pied-ballon à p = 1.0 !
-      const s = (p - 0.55) / 0.45;
-      sUpperBody.rotation.x = THREE.MathUtils.lerp(-0.24, 0.08, s);
-      sArmL.rotation.set(-0.45, 0, 0.79);
-      sArmR.rotation.set(THREE.MathUtils.lerp(0.35, -0.30, s), 0, -0.32);
+      // Phase 3 (0.72 -> 1.0) : Fouetté explosif de la jambe droite qui traverse le ballon à p = 1.0 !
+      const s = (p - 0.72) / 0.28;
+      shooterGroup.position.y = 0;
+      shooterGroup.rotation.y = THREE.MathUtils.lerp(-0.18, -0.08, s);
+      shooterGroup.rotation.z = THREE.MathUtils.lerp(0.16, 0.21, s);
+      sUpperBody.rotation.x = THREE.MathUtils.lerp(-0.26, 0.10, s);
+      sUpperBody.rotation.y = THREE.MathUtils.lerp(-0.18, 0.16, s);
 
-      // Jambe gauche plantée au sol à côté du ballon
-      sLegL.hipPivot.rotation.set(0.28, 0, 0.06);
-      sLegL.kneePivot.rotation.set(-0.26, 0, 0);
+      sArmL.shoulderPivot.rotation.set(-0.48, 0, THREE.MathUtils.lerp(0.96, 0.68, s));
+      sArmR.shoulderPivot.rotation.set(THREE.MathUtils.lerp(0.42, -0.38, s), 0, -0.32);
 
-      // Fouetté de la jambe droite qui traverse le ballon
-      sLegR.hipPivot.rotation.set(THREE.MathUtils.lerp(-0.78, 0.52, s), 0, -0.04);
-      sLegR.kneePivot.rotation.set(THREE.MathUtils.lerp(-1.18, -0.06, s), 0, 0);
-      sLegR.anklePivot.rotation.set(THREE.MathUtils.lerp(-0.35, -0.45, s), 0, 0);
+      // Jambe gauche ancrée au sol à côté du ballon
+      sLegL.hipPivot.rotation.set(0.32, 0, 0.08);
+      sLegL.kneePivot.rotation.set(-0.28, 0, 0);
+
+      // Fouetté ultra-rapide de la jambe droite jusqu'à l'impact avec le ballon
+      sLegR.hipPivot.rotation.set(THREE.MathUtils.lerp(-0.92, 0.58, s), 0, THREE.MathUtils.lerp(-0.08, 0.10, s));
+      sLegR.kneePivot.rotation.set(THREE.MathUtils.lerp(-1.35, -0.04, s), 0, 0);
+      sLegR.anklePivot.rotation.set(THREE.MathUtils.lerp(-0.38, -0.48, s), 0, 0);
     } else {
-      // Phase 3 (p > 1.0) : Accompagnement (follow-through) après le départ du ballon
-      const f = Math.min(1, (p - 1.0) / 0.8);
-      sUpperBody.rotation.x = THREE.MathUtils.lerp(0.08, 0.16, f);
-      sLegR.hipPivot.rotation.set(THREE.MathUtils.lerp(0.52, 0.76, f), 0, 0.08 * f);
-      sLegR.kneePivot.rotation.set(THREE.MathUtils.lerp(-0.06, -0.22, f), 0, 0);
+      // Phase 4 (p > 1.0) : Accompagnement complet (Follow-through) + petit sursaut d'inertie sur le pied d'appui + retour au sol
+      const after = p - 1.0;
+      const follow = Math.min(1, after / 0.55);
+      const settle = Math.max(0, Math.min(1, (after - 0.55) / 0.75));
+
+      // Sursaut d'inertie juste après l'impact
+      shooterGroup.position.y = after < 0.45 ? Math.sin((after / 0.45) * Math.PI) * 0.065 : 0;
+      shooterGroup.rotation.z = THREE.MathUtils.lerp(0.21, 0.04, settle);
+      sUpperBody.rotation.x = THREE.MathUtils.lerp(0.10, 0.02, settle);
+      sUpperBody.rotation.y = THREE.MathUtils.lerp(0.16, 0.06, settle);
+
+      // La jambe droite monte haut dans la direction du tir puis redescend se poser au sol
+      const highSwingHipX = THREE.MathUtils.lerp(0.58, 0.92, follow);
+      sLegR.hipPivot.rotation.set(
+        THREE.MathUtils.lerp(highSwingHipX, 0.14, settle),
+        0,
+        THREE.MathUtils.lerp(0.16, 0.06, settle)
+      );
+      sLegR.kneePivot.rotation.set(
+        THREE.MathUtils.lerp(-0.04, -0.26, follow) * (1 - settle * 0.5),
+        0,
+        0
+      );
+
+      sArmL.shoulderPivot.rotation.set(
+        THREE.MathUtils.lerp(-0.48, 0.08, settle),
+        0,
+        THREE.MathUtils.lerp(0.68, 0.28, settle)
+      );
+      sArmR.shoulderPivot.rotation.set(
+        THREE.MathUtils.lerp(-0.38, 0.08, settle),
+        0,
+        THREE.MathUtils.lerp(-0.32, -0.28, settle)
+      );
     }
 
-    shooterGroundShadow.position.set(shooterGroup.position.x, 0.013, shooterGroup.position.z);
+    shooterGroundShadow.position.set(shooterGroup.position.x + 0.06, 0.013, shooterGroup.position.z - 0.03);
   }
 
   /* -------------------------------------------------------------------------- */
@@ -3235,10 +3213,12 @@
 
     ballMesh.position.set(0, BALL_R, PENALTY_Z);
     ballMesh.rotation.set(0, 0, 0);
+    ballMesh.scale.set(1, 1, 1);
     ballContactShadow.position.set(0, 0.014, PENALTY_Z);
     ballContactShadow.scale.set(1, 1, 1);
-    (ballContactShadow.material as THREE.MeshBasicMaterial).opacity = 0.62;
-    ballGlowRing.visible = true;
+    (ballContactShadow.material as THREE.MeshBasicMaterial).opacity = 0.72;
+    ballGlowRing.visible = false;
+    strikeShockTimer = 0;
     ballTrailLine.visible = false;
     trailHistory.length = 0;
     goalGroup.position.x = 0;
@@ -3247,19 +3227,19 @@
     keeperGroup.rotation.set(0, 0, 0);
     keeperGroundShadow.position.set(0, 0.012, 0.28);
     keeperGroundShadow.scale.set(1, 1, 1);
-    upperBodyGroup.position.set(0, 0.90, 0);
-    upperBodyGroup.rotation.set(0.14, 0, 0);
-    kPelvis.position.set(0, 0.86, 0);
-    kArmL.rotation.set(0, 0, 0.52);
-    kArmR.rotation.set(0, 0, -0.52);
+    upperBodyGroup.position.set(0, 0.88, 0);
+    upperBodyGroup.rotation.set(0.18, 0, 0);
+    kPelvis.position.set(0, 0.84, 0);
+    kArmL.rotation.set(-0.22, 0, 0.56);
+    kArmR.rotation.set(-0.22, 0, -0.56);
     armL.elbowPivot.rotation.set(-0.68, 0, 0.35);
     armR.elbowPivot.rotation.set(-0.68, 0, -0.35);
-    legL.hipPivot.rotation.set(-0.22, 0, 0.09);
-    legR.hipPivot.rotation.set(-0.22, 0, -0.09);
-    legL.kneePivot.rotation.set(0.42, 0, 0);
-    legR.kneePivot.rotation.set(0.42, 0, 0);
-    legL.anklePivot.rotation.set(-0.20, 0, 0);
-    legR.anklePivot.rotation.set(-0.20, 0, 0);
+    legL.hipPivot.rotation.set(-0.24, 0, 0.20);
+    legR.hipPivot.rotation.set(-0.24, 0, -0.20);
+    legL.kneePivot.rotation.set(0.46, 0, 0);
+    legR.kneePivot.rotation.set(0.46, 0, 0);
+    legL.anklePivot.rotation.set(-0.22, 0, 0);
+    legR.anklePivot.rotation.set(-0.22, 0, 0);
 
     setShooterIdlePose(0);
 
@@ -3701,7 +3681,7 @@
     if (chargeActive && state.phase === "charging" && !state.paused) commitShotRelease();
   });
 
-  const RUNUP_DURATION = 0.25;
+  const RUNUP_DURATION = 0.44;
   let pendingShotConfig: {
     powerPct: number;
     traj: ExactShotTrajectory;
@@ -3748,6 +3728,21 @@
     shotPhys.speedKmh = Math.round(traj.speedMs * 3.6);
     shotPhys.wallJumping = true;
 
+    // Effet d'impact explosif au contact du crampon : onde de choc 3D, compression élastique du ballon et gerbe d'herbe/craie
+    strikeShockTimer = 0.24;
+    ballGlowRing.visible = true;
+    ballGlowRing.position.set(0, 0.02, PENALTY_Z);
+    ballGlowRing.scale.set(0.85, 0.85, 1);
+    (ballGlowRing.material as THREE.MeshBasicMaterial).color.setHex(
+      traj.gaugeZone === "overload"
+        ? 0xef4444
+        : traj.gaugeZone === "perfect"
+          ? 0x34d399
+          : 0xfacc15
+    );
+    (ballGlowRing.material as THREE.MeshBasicMaterial).opacity = 0.90;
+    ballMesh.scale.set(1.18, 1.08, 0.78);
+
     // Ruban aérodynamique 3D et particules d'herbe/craie à l'impact du pied
     trailHistory.length = 0;
     trailMat.color.setHex(
@@ -3758,8 +3753,8 @@
           : 0xfacc15
     );
     ballTrailLine.visible = true;
-    spawnTurfBurst(0, BALL_R * 0.5, PENALTY_Z, 26, false);
-    cameraShakeAmp = traj.gaugeZone === "overload" ? 0.065 : 0.032;
+    spawnTurfBurst(0, BALL_R * 0.45, PENALTY_Z, 34, false);
+    cameraShakeAmp = traj.gaugeZone === "overload" ? 0.075 : 0.048;
 
     playKickAudio(powerPct / 100);
 
@@ -4452,16 +4447,16 @@
       card.disabled = !unlocked;
       card.className = `flex flex-col justify-between rounded-2xl border p-3.5 text-left transition-all ${
         isCurrent
-          ? "border-or bg-or/15 shadow-lg"
+          ? "border-or bg-[#171e12] shadow-lg"
           : unlocked
-            ? "border-white/15 bg-black/40 hover:border-white/35 hover:bg-white/5"
-            : "border-white/5 bg-black/20 opacity-45 cursor-not-allowed"
+            ? "border-[#1e3a6e] bg-[#040917] hover:border-sky-400 hover:bg-[#09142e]"
+            : "border-[#0f1f3d] bg-[#030712] opacity-45 cursor-not-allowed"
       }`;
 
       card.innerHTML = `
         <div>
           <div class="flex items-center justify-between gap-2">
-            <span class="rounded ${isCurrent ? "bg-or text-slate-950" : "bg-white/10 text-or"} px-2 py-0.5 font-display text-xs uppercase tracking-wider font-black">
+            <span class="rounded ${isCurrent ? "bg-or text-slate-950" : "bg-[#0c1b3a] text-or"} px-2 py-0.5 font-display text-xs uppercase tracking-wider font-black">
               Niveau ${t.id} · ${t.deficitLabel}
             </span>
             <span class="text-[0.68rem] font-bold ${unlocked ? "text-emerald-400" : "text-slate-500"}">
@@ -4471,9 +4466,9 @@
           <h4 class="mt-1.5 font-display text-lg uppercase tracking-wide text-white">${t.name}</h4>
           <p class="mt-0.5 text-xs text-slate-300 leading-relaxed">${t.desc}</p>
         </div>
-        <div class="mt-2.5 flex items-center justify-between border-t border-white/10 pt-2 text-[0.62rem] font-bold uppercase tracking-wider text-slate-400">
+        <div class="mt-2.5 flex items-center justify-between border-t border-[#162a52] pt-2 text-[0.62rem] font-bold uppercase tracking-wider text-slate-400">
           <span>Objectif : <strong class="text-emerald-400">${t.targetGoals}/5 buts</strong></span>
-          <span>Mur : <strong class="text-or">${t.wallPlayers}</strong> · Vent : <strong class="text-sky-300">${t.windMaxKmh} km/h</strong></span>
+          <span>Vent : <strong class="text-sky-300">${t.windMaxKmh} km/h</strong></span>
         </div>
       `;
 
@@ -4536,16 +4531,15 @@
         const isSelected = idx === state.selectedShooterIndex;
         const btn = document.createElement("button");
         btn.type = "button";
-        btn.className = `group relative flex flex-col overflow-hidden rounded-2xl border text-left transition-all ${
+        btn.className = `group relative flex flex-col overflow-hidden rounded-2xl border-2 text-left transition-all ${
           isSelected
-            ? "border-sky-400 bg-sky-500/20 shadow-[0_0_20px_rgba(56,189,248,0.28)] ring-1 ring-sky-300"
-            : "border-white/15 bg-black/45 hover:border-sky-400/50 hover:bg-white/5"
+            ? "border-sky-400 bg-[#0b2247] shadow-xl ring-1 ring-sky-300"
+            : "border-[#1e3a6e] bg-[#040917] hover:border-sky-400 hover:bg-[#09142e]"
         }`;
         btn.innerHTML = `
-          <div class="relative h-24 sm:h-28 w-full overflow-hidden bg-slate-900">
-            <img src="${s.photo}" alt="${s.name}" class="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-105" loading="lazy" />
-            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/25 to-transparent"></div>
-            <span class="absolute top-2 left-2 rounded-lg bg-sky-500 px-2 py-0.5 font-display text-xs font-black text-slate-950 shadow">
+          <div class="relative h-32 sm:h-40 w-full overflow-hidden bg-[#060d1f]">
+            <img src="${s.photo}" alt="${s.name}" class="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-105" loading="eager" />
+            <span class="absolute top-2 left-2 rounded-lg bg-sky-400 px-2.5 py-0.5 font-display text-xs font-black text-slate-950 shadow">
               #${s.number}
             </span>
             ${
@@ -4553,13 +4547,13 @@
                 ? `<span class="absolute top-2 right-2 rounded-full bg-emerald-400 px-2 py-0.5 text-[0.55rem] font-black uppercase tracking-wider text-slate-950 shadow">✓ Tireur</span>`
                 : ""
             }
-            <div class="absolute bottom-1.5 left-2.5 right-2">
-              <p class="font-display text-sm sm:text-base uppercase tracking-wider text-white leading-tight drop-shadow">${s.name}</p>
-            </div>
           </div>
-          <div class="flex items-center justify-between px-2.5 py-1.5 text-[0.62rem] font-bold text-slate-300">
-            <span class="text-sky-300 truncate">${s.position.split("·")[0].trim()}</span>
-            <span class="text-slate-400 truncate">${s.specialty}</span>
+          <div class="border-t border-[#1e3a6e] bg-[#060d1f] px-3 py-2">
+            <p class="font-display text-sm sm:text-base uppercase tracking-wider text-white leading-tight">${s.name}</p>
+            <div class="mt-0.5 flex items-center justify-between text-[0.62rem] font-bold">
+              <span class="text-sky-300 truncate">${s.position.split("·")[0].trim()}</span>
+              <span class="text-slate-400 truncate">${s.specialty}</span>
+            </div>
           </div>
         `;
         btn.addEventListener("click", () => {
@@ -4578,16 +4572,15 @@
         const isSelected = idx === state.selectedKeeperIndex;
         const btn = document.createElement("button");
         btn.type = "button";
-        btn.className = `group relative flex flex-col overflow-hidden rounded-2xl border text-left transition-all ${
+        btn.className = `group relative flex flex-col overflow-hidden rounded-2xl border-2 text-left transition-all ${
           isSelected
-            ? "border-or bg-or/20 shadow-[0_0_20px_rgba(245,158,11,0.28)] ring-1 ring-or"
-            : "border-white/15 bg-black/45 hover:border-or/50 hover:bg-white/5"
+            ? "border-or bg-[#1c1a0e] shadow-xl ring-1 ring-or"
+            : "border-[#1e3a6e] bg-[#040917] hover:border-or hover:bg-[#09142e]"
         }`;
         btn.innerHTML = `
-          <div class="relative h-24 sm:h-28 w-full overflow-hidden bg-slate-900">
-            <img src="${k.photo}" alt="${k.name}" class="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-105" loading="lazy" />
-            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent"></div>
-            <span class="absolute top-2 left-2 rounded-lg bg-or px-2 py-0.5 font-display text-xs font-black text-slate-950 shadow">
+          <div class="relative h-32 sm:h-40 w-full overflow-hidden bg-[#060d1f]">
+            <img src="${k.photo}" alt="${k.name}" class="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-105" loading="eager" />
+            <span class="absolute top-2 left-2 rounded-lg bg-or px-2.5 py-0.5 font-display text-xs font-black text-slate-950 shadow">
               #${k.number}
             </span>
             ${
@@ -4595,15 +4588,15 @@
                 ? `<span class="absolute top-2 right-2 rounded-full bg-emerald-400 px-2 py-0.5 text-[0.55rem] font-black uppercase tracking-wider text-slate-950 shadow">✓ Gardien</span>`
                 : ""
             }
-            <div class="absolute bottom-1.5 left-2.5 right-2">
-              <p class="font-display text-sm sm:text-base uppercase tracking-wider text-white leading-tight drop-shadow">${k.name}</p>
-            </div>
           </div>
-          <div class="flex items-center justify-between gap-1 px-2.5 py-1.5 text-[0.6rem] font-bold text-slate-300">
-            <span class="inline-flex items-center gap-1 text-amber-300 truncate">
-              <span class="inline-block h-2.5 w-2.5 shrink-0 rounded-full border border-white/40" style="background:${k.shirtPrimary}"></span>
-              ${k.kitName}
-            </span>
+          <div class="border-t border-[#1e3a6e] bg-[#060d1f] px-3 py-2">
+            <p class="font-display text-sm sm:text-base uppercase tracking-wider text-white leading-tight">${k.name}</p>
+            <div class="mt-0.5 flex items-center justify-between gap-1 text-[0.6rem] font-bold">
+              <span class="inline-flex items-center gap-1 text-amber-300 truncate">
+                <span class="inline-block h-2.5 w-2.5 shrink-0 rounded-full border border-white" style="background:${k.shirtPrimary}"></span>
+                ${k.kitName}
+              </span>
+            </div>
           </div>
         `;
         btn.addEventListener("click", () => {
@@ -4847,11 +4840,9 @@
       // Ombre au sol ancrée sous les appuis du gardien
       keeperGroundShadow.position.set(keeperGroup.position.x, 0.013, keeperGroup.position.z);
       keeperGroundShadow.scale.set(1.05, 1, 1);
-      (keeperGroundShadow.material as THREE.MeshBasicMaterial).opacity = 0.46;
+      (keeperGroundShadow.material as THREE.MeshBasicMaterial).opacity = 0.56;
 
-      // Pulsation douce de l'anneau sous le ballon avant le tir
-      const pulse = 1 + Math.sin(elapsed * 4.5) * 0.06;
-      ballGlowRing.scale.set(pulse, pulse, 1);
+      ballGlowRing.visible = false;
 
       if (state.phase === "charging") {
         updateChargeGauge(dt);
@@ -4864,7 +4855,7 @@
 
       // Pendant la course d'élan, le gardien fléchit les genoux et prépare son impulsion
       keeperGroup.position.y = -0.06 - p * 0.05;
-      keeperGroup.rotation.x = 0.12 + p * 0.05;
+      keeperGroup.rotation.x = 0.14 + p * 0.06;
       legL.hipPivot.rotation.x = -0.26 - p * 0.18;
       legL.kneePivot.rotation.x = 0.48 + p * 0.28;
       legR.hipPivot.rotation.x = -0.26 - p * 0.18;
@@ -4877,17 +4868,32 @@
       updateShooterRunupPose(1 + shotPhys.flightElapsed * 2.2);
       updatePhysics(dt);
 
+      // Onde de choc 3D au sol et retour élastique du ballon après l'impact du pied
+      if (strikeShockTimer > 0) {
+        strikeShockTimer = Math.max(0, strikeShockTimer - dt);
+        const shockProgress = 1 - strikeShockTimer / 0.24;
+        const ringScale = 0.85 + shockProgress * 3.1;
+        ballGlowRing.scale.set(ringScale, ringScale, 1);
+        (ballGlowRing.material as THREE.MeshBasicMaterial).opacity = Math.max(0, (1 - shockProgress) * 0.85);
+        if (strikeShockTimer <= 0) {
+          ballGlowRing.visible = false;
+        }
+      }
+      ballMesh.scale.x += (1 - ballMesh.scale.x) * Math.min(1, dt * 18);
+      ballMesh.scale.y += (1 - ballMesh.scale.y) * Math.min(1, dt * 18);
+      ballMesh.scale.z += (1 - ballMesh.scale.z) * Math.min(1, dt * 18);
+
       // Suivi caméra dynamique léger type EA FC + tremblement d'impact (Camera Shake)
       const aspect = window.innerWidth / Math.max(1, window.innerHeight);
       const isPortrait = aspect < 0.95;
-      const baseZ = isPortrait ? 13.15 : 13.35;
-      const baseY = isPortrait ? 0.96 : 1.18;
-      const lookY = isPortrait ? 1.04 : 1.15;
-      const pushIn = Math.min(0.65, shotPhys.flightElapsed * 1.1);
+      const baseZ = isPortrait ? 14.35 : 14.15;
+      const baseY = isPortrait ? 1.66 : 1.62;
+      const lookY = isPortrait ? 0.90 : 0.96;
+      const pushIn = Math.min(0.85, shotPhys.flightElapsed * 1.35);
 
       const shakeX = cameraShakeAmp > 0.001 ? (Math.random() - 0.5) * cameraShakeAmp : 0;
       const shakeY = cameraShakeAmp > 0.001 ? (Math.random() - 0.5) * cameraShakeAmp : 0;
-      cameraShakeAmp = Math.max(0, cameraShakeAmp - dt * 0.18);
+      cameraShakeAmp = Math.max(0, cameraShakeAmp - dt * 0.22);
 
       camera.position.set(
         ballMesh.position.x * 0.08 + shakeX,
