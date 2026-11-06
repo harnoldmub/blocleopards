@@ -2,11 +2,12 @@
 /**
  * PenaltyMartyrsGame.astro
  * Expérience 3D plein écran : « Penalty aux Martyrs » (Stade des Martyrs, Kinshasa)
- * - Gardien 3D articulé réaliste (visage sculpté avec sourcils/eyebrows fins, maillot texturé, gants pro, crampons)
- * - Stade des Martyrs photo-réaliste avec panneaux publicitaires LED intégrant les vrais logos Partenaires & Bloc Léopards
- * - Eyebrow UI ultra-compact et discret
- * - Système de Pause complet (bouton ⏸ + touche P/Espace) qui fige la physique en temps réel
- * - Séparation stricte entre le Menu (Réglages, Pause, Stade, Partenaires) et la Progression de Niveau
+ * - Cadrage mobile grand-angle adaptatif : vue complète des deux poteaux, des filets latéraux et des panneaux partenaires
+ * - Lecteur musical intégré avec les chansons officielles de `public/audio/jeu/` (boucle auto des 3 hits par défaut
+ *   dont « Oh Yaya ! Nos Léopards viennent célébrer la qualification » + changement de piste en 1 clic)
+ * - Gardien 3D réaliste en posture athlétique de garde (jambes fléchies écartées, coudes pliés, gants devant le buste, visage corrigé)
+ * - Stade des Martyrs 3D réaliste (suppression du cylindre photo étiré, tribunes 3D animées, tunnel central, panneaux LED partenaires dégagés)
+ * - Jauge de puissance strictement croissante et irréversible + Pause (⏸) + Séparation stricte Niveaux / Menu
  */
 ---
 
@@ -14,95 +15,116 @@
   <!-- CANVAS WEBGL 3D PLEIN ÉCRAN -->
   <canvas id="penalty-canvas" class="block h-full w-full touch-none cursor-crosshair"></canvas>
 
-  <!-- ================= HUD BROADCAST COMPACT ================= -->
-  <div class="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between p-2.5 sm:p-4">
+  <!-- ================= HUD BROADCAST ULTRA-PROPRE (MOBILE & DESKTOP) ================= -->
+  <div class="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-2 p-2.5 sm:p-4">
     
-    <!-- GAUCHE : SCOREBUG TV & INDICATEURS EN DIRECT -->
-    <div class="flex flex-col gap-1.5">
-      <div class="pointer-events-auto flex items-center overflow-hidden rounded-xl border border-white/15 bg-[#070d1f]/90 shadow-2xl backdrop-blur-md">
+    <!-- GAUCHE : SCOREBUG TV COMPACT + PILULES NIVEAU / VENT -->
+    <div class="flex flex-col gap-1.5 min-w-0">
+      <div class="pointer-events-auto inline-flex items-center overflow-hidden rounded-xl border border-white/15 bg-[#060c1d]/90 shadow-2xl backdrop-blur-md">
         <!-- Logo Bloc Léopards -->
-        <div class="flex items-center justify-center bg-white/95 px-2 py-1.5">
-          <img src="/brand/logo.png" alt="Bloc Léopards" class="h-6 w-auto object-contain" />
+        <div class="flex h-8 sm:h-9 items-center justify-center bg-white px-2">
+          <img src="/brand/logo.png" alt="Bloc Léopards" class="h-5 sm:h-6 w-auto object-contain" />
         </div>
         <!-- Minute -->
-        <div class="bg-feu px-2 py-1.5 text-center font-display text-xs font-black tracking-wider text-white">
+        <div class="flex h-8 sm:h-9 items-center bg-feu px-2 text-center font-display text-[0.7rem] sm:text-xs font-black tracking-wider text-white">
           90'<span class="animate-pulse">+</span>
         </div>
         <!-- Score Série actuelle -->
-        <div class="flex items-center gap-2 px-2.5 py-1">
-          <div class="flex items-center gap-1.5">
-            <img src="/flags/cd.svg" alt="RDC" class="h-3.5 w-5 rounded-[2px] object-cover" onerror="this.style.display='none'" />
-            <span class="font-display text-sm tracking-wider text-white sm:text-base">RDC</span>
-          </div>
-          <div class="flex items-center gap-1 rounded bg-black/65 px-2 py-0.5 font-display text-lg font-black tracking-wider text-or">
+        <div class="flex items-center gap-1.5 px-2 sm:px-2.5 py-1">
+          <img src="/flags/cd.svg" alt="RDC" class="h-3.5 w-4.5 rounded-[2px] object-cover" onerror="this.style.display='none'" />
+          <span class="font-display text-xs sm:text-sm tracking-wider text-white">RDC</span>
+          <div class="flex items-center gap-1 rounded bg-black/70 px-1.5 py-0.5 font-display text-sm sm:text-base font-black tracking-wider text-or">
             <span id="hud-streak">0</span>
-            <span class="text-[0.55rem] font-sans font-bold uppercase tracking-wider text-slate-400">BUTS</span>
+            <span class="text-[0.5rem] font-sans font-bold uppercase tracking-wider text-slate-400">BUTS</span>
           </div>
         </div>
         <!-- Record -->
-        <div class="border-l border-white/10 px-2.5 py-1 text-right">
-          <span class="block text-[0.48rem] font-bold uppercase tracking-wider text-slate-400 leading-none">Record</span>
-          <span id="hud-record" class="font-display text-xs font-black text-emerald-400">0 🏆</span>
+        <div class="border-l border-white/10 px-2 py-1 text-right">
+          <span class="block text-[0.44rem] font-bold uppercase tracking-wider text-slate-400 leading-none">Record</span>
+          <span id="hud-record" class="font-display text-[0.7rem] sm:text-xs font-black text-emerald-400">0 🏆</span>
         </div>
       </div>
 
-      <!-- Mini barre Niveau + Vent (eyebrow réduit au minimum) -->
-      <div class="flex items-center gap-1.5">
+      <!-- Mini barre Niveau + Vent -->
+      <div class="flex flex-wrap items-center gap-1">
         <button
           type="button"
           id="btn-open-levels"
-          class="pointer-events-auto flex items-center gap-1.5 rounded-md border border-or/40 bg-[#070d1f]/85 px-2 py-0.5 backdrop-blur-md transition-all hover:border-or active:scale-95"
-          title="Voir les détails des niveaux"
+          class="pointer-events-auto flex items-center gap-1 rounded-md border border-or/45 bg-[#060c1d]/85 px-2 py-0.5 backdrop-blur-md transition-all hover:border-or active:scale-95"
+          title="Voir les paliers de niveau"
         >
           <span class="h-1.5 w-1.5 rounded-full bg-or animate-pulse"></span>
-          <span id="hud-level-badge" class="font-display text-[0.65rem] uppercase tracking-wider text-or">NIV. 1</span>
+          <span id="hud-level-badge" class="font-display text-[0.62rem] uppercase tracking-wider text-or">NIV. 1 · ÉCHAUFFEMENT</span>
         </button>
 
-        <div id="hud-wind-pill" class="flex items-center gap-1 rounded-md border border-white/10 bg-[#070d1f]/85 px-2 py-0.5 text-[0.65rem] font-bold text-sky-300 backdrop-blur-md">
+        <div id="hud-wind-pill" class="flex items-center gap-1 rounded-md border border-white/10 bg-[#060c1d]/85 px-1.5 py-0.5 text-[0.6rem] font-bold text-sky-300 backdrop-blur-md">
           <span id="hud-wind-arrow" class="inline-block transition-transform duration-300">→</span>
           <span id="hud-wind-val">0 km/h</span>
         </div>
       </div>
     </div>
 
-    <!-- DROITE : PAUSE + SON + MENU -->
-    <div class="pointer-events-auto flex items-center gap-1.5">
-      <button
-        type="button"
-        id="btn-pause"
-        class="flex h-9 w-9 items-center justify-center rounded-xl border border-white/15 bg-[#070d1f]/88 text-xs font-bold text-white shadow-lg backdrop-blur-md transition-all hover:bg-slate-800 active:scale-95"
-        aria-label="Mettre en pause"
-        title="Pause (Espace / P)"
-      >
-        <span id="icon-pause">⏸</span>
-      </button>
+    <!-- DROITE : CONTRÔLES COMPACTS (MUSIQUE SUIVANTE + SON + PAUSE + MENU) -->
+    <div class="pointer-events-auto flex flex-col items-end gap-1.5 shrink-0">
+      <div class="flex items-center gap-1 sm:gap-1.5">
+        <button
+          type="button"
+          id="btn-next-track-hud"
+          class="flex h-8 sm:h-9 items-center gap-1 rounded-xl border border-or/35 bg-[#060c1d]/90 px-2 sm:px-2.5 text-[0.65rem] font-bold text-or shadow-lg backdrop-blur-md transition-all hover:bg-slate-800 active:scale-95"
+          title="Changer de chanson"
+        >
+          <span>🎵</span>
+          <span id="hud-track-short" class="hidden sm:inline max-w-[110px] truncate text-white">Oh Yaya !</span>
+          <span class="text-[0.6rem] text-or">⏭</span>
+        </button>
 
-      <button
-        type="button"
-        id="btn-sound"
-        class="flex h-9 w-9 items-center justify-center rounded-xl border border-white/15 bg-[#070d1f]/88 text-sm text-white shadow-lg backdrop-blur-md transition-all hover:bg-slate-800 active:scale-95"
-        aria-label="Activer ou couper le son"
-      >
-        <span id="icon-sound">🔊</span>
-      </button>
+        <button
+          type="button"
+          id="btn-sound"
+          class="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl border border-white/15 bg-[#060c1d]/90 text-xs sm:text-sm text-white shadow-lg backdrop-blur-md transition-all hover:bg-slate-800 active:scale-95"
+          aria-label="Activer ou couper le son"
+        >
+          <span id="icon-sound">🔊</span>
+        </button>
 
+        <button
+          type="button"
+          id="btn-pause"
+          class="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl border border-white/15 bg-[#060c1d]/90 text-xs font-bold text-white shadow-lg backdrop-blur-md transition-all hover:bg-slate-800 active:scale-95"
+          aria-label="Mettre en pause"
+        >
+          <span id="icon-pause">⏸</span>
+        </button>
+
+        <button
+          type="button"
+          id="btn-open-menu"
+          class="flex h-8 sm:h-9 items-center gap-1 rounded-xl border border-white/20 bg-congo px-2.5 sm:px-3 text-[0.65rem] sm:text-[0.7rem] font-black uppercase tracking-wider text-white shadow-lg shadow-congo/30 transition-all hover:bg-congo-bright active:scale-95"
+        >
+          <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+          <span>Menu</span>
+        </button>
+      </div>
+
+      <!-- Mini pilule chanson en cours sur mobile -->
       <button
         type="button"
-        id="btn-open-menu"
-        class="flex h-9 items-center gap-1.5 rounded-xl border border-white/20 bg-congo px-3 text-[0.7rem] font-black uppercase tracking-wider text-white shadow-lg shadow-congo/30 transition-all hover:bg-congo-bright active:scale-95"
+        id="btn-mobile-track-pill"
+        class="flex sm:hidden items-center gap-1 rounded-md border border-white/10 bg-[#060c1d]/80 px-2 py-0.5 text-[0.55rem] text-slate-300 backdrop-blur-md active:scale-95"
       >
-        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-        <span>Menu</span>
+        <span class="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+        <span id="hud-track-mobile" class="max-w-[135px] truncate font-semibold text-white">Oh Yaya · Nos Léopards</span>
+        <span class="text-or font-bold">⏭</span>
       </button>
     </div>
   </div>
 
   <!-- ================= JAUGE DE PUISSANCE IRRÉVERSIBLE (DROITE) ================= -->
-  <div id="power-meter-wrap" class="pointer-events-none absolute right-3.5 top-1/2 z-20 -translate-y-1/2 flex flex-col items-center gap-1 opacity-0 transition-opacity duration-100">
-    <span class="rounded bg-red-600/95 px-1.5 py-0.5 text-[0.52rem] font-black uppercase tracking-wider text-white shadow">MAX</span>
-    <div class="relative h-48 w-4 overflow-hidden rounded-full border-2 border-white/35 bg-slate-950/90 p-0.5 shadow-2xl backdrop-blur-md">
+  <div id="power-meter-wrap" class="pointer-events-none absolute right-3 top-1/2 z-20 -translate-y-1/2 flex flex-col items-center gap-1 opacity-0 transition-opacity duration-100">
+    <span class="rounded bg-red-600/95 px-1.5 py-0.5 text-[0.5rem] font-black uppercase tracking-wider text-white shadow">MAX</span>
+    <div class="relative h-44 sm:h-48 w-3.5 sm:w-4 overflow-hidden rounded-full border-2 border-white/35 bg-slate-950/90 p-0.5 shadow-2xl backdrop-blur-md">
       <div class="absolute inset-x-0 top-[8%] h-[24%] border-y border-emerald-400/70 bg-emerald-500/20"></div>
       <div class="absolute inset-x-0 top-0 h-[8%] bg-red-600/60"></div>
       <div id="power-meter-fill" class="absolute inset-x-0.5 bottom-0.5 rounded-full bg-gradient-to-t from-sky-400 via-emerald-400 to-red-500" style="height: 0%"></div>
@@ -111,17 +133,17 @@
   </div>
 
   <!-- ================= INDICATION DISCRÈTE EN BAS ================= -->
-  <div id="aim-instruction" class="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex flex-col items-center justify-center opacity-0 transition-opacity duration-300 px-3">
-    <div class="flex items-center gap-2 rounded-full border border-white/15 bg-[#070d1f]/85 px-3.5 py-1 text-[0.7rem] font-semibold text-slate-200 shadow-xl backdrop-blur-md text-center">
+  <div id="aim-instruction" class="pointer-events-none absolute inset-x-0 bottom-3 z-20 flex flex-col items-center justify-center opacity-0 transition-opacity duration-300 px-3">
+    <div class="flex items-center gap-1.5 rounded-full border border-white/15 bg-[#060c1d]/85 px-3 py-1 text-[0.65rem] font-semibold text-slate-200 shadow-xl backdrop-blur-md text-center">
       <span class="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-or"></span>
-      <span>Appuie & glisse vers le but · La jauge monte sans retour en arrière</span>
+      <span>Maintiens & glisse vers la cible · La jauge monte sans retour</span>
     </div>
   </div>
 
   <!-- BOUTON PASSER LA CINÉMATIQUE -->
-  <div id="cinematic-bar" class="pointer-events-none absolute inset-x-0 bottom-5 z-20 flex items-center justify-between px-4 sm:px-8">
-    <div class="rounded-lg border border-white/15 bg-[#070d1f]/85 px-3 py-1.5 backdrop-blur-md">
-      <span id="cinematic-step-label" class="text-[0.65rem] font-bold uppercase tracking-wider text-or">
+  <div id="cinematic-bar" class="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex items-center justify-between px-4 sm:px-8">
+    <div class="rounded-lg border border-white/15 bg-[#060c1d]/85 px-3 py-1.5 backdrop-blur-md">
+      <span id="cinematic-step-label" class="text-[0.62rem] font-bold uppercase tracking-wider text-or">
         Stade des Martyrs · Kinshasa
       </span>
     </div>
@@ -137,11 +159,11 @@
 
   <!-- ================= BANDEAU RÉSULTAT DU TIR ================= -->
   <div id="shot-toast" class="pointer-events-none absolute inset-x-0 top-16 z-30 flex justify-center opacity-0 transition-all duration-200 -translate-y-4 px-3">
-    <div class="flex items-center gap-2.5 rounded-2xl border border-white/20 bg-[#070d1f]/95 px-4 py-2 shadow-2xl backdrop-blur-xl">
+    <div class="flex items-center gap-2.5 rounded-2xl border border-white/20 bg-[#060c1d]/95 px-4 py-2 shadow-2xl backdrop-blur-xl">
       <span id="toast-emoji" class="text-xl">⚽</span>
       <div>
-        <h3 id="toast-title" class="font-display text-lg uppercase tracking-wider text-or leading-none">BUT !</h3>
-        <p id="toast-subtitle" class="mt-0.5 text-[0.68rem] font-semibold text-slate-300">104 km/h</p>
+        <h3 id="toast-title" class="font-display text-base sm:text-lg uppercase tracking-wider text-or leading-none">BUT !</h3>
+        <p id="toast-subtitle" class="mt-0.5 text-[0.65rem] font-semibold text-slate-300">104 km/h</p>
       </div>
     </div>
   </div>
@@ -149,14 +171,29 @@
   <!-- ================= ÉCRAN DE PAUSE ================= -->
   <div id="pause-modal" class="pointer-events-none fixed inset-0 z-40 hidden items-center justify-center bg-black/70 p-4 backdrop-blur-md">
     <div class="pointer-events-auto w-full max-w-xs overflow-hidden rounded-3xl border border-white/20 bg-[#070f22] p-5 text-center shadow-2xl">
-      <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white/95 p-1.5 shadow">
+      <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white p-1.5 shadow">
         <img src="/brand/logo.png" alt="Bloc Léopards" class="h-full w-auto object-contain" />
       </div>
-      <span class="mt-2.5 block text-[0.55rem] font-bold uppercase tracking-widest text-or">Jeu en Pause</span>
+      <span class="mt-2 block text-[0.52rem] font-bold uppercase tracking-widest text-or">Jeu en Pause</span>
       <h2 class="mt-0.5 font-display text-2xl uppercase tracking-wide text-white">PAUSE MATCH</h2>
       <p class="mt-1 text-[0.7rem] text-slate-400">
         Série en cours : <strong id="pause-streak-val" class="text-or">0</strong> but(s)
       </p>
+
+      <!-- Contrôle rapide de la chanson en pause -->
+      <div class="mt-3 flex items-center justify-between rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-left">
+        <div class="min-w-0 pr-2">
+          <span class="block text-[0.5rem] uppercase tracking-wider text-or font-bold">Chanson en cours</span>
+          <p id="pause-track-name" class="truncate text-xs font-semibold text-white">Oh Yaya ! Nos Léopards</p>
+        </div>
+        <button
+          type="button"
+          id="btn-pause-next-track"
+          class="shrink-0 rounded-lg bg-white/10 px-2.5 py-1.5 text-xs font-bold text-or hover:bg-white/20"
+        >
+          ⏭ Changer
+        </button>
+      </div>
 
       <div class="mt-4 flex flex-col gap-2">
         <button
@@ -178,7 +215,7 @@
           id="btn-pause-to-menu"
           class="w-full rounded-xl border border-white/10 bg-white/5 py-2 text-xs font-bold uppercase tracking-wider text-slate-300 hover:bg-white/15 hover:text-white"
         >
-          ⚙️ Réglages du Stade
+          🎵 Playlist & Réglages
         </button>
       </div>
     </div>
@@ -190,7 +227,7 @@
       <div id="go-badge" class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/20 text-2xl border border-red-500/40">
         🧤
       </div>
-      <span id="go-kicker" class="mt-2 block text-[0.55rem] font-bold uppercase tracking-widest text-red-400">Fin de Série</span>
+      <span id="go-kicker" class="mt-2 block text-[0.52rem] font-bold uppercase tracking-widest text-red-400">Fin de Série</span>
       <h2 id="go-title" class="mt-0.5 font-display text-2xl uppercase tracking-wide text-white">ARRÊT DU GARDIEN !</h2>
       <p id="go-desc" class="mt-1 text-xs text-slate-300">
         Le portier a repoussé ta tentative.
@@ -198,15 +235,15 @@
 
       <div class="mt-4 grid grid-cols-3 gap-2 rounded-2xl border border-white/10 bg-black/40 p-2.5">
         <div>
-          <span class="block text-[0.55rem] font-bold uppercase tracking-wider text-slate-400">Buts</span>
+          <span class="block text-[0.52rem] font-bold uppercase tracking-wider text-slate-400">Buts</span>
           <span id="go-stat-streak" class="font-display text-xl text-or">0</span>
         </div>
         <div class="border-x border-white/10">
-          <span class="block text-[0.55rem] font-bold uppercase tracking-wider text-slate-400">Palier</span>
+          <span class="block text-[0.52rem] font-bold uppercase tracking-wider text-slate-400">Palier</span>
           <span id="go-stat-level" class="font-display text-xl text-white">Niv. 1</span>
         </div>
         <div>
-          <span class="block text-[0.55rem] font-bold uppercase tracking-wider text-slate-400">Record</span>
+          <span class="block text-[0.52rem] font-bold uppercase tracking-wider text-slate-400">Record</span>
           <span id="go-stat-record" class="font-display text-xl text-emerald-400">0</span>
         </div>
       </div>
@@ -235,7 +272,7 @@
     <div class="relative flex max-h-[88dvh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-or/30 bg-[#070f22] shadow-2xl">
       <div class="flex items-center justify-between border-b border-white/10 px-5 py-3.5 bg-[#050a18]">
         <div>
-          <span class="text-[0.55rem] font-bold uppercase tracking-widest text-or">Progression Sportive</span>
+          <span class="text-[0.52rem] font-bold uppercase tracking-widest text-or">Progression Sportive</span>
           <h2 class="font-display text-lg uppercase tracking-wider text-white leading-none">
             🏆 Paliers de Difficulté & IA Gardien
           </h2>
@@ -265,20 +302,20 @@
     </div>
   </div>
 
-  <!-- ================= MENU GÉNÉRAL (SANS DUPLICATION DES NIVEAUX) ================= -->
+  <!-- ================= MENU GÉNÉRAL (MUSIQUE, RÉGLAGES, PHOTOS SDM, PARTENAIRES) ================= -->
   <div id="game-menu-overlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 p-3 sm:p-6 backdrop-blur-lg">
     <div class="relative flex max-h-[88dvh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-white/15 bg-[#070f22] shadow-2xl">
       
-      <!-- En-tête du Menu avec Logo Bloc Léopards & SDM -->
+      <!-- En-tête du Menu -->
       <div class="flex items-center justify-between border-b border-white/10 px-5 py-3.5 bg-[#050a18]">
         <div class="flex items-center gap-3">
           <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-white p-1">
             <img src="/brand/logo.png" alt="Bloc Léopards" class="h-full w-auto object-contain" />
           </div>
           <div>
-            <span class="text-[0.55rem] font-bold uppercase tracking-widest text-or">Bloc Léopards · Kinshasa</span>
+            <span class="text-[0.52rem] font-bold uppercase tracking-widest text-or">Bloc Léopards · Kinshasa</span>
             <h2 class="font-display text-lg uppercase tracking-wider text-white leading-none">
-              Menu & Réglages du Stade
+              Menu · Musique & Stade
             </h2>
           </div>
         </div>
@@ -292,26 +329,33 @@
         </button>
       </div>
 
-      <!-- Onglets du Menu (Réglages / Photos SDM / Partenaires) -->
-      <div class="flex border-b border-white/10 bg-[#050a18]/60 px-5 pt-1.5 gap-2 overflow-x-auto">
+      <!-- Onglets du Menu -->
+      <div class="flex border-b border-white/10 bg-[#050a18]/60 px-4 pt-1.5 gap-1.5 overflow-x-auto">
+        <button
+          type="button"
+          data-menu-tab="music"
+          class="menu-tab-btn border-b-2 border-or px-3 py-2 text-xs font-black uppercase tracking-wider text-or transition-colors whitespace-nowrap"
+        >
+          🎵 Chansons Léopards
+        </button>
         <button
           type="button"
           data-menu-tab="settings"
-          class="menu-tab-btn border-b-2 border-or px-3.5 py-2 text-xs font-black uppercase tracking-wider text-or transition-colors"
+          class="menu-tab-btn border-b-2 border-transparent px-3 py-2 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-white transition-colors whitespace-nowrap"
         >
-          ⚙️ Réglages & Stade
+          ⚙️ Stade & Modes
         </button>
         <button
           type="button"
           data-menu-tab="photos"
-          class="menu-tab-btn border-b-2 border-transparent px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-white transition-colors"
+          class="menu-tab-btn border-b-2 border-transparent px-3 py-2 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-white transition-colors whitespace-nowrap"
         >
-          📸 Références SDM
+          📸 Photos SDM
         </button>
         <button
           type="button"
           data-menu-tab="partners"
-          class="menu-tab-btn border-b-2 border-transparent px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-white transition-colors"
+          class="menu-tab-btn border-b-2 border-transparent px-3 py-2 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-white transition-colors whitespace-nowrap"
         >
           🤝 Partenaires
         </button>
@@ -320,14 +364,85 @@
       <!-- Contenu du Menu -->
       <div class="flex-1 overflow-y-auto p-4">
         
-        <!-- ONGLET 1 : RÉGLAGES -->
-        <div id="menu-panel-settings" class="space-y-3.5">
+        <!-- ONGLET 1 : LECTEUR MUSICAL & CHANSONS DU DOSSIER -->
+        <div id="menu-panel-music" class="space-y-3.5">
+          <div class="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-or/30 bg-black/40 p-3.5">
+            <div class="min-w-0">
+              <span class="text-[0.55rem] font-bold uppercase tracking-widest text-or">En écoute dans le stade</span>
+              <h4 id="menu-now-playing" class="mt-0.5 font-display text-lg uppercase text-white truncate">
+                Oh Yaya ! Nos Léopards célèbrent la qualification
+              </h4>
+              <p id="menu-loop-mode-desc" class="text-[0.68rem] text-emerald-400 font-semibold">
+                🔁 Mode actif : Rotation en boucle des 3 chansons phares
+              </p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                id="btn-music-prev"
+                class="flex h-9 w-9 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-xs font-bold text-white hover:bg-white/20"
+                title="Chanson précédente"
+              >
+                ⏮
+              </button>
+              <button
+                type="button"
+                id="btn-music-playpause"
+                class="flex h-9 px-3.5 items-center justify-center rounded-xl bg-or text-xs font-black uppercase text-slate-950 hover:bg-yellow-300"
+              >
+                ⏯ Pause / Play
+              </button>
+              <button
+                type="button"
+                id="btn-music-next"
+                class="flex h-9 w-9 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-xs font-bold text-white hover:bg-white/20"
+                title="Chanson suivante"
+              >
+                ⏭
+              </button>
+            </div>
+          </div>
+
+          <!-- Sélecteur du mode de boucle -->
+          <div class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-black/25 px-3.5 py-2.5">
+            <span class="text-xs font-bold text-slate-300">Mode de lecture :</span>
+            <div class="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                data-loop-mode="top3"
+                class="loop-mode-btn rounded-lg border border-or bg-or/20 px-2.5 py-1 text-[0.68rem] font-bold text-or"
+              >
+                🔁 Boucle 3 Hits (Défaut)
+              </button>
+              <button
+                type="button"
+                data-loop-mode="all"
+                class="loop-mode-btn rounded-lg border border-white/15 bg-white/5 px-2.5 py-1 text-[0.68rem] font-bold text-slate-300 hover:text-white"
+              >
+                🔁 Toutes (5 titres)
+              </button>
+              <button
+                type="button"
+                data-loop-mode="single"
+                class="loop-mode-btn rounded-lg border border-white/15 bg-white/5 px-2.5 py-1 text-[0.68rem] font-bold text-slate-300 hover:text-white"
+              >
+                🔂 Répéter 1 titre
+              </button>
+            </div>
+          </div>
+
+          <!-- Liste des chansons disponibles dans public/audio/jeu/ -->
+          <div id="playlist-container" class="space-y-2"></div>
+        </div>
+
+        <!-- ONGLET 2 : RÉGLAGES DU STADE & AUTRES MODES -->
+        <div id="menu-panel-settings" class="hidden space-y-3.5">
           <div class="grid gap-3.5 sm:grid-cols-2">
             <div class="rounded-2xl border border-white/10 bg-black/30 p-3.5">
-              <span class="text-[0.58rem] font-bold uppercase tracking-wider text-or">Éclairage Stade des Martyrs</span>
+              <span class="text-[0.55rem] font-bold uppercase tracking-wider text-or">Éclairage Stade des Martyrs</span>
               <h4 class="mt-0.5 font-display text-base uppercase text-white">Jour / Soir de Match</h4>
               <p class="mt-1 text-xs text-slate-400">
-                Bascule entre la lumière zénithale de Kinshasa et les 4 mâts de projecteurs nocturnes.
+                Bascule entre la lumière de jour à Kinshasa et les projecteurs nocturnes.
               </p>
               <div class="mt-3 flex gap-2">
                 <button type="button" id="btn-set-day" class="flex-1 rounded-xl border border-white/15 bg-white/5 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-white/15">
@@ -340,10 +455,10 @@
             </div>
 
             <div class="rounded-2xl border border-white/10 bg-black/30 p-3.5">
-              <span class="text-[0.58rem] font-bold uppercase tracking-wider text-or">Ambiance Sonore</span>
-              <h4 class="mt-0.5 font-display text-base uppercase text-white">Tam-tams & 80 000 Supporters</h4>
+              <span class="text-[0.55rem] font-bold uppercase tracking-wider text-or">Audio Général</span>
+              <h4 class="mt-0.5 font-display text-base uppercase text-white">Chansons & Public</h4>
               <p class="mt-1 text-xs text-slate-400">
-                Chants, percussions kinoises, impact des gants et explosion du virage.
+                Active ou coupe la musique des Léopards et les effets sonores du stade.
               </p>
               <button type="button" id="btn-menu-audio-toggle" class="mt-3 w-full rounded-xl border border-emerald-500/40 bg-emerald-500/20 py-2 text-xs font-bold uppercase tracking-wider text-emerald-300">
                 🔊 Son Activé
@@ -352,7 +467,7 @@
           </div>
 
           <div class="rounded-2xl border border-white/10 bg-black/30 p-3.5">
-            <h4 class="font-display text-sm uppercase tracking-wider text-white">Actions de Partie</h4>
+            <h4 class="font-display text-sm uppercase tracking-wider text-white">Actions & Modes de Jeu</h4>
             <div class="mt-2.5 flex flex-wrap gap-2">
               <button type="button" id="btn-menu-restart" class="rounded-xl border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-white/20">
                 🔄 Recommencer à 0
@@ -360,14 +475,14 @@
               <button type="button" id="btn-menu-intro" class="rounded-xl border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-white/20">
                 🎬 Caméra d'entrée au stade
               </button>
-              <a href="/" class="rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-slate-300 hover:bg-white/15 hover:text-white">
-                ← Quitter vers l'accueil
+              <a href="/shoot" class="rounded-xl border border-or/40 bg-congo/60 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-congo">
+                🏀 Mode Basket · Shoot à la Sirène
               </a>
             </div>
           </div>
         </div>
 
-        <!-- ONGLET 2 : PHOTOS OFFICIELLES SDM -->
+        <!-- ONGLET 3 : PHOTOS OFFICIELLES SDM -->
         <div id="menu-panel-photos" class="hidden space-y-3">
           <div class="grid gap-3 sm:grid-cols-2">
             <figure class="overflow-hidden rounded-2xl border border-white/10 bg-black/40">
@@ -401,10 +516,10 @@
           </div>
         </div>
 
-        <!-- ONGLET 3 : PARTENAIRES OFFICIELS (INTÉGRÉS SUR LES PANNEAUX LED DU STADE) -->
+        <!-- ONGLET 4 : PARTENAIRES OFFICIELS -->
         <div id="menu-panel-partners" class="hidden space-y-3">
           <p class="text-xs text-slate-300">
-            Logos officiels affichés sur la panneautique LED autour de la pelouse du Stade des Martyrs :
+            Logos officiels affichés sur la panneautique LED autour de la cage du Stade des Martyrs :
           </p>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             <div class="flex flex-col items-center justify-center rounded-xl bg-white p-3 h-20">
@@ -437,7 +552,7 @@
 
       <!-- Pied du Menu -->
       <div class="flex items-center justify-between border-t border-white/10 bg-[#050a18] px-5 py-2.5">
-        <span class="text-[0.65rem] text-slate-400">Raccourci Pause : touche <strong>Espace</strong> ou <strong>P</strong></span>
+        <span class="text-[0.62rem] text-slate-400">Raccourci Pause : <strong>Espace</strong> ou <strong>P</strong></span>
         <button type="button" id="btn-resume-game" class="rounded-xl bg-or px-4 py-2 text-xs font-black uppercase tracking-wider text-slate-950 hover:bg-yellow-300">
           Reprendre
         </button>
@@ -446,9 +561,64 @@
   </div>
 </div>
 
-<!-- ================= MOTEUR 3D & GAMEPLAY RÉALISTE ================= -->
+<!-- ================= MOTEUR 3D, MUSIQUE & GAMEPLAY RÉALISTE ================= -->
 <script>
   import * as THREE from "three";
+
+  /* -------------------------------------------------------------------------- */
+  /*  PLAYLIST OFFICIELLE DES CHANSONS (DOSSIER public/audio/jeu/)              */
+  /* -------------------------------------------------------------------------- */
+  interface SongTrack {
+    id: string;
+    title: string;
+    shortTitle: string;
+    subtitle: string;
+    filename: string;
+    inDefaultLoop: boolean;
+  }
+
+  const PLAYLIST: SongTrack[] = [
+    {
+      id: "oh-yaya",
+      title: "Oh Yaya ! Nos Léopards viennent célébrer la qualification",
+      shortTitle: "Oh Yaya · Nos Léopards",
+      subtitle: "Hymne de célébration des Léopards · Boucle par défaut #1",
+      filename: "Oh_yaya_Nos_le\u0301opards_viennent_ce\u0301le\u0301brer_la_qualification.mp3",
+      inDefaultLoop: true
+    },
+    {
+      id: "ti-na-trois",
+      title: "Tout droit Ti Na Trois",
+      shortTitle: "Tout droit Ti Na Trois",
+      subtitle: "Ambiance tribunes Stade des Martyrs · Boucle par défaut #2",
+      filename: "Tout droit Ti Na Trois.mp3",
+      inDefaultLoop: true
+    },
+    {
+      id: "esimbi-mondial",
+      title: "Esimbi — Mondial Bolukaki Yangoyoooo",
+      shortTitle: "Esimbi · Mondial",
+      subtitle: "Ferveur qualification RDC · Boucle par défaut #3",
+      filename: "ESIMBI,_MONDIAL_BOLUKAKI_YANGOYOOOO_#b.mp3",
+      inDefaultLoop: true
+    },
+    {
+      id: "cest-fait-3-1",
+      title: "C'est Fait !!! 3–1 Merci les Léopards",
+      shortTitle: "C'est Fait ! 3–1 Léopards",
+      subtitle: "Victoire historique @blocleopards",
+      filename: "C_est_Fait!!!_3_1_Merci_les_le\u0301opards!!_@blocleopards.mp3",
+      inDefaultLoop: false
+    },
+    {
+      id: "rendez-vous-destin",
+      title: "Le Rendez-vous avec le Destin (Un demi-siècle)",
+      shortTitle: "Rendez-vous du Destin",
+      subtitle: "50 ans de passion derrière la RDC",
+      filename: "LE_RENDEZ_VOUS_AVEC_LE_DESTIN_Un_demi_sie\u0300cle_de_patience,.mp3",
+      inDefaultLoop: false
+    }
+  ];
 
   /* -------------------------------------------------------------------------- */
   /*  NIVEAUX ÉVOLUTIFS AUTOMATIQUES                                            */
@@ -530,7 +700,7 @@
   ];
 
   /* -------------------------------------------------------------------------- */
-  /*  ÉTAT DU JEU (AVEC GESTION PAUSE)                                          */
+  /*  ÉTAT DU JEU & DU LECTEUR MUSICAL                                          */
   /* -------------------------------------------------------------------------- */
   const state = {
     phase: "cinematic" as "cinematic" | "aiming" | "charging" | "shooting" | "result" | "gameover",
@@ -543,7 +713,10 @@
     windKmh: 0,
     wallSide: 1,
     isNight: true,
-    audioEnabled: true
+    audioEnabled: true,
+    currentTrackIndex: 0,
+    loopMode: "top3" as "top3" | "all" | "single", // Par défaut : boucle sur les 3 premières chansons !
+    musicStarted: false
   };
 
   function getActiveTier(): LevelTier {
@@ -567,6 +740,11 @@
   const hudWindArrow = document.getElementById("hud-wind-arrow");
   const hudWindVal = document.getElementById("hud-wind-val");
 
+  const hudTrackShort = document.getElementById("hud-track-short");
+  const hudTrackMobile = document.getElementById("hud-track-mobile");
+  const btnNextTrackHud = document.getElementById("btn-next-track-hud");
+  const btnMobileTrackPill = document.getElementById("btn-mobile-track-pill");
+
   const powerMeterWrap = document.getElementById("power-meter-wrap");
   const powerMeterFill = document.getElementById("power-meter-fill");
   const powerMeterPct = document.getElementById("power-meter-pct");
@@ -585,6 +763,8 @@
   const iconPause = document.getElementById("icon-pause");
   const pauseModal = document.getElementById("pause-modal");
   const pauseStreakVal = document.getElementById("pause-streak-val");
+  const pauseTrackName = document.getElementById("pause-track-name");
+  const btnPauseNextTrack = document.getElementById("btn-pause-next-track");
   const btnPauseResume = document.getElementById("btn-pause-resume");
   const btnPauseRestart = document.getElementById("btn-pause-restart");
   const btnPauseToMenu = document.getElementById("btn-pause-to-menu");
@@ -599,7 +779,7 @@
   const btnGoRetry = document.getElementById("btn-go-retry");
   const btnGoLevels = document.getElementById("btn-go-levels");
 
-  // Modale Niveaux dédiée (séparée du Menu)
+  // Modale Niveaux dédiée
   const levelsModalOverlay = document.getElementById("levels-modal-overlay");
   const btnOpenLevels = document.getElementById("btn-open-levels");
   const btnCloseLevels = document.getElementById("btn-close-levels");
@@ -607,7 +787,7 @@
   const levelsGrid = document.getElementById("levels-grid");
   const levelsBestStreak = document.getElementById("levels-best-streak");
 
-  // Menu Général DOM
+  // Menu Général & Musique DOM
   const gameMenuOverlay = document.getElementById("game-menu-overlay");
   const btnOpenMenu = document.getElementById("btn-open-menu");
   const btnCloseMenu = document.getElementById("btn-close-menu");
@@ -620,11 +800,205 @@
   const btnMenuRestart = document.getElementById("btn-menu-restart");
   const btnMenuIntro = document.getElementById("btn-menu-intro");
 
+  const menuNowPlaying = document.getElementById("menu-now-playing");
+  const menuLoopModeDesc = document.getElementById("menu-loop-mode-desc");
+  const playlistContainer = document.getElementById("playlist-container");
+  const btnMusicPrev = document.getElementById("btn-music-prev");
+  const btnMusicPlayPause = document.getElementById("btn-music-playpause");
+  const btnMusicNext = document.getElementById("btn-music-next");
+
   /* -------------------------------------------------------------------------- */
-  /*  WEB AUDIO API                                                             */
+  /*  LECTEUR MUSICAL HTML5 (BOUCLE AUTO 3 CHANSONS + CHANGEMENT DE PISTE)      */
+  /* -------------------------------------------------------------------------- */
+  const bgMusic = new Audio();
+  bgMusic.preload = "auto";
+  bgMusic.volume = 0.58;
+
+  function getTrackUrl(track: SongTrack): string {
+    return `/audio/jeu/${encodeURIComponent(track.filename)}`;
+  }
+
+  function updateMusicUi() {
+    const current = PLAYLIST[state.currentTrackIndex] || PLAYLIST[0];
+    if (hudTrackShort) hudTrackShort.textContent = current.shortTitle;
+    if (hudTrackMobile) hudTrackMobile.textContent = current.shortTitle;
+    if (pauseTrackName) pauseTrackName.textContent = current.title;
+    if (menuNowPlaying) menuNowPlaying.textContent = current.title;
+    if (menuLoopModeDesc) {
+      menuLoopModeDesc.textContent =
+        state.loopMode === "top3"
+          ? "🔁 Mode actif : Rotation en boucle des 3 chansons phares"
+          : state.loopMode === "all"
+            ? "🔁 Mode actif : Boucle sur les 5 chansons du dossier"
+            : "🔂 Mode actif : Répétition de cette chanson en boucle";
+    }
+    renderPlaylistMenu();
+  }
+
+  function loadAndPlayTrack(index: number, showToast = false) {
+    state.currentTrackIndex = ((index % PLAYLIST.length) + PLAYLIST.length) % PLAYLIST.length;
+    const track = PLAYLIST[state.currentTrackIndex];
+    bgMusic.src = getTrackUrl(track);
+    updateMusicUi();
+
+    if (state.audioEnabled) {
+      bgMusic.play().then(() => {
+        state.musicStarted = true;
+      }).catch(() => {
+        // Attendre la première interaction tactile si bloqué par l'autoplay mobile
+      });
+    }
+
+    if (showToast && shotToast && toastTitle && toastSubtitle && toastEmoji && state.phase === "aiming") {
+      toastEmoji.textContent = "🎵";
+      toastTitle.textContent = track.shortTitle.toUpperCase();
+      toastTitle.className = "font-display text-base sm:text-lg uppercase tracking-wider text-or leading-none";
+      toastSubtitle.textContent = track.subtitle;
+      shotToast.classList.remove("opacity-0", "-translate-y-4");
+      setTimeout(() => {
+        if (state.phase === "aiming") shotToast.classList.add("opacity-0", "-translate-y-4");
+      }, 1500);
+    }
+  }
+
+  function playNextTrack(manual = false) {
+    if (!manual && state.loopMode === "single") {
+      bgMusic.currentTime = 0;
+      if (state.audioEnabled) bgMusic.play().catch(() => {});
+      return;
+    }
+
+    if (!manual && state.loopMode === "top3") {
+      // Tourner en boucle parmi les 3 premières chansons (0 -> 1 -> 2 -> 0)
+      const nextTop3 = (state.currentTrackIndex + 1) % 3;
+      loadAndPlayTrack(nextTop3, false);
+    } else {
+      const poolSize = state.loopMode === "top3" && !manual ? 3 : PLAYLIST.length;
+      const nextIdx = (state.currentTrackIndex + 1) % poolSize;
+      loadAndPlayTrack(nextIdx, manual);
+    }
+  }
+
+  function playPrevTrack() {
+    const prevIdx = (state.currentTrackIndex - 1 + PLAYLIST.length) % PLAYLIST.length;
+    loadAndPlayTrack(prevIdx, true);
+  }
+
+  bgMusic.addEventListener("ended", () => {
+    playNextTrack(false);
+  });
+
+  // Charger dès le départ « Oh Yaya ! Nos Léopards viennent célébrer la qualification »
+  bgMusic.src = getTrackUrl(PLAYLIST[0]);
+
+  function ensureMusicPlaying() {
+    if (!state.audioEnabled) return;
+    if (bgMusic.paused) {
+      bgMusic.play().then(() => {
+        state.musicStarted = true;
+      }).catch(() => {});
+    }
+  }
+
+  function renderPlaylistMenu() {
+    if (!playlistContainer) return;
+    playlistContainer.innerHTML = "";
+
+    PLAYLIST.forEach((track, idx) => {
+      const isCurrent = idx === state.currentTrackIndex;
+      const row = document.createElement("button");
+      row.type = "button";
+      row.className = `flex w-full items-center justify-between gap-3 rounded-xl border p-3 text-left transition-all ${
+        isCurrent
+          ? "border-or bg-or/15 shadow-md"
+          : "border-white/10 bg-black/35 hover:border-white/30 hover:bg-white/5"
+      }`;
+
+      row.innerHTML = `
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+            isCurrent ? "bg-or text-slate-950 font-black" : "bg-white/10 text-slate-300 font-bold"
+          } text-xs">
+            ${isCurrent ? "▶" : idx + 1}
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5">
+              <p class="truncate text-xs sm:text-sm font-bold ${isCurrent ? "text-or" : "text-white"}">${track.title}</p>
+              ${
+                track.inDefaultLoop
+                  ? `<span class="shrink-0 rounded bg-emerald-500/20 border border-emerald-400/30 px-1.5 py-0.5 text-[0.52rem] font-bold uppercase text-emerald-300">Boucle 3 Hits</span>`
+                  : ""
+              }
+            </div>
+            <p class="truncate text-[0.65rem] text-slate-400">${track.subtitle}</p>
+          </div>
+        </div>
+        <span class="shrink-0 text-[0.65rem] font-bold uppercase tracking-wider ${
+          isCurrent ? "text-or" : "text-slate-400"
+        }">
+          ${isCurrent ? "En écoute" : "Choisir"}
+        </span>
+      `;
+
+      row.addEventListener("click", () => {
+        loadAndPlayTrack(idx, false);
+      });
+
+      playlistContainer.appendChild(row);
+    });
+  }
+
+  // Boutons de contrôle musical
+  btnNextTrackHud?.addEventListener("click", () => {
+    initAudio();
+    playNextTrack(true);
+  });
+  btnMobileTrackPill?.addEventListener("click", () => {
+    initAudio();
+    playNextTrack(true);
+  });
+  btnPauseNextTrack?.addEventListener("click", () => {
+    initAudio();
+    playNextTrack(true);
+  });
+  btnMusicNext?.addEventListener("click", () => {
+    initAudio();
+    playNextTrack(true);
+  });
+  btnMusicPrev?.addEventListener("click", () => {
+    initAudio();
+    playPrevTrack();
+  });
+  btnMusicPlayPause?.addEventListener("click", () => {
+    initAudio();
+    if (bgMusic.paused) {
+      state.audioEnabled = true;
+      bgMusic.play().catch(() => {});
+      if (iconSound) iconSound.textContent = "🔊";
+    } else {
+      bgMusic.pause();
+    }
+  });
+
+  const loopModeBtns = document.querySelectorAll<HTMLButtonElement>(".loop-mode-btn");
+  loopModeBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const m = (btn.dataset.loopMode || "top3") as "top3" | "all" | "single";
+      state.loopMode = m;
+      loopModeBtns.forEach((b) => {
+        const active = b.dataset.loopMode === m;
+        b.className = active
+          ? "loop-mode-btn rounded-lg border border-or bg-or/20 px-2.5 py-1 text-[0.68rem] font-bold text-or"
+          : "loop-mode-btn rounded-lg border border-white/15 bg-white/5 px-2.5 py-1 text-[0.68rem] font-bold text-slate-300 hover:text-white";
+      });
+      updateMusicUi();
+    });
+  });
+
+  /* -------------------------------------------------------------------------- */
+  /*  WEB AUDIO API (EFFETS SONORES : FRAPPE, POTEAU, FILET, ARRÊT, FOULE)      */
   /* -------------------------------------------------------------------------- */
   let audioCtx: AudioContext | null = null;
-  let drumInterval: number | null = null;
 
   function initAudio() {
     if (!audioCtx) {
@@ -632,43 +1006,7 @@
       if (AC) audioCtx = new AC();
     }
     if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
-  }
-
-  function playTamTam(freq = 105, vol = 0.3) {
-    if (!state.audioEnabled || state.paused || !audioCtx) return;
-    try {
-      const now = audioCtx.currentTime;
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(freq, now);
-      osc.frequency.exponentialRampToValueAtTime(freq * 0.42, now + 0.15);
-      gain.gain.setValueAtTime(vol, now);
-      gain.gain.exponentialRampToValueAtTime(0.005, now + 0.19);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start(now);
-      osc.stop(now + 0.19);
-    } catch {}
-  }
-
-  function startDrums() {
-    if (drumInterval) return;
-    let step = 0;
-    drumInterval = window.setInterval(() => {
-      if (state.paused || (state.phase !== "aiming" && state.phase !== "charging") || !state.audioEnabled || !audioCtx) return;
-      const seq = [110, 0, 145, 110, 0, 165, 130, 0];
-      const f = seq[step % seq.length];
-      if (f > 0) playTamTam(f, step % 4 === 0 ? 0.32 : 0.18);
-      step++;
-    }, 220);
-  }
-
-  function stopDrums() {
-    if (drumInterval) {
-      clearInterval(drumInterval);
-      drumInterval = null;
-    }
+    ensureMusicPlaying();
   }
 
   function playKickAudio(powerRatio: number) {
@@ -756,7 +1094,7 @@
     if (!state.audioEnabled || !audioCtx) return;
     try {
       const now = audioCtx.currentTime;
-      const dur = isGoal ? 1.7 : 0.85;
+      const dur = isGoal ? 1.5 : 0.75;
       const bufSize = Math.floor(audioCtx.sampleRate * dur);
       const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
       const data = buf.getChannelData(0);
@@ -772,7 +1110,7 @@
 
       const gain = audioCtx.createGain();
       gain.gain.setValueAtTime(0.01, now);
-      gain.gain.linearRampToValueAtTime(isGoal ? 0.65 : 0.3, now + 0.18);
+      gain.gain.linearRampToValueAtTime(isGoal ? 0.55 : 0.25, now + 0.18);
       gain.gain.exponentialRampToValueAtTime(0.008, now + dur);
 
       src.connect(filter);
@@ -784,7 +1122,7 @@
   }
 
   /* -------------------------------------------------------------------------- */
-  /*  SCÈNE 3D DU STADE DES MARTYRS ULTRA-RÉALISTE                              */
+  /*  SCÈNE 3D & CAMÉRA GRAND-ANGLE ADAPTATIVE SUR MOBILE PORTRAIT              */
   /* -------------------------------------------------------------------------- */
   const renderer = new THREE.WebGLRenderer({
     canvas,
@@ -800,11 +1138,40 @@
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color("#050811");
-  scene.fog = new THREE.FogExp2("#050811", 0.0042);
+  scene.fog = new THREE.FogExp2("#050811", 0.0038);
 
-  const camera = new THREE.PerspectiveCamera(47, window.innerWidth / window.innerHeight, 0.1, 450);
+  const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 450);
 
-  const hemiLight = new THREE.HemisphereLight(0xdbeafe, 0x0f172a, 0.48);
+  /**
+   * Calcule dynamiquement la position et le FOV de la caméra pour que sur mobile portrait :
+   * - On voie TOUT le but (7.32m) + au moins 2.6m de marge à gauche et à droite des poteaux (total ~12.6m de large)
+   * - Le ballon au point de penalty (Z = 11.0m) soit parfaitement entier dans le tiers inférieur de l'écran
+   */
+  function applyPlayableCameraFraming() {
+    const aspect = window.innerWidth / Math.max(1, window.innerHeight);
+    const isPortrait = aspect < 0.95;
+
+    const camZ = isPortrait ? 15.6 : 14.3;
+    const camY = isPortrait ? 1.68 : 1.48;
+    const lookY = isPortrait ? 1.42 : 1.28;
+
+    // Largeur minimale visible au niveau de la ligne de but (Z = 0) : 12.6m sur mobile portrait !
+    const minGoalLineHalfWidth = isPortrait ? 6.35 : 7.8;
+    const tanHalfHoriz = minGoalLineHalfWidth / camZ;
+    const tanHalfVert = tanHalfHoriz / aspect;
+    const computedFov = THREE.MathUtils.radToDeg(2 * Math.atan(tanHalfVert));
+
+    camera.fov = THREE.MathUtils.clamp(computedFov, 46, 86);
+    camera.aspect = aspect;
+    camera.updateProjectionMatrix();
+
+    if (state.phase === "aiming" || state.phase === "charging" || state.phase === "shooting" || state.phase === "result") {
+      camera.position.set(0, camY, camZ);
+      camera.lookAt(0, lookY, 0);
+    }
+  }
+
+  const hemiLight = new THREE.HemisphereLight(0xdbeafe, 0x0f172a, 0.5);
   scene.add(hemiLight);
 
   const sunLight = new THREE.DirectionalLight(0xfffbeb, 1.5);
@@ -820,14 +1187,13 @@
   sunLight.shadow.bias = -0.0005;
   scene.add(sunLight);
 
-  // Projecteur frontal subtil pour éclairer les détails du gardien et des panneaux partenaires
-  const frontSpot = new THREE.DirectionalLight(0xe0f2fe, 0.45);
-  frontSpot.position.set(0, 12, 22);
+  const frontSpot = new THREE.DirectionalLight(0xe0f2fe, 0.52);
+  frontSpot.position.set(0, 10, 22);
   scene.add(frontSpot);
 
   const texLoader = new THREE.TextureLoader();
 
-  // Pelouse photo-réaliste à brins d'herbe + bandes de tonte + usure surface
+  // Pelouse photo-réaliste
   function createRealisticGrassTexture() {
     const cv = document.createElement("canvas");
     cv.width = 1024;
@@ -838,7 +1204,6 @@
       ctx.fillStyle = i % 2 === 0 ? "#1d6b35" : "#247a3f";
       ctx.fillRect(0, (i * 1024) / stripes, 1024, 1024 / stripes + 1);
     }
-    // Micro-brins d'herbe pour donner du grain réaliste dans le champ caméra
     for (let i = 0; i < 28000; i++) {
       const x = Math.random() * 1024;
       const y = Math.random() * 1024;
@@ -862,7 +1227,7 @@
   pitchMesh.receiveShadow = true;
   scene.add(pitchMesh);
 
-  // Marquages réglementaires FIFA sur la pelouse
+  // Marquages réglementaires FIFA
   const lineMat = new THREE.MeshBasicMaterial({ color: 0xf8fafc });
   function addPitchLine(w: number, d: number, x: number, z: number) {
     const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), lineMat);
@@ -870,11 +1235,11 @@
     m.position.set(x, 0.012, z);
     scene.add(m);
   }
-  addPitchLine(68, 0.14, 0, 0); // Ligne de but
-  addPitchLine(40.32, 0.12, 0, 16.5); // Ligne des 16m50
+  addPitchLine(68, 0.14, 0, 0);
+  addPitchLine(40.32, 0.12, 0, 16.5);
   addPitchLine(0.12, 16.5, -20.16, 8.25);
   addPitchLine(0.12, 16.5, 20.16, 8.25);
-  addPitchLine(18.32, 0.12, 0, 5.5); // Surface des 5m50
+  addPitchLine(18.32, 0.12, 0, 5.5);
   addPitchLine(0.12, 5.5, -9.16, 2.75);
   addPitchLine(0.12, 5.5, 9.16, 2.75);
 
@@ -883,7 +1248,6 @@
   penSpotMesh.position.set(0, 0.015, 11.0);
   scene.add(penSpotMesh);
 
-  // Arc de cercle des 9,15m devant la surface
   const penArcMesh = new THREE.Mesh(
     new THREE.RingGeometry(9.08, 9.20, 48, 1, -0.62, 1.24),
     lineMat
@@ -934,20 +1298,19 @@
   }
 
   /* -------------------------------------------------------------------------- */
-  /*  ESPACE PUB LED : LOGOS DES PARTENAIRES & LOGO BLOC LÉOPARDS               */
+  /*  ESPACE PUB LED DÉGAGÉ DE PART ET D'AUTRE DU BUT (PARTENAIRES & BLOC)      */
   /* -------------------------------------------------------------------------- */
   const PARTNER_ADS = [
     { name: "BLOC LÉOPARDS", src: "/brand/logo.png", bg: "#ffffff", accent: "#007fff" },
-    { name: "R.D. CONGO · CŒUR DE L'AFRIQUE", src: "/logo-rdc.png", bg: "#ffffff", accent: "#f7d618" },
+    { name: "R.D. CONGO", src: "/logo-rdc.png", bg: "#ffffff", accent: "#f7d618" },
     { name: "EQUITY BCDC", src: "/media/partenaires/Logo_EquityBCDC.png", bg: "#ffffff", accent: "#b3202c" },
-    { name: "SONAS ASSURANCES", src: "/media/partenaires/LOGO SONAS.png", bg: "#ffffff", accent: "#f7d618" },
+    { name: "SONAS", src: "/media/partenaires/LOGO SONAS.png", bg: "#ffffff", accent: "#f7d618" },
     { name: "MFS GROUPE", src: "/media/partenaires/MFS GROUPE.png", bg: "#ffffff", accent: "#007fff" },
-    { name: "SHALINA HEALTHCARE", src: "/media/partenaires/Shalina-Logo-Blue.png", bg: "#ffffff", accent: "#1b4fc4" },
-    { name: "FONAREV RDC", src: "/media/partenaires/logo-fonarev.webp", bg: "#ffffff", accent: "#007fff" },
+    { name: "SHALINA", src: "/media/partenaires/Shalina-Logo-Blue.png", bg: "#ffffff", accent: "#1b4fc4" },
+    { name: "FONAREV", src: "/media/partenaires/logo-fonarev.webp", bg: "#ffffff", accent: "#007fff" },
     { name: "VISA", src: "/media/partenaires/logo-visa.png", bg: "#ffffff", accent: "#1a1f71" }
   ];
 
-  // Fonction qui génère la texture d'un panneau publicitaire LED et y dessine les vrais logos chargés
   function createPartnerBoardTexture(adIndices: number[]) {
     const cv = document.createElement("canvas");
     cv.width = 2048;
@@ -955,28 +1318,20 @@
     const ctx = cv.getContext("2d")!;
     const tex = new THREE.CanvasTexture(cv);
     tex.colorSpace = THREE.SRGBColorSpace;
-
     const slotW = cv.width / adIndices.length;
 
     function drawBase() {
       ctx.fillStyle = "#060d1f";
       ctx.fillRect(0, 0, cv.width, cv.height);
-
       adIndices.forEach((adIdx, i) => {
         const ad = PARTNER_ADS[adIdx % PARTNER_ADS.length];
         const x0 = i * slotW;
-
-        // Liseré tricolore supérieur et inférieur
         ctx.fillStyle = ad.accent;
         ctx.fillRect(x0, 0, slotW, 14);
         ctx.fillStyle = "#f7d618";
         ctx.fillRect(x0, cv.height - 12, slotW, 12);
-
-        // Cartouche blanc lumineux pour mettre parfaitement en valeur chaque logo partenaire
         ctx.fillStyle = ad.bg;
-        ctx.fillRect(x0 + 18, 22, slotW - 36, cv.height - 42);
-
-        // Texte de secours avant chargement de l'image
+        ctx.fillRect(x0 + 16, 22, slotW - 32, cv.height - 42);
         ctx.fillStyle = "#081126";
         ctx.font = "900 30px sans-serif";
         ctx.textAlign = "center";
@@ -988,25 +1343,20 @@
 
     drawBase();
 
-    // Charger chaque logo réel (PNG/WEBP) et l'incruster proprement dans son espace pub
     adIndices.forEach((adIdx, i) => {
       const ad = PARTNER_ADS[adIdx % PARTNER_ADS.length];
       const img = new Image();
       img.crossOrigin = "anonymous";
       img.onload = () => {
         const x0 = i * slotW;
-        // Nettoyer le cartouche blanc
         ctx.fillStyle = ad.bg;
-        ctx.fillRect(x0 + 18, 22, slotW - 36, cv.height - 42);
-
-        const maxW = slotW - 80;
-        const maxH = cv.height - 64;
+        ctx.fillRect(x0 + 16, 22, slotW - 32, cv.height - 42);
+        const maxW = slotW - 64;
+        const maxH = cv.height - 60;
         const scale = Math.min(maxW / img.width, maxH / img.height);
         const drawW = img.width * scale;
         const drawH = img.height * scale;
-        const dx = x0 + (slotW - drawW) / 2;
-        const dy = 22 + (cv.height - 42 - drawH) / 2;
-        ctx.drawImage(img, dx, dy, drawW, drawH);
+        ctx.drawImage(img, x0 + (slotW - drawW) / 2, 22 + (cv.height - 42 - drawH) / 2, drawW, drawH);
         tex.needsUpdate = true;
       };
       img.src = ad.src;
@@ -1015,80 +1365,77 @@
     return tex;
   }
 
-  // Panneaux publicitaires LED de bord de terrain (proches derrière la cage, très visibles au tir)
   const adBoardsGroup = new THREE.Group();
 
-  // 1. Panneau LED gauche derrière la ligne de but
-  const leftAdTex = createPartnerBoardTexture([0, 2, 3, 5]);
-  const leftAdBoard = new THREE.Mesh(
-    new THREE.BoxGeometry(11.5, 1.05, 0.18),
-    new THREE.MeshBasicMaterial({ map: leftAdTex })
+  // Panneaux LED placés immédiatement à GAUCHE et à DROITE des poteaux (parfaitement visibles hors du filet sur mobile !)
+  const leftWingAd = new THREE.Mesh(
+    new THREE.BoxGeometry(6.2, 0.92, 0.16),
+    new THREE.MeshBasicMaterial({ map: createPartnerBoardTexture([0, 2, 3]) })
   );
-  leftAdBoard.position.set(-10.2, 0.52, -3.2);
-  leftAdBoard.rotation.y = 0.18;
-  adBoardsGroup.add(leftAdBoard);
+  leftWingAd.position.set(-7.1, 0.46, -1.2);
+  leftWingAd.rotation.y = 0.22;
+  adBoardsGroup.add(leftWingAd);
 
-  // 2. Panneau LED droit derrière la ligne de but
-  const rightAdTex = createPartnerBoardTexture([0, 1, 4, 7]);
-  const rightAdBoard = new THREE.Mesh(
-    new THREE.BoxGeometry(11.5, 1.05, 0.18),
-    new THREE.MeshBasicMaterial({ map: rightAdTex })
+  const rightWingAd = new THREE.Mesh(
+    new THREE.BoxGeometry(6.2, 0.92, 0.16),
+    new THREE.MeshBasicMaterial({ map: createPartnerBoardTexture([0, 1, 7]) })
   );
-  rightAdBoard.position.set(10.2, 0.52, -3.2);
-  rightAdBoard.rotation.y = -0.18;
-  adBoardsGroup.add(rightAdBoard);
+  rightWingAd.position.set(7.1, 0.46, -1.2);
+  rightWingAd.rotation.y = -0.22;
+  adBoardsGroup.add(rightWingAd);
 
-  // 3. Panneau LED central derrière la cage (Bloc Léopards + FONAREV + Equity BCDC + Visa)
-  const centerAdTex = createPartnerBoardTexture([0, 6, 2, 7, 0]);
-  const centerAdBoard = new THREE.Mesh(
-    new THREE.BoxGeometry(10.0, 0.95, 0.18),
-    new THREE.MeshBasicMaterial({ map: centerAdTex })
+  // Panneau LED arrière derrière la cage
+  const rearCenterAd = new THREE.Mesh(
+    new THREE.BoxGeometry(8.6, 0.85, 0.16),
+    new THREE.MeshBasicMaterial({ map: createPartnerBoardTexture([0, 6, 4, 5]) })
   );
-  centerAdBoard.position.set(0, 0.48, -4.2);
-  adBoardsGroup.add(centerAdBoard);
+  rearCenterAd.position.set(0, 0.43, -4.6);
+  adBoardsGroup.add(rearCenterAd);
 
-  // 4. Grand ruban LED panoramique le long de la tribune Bloc Léopards
-  const ribbonAdTex = createPartnerBoardTexture([0, 1, 2, 3, 0, 4, 5, 6, 7, 0]);
-  const ledRibbon = new THREE.Mesh(
-    new THREE.CylinderGeometry(42, 42, 1.45, 48, 1, true, Math.PI * 0.72, Math.PI * 0.56),
-    new THREE.MeshBasicMaterial({ map: ribbonAdTex, side: THREE.DoubleSide })
+  // Grand bandeau du muret de la tribune Nord (Bloc Léopards + Partenaires)
+  const standWallAd = new THREE.Mesh(
+    new THREE.CylinderGeometry(42, 42, 1.65, 48, 1, true, Math.PI * 0.72, Math.PI * 0.56),
+    new THREE.MeshBasicMaterial({
+      map: createPartnerBoardTexture([0, 1, 2, 3, 0, 4, 5, 6, 7, 0]),
+      side: THREE.DoubleSide
+    })
   );
-  ledRibbon.position.set(0, 1.1, 22);
-  adBoardsGroup.add(ledRibbon);
+  standWallAd.position.set(0, 1.35, 22);
+  adBoardsGroup.add(standWallAd);
 
   scene.add(adBoardsGroup);
 
   /* -------------------------------------------------------------------------- */
-  /*  ARCHITECTURE DU STADE DES MARTYRS (CUVETTE, TUNNEL, SIÈGES, BANDEROLES)   */
+  /*  ARCHITECTURE RÉALISTE DU STADE DES MARTYRS (SANS PHOTO ÉTIRÉE)            */
   /* -------------------------------------------------------------------------- */
-  const BOWL = { rx: 56, rz: 74, centerZ: 20 };
+  const BOWL = { rx: 46, rz: 56, centerZ: 20 };
   const SECTOR_PATTERN = ["b", "b", "y", "b", "r", "b", "b", "y", "r", "b", "s", "b", "b", "y", "b", "r", "b", "b", "y", "r", "b", "s", "b", "r"];
   const SDM_COLORS = {
     seatBlue: "#1b4fc4",
     seatSky: "#2f86f0",
     seatYellow: "#f7d618",
     seatRed: "#b3202c",
-    concrete: "#17181d"
+    concrete: "#151924"
   };
 
   interface BowlRow { d: number; h: number }
   const bowlRows: BowlRow[] = [];
-  for (let i = 0; i < 14; i++) bowlRows.push({ d: i * 1.15, h: 1.6 + i * 0.62 });
-  const baseD = 14 * 1.15 + 3.0;
-  const baseH = 1.6 + 14 * 0.62 + 2.6;
-  for (let i = 0; i < 14; i++) bowlRows.push({ d: baseD + i * 1.1, h: baseH + i * 0.78 });
+  for (let i = 0; i < 14; i++) bowlRows.push({ d: i * 1.05, h: 2.2 + i * 0.58 });
+  const baseD = 14 * 1.05 + 2.5;
+  const baseH = 2.2 + 14 * 0.58 + 2.4;
+  for (let i = 0; i < 14; i++) bowlRows.push({ d: baseD + i * 1.05, h: baseH + i * 0.72 });
 
   function buildMartyrsBowl() {
     const segments = 96;
-    const profile: [number, number][] = [[-1.5, 0]];
+    const profile: [number, number][] = [[-1.2, 0], [-1.2, 2.1]];
     bowlRows.forEach((r, i) => {
-      const prevH = i === 0 ? 0 : bowlRows[i - 1].h;
+      const prevH = i === 0 ? 2.1 : bowlRows[i - 1].h;
       profile.push([r.d, prevH], [r.d, r.h]);
       const next = bowlRows[i + 1];
       profile.push([next ? next.d : r.d + 2, r.h]);
     });
     const last = profile[profile.length - 1];
-    profile.push([last[0] + 0.2, last[1] + 4.5], [last[0] + 2.4, last[1] + 4.5], [last[0] + 2.4, 0]);
+    profile.push([last[0] + 0.2, last[1] + 4.2], [last[0] + 2.2, last[1] + 4.2], [last[0] + 2.2, 0]);
 
     const positions: number[] = [];
     const indices: number[] = [];
@@ -1118,19 +1465,19 @@
   scene.add(
     new THREE.Mesh(
       buildMartyrsBowl(),
-      new THREE.MeshStandardMaterial({ color: SDM_COLORS.concrete, roughness: 0.9, side: THREE.DoubleSide })
+      new THREE.MeshStandardMaterial({ color: SDM_COLORS.concrete, roughness: 0.88, side: THREE.DoubleSide })
     )
   );
 
-  // Sièges tricolores RDC instanciés
+  // Sièges & Supporters tricolores RDC instanciés dans la cuvette
   const seatItems: { x: number; y: number; z: number; color: THREE.Color }[] = [];
-  let seed = 13;
+  let seed = 17;
   const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
 
   bowlRows.forEach((r, ri) => {
-    const rx = BOWL.rx + r.d + 0.5;
-    const rz = BOWL.rz + r.d + 0.5;
-    const count = 136;
+    const rx = BOWL.rx + r.d + 0.45;
+    const rz = BOWL.rz + r.d + 0.45;
+    const count = 144;
     for (let i = 0; i < count; i++) {
       const a = (i / count) * Math.PI * 2;
       const idx = Math.floor(((a / (Math.PI * 2)) * SECTOR_PATTERN.length) % SECTOR_PATTERN.length);
@@ -1138,14 +1485,14 @@
       if (ri >= bowlRows.length - 2) key = "y";
       const hex = key === "y" ? SDM_COLORS.seatYellow : key === "r" ? SDM_COLORS.seatRed : key === "s" ? SDM_COLORS.seatSky : SDM_COLORS.seatBlue;
       const col = new THREE.Color(hex);
-      col.offsetHSL(0, -0.08 * rand(), (rand() - 0.5) * 0.08);
-      seatItems.push({ x: rx * Math.cos(a), y: r.h + 0.25, z: BOWL.centerZ + rz * Math.sin(a), color: col });
+      col.offsetHSL(0, -0.06 * rand(), (rand() - 0.5) * 0.08);
+      seatItems.push({ x: rx * Math.cos(a), y: r.h + 0.35, z: BOWL.centerZ + rz * Math.sin(a), color: col });
     }
   });
 
   const seatsInstanced = new THREE.InstancedMesh(
-    new THREE.BoxGeometry(1.55, 0.48, 0.7),
-    new THREE.MeshStandardMaterial({ roughness: 0.55, metalness: 0.08 }),
+    new THREE.BoxGeometry(1.45, 0.62, 0.65),
+    new THREE.MeshStandardMaterial({ roughness: 0.5, metalness: 0.08 }),
     seatItems.length
   );
   const dummy = new THREE.Object3D();
@@ -1160,51 +1507,66 @@
   if (seatsInstanced.instanceColor) seatsInstanced.instanceColor.needsUpdate = true;
   scene.add(seatsInstanced);
 
-  // Panorama photo réelle SDM des tribunes
-  const crowdPanoramaTex = texLoader.load("/media/martyrs/tribunes-panorama.jpg");
-  crowdPanoramaTex.wrapS = THREE.RepeatWrapping;
-  crowdPanoramaTex.repeat.set(3, 1);
-  crowdPanoramaTex.colorSpace = THREE.SRGBColorSpace;
+  // Banderole du balcon intermédiaire (2e anneau) : « STADE DES MARTYRS · BLOC LÉOPARDS · RDC »
+  function createBalconyBannerTex() {
+    const cv = document.createElement("canvas");
+    cv.width = 2048;
+    cv.height = 128;
+    const ctx = cv.getContext("2d")!;
+    ctx.fillStyle = "#08142c";
+    ctx.fillRect(0, 0, 2048, 128);
+    ctx.fillStyle = "#007fff";
+    ctx.fillRect(0, 0, 2048, 14);
+    ctx.fillStyle = "#f7d618";
+    ctx.fillRect(0, 114, 2048, 14);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "900 50px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("★ BLOC LÉOPARDS · STADE DES MARTYRS DE LA PENTECÔTE · KINSHASA ★", 1024, 64);
+    const t = new THREE.CanvasTexture(cv);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  }
 
-  const crowdBackdrop = new THREE.Mesh(
-    new THREE.CylinderGeometry(72, 62, 12, 64, 1, true, Math.PI * 0.65, Math.PI * 0.7),
-    new THREE.MeshBasicMaterial({ map: crowdPanoramaTex, side: THREE.DoubleSide, transparent: true, opacity: 0.9 })
+  const balconyBanner = new THREE.Mesh(
+    new THREE.CylinderGeometry(58, 58, 1.9, 56, 1, true, Math.PI * 0.68, Math.PI * 0.64),
+    new THREE.MeshBasicMaterial({ map: createBalconyBannerTex(), side: THREE.DoubleSide })
   );
-  crowdBackdrop.position.set(0, 9.8, 12);
-  scene.add(crowdBackdrop);
+  balconyBanner.position.set(0, baseH - 1.1, BOWL.centerZ);
+  scene.add(balconyBanner);
 
-  // Écran géant Jumbotron SDM + Logos Bloc Léopards de chaque côté
+  // Écran géant Jumbotron positionné au sommet de la tribune Nord (sans gêner le HUD)
   const jumboGroup = new THREE.Group();
-  jumboGroup.position.set(0, 27.5, -58);
+  jumboGroup.position.set(0, 28.5, -56);
   jumboGroup.add(
     new THREE.Mesh(
-      new THREE.BoxGeometry(24, 9.8, 1.2),
+      new THREE.BoxGeometry(18, 7.2, 1.0),
       new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.5, roughness: 0.4 })
     )
   );
   const jumboPhotoTex = texLoader.load("/media/martyrs/fecofa-leopards-stade-martyrs.jpg");
   jumboPhotoTex.colorSpace = THREE.SRGBColorSpace;
   const jumboScreen = new THREE.Mesh(
-    new THREE.PlaneGeometry(16.5, 8.2),
+    new THREE.PlaneGeometry(12.2, 6.0),
     new THREE.MeshBasicMaterial({ map: jumboPhotoTex })
   );
-  jumboScreen.position.z = 0.65;
+  jumboScreen.position.z = 0.55;
   jumboGroup.add(jumboScreen);
 
-  // Panneaux latéraux du Jumbotron avec le logo Bloc Léopards
   const blocLogoTex = texLoader.load("/brand/logo.png");
   blocLogoTex.colorSpace = THREE.SRGBColorSpace;
-  [-9.8, 9.8].forEach((jx) => {
+  [-7.4, 7.4].forEach((jx) => {
     const bgWing = new THREE.Mesh(
-      new THREE.PlaneGeometry(2.8, 8.2),
+      new THREE.PlaneGeometry(2.2, 6.0),
       new THREE.MeshBasicMaterial({ color: 0xffffff })
     );
-    bgWing.position.set(jx, 0, 0.64);
+    bgWing.position.set(jx, 0, 0.54);
     const logoWing = new THREE.Mesh(
-      new THREE.PlaneGeometry(2.5, 2.5),
+      new THREE.PlaneGeometry(1.9, 1.9),
       new THREE.MeshBasicMaterial({ map: blocLogoTex, transparent: true })
     );
-    logoWing.position.set(jx, 0, 0.66);
+    logoWing.position.set(jx, 0, 0.56);
     jumboGroup.add(bgWing, logoWing);
   });
   scene.add(jumboGroup);
@@ -1217,7 +1579,7 @@
     side: THREE.DoubleSide,
     uniforms: {
       uColor: { value: new THREE.Color("#e9f2ff") },
-      uOpacity: { value: 0.14 }
+      uOpacity: { value: 0.13 }
     },
     vertexShader: `
       varying float vY; varying vec3 vN; varying vec3 vV;
@@ -1242,10 +1604,10 @@
 
   const floodCones: THREE.Mesh[] = [];
   const mastAngles = [0.65, Math.PI - 0.65, Math.PI + 0.55, -0.55];
-  const mastHeight = 52;
+  const mastHeight = 48;
   mastAngles.forEach((a) => {
-    const bx = (BOWL.rx + 28) * Math.cos(a);
-    const bz = BOWL.centerZ + (BOWL.rz + 28) * Math.sin(a);
+    const bx = (BOWL.rx + 26) * Math.cos(a);
+    const bz = BOWL.centerZ + (BOWL.rz + 26) * Math.sin(a);
     const mast = new THREE.Mesh(
       new THREE.CylinderGeometry(0.45, 1.0, mastHeight, 8),
       new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6 })
@@ -1254,7 +1616,7 @@
     scene.add(mast);
 
     const headPanel = new THREE.Mesh(
-      new THREE.BoxGeometry(10, 4.8, 0.9),
+      new THREE.BoxGeometry(9.5, 4.4, 0.9),
       new THREE.MeshBasicMaterial({ color: 0xf8fafc })
     );
     headPanel.position.set(bx, mastHeight, bz);
@@ -1265,7 +1627,7 @@
     const targetPos = new THREE.Vector3(0, 0, 5);
     const dir = headPos.clone().sub(targetPos);
     const len = dir.length();
-    const cone = new THREE.Mesh(new THREE.ConeGeometry(26, len, 32, 1, true), floodBeamMat);
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(24, len, 32, 1, true), floodBeamMat);
     cone.position.copy(targetPos.clone().add(headPos).multiplyScalar(0.5));
     cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
     scene.add(cone);
@@ -1376,15 +1738,15 @@
     const ctx = cv.getContext("2d")!;
     ctx.clearRect(0, 0, 128, 128);
 
-    ctx.strokeStyle = "rgba(248, 250, 252, 0.92)";
-    ctx.lineWidth = 10;
+    ctx.strokeStyle = "rgba(248, 250, 252, 0.85)";
+    ctx.lineWidth = 8;
     ctx.beginPath();
     ctx.moveTo(0, 0); ctx.lineTo(128, 128);
     ctx.moveTo(128, 0); ctx.lineTo(0, 128);
     ctx.stroke();
 
-    ctx.strokeStyle = "rgba(226, 232, 240, 0.65)";
-    ctx.lineWidth = 6;
+    ctx.strokeStyle = "rgba(226, 232, 240, 0.55)";
+    ctx.lineWidth = 5;
     ctx.strokeRect(3, 3, 122, 122);
 
     const tex = new THREE.CanvasTexture(cv);
@@ -1478,7 +1840,7 @@
   }
 
   /* -------------------------------------------------------------------------- */
-  /*  GARDIEN DE BUT 3D ULTRA-RÉALISTE (ANATOMIE ARTICULÉE, VISAGE & MAILLOT)   */
+  /*  GARDIEN DE BUT 3D EN POSTURE ATHLÉTIQUE DE GARDE (VISAGE & CORPS PRO)     */
   /* -------------------------------------------------------------------------- */
   function createKeeperJerseyTexture() {
     const cv = document.createElement("canvas");
@@ -1486,34 +1848,35 @@
     cv.height = 512;
     const ctx = cv.getContext("2d")!;
 
-    // Fond maillot gardien pro vert émeraude / or / motifs géométriques
     const grad = ctx.createLinearGradient(0, 0, 0, 512);
-    grad.addColorStop(0, "#f97316");
-    grad.addColorStop(1, "#c2410c");
+    grad.addColorStop(0, "#10b981");
+    grad.addColorStop(1, "#047857");
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 512, 512);
 
-    // Motifs chevrons subtils sur le torse
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
-    ctx.lineWidth = 14;
-    for (let y = 80; y < 440; y += 55) {
+    // Motifs dynamiques pro sur le maillot
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.14)";
+    ctx.lineWidth = 12;
+    for (let y = 70; y < 440; y += 52) {
       ctx.beginPath();
-      ctx.moveTo(110, y);
-      ctx.lineTo(256, y + 36);
-      ctx.lineTo(402, y);
+      ctx.moveTo(100, y);
+      ctx.lineTo(256, y + 34);
+      ctx.lineTo(412, y);
       ctx.stroke();
     }
 
-    // Bandes épaules
-    ctx.fillStyle = "#0f172a";
-    ctx.fillRect(0, 0, 512, 34);
+    // Liseré doré col et épaules
+    ctx.fillStyle = "#facc15";
+    ctx.fillRect(0, 0, 512, 26);
 
-    // Numéro 1 officiel sur la poitrine
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "900 130px sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("1", 256, 235);
+    // Écusson poitrine
+    ctx.fillStyle = "#0f172a";
+    ctx.beginPath();
+    ctx.arc(330, 145, 26, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#facc15";
+    ctx.lineWidth = 5;
+    ctx.stroke();
 
     const tex = new THREE.CanvasTexture(cv);
     tex.colorSpace = THREE.SRGBColorSpace;
@@ -1521,184 +1884,183 @@
   }
 
   const keeperGroup = new THREE.Group();
-  const kitMat = new THREE.MeshStandardMaterial({ map: createKeeperJerseyTexture(), roughness: 0.45 });
-  const sleeveMat = new THREE.MeshStandardMaterial({ color: 0xea580c, roughness: 0.48 });
+  const kitMat = new THREE.MeshStandardMaterial({ map: createKeeperJerseyTexture(), roughness: 0.44 });
+  const sleeveMat = new THREE.MeshStandardMaterial({ color: 0x059669, roughness: 0.46 });
   const shortMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.65 });
-  const skinMat = new THREE.MeshStandardMaterial({ color: 0x5c3a28, roughness: 0.62 });
-  const hairMat = new THREE.MeshStandardMaterial({ color: 0x111115, roughness: 0.85 });
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0x4e3020, roughness: 0.6 });
+  const hairMat = new THREE.MeshStandardMaterial({ color: 0x0f1117, roughness: 0.85 });
   const gloveLatexMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.25, metalness: 0.1 });
   const glovePalmMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.35 });
-  const socksMat = new THREE.MeshStandardMaterial({ color: 0xea580c, roughness: 0.5 });
-  const bootMat = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.3, metalness: 0.2 });
+  const socksMat = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.5 });
+  const bootMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.3, metalness: 0.2 });
 
-  // Torse anatomique sculpté (poitrine athlétique + taille + bassin)
-  const kChest = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.23, 0.54, 18), kitMat);
-  kChest.scale.set(1.18, 1, 0.68);
-  kChest.position.y = 1.42;
+  // Buste incliné légèrement vers l'avant (posture d'arrêt réflexe)
+  const upperBodyGroup = new THREE.Group();
+  upperBodyGroup.position.set(0, 0.92, 0);
+  upperBodyGroup.rotation.x = 0.08;
+
+  const kChest = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.22, 0.52, 18), kitMat);
+  kChest.scale.set(1.22, 1, 0.68);
+  kChest.position.y = 0.46;
   kChest.castShadow = true;
-  keeperGroup.add(kChest);
+  upperBodyGroup.add(kChest);
 
-  const kWaist = new THREE.Mesh(new THREE.CylinderGeometry(0.23, 0.24, 0.26, 16), kitMat);
+  const kWaist = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.23, 0.24, 16), kitMat);
   kWaist.scale.set(1.12, 1, 0.68);
-  kWaist.position.y = 1.05;
+  kWaist.position.y = 0.12;
   kWaist.castShadow = true;
-  keeperGroup.add(kWaist);
+  upperBodyGroup.add(kWaist);
 
-  // Col en V noir
-  const kCollar = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.025, 10, 20), shortMat);
+  const kCollar = new THREE.Mesh(new THREE.TorusGeometry(0.125, 0.024, 10, 20), shortMat);
   kCollar.rotation.x = Math.PI / 2;
-  kCollar.position.set(0, 1.69, 0.02);
-  keeperGroup.add(kCollar);
+  kCollar.position.set(0, 0.72, 0.01);
+  upperBodyGroup.add(kCollar);
 
-  // Cou + Tête sculptée + Visage réaliste (avec sourcils/eyebrows fins et réduits)
-  const kNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.085, 0.14, 14), skinMat);
-  kNeck.position.y = 1.74;
-  keeperGroup.add(kNeck);
+  // Cou + Tête sculptée (cheveux sur le haut du crâne uniquement, sans déborder sur les yeux !)
+  const kNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.072, 0.082, 0.13, 14), skinMat);
+  kNeck.position.y = 0.78;
+  upperBodyGroup.add(kNeck);
 
   const headGroup = new THREE.Group();
-  headGroup.position.set(0, 1.91, 0.02);
+  headGroup.position.set(0, 0.94, 0.02);
 
-  const kSkull = new THREE.Mesh(new THREE.SphereGeometry(0.155, 24, 24), skinMat);
-  kSkull.scale.set(0.92, 1.08, 0.98);
+  const kSkull = new THREE.Mesh(new THREE.SphereGeometry(0.15, 24, 24), skinMat);
+  kSkull.scale.set(0.92, 1.08, 0.96);
   kSkull.castShadow = true;
   headGroup.add(kSkull);
 
-  // Coupe de cheveux afro courte dégradée
+  // Coupe de cheveux afro-fade placée sur la calotte supérieure uniquement
   const kHair = new THREE.Mesh(
-    new THREE.SphereGeometry(0.159, 22, 18, 0, Math.PI * 2, 0, Math.PI * 0.58),
+    new THREE.SphereGeometry(0.152, 20, 16, 0, Math.PI * 2, 0, Math.PI * 0.44),
     hairMat
   );
-  kHair.scale.set(0.93, 1.08, 1.0);
-  kHair.rotation.x = -0.18;
-  kHair.position.y = 0.015;
+  kHair.scale.set(0.93, 1.06, 0.98);
+  kHair.rotation.x = -0.35;
+  kHair.position.set(0, 0.03, -0.015);
   headGroup.add(kHair);
 
-  // Yeux + Pupilles
-  const eyeWhiteMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-  const pupilMat = new THREE.MeshBasicMaterial({ color: 0x090d16 });
-  [-0.052, 0.052].forEach((ex) => {
-    const eyeW = new THREE.Mesh(new THREE.SphereGeometry(0.021, 12, 12), eyeWhiteMat);
-    eyeW.scale.set(1.2, 0.85, 0.6);
-    eyeW.position.set(ex, 0.018, 0.138);
-    const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.011, 10, 10), pupilMat);
-    pupil.position.set(ex, 0.018, 0.149);
-    headGroup.add(eyeW, pupil);
-
-    // Sourcil ("eyebrow") réduit, fin et naturel
-    const eyebrow = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.006, 0.008), hairMat);
-    eyebrow.position.set(ex, 0.042, 0.142);
-    eyebrow.rotation.z = ex < 0 ? 0.06 : -0.06;
-    headGroup.add(eyebrow);
+  // Yeux sombres naturels (sans sphères blanches saillantes)
+  const pupilMat = new THREE.MeshBasicMaterial({ color: 0x111827 });
+  [-0.048, 0.048].forEach((ex) => {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.014, 10, 10), pupilMat);
+    eye.position.set(ex, 0.01, 0.14);
+    headGroup.add(eye);
   });
 
-  // Nez & Oreilles
-  const nose = new THREE.Mesh(new THREE.ConeGeometry(0.022, 0.055, 8), skinMat);
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.05, 8), skinMat);
   nose.rotation.x = Math.PI * 0.42;
-  nose.position.set(0, -0.005, 0.152);
+  nose.position.set(0, -0.01, 0.148);
   headGroup.add(nose);
 
-  [-0.142, 0.142].forEach((earX) => {
-    const ear = new THREE.Mesh(new THREE.SphereGeometry(0.028, 10, 10), skinMat);
+  [-0.138, 0.138].forEach((earX) => {
+    const ear = new THREE.Mesh(new THREE.SphereGeometry(0.026, 10, 10), skinMat);
     ear.scale.set(0.45, 0.95, 0.65);
     ear.position.set(earX, 0.0, 0.0);
     headGroup.add(ear);
   });
 
-  keeperGroup.add(headGroup);
+  upperBodyGroup.add(headGroup);
 
-  // Fonction de création d'un bras articulé réaliste (Épaule -> Bras -> Coude -> Avant-bras -> Gant Pro à doigts)
-  function createArticulatedArm(isLeft: boolean) {
+  // Bras articulés en posture de gardien (coudes fléchis, gants ramenés devant le buste)
+  function createKeeperArm(isLeft: boolean) {
     const side = isLeft ? -1 : 1;
     const shoulderPivot = new THREE.Group();
-    shoulderPivot.position.set(side * 0.34, 1.61, 0);
+    shoulderPivot.position.set(side * 0.34, 0.66, 0);
 
-    const shoulderCap = new THREE.Mesh(new THREE.SphereGeometry(0.105, 14, 14), sleeveMat);
+    const shoulderCap = new THREE.Mesh(new THREE.SphereGeometry(0.10, 14, 14), sleeveMat);
     shoulderPivot.add(shoulderCap);
 
-    const upperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.082, 0.068, 0.34, 14), sleeveMat);
-    upperArm.position.y = -0.17;
+    const upperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.078, 0.066, 0.32, 14), sleeveMat);
+    upperArm.position.y = -0.16;
     upperArm.castShadow = true;
     shoulderPivot.add(upperArm);
 
-    const forearm = new THREE.Mesh(new THREE.CylinderGeometry(0.066, 0.054, 0.34, 14), skinMat);
-    forearm.position.y = -0.49;
+    // Coude fléchi vers l'avant et l'intérieur en posture de garde
+    const elbowPivot = new THREE.Group();
+    elbowPivot.position.set(0, -0.32, 0);
+    elbowPivot.rotation.x = -0.65;
+    elbowPivot.rotation.z = side * -0.35;
+
+    const forearm = new THREE.Mesh(new THREE.CylinderGeometry(0.064, 0.052, 0.32, 14), skinMat);
+    forearm.position.y = -0.16;
     forearm.castShadow = true;
-    shoulderPivot.add(forearm);
+    elbowPivot.add(forearm);
 
-    // Gant de gardien professionnel (poignet + paume + dos du gant + pouce + 4 doigts)
     const gloveGroup = new THREE.Group();
-    gloveGroup.position.y = -0.74;
+    gloveGroup.position.y = -0.38;
 
-    const wristStrap = new THREE.Mesh(new THREE.CylinderGeometry(0.064, 0.064, 0.09, 14), shortMat);
-    wristStrap.position.y = 0.07;
+    const wristStrap = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.08, 12), shortMat);
+    wristStrap.position.y = 0.06;
     gloveGroup.add(wristStrap);
 
-    const palm = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.20, 0.065), glovePalmMat);
+    const palm = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.19, 0.06), glovePalmMat);
     palm.position.z = 0.015;
-    const backhand = new THREE.Mesh(new THREE.BoxGeometry(0.185, 0.205, 0.05), gloveLatexMat);
+    const backhand = new THREE.Mesh(new THREE.BoxGeometry(0.175, 0.195, 0.045), gloveLatexMat);
     backhand.position.z = -0.015;
     gloveGroup.add(palm, backhand);
 
-    // 4 doigts + pouce écarté
-    [-0.065, -0.022, 0.022, 0.065].forEach((fx, fi) => {
-      const len = fi === 1 || fi === 2 ? 0.11 : 0.095;
-      const finger = new THREE.Mesh(new THREE.CapsuleGeometry(0.018, len, 6, 8), gloveLatexMat);
-      finger.position.set(fx, -0.13, 0);
+    [-0.06, -0.02, 0.02, 0.06].forEach((fx, fi) => {
+      const len = fi === 1 || fi === 2 ? 0.10 : 0.085;
+      const finger = new THREE.Mesh(new THREE.CapsuleGeometry(0.016, len, 6, 8), gloveLatexMat);
+      finger.position.set(fx, -0.12, 0);
       gloveGroup.add(finger);
     });
-    const thumb = new THREE.Mesh(new THREE.CapsuleGeometry(0.02, 0.08, 6, 8), gloveLatexMat);
-    thumb.position.set(side * -0.11, -0.04, 0.02);
+    const thumb = new THREE.Mesh(new THREE.CapsuleGeometry(0.018, 0.075, 6, 8), gloveLatexMat);
+    thumb.position.set(side * -0.10, -0.03, 0.02);
     thumb.rotation.z = side * 0.55;
     gloveGroup.add(thumb);
 
-    shoulderPivot.add(gloveGroup);
-    return shoulderPivot;
+    elbowPivot.add(gloveGroup);
+    shoulderPivot.add(elbowPivot);
+    return { shoulderPivot, elbowPivot };
   }
 
-  const kArmL = createArticulatedArm(true);
-  kArmL.rotation.z = 0.78;
-  keeperGroup.add(kArmL);
+  const armL = createKeeperArm(true);
+  const armR = createKeeperArm(false);
+  const kArmL = armL.shoulderPivot;
+  const kArmR = armR.shoulderPivot;
+  kArmL.rotation.z = 0.52;
+  kArmR.rotation.z = -0.52;
+  upperBodyGroup.add(kArmL, kArmR);
 
-  const kArmR = createArticulatedArm(false);
-  kArmR.rotation.z = -0.78;
-  keeperGroup.add(kArmR);
+  keeperGroup.add(upperBodyGroup);
 
-  // Short + Jambes anatomiques (Cuisse -> Genou -> Mollet/Chaussette -> Crampons)
-  const kPelvis = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.24, 0.30), shortMat);
-  kPelvis.position.y = 0.86;
+  // Bassin & Jambes écartées en posture athlétique (appuis larges sur la ligne)
+  const kPelvis = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.24, 0.30), shortMat);
+  kPelvis.position.y = 0.88;
   kPelvis.castShadow = true;
   keeperGroup.add(kPelvis);
 
-  function createArticulatedLeg(isLeft: boolean) {
+  function createAthleticLeg(isLeft: boolean) {
     const side = isLeft ? -1 : 1;
     const legGroup = new THREE.Group();
-    legGroup.position.set(side * 0.16, 0.78, 0);
+    legGroup.position.set(side * 0.22, 0.80, 0);
+    legGroup.rotation.z = side * -0.08; // Appuis écartés
 
-    const thighShort = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.098, 0.28, 14), shortMat);
-    thighShort.position.y = -0.12;
+    const thighShort = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.095, 0.30, 14), shortMat);
+    thighShort.position.y = -0.13;
     thighShort.castShadow = true;
     legGroup.add(thighShort);
 
-    const knee = new THREE.Mesh(new THREE.SphereGeometry(0.078, 12, 12), skinMat);
-    knee.position.y = -0.30;
+    const knee = new THREE.Mesh(new THREE.SphereGeometry(0.076, 12, 12), skinMat);
+    knee.position.set(0, -0.31, 0.02);
     legGroup.add(knee);
 
-    const calfSock = new THREE.Mesh(new THREE.CylinderGeometry(0.076, 0.056, 0.42, 14), socksMat);
-    calfSock.position.y = -0.52;
+    const calfSock = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.055, 0.42, 14), socksMat);
+    calfSock.position.set(0, -0.53, 0.01);
     calfSock.castShadow = true;
     legGroup.add(calfSock);
 
-    // Chaussure à crampons
     const boot = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.09, 0.27), bootMat);
-    boot.position.set(0, -0.74, 0.05);
+    boot.position.set(0, -0.75, 0.06);
     boot.castShadow = true;
     legGroup.add(boot);
 
     return legGroup;
   }
 
-  const kLegL = createArticulatedLeg(true);
-  const kLegR = createArticulatedLeg(false);
+  const kLegL = createAthleticLeg(true);
+  const kLegR = createAthleticLeg(false);
   keeperGroup.add(kLegL, kLegR);
 
   keeperGroup.position.set(0, 0, 0.28);
@@ -1776,9 +2138,9 @@
     state.isNight = night;
     if (night) {
       scene.background = new THREE.Color("#050811");
-      scene.fog = new THREE.FogExp2("#050811", 0.0042);
-      hemiLight.intensity = 0.45;
-      sunLight.intensity = 1.4;
+      scene.fog = new THREE.FogExp2("#050811", 0.0038);
+      hemiLight.intensity = 0.48;
+      sunLight.intensity = 1.42;
       sunLight.color.setHex(0xeef6ff);
       floodCones.forEach((c) => (c.visible = true));
       crowdFlashes.visible = true;
@@ -1786,7 +2148,7 @@
       btnSetDay?.classList.remove("bg-congo", "border-or/40");
     } else {
       scene.background = new THREE.Color("#60a5fa");
-      scene.fog = new THREE.FogExp2("#93c5fd", 0.0025);
+      scene.fog = new THREE.FogExp2("#93c5fd", 0.0022);
       hemiLight.intensity = 0.88;
       sunLight.intensity = 1.95;
       sunLight.color.setHex(0xfffbeb);
@@ -1818,13 +2180,13 @@
     }
   }
 
-  // Fonctionnalité Pause complète
   function setPaused(pauseState: boolean) {
     if (state.phase === "gameover") return;
     state.paused = pauseState;
     if (iconPause) iconPause.textContent = state.paused ? "▶" : "⏸";
     if (state.paused) {
       updateHud();
+      updateMusicUi();
       pauseModal?.classList.remove("hidden");
       pauseModal?.classList.add("flex");
     } else {
@@ -1847,7 +2209,7 @@
   btnPauseToMenu?.addEventListener("click", () => {
     pauseModal?.classList.add("hidden");
     pauseModal?.classList.remove("flex");
-    openMenu("settings");
+    openMenu("music");
   });
 
   window.addEventListener("keydown", (e) => {
@@ -1878,20 +2240,20 @@
     ballMesh.rotation.set(0, 0, 0);
     keeperGroup.position.set(0, 0, 0.28);
     keeperGroup.rotation.set(0, 0, 0);
-    kArmL.rotation.z = 0.78;
-    kArmR.rotation.z = -0.78;
+    kArmL.rotation.z = 0.52;
+    kArmR.rotation.z = -0.52;
+    armL.elbowPivot.rotation.set(-0.65, 0, 0.35);
+    armR.elbowPivot.rotation.set(-0.65, 0, -0.35);
     aimArrowGroup.visible = false;
 
     if (powerMeterWrap) powerMeterWrap.classList.add("opacity-0");
     if (powerMeterFill) powerMeterFill.style.height = "0%";
 
     state.phase = "aiming";
-    camera.position.set(0, 1.38, 13.7);
-    camera.lookAt(0, 1.25, 0);
+    applyPlayableCameraFraming();
     cinematicBar?.classList.add("hidden");
     aimInstruction?.classList.remove("opacity-0");
     updateHud();
-    startDrums();
   }
 
   /* -------------------------------------------------------------------------- */
@@ -1943,7 +2305,7 @@
     }
 
     const w = window.innerWidth;
-    const dx = (chargeCurrX - chargeStartX) / Math.min(w, 440);
+    const dx = (chargeCurrX - chargeStartX) / Math.min(w, 420);
     aimArrowGroup.visible = true;
     aimArrowGroup.rotation.y = Math.PI - dx * 0.45;
     aimLineMesh.scale.set(1, 1.2 + (Math.min(lockedPowerPct, 105) / 100) * 6.5, 1);
@@ -1966,15 +2328,15 @@
     aimArrowGroup.visible = false;
 
     const w = window.innerWidth;
-    const dx = (chargeCurrX - chargeStartX) / Math.min(w, 440);
+    const dx = (chargeCurrX - chargeStartX) / Math.min(w, 420);
     const midExpectedX = (chargeStartX + chargeCurrX) * 0.5;
-    const curveDelta = (chargeMidX - midExpectedX) / Math.min(w, 400);
+    const curveDelta = (chargeMidX - midExpectedX) / Math.min(w, 380);
 
     const finalPower = Math.max(22, Math.min(lockedPowerPct, 115));
     const normP = finalPower / 100;
 
     const speedMs = 16.5 + normP * 17.5;
-    const targetX = THREE.MathUtils.clamp(dx * 5.5, -4.6, 4.6);
+    const targetX = THREE.MathUtils.clamp(dx * 5.6, -4.6, 4.6);
     const targetY = normP <= 0.93
       ? Math.pow(normP / 0.93, 1.2) * 2.30
       : 2.48 + (normP - 0.93) * 9.8;
@@ -1988,8 +2350,8 @@
   }
 
   canvas.addEventListener("pointerdown", (e) => {
-    if (state.phase !== "aiming" || state.paused) return;
     initAudio();
+    if (state.phase !== "aiming" || state.paused) return;
     state.phase = "charging";
     chargeActive = true;
     chargeStartX = e.clientX;
@@ -2024,7 +2386,6 @@
 
   function fireShot(powerPct: number, speedMs: number, targetX: number, targetY: number, spinCurve: number) {
     state.phase = "shooting";
-    stopDrums();
 
     const flightTime = 11.0 / speedMs;
     shotPhys.active = true;
@@ -2102,10 +2463,13 @@
         Math.min(1, dt * tier.keeperDiveSpeed * 0.95)
       );
 
+      // Extension complète des bras et des coudes lors du plongeon
       const diveTilt = THREE.MathUtils.clamp(-shotPhys.keeperTargetX * 0.46, -1.35, 1.35);
       keeperGroup.rotation.z = THREE.MathUtils.lerp(keeperGroup.rotation.z, diveTilt, dt * 18);
       kArmL.rotation.z = THREE.MathUtils.lerp(kArmL.rotation.z, 2.75, dt * 20);
       kArmR.rotation.z = THREE.MathUtils.lerp(kArmR.rotation.z, -2.75, dt * 20);
+      armL.elbowPivot.rotation.x = THREE.MathUtils.lerp(armL.elbowPivot.rotation.x, 0, dt * 20);
+      armR.elbowPivot.rotation.x = THREE.MathUtils.lerp(armR.elbowPivot.rotation.x, 0, dt * 20);
     }
 
     const SUBSTEPS = 6;
@@ -2175,8 +2539,8 @@
       }
 
       if (shotPhys.resolved) {
-        if (ballMesh.position.z < -3.2) {
-          ballMesh.position.z = -3.2;
+        if (ballMesh.position.z < -4.2) {
+          ballMesh.position.z = -4.2;
           shotPhys.vz = Math.abs(shotPhys.vz) * 0.3;
           shotPhys.vx *= 0.5;
         }
@@ -2301,8 +2665,8 @@
         ? `BUT ! PASSAGE NIVEAU ${newTier.id} (${newTier.name.toUpperCase()})`
         : title;
       toastTitle.className = isGoal
-        ? "font-display text-lg uppercase tracking-wider text-or leading-none"
-        : "font-display text-lg uppercase tracking-wider text-red-400 leading-none";
+        ? "font-display text-base sm:text-lg uppercase tracking-wider text-or leading-none"
+        : "font-display text-base sm:text-lg uppercase tracking-wider text-red-400 leading-none";
       toastSubtitle.textContent = leveledUp ? newTier.desc : subtitle;
       shotToast.classList.remove("opacity-0", "-translate-y-4");
     }
@@ -2324,7 +2688,6 @@
 
   function showGameOverModal(title: string, subtitle: string, reachedTierId: number) {
     state.phase = "gameover";
-    stopDrums();
 
     if (goTitle) goTitle.textContent = title;
     if (goDesc) goDesc.textContent = subtitle;
@@ -2353,7 +2716,7 @@
   }
 
   /* -------------------------------------------------------------------------- */
-  /*  SÉPARATION STRICTE : MODALE NIVEAUX VS MENU GÉNÉRAL                       */
+  /*  MODALE NIVEAUX & MENU GÉNÉRAL                                             */
   /* -------------------------------------------------------------------------- */
   function renderLevelsModal() {
     if (!levelsGrid) return;
@@ -2401,6 +2764,7 @@
   }
 
   function openLevelsModal() {
+    initAudio();
     state.paused = true;
     if (iconPause) iconPause.textContent = "▶";
     renderLevelsModal();
@@ -2425,8 +2789,9 @@
     openLevelsModal();
   });
 
-  // Onglets du Menu Général (Réglages / Photos SDM / Partenaires)
+  // Onglets du Menu Général
   const tabBtns = document.querySelectorAll<HTMLButtonElement>(".menu-tab-btn");
+  const panelMusic = document.getElementById("menu-panel-music");
   const panelSettings = document.getElementById("menu-panel-settings");
   const panelPhotos = document.getElementById("menu-panel-photos");
   const panelPartners = document.getElementById("menu-panel-partners");
@@ -2439,16 +2804,19 @@
       b.classList.toggle("border-transparent", !active);
       b.classList.toggle("text-slate-400", !active);
     });
+    panelMusic?.classList.toggle("hidden", tabName !== "music");
     panelSettings?.classList.toggle("hidden", tabName !== "settings");
     panelPhotos?.classList.toggle("hidden", tabName !== "photos");
     panelPartners?.classList.toggle("hidden", tabName !== "partners");
   }
 
-  tabBtns.forEach((b) => b.addEventListener("click", () => switchMenuTab(b.dataset.menuTab || "settings")));
+  tabBtns.forEach((b) => b.addEventListener("click", () => switchMenuTab(b.dataset.menuTab || "music")));
 
-  function openMenu(tab = "settings") {
+  function openMenu(tab = "music") {
+    initAudio();
     state.paused = true;
     if (iconPause) iconPause.textContent = "▶";
+    updateMusicUi();
     switchMenuTab(tab);
     gameMenuOverlay?.classList.remove("hidden");
     gameMenuOverlay?.classList.add("flex");
@@ -2462,7 +2830,7 @@
     prevTime = performance.now();
   }
 
-  btnOpenMenu?.addEventListener("click", () => openMenu("settings"));
+  btnOpenMenu?.addEventListener("click", () => openMenu("music"));
   btnCloseMenu?.addEventListener("click", closeMenu);
   btnResumeGame?.addEventListener("click", closeMenu);
   btnGoRetry?.addEventListener("click", () => restartSeries(0));
@@ -2474,6 +2842,11 @@
   function toggleAudio() {
     initAudio();
     state.audioEnabled = !state.audioEnabled;
+    if (!state.audioEnabled) {
+      bgMusic.pause();
+    } else {
+      bgMusic.play().catch(() => {});
+    }
     if (iconSound) iconSound.textContent = state.audioEnabled ? "🔊" : "🔇";
     if (btnMenuAudioToggle) {
       btnMenuAudioToggle.textContent = state.audioEnabled ? "🔊 Son Activé" : "🔇 Son Coupé";
@@ -2525,20 +2898,21 @@
         if (cinematicStepLabel) cinematicStepLabel.textContent = "1/2 · Stade des Martyrs · 80 000 places";
       } else if (t < 4.0) {
         const p = (t - 2.2) / 1.8;
-        camera.position.set(-12 * (1 - p), 1.55 - p * 0.17, 21 - p * 7.3);
-        camera.lookAt(0, 1.3, 0);
+        camera.position.set(-12 * (1 - p), 1.65, 22 - p * 6.4);
+        camera.lookAt(0, 1.35, 0);
         if (cinematicStepLabel) cinematicStepLabel.textContent = "2/2 · 90ᵉ Minute · Point de Penalty";
       } else {
         restartSeries(0);
       }
     } else if (state.phase === "aiming" || state.phase === "charging") {
       const tier = getActiveTier();
+      // Appuis toniques de gardien (split-step) sur sa ligne
       const swayFreq = 4.2 + tier.id * 0.95;
       const swayAmp = 0.34 + tier.id * 0.09;
       keeperGroup.position.x = Math.sin(elapsed * swayFreq) * swayAmp;
-      keeperGroup.position.y = Math.abs(Math.sin(elapsed * swayFreq * 2)) * 0.09;
-      kArmL.rotation.z = 0.78 + Math.sin(elapsed * 7.5) * 0.16;
-      kArmR.rotation.z = -0.78 - Math.sin(elapsed * 7.5) * 0.16;
+      keeperGroup.position.y = Math.abs(Math.sin(elapsed * swayFreq * 2)) * 0.08;
+      kArmL.rotation.z = 0.52 + Math.sin(elapsed * 7.5) * 0.10;
+      kArmR.rotation.z = -0.52 - Math.sin(elapsed * 7.5) * 0.10;
 
       if (state.phase === "charging") {
         updateChargeGauge(dt);
@@ -2551,13 +2925,14 @@
   }
 
   window.addEventListener("resize", () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
+    applyPlayableCameraFraming();
   });
 
   applyLightingMode(true);
+  applyPlayableCameraFraming();
   updateHud();
+  updateMusicUi();
   renderLevelsModal();
   animate();
 </script>
