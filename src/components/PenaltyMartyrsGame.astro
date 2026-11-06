@@ -72,11 +72,21 @@
         <button
           type="button"
           id="btn-open-selection-hud"
-          class="pointer-events-auto flex items-center gap-1 rounded-md border border-sky-400 bg-[#071024] px-2 py-0.5 text-[0.6rem] font-bold text-sky-200 shadow-md transition-all hover:bg-[#0c1b3a] active:scale-95"
-          title="Changer le tireur Léopard ou le gardien"
+          class="pointer-events-auto flex items-center gap-1 rounded-md border border-or bg-[#071024] px-2 py-0.5 text-[0.6rem] font-bold text-or shadow-md transition-all hover:bg-[#0c1b3a] active:scale-95"
+          title="Changer le gardien adverse"
         >
-          <span>👕</span>
-          <span id="hud-matchup-label">#20 WISSA vs #1 MPASI</span>
+          <span>🧤</span>
+          <span id="hud-matchup-label">VS #1 MPASI</span>
+        </button>
+
+        <button
+          type="button"
+          id="btn-open-challenge-hud"
+          class="pointer-events-auto flex items-center gap-1 rounded-md border border-emerald-500 bg-[#063023] px-2 py-0.5 text-[0.6rem] font-bold text-emerald-300 shadow-md transition-all hover:bg-[#094734] active:scale-95"
+          title="Défier un ami en ligne"
+        >
+          <span>⚔️</span>
+          <span>DÉFIER UN AMI</span>
         </button>
 
         <div id="hud-wind-pill" class="flex items-center gap-1 rounded-md border border-[#1e3a6e] bg-[#071024] px-1.5 py-0.5 text-[0.6rem] font-bold text-sky-300 shadow-md">
@@ -236,9 +246,16 @@
         <button
           type="button"
           id="btn-pause-change-players"
-          class="w-full rounded-xl border border-sky-400 bg-[#082240] py-2 text-xs font-bold uppercase tracking-wider text-sky-200 hover:bg-[#0c315c]"
+          class="w-full rounded-xl border border-or bg-[#1a1608] py-2 text-xs font-bold uppercase tracking-wider text-or hover:bg-[#2e260e]"
         >
-          👕 Changer les joueurs
+          🧤 Changer le Gardien
+        </button>
+        <button
+          type="button"
+          id="btn-pause-challenge"
+          class="w-full rounded-xl border border-emerald-500 bg-[#063023] py-2 text-xs font-bold uppercase tracking-wider text-emerald-300 hover:bg-[#094734]"
+        >
+          ⚔️ Défier un ami en ligne
         </button>
         <button
           type="button"
@@ -301,17 +318,24 @@
         <button
           type="button"
           id="btn-go-change-players"
-          class="w-full rounded-xl border border-sky-400 bg-[#082240] py-2.5 text-xs font-bold uppercase tracking-wider text-sky-200 hover:bg-[#0c315c]"
+          class="w-full rounded-xl border border-or bg-[#1a1608] py-2.5 text-xs font-bold uppercase tracking-wider text-or hover:bg-[#2e260e]"
         >
-          👕 Changer les joueurs (Tireur & Gardien)
+          🧤 Changer le Gardien
+        </button>
+        <button
+          type="button"
+          id="btn-go-challenge"
+          class="w-full rounded-xl border-2 border-emerald-500 bg-[#063023] py-2.5 text-xs font-black uppercase tracking-wider text-emerald-300 hover:bg-[#094734] shadow-lg"
+        >
+          ⚔️ Défier un ami en ligne avec ce score
         </button>
       </div>
     </div>
   </div>
 
-  <!-- ================= ÉTAPE DE SÉLECTION : CHOIX DU TIREUR LÉOPARD & DU GARDIEN (100% SOLIDE) ================= -->
+  <!-- ================= ÉTAPE DE SÉLECTION : CHOIX DU GARDIEN ADVERSE (100% SOLIDE) ================= -->
   <div id="selection-modal-overlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-[#030712]/95 p-2.5 sm:p-5">
-    <div class="relative flex max-h-[92dvh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border-2 border-or bg-[#071024] shadow-2xl">
+    <div class="relative flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border-2 border-or bg-[#071024] shadow-2xl">
       <!-- En-tête -->
       <div class="flex items-center justify-between border-b border-[#1e3a6e] bg-[#040917] px-4 py-3 sm:px-6">
         <div class="flex items-center gap-2.5">
@@ -321,7 +345,7 @@
           <div>
             <span class="block text-[0.52rem] font-bold uppercase tracking-widest text-or">La Série de Kin · Stade des Martyrs</span>
             <h2 class="font-display text-base sm:text-xl uppercase tracking-wider text-white leading-none">
-              Choisis ton Léopard & ton Gardien
+              Choisis ton adversaire dans les cages
             </h2>
           </div>
         </div>
@@ -335,41 +359,27 @@
         </button>
       </div>
 
-      <!-- Corps défilant : 1. Tireur Léopard + 2. Gardien -->
+      <!-- Corps défilant : Sélection des Gardiens -->
       <div class="flex-1 overflow-y-auto p-3.5 sm:p-5 space-y-4 bg-[#071024]">
-        <!-- 1. Choisir son tireur parmi les Léopards -->
         <div>
           <div class="flex items-center justify-between mb-2">
-            <h3 class="font-display text-sm sm:text-base uppercase tracking-wider text-sky-300">
-              1. Choisis ton tireur parmi les Léopards (Maillot Bleu Ciel RDC)
-            </h3>
-            <span id="selected-shooter-pill" class="rounded-full bg-[#082240] border border-sky-400 px-2.5 py-0.5 text-[0.62rem] font-bold text-sky-200">
-              #20 Yoane Wissa
-            </span>
-          </div>
-          <div id="shooters-grid" class="grid grid-cols-3 gap-2.5"></div>
-        </div>
-
-        <!-- 2. Choisir le gardien à affronter -->
-        <div class="border-t border-[#1e3a6e] pt-3.5">
-          <div class="flex items-center justify-between mb-2">
             <h3 class="font-display text-sm sm:text-base uppercase tracking-wider text-or">
-              2. Choisis ton adversaire dans les cages (Gardien)
+              Gardiens officiels disponibles (/media/joueurs/)
             </h3>
             <span id="selected-keeper-pill" class="rounded-full bg-[#1a1608] border border-or px-2.5 py-0.5 text-[0.62rem] font-bold text-or">
               #1 Lionel Mpasi
             </span>
           </div>
-          <div id="keepers-grid" class="grid grid-cols-3 gap-2.5"></div>
+          <div id="keepers-grid" class="grid grid-cols-1 sm:grid-cols-3 gap-3"></div>
         </div>
       </div>
 
       <!-- Pied de modale : Résumé + Bouton Entrer sur le terrain -->
       <div class="flex flex-col sm:flex-row items-center justify-between gap-2.5 border-t border-[#1e3a6e] bg-[#040917] px-4 py-3 sm:px-6">
         <div class="text-center sm:text-left">
-          <span class="block text-[0.52rem] uppercase tracking-widest text-slate-400">Duel sélectionné aux Martyrs</span>
+          <span class="block text-[0.52rem] uppercase tracking-widest text-slate-400">Gardien sélectionné aux Martyrs</span>
           <p id="selection-duel-summary" class="text-xs font-bold text-white">
-            👕 #20 Yoane Wissa vs 🧤 #1 Lionel Mpasi
+            🧤 #1 Lionel Mpasi (Tenue Orange & Noir)
           </p>
         </div>
         <button
@@ -379,6 +389,85 @@
         >
           ⚽ Entrer sur le terrain
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODALE DÉFIER UN AMI EN LIGNE (100% SOLIDE, ZÉRO GLASSMORPHISME) ================= -->
+  <div id="challenge-modal-overlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-[#030712]/95 p-3 sm:p-5">
+    <div class="relative flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-3xl border-2 border-emerald-500 bg-[#071024] shadow-2xl">
+      <div class="flex items-center justify-between border-b border-[#1e3a6e] bg-[#040917] px-5 py-3.5">
+        <div class="flex items-center gap-2.5">
+          <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/20 text-xl border border-emerald-500/50">
+            ⚔️
+          </div>
+          <div>
+            <span class="block text-[0.52rem] font-bold uppercase tracking-widest text-emerald-400">Duel Multijoueur Asynchrone</span>
+            <h2 class="font-display text-base sm:text-lg uppercase tracking-wider text-white leading-none">
+              Défie un ami aux Martyrs
+            </h2>
+          </div>
+        </div>
+        <button
+          type="button"
+          id="btn-close-challenge"
+          class="flex h-8 w-8 items-center justify-center rounded-xl border border-[#1e3a6e] bg-[#0c1b3a] text-slate-200 hover:bg-[#132854] hover:text-white"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-5 space-y-4 bg-[#071024]">
+        <div class="rounded-2xl border border-emerald-500/40 bg-[#063023] p-4 text-emerald-100">
+          <p class="text-xs sm:text-sm leading-relaxed">
+            Partage ton lien de défi personnalisé. Ton ami devra affronter le même gardien au même niveau pour tenter de battre ton score !
+          </p>
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-300">Ton pseudo de tireur :</label>
+          <input
+            type="text"
+            id="challenge-player-name"
+            placeholder="Ex: LeopardDeKin90"
+            maxlength="20"
+            class="w-full rounded-xl border-2 border-[#1e3a6e] bg-[#040917] px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-emerald-400 focus:outline-none"
+          />
+        </div>
+
+        <div class="rounded-2xl border border-[#1e3a6e] bg-[#040917] p-3.5 space-y-2">
+          <span class="block text-[0.55rem] font-bold uppercase tracking-wider text-slate-400">Lien direct du défi :</span>
+          <div class="flex items-center gap-2">
+            <input
+              type="text"
+              id="challenge-share-url"
+              readonly
+              class="flex-1 rounded-xl border border-[#1e3a6e] bg-[#020611] px-3 py-2 text-xs text-sky-300 font-mono select-all focus:outline-none truncate"
+            />
+            <button
+              type="button"
+              id="btn-copy-challenge-link"
+              class="shrink-0 rounded-xl bg-emerald-500 px-3.5 py-2 text-xs font-black uppercase tracking-wider text-slate-950 hover:bg-emerald-400 transition-colors"
+            >
+              Copier
+            </button>
+          </div>
+          <p id="challenge-copy-feedback" class="text-[0.68rem] text-emerald-400 font-bold hidden">
+            ✓ Lien copié dans le presse-papier !
+          </p>
+        </div>
+
+        <!-- Partage WhatsApp direct -->
+        <a
+          id="btn-whatsapp-challenge"
+          href="#"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="flex items-center justify-center gap-2.5 w-full rounded-xl bg-[#25D366] px-4 py-3 text-xs sm:text-sm font-black uppercase tracking-wider text-slate-950 shadow-lg hover:bg-[#20ba59] transition-transform active:scale-95"
+        >
+          <span>📱</span>
+          <span>Défier sur WhatsApp</span>
+        </a>
       </div>
     </div>
   </div>
@@ -4505,65 +4594,112 @@
     openLevelsModal();
   });
 
+  const btnOpenChallengeHud = document.getElementById("btn-open-challenge-hud");
+  const btnPauseChallenge = document.getElementById("btn-pause-challenge");
+  const btnGoChallenge = document.getElementById("btn-go-challenge");
+  const challengeModalOverlay = document.getElementById("challenge-modal-overlay");
+  const btnCloseChallenge = document.getElementById("btn-close-challenge");
+  const challengePlayerName = document.getElementById("challenge-player-name") as HTMLInputElement | null;
+  const challengeShareUrl = document.getElementById("challenge-share-url") as HTMLInputElement | null;
+  const btnCopyChallengeLink = document.getElementById("btn-copy-challenge-link");
+  const challengeCopyFeedback = document.getElementById("challenge-copy-feedback");
+  const btnWhatsappChallenge = document.getElementById("btn-whatsapp-challenge") as HTMLAnchorElement | null;
+
+  function generateChallengeShareLink(): string {
+    const activeKeeper = getActiveKeeper();
+    const pseudo = (challengePlayerName?.value || "").trim() || "UnSupporter";
+    const origin = window.location.origin || "https://blocleopards.com";
+    const path = window.location.pathname.includes("penalty") ? window.location.pathname : "/penalty";
+    const params = new URLSearchParams({
+      defie_par: pseudo,
+      niveau: String(state.currentTierIndex + 1),
+      score: String(state.goalsInSeries),
+      gardien: activeKeeper.id
+    });
+    return `${origin}${path}?${params.toString()}#experience-3d`;
+  }
+
+  function updateChallengeModalContent() {
+    const url = generateChallengeShareLink();
+    if (challengeShareUrl) challengeShareUrl.value = url;
+    const activeKeeper = getActiveKeeper();
+    const pseudo = (challengePlayerName?.value || "").trim() || "Un supporter des Léopards";
+    const textMsg = encodeURIComponent(
+      `⚽ *DÉFI PENALTY AUX MARTYRS !*\n` +
+      `${pseudo} te défie sur le jeu officiel du Bloc Léopards !\n` +
+      `🧤 Gardien : ${activeKeeper.name}\n` +
+      `🔥 Score à battre : ${state.goalsInSeries}/5 buts (Niveau ${state.currentTierIndex + 1})\n` +
+      `Peux-tu faire mieux devant 80 000 supporters ?\n\n` +
+      `👉 Relève le défi ici : ${url}`
+    );
+    if (btnWhatsappChallenge) {
+      btnWhatsappChallenge.href = `https://api.whatsapp.com/send?text=${textMsg}`;
+    }
+  }
+
+  function openChallengeModal() {
+    initAudio();
+    state.paused = true;
+    if (iconPause) iconPause.textContent = "▶";
+    pauseModal?.classList.add("hidden");
+    pauseModal?.classList.remove("flex");
+    gameoverModal?.classList.add("hidden");
+    gameoverModal?.classList.remove("flex");
+    selectionModalOverlay?.classList.add("hidden");
+    selectionModalOverlay?.classList.remove("flex");
+
+    if (challengePlayerName && !challengePlayerName.value) {
+      challengePlayerName.value = localStorage.getItem("kin_penalty_player_pseudo") || "LéopardDeKin";
+    }
+    updateChallengeModalContent();
+    if (challengeCopyFeedback) challengeCopyFeedback.classList.add("hidden");
+
+    challengeModalOverlay?.classList.remove("hidden");
+    challengeModalOverlay?.classList.add("flex");
+  }
+
+  function closeChallengeModal() {
+    challengeModalOverlay?.classList.add("hidden");
+    challengeModalOverlay?.classList.remove("flex");
+    state.paused = false;
+    if (iconPause) iconPause.textContent = "⏸";
+    prevTime = performance.now();
+  }
+
+  btnOpenChallengeHud?.addEventListener("click", openChallengeModal);
+  btnPauseChallenge?.addEventListener("click", openChallengeModal);
+  btnGoChallenge?.addEventListener("click", openChallengeModal);
+  btnCloseChallenge?.addEventListener("click", closeChallengeModal);
+
+  challengePlayerName?.addEventListener("input", () => {
+    localStorage.setItem("kin_penalty_player_pseudo", challengePlayerName.value);
+    updateChallengeModalContent();
+  });
+
+  btnCopyChallengeLink?.addEventListener("click", () => {
+    const url = challengeShareUrl?.value || generateChallengeShareLink();
+    navigator.clipboard.writeText(url).then(() => {
+      if (challengeCopyFeedback) {
+        challengeCopyFeedback.classList.remove("hidden");
+        setTimeout(() => challengeCopyFeedback.classList.add("hidden"), 3000);
+      }
+    }).catch(() => {});
+  });
+
   /* -------------------------------------------------------------------------- */
-  /*  MODALE DE SÉLECTION DU TIREUR LÉOPARD & DU GARDIEN ADVERSE                */
+  /*  MODALE DE SÉLECTION DU GARDIEN ADVERSE (Tireur fixé de dos)               */
   /* -------------------------------------------------------------------------- */
   function renderSelectionModal() {
-    const activeShooter = getActiveShooter();
     const activeKeeper = getActiveKeeper();
 
-    if (selectedShooterPill) {
-      selectedShooterPill.textContent = `#${activeShooter.number} ${activeShooter.name}`;
-    }
     if (selectedKeeperPill) {
       selectedKeeperPill.textContent = `#${activeKeeper.number} ${activeKeeper.name}`;
     }
     if (selectionDuelSummary) {
-      selectionDuelSummary.textContent = `Tireur : #${activeShooter.number} ${activeShooter.name} (${activeShooter.position.split("·")[0].trim()}) vs Gardien : #${activeKeeper.number} ${activeKeeper.name}`;
+      selectionDuelSummary.textContent = `🧤 Gardien adverse : #${activeKeeper.number} ${activeKeeper.name} (${activeKeeper.kitName})`;
     }
     if (hudMatchupLabel) {
-      hudMatchupLabel.textContent = `#${activeShooter.number} ${activeShooter.backName} vs #${activeKeeper.number} ${activeKeeper.shortName}`;
-    }
-
-    if (shootersGrid) {
-      shootersGrid.innerHTML = "";
-      LEOPARD_SHOOTERS.forEach((s, idx) => {
-        const isSelected = idx === state.selectedShooterIndex;
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = `group relative flex flex-col overflow-hidden rounded-2xl border-2 text-left transition-all ${
-          isSelected
-            ? "border-sky-400 bg-[#0b2247] shadow-xl ring-1 ring-sky-300"
-            : "border-[#1e3a6e] bg-[#040917] hover:border-sky-400 hover:bg-[#09142e]"
-        }`;
-        btn.innerHTML = `
-          <div class="relative h-32 sm:h-40 w-full overflow-hidden bg-[#060d1f]">
-            <img src="${s.photo}" alt="${s.name}" class="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-105" loading="eager" />
-            <span class="absolute top-2 left-2 rounded-lg bg-sky-400 px-2.5 py-0.5 font-display text-xs font-black text-slate-950 shadow">
-              #${s.number}
-            </span>
-            ${
-              isSelected
-                ? `<span class="absolute top-2 right-2 rounded-full bg-emerald-400 px-2 py-0.5 text-[0.55rem] font-black uppercase tracking-wider text-slate-950 shadow">✓ Tireur</span>`
-                : ""
-            }
-          </div>
-          <div class="border-t border-[#1e3a6e] bg-[#060d1f] px-3 py-2">
-            <p class="font-display text-sm sm:text-base uppercase tracking-wider text-white leading-tight">${s.name}</p>
-            <div class="mt-0.5 flex items-center justify-between text-[0.62rem] font-bold">
-              <span class="text-sky-300 truncate">${s.position.split("·")[0].trim()}</span>
-              <span class="text-slate-400 truncate">${s.specialty}</span>
-            </div>
-          </div>
-        `;
-        btn.addEventListener("click", () => {
-          state.selectedShooterIndex = idx;
-          applyShooterProfile(s);
-          renderSelectionModal();
-          updateHud();
-        });
-        shootersGrid.appendChild(btn);
-      });
+      hudMatchupLabel.textContent = `VS #${activeKeeper.number} ${activeKeeper.shortName}`;
     }
 
     if (keepersGrid) {
@@ -4574,25 +4710,25 @@
         btn.type = "button";
         btn.className = `group relative flex flex-col overflow-hidden rounded-2xl border-2 text-left transition-all ${
           isSelected
-            ? "border-or bg-[#1c1a0e] shadow-xl ring-1 ring-or"
+            ? "border-or bg-[#1c1a0e] shadow-xl ring-2 ring-or"
             : "border-[#1e3a6e] bg-[#040917] hover:border-or hover:bg-[#09142e]"
         }`;
         btn.innerHTML = `
-          <div class="relative h-32 sm:h-40 w-full overflow-hidden bg-[#060d1f]">
+          <div class="relative h-36 sm:h-44 w-full overflow-hidden bg-[#060d1f]">
             <img src="${k.photo}" alt="${k.name}" class="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-105" loading="eager" />
             <span class="absolute top-2 left-2 rounded-lg bg-or px-2.5 py-0.5 font-display text-xs font-black text-slate-950 shadow">
               #${k.number}
             </span>
             ${
               isSelected
-                ? `<span class="absolute top-2 right-2 rounded-full bg-emerald-400 px-2 py-0.5 text-[0.55rem] font-black uppercase tracking-wider text-slate-950 shadow">✓ Gardien</span>`
+                ? `<span class="absolute top-2 right-2 rounded-full bg-emerald-400 px-2 py-0.5 text-[0.55rem] font-black uppercase tracking-wider text-slate-950 shadow">✓ Titulaire</span>`
                 : ""
             }
           </div>
-          <div class="border-t border-[#1e3a6e] bg-[#060d1f] px-3 py-2">
-            <p class="font-display text-sm sm:text-base uppercase tracking-wider text-white leading-tight">${k.name}</p>
-            <div class="mt-0.5 flex items-center justify-between gap-1 text-[0.6rem] font-bold">
-              <span class="inline-flex items-center gap-1 text-amber-300 truncate">
+          <div class="border-t border-[#1e3a6e] bg-[#060d1f] px-3.5 py-2.5">
+            <p class="font-display text-sm sm:text-base uppercase tracking-wider text-white leading-tight font-black">${k.name}</p>
+            <div class="mt-1 flex items-center justify-between gap-1 text-[0.62rem] font-bold">
+              <span class="inline-flex items-center gap-1.5 text-amber-300 truncate">
                 <span class="inline-block h-2.5 w-2.5 shrink-0 rounded-full border border-white" style="background:${k.shirtPrimary}"></span>
                 ${k.kitName}
               </span>
@@ -4911,6 +5047,30 @@
     resizeSwipeCanvas();
     applyPlayableCameraFraming();
   });
+
+  // Lecture des paramètres de défi en ligne (si un ami a partagé son lien)
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const challenger = urlParams.get("defie_par");
+    const challengedLevel = Number(urlParams.get("niveau") || 0);
+    const keeperParam = urlParams.get("gardien");
+    if (keeperParam) {
+      const kIdx = GOALKEEPERS_CATALOG.findIndex((k) => k.id === keeperParam);
+      if (kIdx >= 0) state.selectedKeeperIndex = kIdx;
+    }
+    if (challengedLevel > 0 && challengedLevel <= TIERS.length) {
+      state.currentTierIndex = challengedLevel - 1;
+    }
+    if (challenger && shotToast && toastTitle && toastSubtitle && toastEmoji) {
+      setTimeout(() => {
+        toastEmoji.textContent = "⚔️";
+        toastTitle.textContent = `DÉFI REÇU DE ${challenger.toUpperCase()} !`;
+        toastSubtitle.textContent = `Même gardien, Niveau ${state.currentTierIndex + 1} · Réalise la remontada !`;
+        shotToast.classList.remove("opacity-0", "-translate-y-4");
+        setTimeout(() => shotToast.classList.add("opacity-0", "-translate-y-4"), 4200);
+      }, 1200);
+    }
+  } catch {}
 
   applyLightingMode(true);
   applyPlayableCameraFraming();
