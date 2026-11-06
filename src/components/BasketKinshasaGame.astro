@@ -86,8 +86,18 @@
       </div>
     </div>
 
-    <!-- DROITE : BOUTONS DE COMMANDE (PAUSE + SON + MENU) -->
+    <!-- DROITE : BOUTONS DE COMMANDE (DÉFI + PAUSE + SON + MENU) -->
     <div class="pointer-events-auto flex items-center gap-1.5">
+      <button
+        type="button"
+        id="btn-open-challenge-hud"
+        class="flex h-9 items-center gap-1 rounded-xl border border-emerald-500/80 bg-emerald-950/80 px-2.5 text-[0.68rem] font-bold text-emerald-300 shadow-lg transition-all hover:bg-emerald-900 active:scale-95"
+        title="Défier un ami en ligne"
+      >
+        <span>⚔️</span>
+        <span class="hidden sm:inline">Défier</span>
+      </button>
+
       <button
         type="button"
         id="btn-pause"
@@ -125,12 +135,12 @@
       DOSAGE
     </span>
     <div class="relative h-56 w-5 overflow-hidden rounded-full border-2 border-[#1e3a6e] bg-[#030712] p-0.5 shadow-2xl">
-      <!-- Zone Trop Forte (>= 92%) : Tir raté au-dessus ou violent sur la planche -->
-      <div class="absolute inset-x-0 top-0 h-[10%] bg-red-600 border-b border-red-400"></div>
-      <!-- Zone Parfaite (72% - 90%) : Swish net ou planche parfaite ! -->
-      <div class="absolute inset-x-0 top-[10%] h-[18%] bg-emerald-500/80 border-y-2 border-emerald-300"></div>
-      <!-- Zone Moyenne (50% - 71%) : Un peu court ou premier arceau -->
-      <div class="absolute inset-x-0 top-[28%] h-[22%] bg-amber-500/60 border-b border-amber-300"></div>
+      <!-- Zone Trop Forte (>= 92%) : Tir raté violent -->
+      <div class="absolute inset-x-0 top-0 h-[8%] bg-red-600 border-b border-red-400"></div>
+      <!-- Zone Idéale / Réussite (54% - 91%) : Panier garanti (Swish ou Rebond Planche) -->
+      <div class="absolute inset-x-0 top-[8%] h-[38%] bg-emerald-500/80 border-y-2 border-emerald-300"></div>
+      <!-- Zone Trop Faible (< 54%) : Trop court -->
+      <div class="absolute inset-x-0 bottom-0 h-[54%] bg-sky-950/40"></div>
       <!-- Remplissage dynamique -->
       <div id="power-meter-fill" class="absolute inset-x-0.5 bottom-0.5 rounded-full bg-gradient-to-t from-sky-400 via-emerald-400 to-red-500" style="height: 0%"></div>
     </div>
@@ -169,6 +179,13 @@
           class="w-full rounded-xl bg-or py-2.5 text-xs font-black uppercase tracking-wider text-slate-950 shadow-lg hover:bg-yellow-300 active:scale-95 transition-transform"
         >
           ▶ Reprendre le tir
+        </button>
+        <button
+          type="button"
+          id="btn-pause-challenge"
+          class="w-full rounded-xl border border-emerald-500/80 bg-emerald-950/80 py-2.5 text-xs font-bold uppercase tracking-wider text-emerald-300 hover:bg-emerald-900 active:scale-95 transition-all"
+        >
+          ⚔️ Défier un ami sur ce niveau
         </button>
         <button
           type="button"
@@ -239,6 +256,103 @@
             🔄 Rejouer la série
           </button>
         </div>
+        <button
+          type="button"
+          id="btn-go-challenge"
+          class="w-full flex items-center justify-center gap-2 rounded-xl border border-emerald-500/80 bg-emerald-950/80 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-emerald-300 hover:bg-emerald-900 active:scale-95 transition-all shadow-md"
+        >
+          <span>⚔️</span>
+          <span>Défier un ami sur cette série</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODALE DÉFIER UN AMI AU BASKET (100% SOLIDE) ================= -->
+  <div id="challenge-modal-overlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/85 p-3 sm:p-5">
+    <div class="relative flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-3xl border-2 border-emerald-500 bg-[#060d1f] shadow-2xl">
+      <div class="flex items-center justify-between border-b border-[#1e3a6e] bg-[#040917] px-5 py-3.5">
+        <div class="flex items-center gap-2.5">
+          <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/20 text-xl border border-emerald-500/50">
+            ⚔️
+          </div>
+          <div>
+            <span class="block text-[0.52rem] font-bold uppercase tracking-widest text-emerald-400">Streetball Multijoueur</span>
+            <h2 class="font-display text-base sm:text-lg uppercase tracking-wider text-white leading-none">
+              Défie un ami à Limete 7ᵉ Rue
+            </h2>
+          </div>
+        </div>
+        <button
+          type="button"
+          id="btn-close-challenge"
+          class="flex h-8 w-8 items-center justify-center rounded-xl border border-[#1e3a6e] bg-[#0c1b3a] text-slate-200 hover:text-white"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+        <div class="rounded-2xl border border-emerald-500/40 bg-[#071d18] p-3.5">
+          <span class="block text-[0.55rem] font-black uppercase tracking-wider text-emerald-400">Règles du Défi</span>
+          <p class="mt-1 text-xs text-slate-200 leading-relaxed">
+            Partage ce lien avec un ami. Il affrontera exactement la même série sur le playground de Limete (mêmes spots, même chrono et même vent). Qui mettra le plus de paniers ?
+          </p>
+        </div>
+
+        <div>
+          <label for="challenge-player-name" class="block text-xs font-bold uppercase tracking-wider text-slate-300">
+            1. Ton Prénom ou Pseudo de Shooteur
+          </label>
+          <input
+            type="text"
+            id="challenge-player-name"
+            maxlength="20"
+            placeholder="Ex : Dikembe, Jordan, Mutombo..."
+            class="mt-1.5 w-full rounded-xl border border-[#1e3a6e] bg-[#040917] px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-emerald-400"
+          />
+        </div>
+
+        <div class="rounded-2xl border border-[#1e3a6e] bg-[#040917] p-3 text-xs text-slate-300">
+          <span class="block text-[0.55rem] font-bold uppercase tracking-wider text-or">Résumé du Défi</span>
+          <p id="challenge-preview-text" class="mt-1 font-semibold text-white">
+            Niveau 1 · Score : 0/5 paniers
+          </p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-300">
+            2. Lien d'invitation à envoyer
+          </label>
+          <div class="mt-1.5 flex gap-2">
+            <input
+              type="text"
+              id="challenge-share-url"
+              readonly
+              class="flex-1 rounded-xl border border-[#1e3a6e] bg-[#030712] px-3 py-2 text-xs text-slate-300 select-all outline-none"
+            />
+            <button
+              type="button"
+              id="btn-copy-challenge-link"
+              class="rounded-xl border border-emerald-500 bg-emerald-600 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-emerald-500 active:scale-95 transition-all"
+            >
+              Copier
+            </button>
+          </div>
+          <span id="challenge-copy-feedback" class="mt-1 hidden text-[0.68rem] font-bold text-emerald-400">
+            ✓ Lien copié dans le presse-papier !
+          </span>
+        </div>
+
+        <a
+          id="btn-whatsapp-challenge"
+          href="#"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#25D366] px-4 py-3 font-display text-xs font-black uppercase tracking-wider text-slate-950 shadow-xl hover:brightness-105 active:scale-95 transition-all"
+        >
+          <span>💬 Envoyer le Défi sur WhatsApp</span>
+        </a>
       </div>
     </div>
   </div>
@@ -479,10 +593,10 @@
       id: 1,
       name: "Échauffement 7ᵉ Rue",
       subtitle: "Lancers francs & tirs ouverts",
-      desc: "5 lancers francs pour caler le poignet. 24 secondes, vent nul, tolérance large.",
+      desc: "5 lancers francs pour caler le poignet. 24 secondes, vent nul, tolérance large et jauge facile.",
       targetGoals: 2,
-      tolerancePct: 10.5,
-      gaugeSpeed: 48,
+      tolerancePct: 15.0,
+      gaugeSpeed: 34,
       shotClockSec: 24,
       windMaxKmh: 0,
       spots: SPOTS_WARMUP
@@ -491,12 +605,12 @@
       id: 2,
       name: "Playground Limete",
       subtitle: "Tour de l'arc classique",
-      desc: "Rotation 45° et tirs à mi-distance. Jauge plus dynamique et légère brise.",
+      desc: "Rotation 45° et tirs à mi-distance. Jauge agréable et légère brise.",
       targetGoals: 3,
-      tolerancePct: 8.8,
-      gaugeSpeed: 56,
+      tolerancePct: 13.0,
+      gaugeSpeed: 40,
       shotClockSec: 18,
-      windMaxKmh: 5,
+      windMaxKmh: 4,
       spots: SPOTS_STANDARD
     },
     {
@@ -505,70 +619,70 @@
       subtitle: "Tirs primés & chrono 14s",
       desc: "3 points dans les corners et à 45°. Chrono offensif FIBA 14s et vent latéral sensible.",
       targetGoals: 3,
-      tolerancePct: 7.2,
-      gaugeSpeed: 64,
+      tolerancePct: 11.5,
+      gaugeSpeed: 48,
       shotClockSec: 14,
-      windMaxKmh: 10,
+      windMaxKmh: 8,
       spots: SPOTS_CLUTCH
     },
     {
       id: 4,
       name: "Money Time Léopards",
       subtitle: "Chrono 10s sous pression",
-      desc: "Lancers ultra serrés, 10s avant le buzzer et rafales de vent à Limete. 4/5 exigés !",
+      desc: "Lancers serrés, 10s avant le buzzer et brise à Limete. 4/5 exigés !",
       targetGoals: 4,
-      tolerancePct: 5.8,
-      gaugeSpeed: 72,
+      tolerancePct: 10.0,
+      gaugeSpeed: 56,
       shotClockSec: 10,
-      windMaxKmh: 16,
+      windMaxKmh: 12,
       spots: SPOTS_CLUTCH
     },
     {
       id: 5,
       name: "Légende Buzzer Beater",
       subtitle: "Logo 8m+ & Chrono éclair 7s",
-      desc: "Du logo du terrain à plus de 8 mètres ! 7 secondes par tir, tolérance chirurgicale.",
+      desc: "Du logo du terrain à plus de 8 mètres ! 7 secondes par tir et vent modéré.",
       targetGoals: 4,
-      tolerancePct: 4.6,
-      gaugeSpeed: 82,
+      tolerancePct: 8.5,
+      gaugeSpeed: 64,
       shotClockSec: 7,
-      windMaxKmh: 22,
+      windMaxKmh: 16,
       spots: SPOTS_LOGO
     },
     {
       id: 6,
       name: "Shootout Matonge",
-      subtitle: "Corners Zéro Degré & Rafales 24 km/h",
-      desc: "Tirs au ras de la ligne de touche sans planche possible et vent changeant. 9s par tir !",
+      subtitle: "Corners Zéro Degré & Rafales",
+      desc: "Tirs au ras de la ligne de touche et vent changeant. 9s par tir !",
       targetGoals: 4,
-      tolerancePct: 4.0,
-      gaugeSpeed: 88,
+      tolerancePct: 7.5,
+      gaugeSpeed: 70,
       shotClockSec: 9,
-      windMaxKmh: 24,
+      windMaxKmh: 20,
       spots: SPOTS_MATONGE
     },
     {
       id: 7,
       name: "Finale Boulevard Triomphal",
-      subtitle: "Distance Parking 8.8m+ & Rafales 28 km/h",
-      desc: "Chrono éclair 8s à très longue distance. Il faut une précision métronomique pour valider 4/5 !",
+      subtitle: "Distance Parking 8.8m+",
+      desc: "Chrono éclair 8s à très longue distance. Reste concentré sur la zone verte pour valider 4/5 !",
       targetGoals: 4,
-      tolerancePct: 3.5,
-      gaugeSpeed: 95,
+      tolerancePct: 6.8,
+      gaugeSpeed: 76,
       shotClockSec: 8,
-      windMaxKmh: 28,
+      windMaxKmh: 24,
       spots: SPOTS_BOULEVARD
     },
     {
       id: 8,
       name: "Roi du Playground Léopards",
       subtitle: "Le Défi Suprême · 5/5 Exigé !",
-      desc: "Du milieu de terrain à 10.2 mètres, chrono 6s et vent tempétueux à 32 km/h. Seuls les champions réussissent le sans-faute !",
+      desc: "Du milieu de terrain à 10.2 mètres, chrono 6s et vent à 28 km/h. Seuls les tireurs d'élite font le 5/5 !",
       targetGoals: 5,
-      tolerancePct: 3.0,
-      gaugeSpeed: 102,
+      tolerancePct: 6.0,
+      gaugeSpeed: 84,
       shotClockSec: 6,
-      windMaxKmh: 32,
+      windMaxKmh: 28,
       spots: SPOTS_LEOPARDS_ROYAL
     }
   ];
@@ -633,6 +747,18 @@
   const btnGoNextLabel = document.getElementById("btn-go-next-label");
   const btnGoRetry = document.getElementById("btn-go-retry") as HTMLButtonElement | null;
   const btnGoLevels = document.getElementById("btn-go-levels");
+  const btnGoChallenge = document.getElementById("btn-go-challenge");
+
+  const btnOpenChallengeHud = document.getElementById("btn-open-challenge-hud");
+  const btnPauseChallenge = document.getElementById("btn-pause-challenge");
+  const challengeModalOverlay = document.getElementById("challenge-modal-overlay");
+  const btnCloseChallenge = document.getElementById("btn-close-challenge");
+  const challengePlayerName = document.getElementById("challenge-player-name") as HTMLInputElement | null;
+  const challengePreviewText = document.getElementById("challenge-preview-text");
+  const challengeShareUrl = document.getElementById("challenge-share-url") as HTMLInputElement | null;
+  const btnCopyChallengeLink = document.getElementById("btn-copy-challenge-link");
+  const challengeCopyFeedback = document.getElementById("challenge-copy-feedback");
+  const btnWhatsappChallenge = document.getElementById("btn-whatsapp-challenge") as HTMLAnchorElement | null;
 
   const levelsModalOverlay = document.getElementById("levels-modal-overlay");
   const btnOpenLevels = document.getElementById("btn-open-levels");
@@ -1210,26 +1336,29 @@
 
     if (powerMeterFill) powerMeterFill.style.height = `${displayPct}%`;
     const isOverload = lockedPowerPct >= 92;
-    const isPerfect = lockedPowerPct >= 72 && lockedPowerPct < 92;
+    const isMakeRange = lockedPowerPct >= 54 && lockedPowerPct < 92;
+    const isSwishRange = lockedPowerPct >= 68 && lockedPowerPct <= 88;
 
     if (powerMeterPct) {
       powerMeterPct.textContent = isOverload ? "MAX !" : `${displayPct}%`;
       powerMeterPct.className = isOverload
         ? "rounded bg-red-600 px-2 py-0.5 font-display text-xs tracking-wider text-white shadow animate-pulse font-black"
-        : isPerfect
-          ? "rounded bg-emerald-500 px-2 py-0.5 font-display text-xs tracking-wider text-slate-950 font-black shadow"
-          : "rounded bg-[#060d1f] px-2 py-0.5 font-display text-xs tracking-wider text-or shadow font-bold";
+        : isSwishRange
+          ? "rounded bg-emerald-500 px-2 py-0.5 font-display text-xs tracking-wider text-slate-950 font-black shadow animate-pulse"
+          : isMakeRange
+            ? "rounded bg-or px-2 py-0.5 font-display text-xs tracking-wider text-slate-950 font-black shadow"
+            : "rounded bg-[#060d1f] px-2 py-0.5 font-display text-xs tracking-wider text-sky-300 shadow font-bold";
     }
 
     if (powerMeterZoneBadge) {
       if (isOverload) {
         powerMeterZoneBadge.textContent = "TROP FORT (RATÉ) !";
         powerMeterZoneBadge.className = "rounded bg-red-600 px-2 py-0.5 text-[0.52rem] font-black uppercase tracking-wider text-white shadow";
-      } else if (isPerfect) {
-        powerMeterZoneBadge.textContent = "ZONE PARFAITE ✨";
+      } else if (isSwishRange) {
+        powerMeterZoneBadge.textContent = "SWISH NET ! 🔥";
         powerMeterZoneBadge.className = "rounded bg-emerald-400 px-2 py-0.5 text-[0.52rem] font-black uppercase tracking-wider text-slate-950 shadow";
-      } else if (lockedPowerPct >= 50) {
-        powerMeterZoneBadge.textContent = "CORRECT";
+      } else if (isMakeRange) {
+        powerMeterZoneBadge.textContent = "ZONE PANIER 🏀";
         powerMeterZoneBadge.className = "rounded bg-amber-400 px-2 py-0.5 text-[0.52rem] font-black uppercase tracking-wider text-slate-950 shadow";
       } else {
         powerMeterZoneBadge.textContent = "TROP COURT";
@@ -1258,8 +1387,9 @@
     swipeCtx.lineJoin = "round";
 
     const isOverload = lockedPowerPct >= 92;
-    const isPerfect = lockedPowerPct >= 72 && lockedPowerPct < 92;
-    const color = isOverload ? "#ef4444" : isPerfect ? "#34d399" : "#facc15";
+    const isSwishRange = lockedPowerPct >= 68 && lockedPowerPct <= 88;
+    const isMakeRange = lockedPowerPct >= 54 && lockedPowerPct < 92;
+    const color = isOverload ? "#ef4444" : isSwishRange ? "#34d399" : isMakeRange ? "#facc15" : "#38bdf8";
 
     swipeCtx.strokeStyle = color;
     swipeCtx.lineWidth = 6;
@@ -1285,7 +1415,10 @@
     const tier = getActiveTier();
     const spot = getCurrentSpot();
     const isOverload = lockedPowerPct >= 92;
-    const isPerfect = lockedPowerPct >= 72 && lockedPowerPct < 92;
+    // Zone idéale élargie (54% - 91%) : Panier Réussi !
+    const isMakeRange = lockedPowerPct >= 54 && lockedPowerPct < 92;
+    // Swish net sans toucher le cercle
+    const isSwishRange = lockedPowerPct >= 68 && lockedPowerPct <= 88;
 
     ballPhys.active = true;
     ballPhys.elapsed = 0;
@@ -1293,19 +1426,18 @@
     ballPhys.hitRim = false;
     ballPhys.scoredTriggered = false;
 
-    // Détermination stricte du résultat selon le respect de la jauge :
-    // - Si MAX (>=92%) : OBLIGATOIREMENT RATÉ (trop fort sur le panneau ou arrière de l'arceau)
-    // - Si Parfait (72-91%) : SWISH OU PLANCHE MAGNIFIQUE !
     if (isOverload) {
+      // Trop violent / max : échec
       ballPhys.isMake = false;
       ballPhys.isSwish = false;
       ballPhys.isBankMake = false;
-    } else if (isPerfect) {
+    } else if (isMakeRange) {
+      // Panier garanti : swish net si dosage optimal ou panier avec planche/arceau rentrant
       ballPhys.isMake = true;
-      ballPhys.isSwish = Math.abs(lockedPowerPct - 81) <= tier.tolerancePct * 0.6;
-      ballPhys.isBankMake = !ballPhys.isSwish;
+      ballPhys.isSwish = isSwishRange;
+      ballPhys.isBankMake = !isSwishRange;
     } else {
-      // Trop faible / moyen
+      // Moins de 54% : trop court
       ballPhys.isMake = false;
       ballPhys.isSwish = false;
       ballPhys.isBankMake = false;
@@ -1348,7 +1480,7 @@
     state.phase = "charging";
     chargeActive = true;
     swipePoints = [{ x: e.clientX, y: e.clientY }];
-    lockedPowerPct = 20;
+    lockedPowerPct = 32;
 
     powerMeterWrap?.classList.remove("opacity-0");
   });
@@ -1633,6 +1765,94 @@
   btnMenuAudioToggle?.addEventListener("click", toggleAudio);
 
   /* -------------------------------------------------------------------------- */
+  /*  DÉFI MULTIJOUEUR EN LIGNE (WHATSAPP & LIEN DIRECT)                        */
+  /* -------------------------------------------------------------------------- */
+  function generateChallengeShareLink(): string {
+    const activeTier = getActiveTier();
+    const pseudo = (challengePlayerName?.value || "").trim() || "ShooteurDeKin";
+    const origin = window.location.origin || "https://blocleopards.com";
+    const path = window.location.pathname.includes("basket") ? window.location.pathname : "/jeux/basket";
+    const params = new URLSearchParams({
+      defie_par: pseudo,
+      niveau: String(state.currentTierIndex + 1),
+      score: String(state.scoreMadeInSeries)
+    });
+    return `${origin}${path}?${params.toString()}#experience-3d`;
+  }
+
+  function updateChallengeModalContent() {
+    const url = generateChallengeShareLink();
+    if (challengeShareUrl) challengeShareUrl.value = url;
+    const activeTier = getActiveTier();
+    const pseudo = (challengePlayerName?.value || "").trim() || "Un shooteur de Kinshasa";
+    if (challengePreviewText) {
+      challengePreviewText.textContent = `Niveau ${state.currentTierIndex + 1} (${activeTier.name}) · Score : ${state.scoreMadeInSeries}/5 paniers`;
+    }
+    const textMsg = encodeURIComponent(
+      `🏀 *DÉFI STREETBALL KINSHASA (LIMETE 7ᵉ RUE) !*\n` +
+      `${pseudo} te défie sur le playground officiel du Bloc Léopards !\n` +
+      `🔥 Niveau : ${activeTier.name} (Niv. ${state.currentTierIndex + 1})\n` +
+      `🎯 Score à battre : ${state.scoreMadeInSeries}/5 paniers\n` +
+      `Fais parler ton poignet et rentre les swishs !\n\n` +
+      `👉 Relève le défi ici : ${url}`
+    );
+    if (btnWhatsappChallenge) {
+      btnWhatsappChallenge.href = `https://api.whatsapp.com/send?text=${textMsg}`;
+    }
+  }
+
+  function openChallengeModal() {
+    initAudio();
+    state.paused = true;
+    if (iconPause) iconPause.textContent = "▶";
+    pauseModal?.classList.add("hidden");
+    pauseModal?.classList.remove("flex");
+    gameoverModal?.classList.add("hidden");
+    gameoverModal?.classList.remove("flex");
+    levelsModalOverlay?.classList.add("hidden");
+    levelsModalOverlay?.classList.remove("flex");
+    gameMenuOverlay?.classList.add("hidden");
+    gameMenuOverlay?.classList.remove("flex");
+
+    if (challengePlayerName && !challengePlayerName.value) {
+      challengePlayerName.value = localStorage.getItem("kin_basket_player_pseudo") || "ShooteurDeKin";
+    }
+    updateChallengeModalContent();
+    if (challengeCopyFeedback) challengeCopyFeedback.classList.add("hidden");
+
+    challengeModalOverlay?.classList.remove("hidden");
+    challengeModalOverlay?.classList.add("flex");
+  }
+
+  function closeChallengeModal() {
+    challengeModalOverlay?.classList.add("hidden");
+    challengeModalOverlay?.classList.remove("flex");
+    state.paused = false;
+    if (iconPause) iconPause.textContent = "⏸";
+    prevTime = performance.now();
+  }
+
+  btnOpenChallengeHud?.addEventListener("click", openChallengeModal);
+  btnPauseChallenge?.addEventListener("click", openChallengeModal);
+  btnGoChallenge?.addEventListener("click", openChallengeModal);
+  btnCloseChallenge?.addEventListener("click", closeChallengeModal);
+
+  challengePlayerName?.addEventListener("input", () => {
+    localStorage.setItem("kin_basket_player_pseudo", challengePlayerName.value);
+    updateChallengeModalContent();
+  });
+
+  btnCopyChallengeLink?.addEventListener("click", () => {
+    const url = challengeShareUrl?.value || generateChallengeShareLink();
+    navigator.clipboard.writeText(url).then(() => {
+      if (challengeCopyFeedback) {
+        challengeCopyFeedback.classList.remove("hidden");
+        setTimeout(() => challengeCopyFeedback.classList.add("hidden"), 3000);
+      }
+    }).catch(() => {});
+  });
+
+  /* -------------------------------------------------------------------------- */
   /*  BOUCLE DE RENDU 3D                                                        */
   /* -------------------------------------------------------------------------- */
   let prevTime = performance.now();
@@ -1686,8 +1906,30 @@
     if (state.phase === "aiming") applyPlayableFraming();
   });
 
+  // Lecture des paramètres de défi en ligne (si un ami a partagé son lien)
+  let initialTier = 0;
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const challenger = urlParams.get("defie_par");
+    const challengedLevel = Number(urlParams.get("niveau") || 0);
+    const challengedScore = urlParams.get("score");
+    if (challengedLevel > 0 && challengedLevel <= TIERS.length) {
+      initialTier = challengedLevel - 1;
+    }
+    if (challenger && shotToast && toastTitle && toastSubtitle && toastEmoji) {
+      setTimeout(() => {
+        toastEmoji.textContent = "⚔️";
+        toastTitle.textContent = `DÉFI REÇU DE ${challenger.toUpperCase()} !`;
+        const scoreTxt = challengedScore !== null ? `Score à battre : ${challengedScore}/5` : "Viens claquer des swishs !";
+        toastSubtitle.textContent = `Niveau ${initialTier + 1} (${TIERS[initialTier].name}) · ${scoreTxt}`;
+        shotToast.classList.remove("opacity-0", "-translate-y-4");
+        setTimeout(() => shotToast.classList.add("opacity-0", "-translate-y-4"), 4500);
+      }, 1200);
+    }
+  } catch {}
+
   scene.background = new THREE.Color("#050914");
-  startSeries(0);
+  startSeries(initialTier);
   renderPlaylistUi();
   renderLevelsModal();
   animate();
