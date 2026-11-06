@@ -101,6 +101,21 @@
       </div>
     </div>
 
+    <!-- CENTRE : TIMER DU NIVEAU IMMERSIF (CHRONO SOUS PRESSION) -->
+    <div class="pointer-events-auto flex flex-col items-center">
+      <div
+        id="hud-level-timer-pill"
+        class="flex items-center gap-1.5 rounded-2xl border-2 border-emerald-500 bg-[#060d1f] px-3 sm:px-4 py-1 shadow-2xl transition-all"
+      >
+        <span class="text-xs">⏱️</span>
+        <span class="text-[0.6rem] font-black uppercase tracking-wider text-slate-300">TIMER NIVEAU :</span>
+        <span id="hud-level-timer" class="font-display text-sm sm:text-base font-black tracking-wider text-white">35.0s</span>
+      </div>
+      <div class="mt-1 h-1.5 w-24 sm:w-36 overflow-hidden rounded-full bg-[#040917] border border-[#1e3a6e]">
+        <div id="hud-level-timer-bar" class="h-full w-full bg-emerald-400 transition-all duration-75"></div>
+      </div>
+    </div>
+
     <!-- DROITE : CONTRÔLES COMPACTS (MUSIQUE + SON + PAUSE + MENU) -->
     <div class="pointer-events-auto flex flex-col items-end gap-1.5 shrink-0">
       <div class="flex items-center gap-1 sm:gap-1.5">
@@ -864,6 +879,7 @@
     keeperArmSpan: number;
     keeperReadProb: number;
     windMaxKmh: number;
+    levelTimerSec: number;
   }
 
   const TIERS: LevelTier[] = [
@@ -876,7 +892,8 @@
       deficitLabel: "RDC menée 0 – 2",
       oppScore: 2,
       targetGoals: 3,
-      desc: "Séance de 5 penalties : marque au moins 3 buts sur 5 plein axe pour renverser le score (3–2) !",
+      levelTimerSec: 35,
+      desc: "Séance de 5 penalties : marque au moins 3 buts sur 5 plein axe pour renverser le score (3–2) ! Timer 35s.",
       ballX: 0,
       ballZ: 11.0,
       wallPlayers: 0,
@@ -897,7 +914,8 @@
       deficitLabel: "RDC menée 0 – 2",
       oppScore: 2,
       targetGoals: 3,
-      desc: "Séance de 5 penalties : vent léger (14 km/h) et gardien titulaire explosif. Objectif : 3/5 !",
+      levelTimerSec: 18,
+      desc: "Chrono 18s ! Vent léger (14 km/h) et gardien titulaire explosif. Objectif : 3/5 sans traîner !",
       ballX: 0,
       ballZ: 11.0,
       wallPlayers: 0,
@@ -918,7 +936,8 @@
       deficitLabel: "RDC menée 0 – 3",
       oppScore: 3,
       targetGoals: 4,
-      desc: "Coup franc direct à l'entrée de la surface ! Contourne ou survole le mur de 3 joueurs pour tromper le gardien.",
+      levelTimerSec: 15,
+      desc: "Coup franc direct à l'entrée de la surface ! 15s au chrono, contourne le mur de 3 joueurs. 4/5 exigés !",
       ballX: 0,
       ballZ: 19.5,
       wallPlayers: 3,
@@ -939,7 +958,8 @@
       deficitLabel: "RDC menée 0 – 3",
       oppScore: 3,
       targetGoals: 4,
-      desc: "Coup franc excentré côté gauche ! Enroule fort du pied droit par-dessus le mur de 4 joueurs malgré les rafales (25 km/h).",
+      levelTimerSec: 12.5,
+      desc: "12.5 secondes seulement ! Enroule fort du pied droit par-dessus le mur de 4 joueurs malgré les rafales 25 km/h.",
       ballX: -3.6,
       ballZ: 23.0,
       wallPlayers: 4,
@@ -960,7 +980,8 @@
       deficitLabel: "RDC menée 0 – 4",
       oppScore: 4,
       targetGoals: 4,
-      desc: "27 mètres des buts, mur compact de 5 joueurs sautant et rafales 32 km/h. Seuls les tireurs d'élite qualifient les Léopards !",
+      levelTimerSec: 10,
+      desc: "10 secondes au chrono ! 27 mètres des buts, mur compact de 5 joueurs sautant et rafales 32 km/h. Seuls les tireurs d'élite l'emportent !",
       ballX: 1.8,
       ballZ: 27.0,
       wallPlayers: 5,
@@ -1103,6 +1124,8 @@
     kickIndex: 0,                      // 0..4 (5 tirs par séance)
     kickHistory: [] as ("goal" | "miss")[],
     goalsInSeries: 0,
+    levelTimeRemaining: 35.0,
+    levelTotalTime: 35.0,
     windKmh: 0,
     wallSide: 1,
     isNight: true,
@@ -1129,6 +1152,9 @@
   const swipeCanvas = document.getElementById("swipe-trail-canvas") as HTMLCanvasElement;
   const swipeCtx = swipeCanvas.getContext("2d")!;
 
+  const hudLevelTimer = document.getElementById("hud-level-timer");
+  const hudLevelTimerBar = document.getElementById("hud-level-timer-bar");
+  const hudLevelTimerPill = document.getElementById("hud-level-timer-pill");
   const hudRdcScore = document.getElementById("hud-rdc-score");
   const hudOppScore = document.getElementById("hud-opp-score");
   const hudKickCounter = document.getElementById("hud-kick-counter");
@@ -4527,7 +4553,7 @@
     }
   }
 
-  function showSeriesSummaryModal() {
+  function showSeriesSummaryModal(timeExpired = false) {
     state.phase = "gameover";
     const tier = getActiveTier();
     const wonLevel = state.goalsInSeries >= tier.targetGoals;
@@ -4546,18 +4572,28 @@
     if (goKicker) {
       goKicker.textContent = wonLevel
         ? `Niveau ${tier.id} Validé · Qualification !`
-        : `Fin des 5 Tirs · Objectif ${tier.targetGoals}/5`;
+        : timeExpired
+          ? "Chrono Expiré ⏱️"
+          : `Fin des 5 Tirs · Objectif ${tier.targetGoals}/5`;
       goKicker.className = wonLevel
         ? "mt-2 block text-[0.52rem] font-bold uppercase tracking-widest text-emerald-400"
         : "mt-2 block text-[0.52rem] font-bold uppercase tracking-widest text-red-400";
     }
     if (goTitle) {
-      goTitle.textContent = wonLevel ? "REMONTADA AUX MARTYRS !" : "ÉLIMINATION AUX TAB";
+      if (timeExpired && !wonLevel) {
+        goTitle.textContent = "TEMPS DU NIVEAU ÉCOULÉ ! ⏱️🚨";
+      } else {
+        goTitle.textContent = wonLevel ? "REMONTADA AUX MARTYRS !" : "ÉLIMINATION AUX TAB";
+      }
     }
     if (goDesc) {
-      goDesc.textContent = wonLevel
-        ? `Score final : RDC ${state.goalsInSeries} – ${tier.oppScore} ADV. Prêt pour le niveau supérieur !`
-        : `Score final : RDC ${state.goalsInSeries} – ${tier.oppScore} ADV. Il fallait ${tier.targetGoals} buts sur 5.`;
+      if (timeExpired && !wonLevel) {
+        goDesc.textContent = `Chronomètre de ${tier.levelTimerSec}s expiré (0.0s) ! Score final : RDC ${state.goalsInSeries} – ${tier.oppScore} ADV. Il fallait marquer ${tier.targetGoals} buts sur 5.`;
+      } else {
+        goDesc.textContent = wonLevel
+          ? `Score final : RDC ${state.goalsInSeries} – ${tier.oppScore} ADV. Prêt pour le niveau supérieur !`
+          : `Score final : RDC ${state.goalsInSeries} – ${tier.oppScore} ADV. Il fallait ${tier.targetGoals} buts sur 5.`;
+      }
     }
 
     if (goFiveRecap) {
@@ -4604,6 +4640,15 @@
     state.kickIndex = 0;
     state.kickHistory = [];
     state.goalsInSeries = 0;
+
+    const tier = getActiveTier();
+    state.levelTimeRemaining = tier.levelTimerSec;
+    state.levelTotalTime = tier.levelTimerSec;
+    if (hudLevelTimer) hudLevelTimer.textContent = `${tier.levelTimerSec.toFixed(1)}s`;
+    if (hudLevelTimerBar) hudLevelTimerBar.style.width = "100%";
+    if (hudLevelTimerPill) {
+      hudLevelTimerPill.className = "flex items-center gap-1.5 rounded-2xl border-2 border-emerald-500 bg-[#060d1f] px-3 sm:px-4 py-1 shadow-2xl transition-all";
+    }
 
     gameoverModal?.classList.add("hidden");
     gameoverModal?.classList.remove("flex");
@@ -4652,7 +4697,7 @@
         </div>
         <div class="mt-2.5 flex items-center justify-between border-t border-[#162a52] pt-2 text-[0.62rem] font-bold uppercase tracking-wider text-slate-400">
           <span>Format : <strong class="text-or">${t.distanceLabel}</strong></span>
-          <span>Obj : <strong class="text-emerald-400">${t.targetGoals}/5</strong> · Vent : <strong class="text-sky-300">${t.windMaxKmh} km/h</strong></span>
+          <span>Obj : <strong class="text-emerald-400">${t.targetGoals}/5</strong> · Timer : <strong class="text-red-400 font-black">${t.levelTimerSec}s</strong></span>
         </div>
       `;
 
@@ -5017,6 +5062,39 @@
       goalFrameVibration = Math.max(0, goalFrameVibration - dt * 0.55);
     } else {
       goalGroup.position.x = 0;
+    }
+
+    // Décompte du timer de niveau immersif (sous pression)
+    if (state.phase !== "cinematic" && state.phase !== "gameover" && !state.paused) {
+      state.levelTimeRemaining -= dt;
+      const tRem = Math.max(0, state.levelTimeRemaining);
+
+      if (hudLevelTimer) hudLevelTimer.textContent = `${tRem.toFixed(1)}s`;
+
+      if (hudLevelTimerBar) {
+        const total = getActiveTier().levelTimerSec;
+        const pct = Math.max(0, Math.min(100, (tRem / total) * 100));
+        hudLevelTimerBar.style.width = `${pct}%`;
+        if (tRem <= 4.0 || pct < 25) {
+          hudLevelTimerBar.className = "h-full bg-red-500 animate-pulse";
+          hudLevelTimerPill?.classList.remove("border-emerald-500", "border-amber-400");
+          hudLevelTimerPill?.classList.add("border-red-500", "animate-pulse");
+        } else if (pct < 55) {
+          hudLevelTimerBar.className = "h-full bg-amber-400";
+          hudLevelTimerPill?.classList.remove("border-emerald-500", "border-red-500", "animate-pulse");
+          hudLevelTimerPill?.classList.add("border-amber-400");
+        } else {
+          hudLevelTimerBar.className = "h-full bg-emerald-400";
+          hudLevelTimerPill?.classList.remove("border-red-500", "border-amber-400", "animate-pulse");
+          hudLevelTimerPill?.classList.add("border-emerald-500");
+        }
+      }
+
+      if (state.levelTimeRemaining <= 0) {
+        state.levelTimeRemaining = 0;
+        playWhistleAudio();
+        showSeriesSummaryModal(true); // Expiré par le timer !
+      }
     }
 
     if (state.phase === "cinematic") {

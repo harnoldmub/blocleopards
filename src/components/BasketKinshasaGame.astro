@@ -86,6 +86,21 @@
       </div>
     </div>
 
+    <!-- CENTRE : TIMER DU NIVEAU IMMERSIF (CHRONO SOUS PRESSION) -->
+    <div class="pointer-events-auto flex flex-col items-center">
+      <div
+        id="hud-level-timer-pill"
+        class="flex items-center gap-1.5 rounded-2xl border-2 border-emerald-500 bg-[#060d1f] px-3 sm:px-4 py-1 shadow-2xl transition-all"
+      >
+        <span class="text-xs">⏱️</span>
+        <span class="text-[0.6rem] font-black uppercase tracking-wider text-slate-300">TIMER NIVEAU :</span>
+        <span id="hud-level-timer" class="font-display text-sm sm:text-base font-black tracking-wider text-white">32.0s</span>
+      </div>
+      <div class="mt-1 h-1.5 w-24 sm:w-36 overflow-hidden rounded-full bg-[#040917] border border-[#1e3a6e]">
+        <div id="hud-level-timer-bar" class="h-full w-full bg-emerald-400 transition-all duration-75"></div>
+      </div>
+    </div>
+
     <!-- DROITE : BOUTONS DE COMMANDE (DÉFI + PAUSE + SON + MENU) -->
     <div class="pointer-events-auto flex items-center gap-1.5">
       <button
@@ -524,7 +539,8 @@
     targetGoals: number; // Buts requis pour valider le niveau (sur 5)
     tolerancePct: number;
     gaugeSpeed: number; // Vitesse de montée de la jauge
-    shotClockSec: number; // Temps limite par tir
+    shotClockSec: number; // Temps limite indicatif par tir
+    levelTimerSec: number; // Chrono global du niveau pour la série complète
     windMaxKmh: number;
     spots: CourtSpot[];
   }
@@ -591,96 +607,104 @@
       id: 1,
       name: "Échauffement 7ᵉ Rue",
       subtitle: "Lancers francs & tirs ouverts",
-      desc: "5 lancers francs pour caler le poignet. 20 secondes, vent nul, tolérance souple et jauge accessible.",
+      desc: "5 lancers francs tranquilles pour s'échauffer. Timer 32s, vent nul, tolérance large. 3/5 exigés.",
       targetGoals: 3,
-      tolerancePct: 12.0,
+      tolerancePct: 11.0,
       gaugeSpeed: 44,
-      shotClockSec: 20,
+      shotClockSec: 15,
+      levelTimerSec: 32,
       windMaxKmh: 0,
       spots: SPOTS_WARMUP
     },
     {
       id: 2,
       name: "Playground Limete",
-      subtitle: "Tour de l'arc classique",
-      desc: "Rotation 45° et mi-distance. Jauge plus dynamique et légère brise (6 km/h).",
+      subtitle: "Chrono 18s & Tolérance Serrée",
+      desc: "Attention, le défi commence ! Seulement 18s au chrono pour 5 tirs, jauge accélérée et brise 8 km/h. 3/5 !",
       targetGoals: 3,
-      tolerancePct: 9.5,
-      gaugeSpeed: 56,
-      shotClockSec: 16,
-      windMaxKmh: 6,
+      tolerancePct: 4.8,
+      gaugeSpeed: 78,
+      shotClockSec: 5.5,
+      levelTimerSec: 18,
+      windMaxKmh: 8,
       spots: SPOTS_STANDARD
     },
     {
       id: 3,
       name: "Tournoi Urbain Kin",
-      subtitle: "Tirs primés 3pts & chrono 13s",
-      desc: "3 points dans les corners et à 45°. Chrono offensif 13s, vent latéral 12 km/h et 4/5 exigés !",
+      subtitle: "Tirs primés 3pts & Chrono 14s",
+      desc: "3 points sous pression : 14 secondes pour 5 tirs ! Rafales 14 km/h, jauge vive et 4/5 obligatoires.",
       targetGoals: 4,
-      tolerancePct: 7.5,
-      gaugeSpeed: 70,
-      shotClockSec: 13,
-      windMaxKmh: 12,
+      tolerancePct: 3.8,
+      gaugeSpeed: 96,
+      shotClockSec: 4.5,
+      levelTimerSec: 14,
+      windMaxKmh: 14,
       spots: SPOTS_CLUTCH
     },
     {
       id: 4,
       name: "Money Time Léopards",
-      subtitle: "Chrono 10s sous pression",
-      desc: "Tirs longue distance, 10s avant le buzzer et brise à 16 km/h. Réflexe vif et 4/5 obligatoires !",
+      subtitle: "Chrono Éclair 11.5s",
+      desc: "Clutch shot ! 11.5s chrono, tirs à 7.3m, vent 18 km/h et zone verte millimétrée. 4/5 exigés !",
       targetGoals: 4,
-      tolerancePct: 6.0,
-      gaugeSpeed: 86,
-      shotClockSec: 10,
-      windMaxKmh: 16,
+      tolerancePct: 3.0,
+      gaugeSpeed: 118,
+      shotClockSec: 3.8,
+      levelTimerSec: 11.5,
+      windMaxKmh: 18,
       spots: SPOTS_CLUTCH
     },
     {
       id: 5,
       name: "Légende Buzzer Beater",
-      subtitle: "Logo 8m+ & Chrono éclair 8s",
-      desc: "Du logo à plus de 8 mètres ! Chrono éclair 8s, vent à 20 km/h et zone verte très resserrée.",
+      subtitle: "Logo 8.4m & Chrono 9.8s",
+      desc: "Du logo à 8.4m : 9.8s au total, rafales 22 km/h et jauge ultra rapide. 4/5 obligatoires !",
       targetGoals: 4,
-      tolerancePct: 4.8,
-      gaugeSpeed: 102,
-      shotClockSec: 8,
-      windMaxKmh: 20,
+      tolerancePct: 2.4,
+      gaugeSpeed: 138,
+      shotClockSec: 3.2,
+      levelTimerSec: 9.8,
+      windMaxKmh: 22,
       spots: SPOTS_LOGO
     },
     {
       id: 6,
       name: "Shootout Matonge",
-      subtitle: "Corners Zéro Degré & Rafales",
-      desc: "Tirs au ras de la ligne de touche, chrono 7s, rafales 24 km/h et jauge rapide. Pas le droit à l'erreur !",
+      subtitle: "Corners Zéro Degré & 8.5s",
+      desc: "Corners 0° ras de ligne. 8.5s au chrono global, vent 26 km/h. Pas le droit à l'erreur !",
       targetGoals: 4,
-      tolerancePct: 3.8,
-      gaugeSpeed: 120,
-      shotClockSec: 7,
-      windMaxKmh: 24,
+      tolerancePct: 1.9,
+      gaugeSpeed: 158,
+      shotClockSec: 2.8,
+      levelTimerSec: 8.5,
+      windMaxKmh: 26,
       spots: SPOTS_MATONGE
     },
     {
       id: 7,
       name: "Finale Boulevard Triomphal",
-      subtitle: "Distance Parking 8.8m+",
-      desc: "Chrono 6s à très longue distance. Vent 28 km/h et 5/5 exigé pour accéder au trône !",
+      subtitle: "Distance Parking 8.8m & 7.5s",
+      desc: "8.8m du cercle. 7.5s chrono total, vent 30 km/h et 5/5 parfait exigé !",
       targetGoals: 5,
-      tolerancePct: 3.0,
-      gaugeSpeed: 138,
-      shotClockSec: 6,
-      windMaxKmh: 28,
+      tolerancePct: 1.5,
+      gaugeSpeed: 178,
+      shotClockSec: 2.5,
+      levelTimerSec: 7.5,
+      windMaxKmh: 30,
       spots: SPOTS_BOULEVARD
     },
     {
       id: 8,
       name: "Roi du Playground Léopards",
-      subtitle: "Le Défi Suprême · 5/5 Parfait !",
-      desc: "Du milieu de terrain à 10.2 mètres, chrono 5s, vent à 32 km/h et jauge éclair. Seuls les dieux du shoot l'emportent !",
+      subtitle: "Le Défi Suprême · 6.8s · 5/5 !",
+      desc: "Milieu de terrain à 10.2m, 6.8s au chrono et vent 34 km/h. Seuls les dieux du shoot réussissent le 5/5 !",
       targetGoals: 5,
-      tolerancePct: 2.2,
-      gaugeSpeed: 155,
-      shotClockSec: 5,
-      windMaxKmh: 32,
+      tolerancePct: 1.2,
+      gaugeSpeed: 200,
+      shotClockSec: 2.2,
+      levelTimerSec: 6.8,
+      windMaxKmh: 34,
       spots: SPOTS_LEOPARDS_ROYAL
     }
   ];
@@ -692,7 +716,9 @@
     shotIndex: 0, // 0..4 (5 tirs par série)
     shotsHistory: [] as boolean[],
     goalsInSeries: 0,
-    shotClockRemaining: 24.0,
+    shotClockRemaining: 32.0,
+    levelTimeRemaining: 32.0,
+    levelTotalTime: 32.0,
     currentWindKmh: 0,
     maxUnlockedTier: Number(localStorage.getItem("kin_basket_max_tier") || 1),
     bestScore: Number(localStorage.getItem("kin_basket_best_score") || 0),
@@ -737,6 +763,9 @@
   const swipeCtx = swipeCanvas.getContext("2d")!;
 
   const hudShotclock = document.getElementById("hud-shotclock");
+  const hudLevelTimer = document.getElementById("hud-level-timer");
+  const hudLevelTimerBar = document.getElementById("hud-level-timer-bar");
+  const hudLevelTimerPill = document.getElementById("hud-level-timer-pill");
   const hudScoreMade = document.getElementById("hud-score-made");
   const hudLevelBadge = document.getElementById("hud-level-badge");
   const hudSpotLabel = document.getElementById("hud-spot-label");
@@ -1276,6 +1305,16 @@
     state.goalsInSeries = 0;
     state.paused = false;
 
+    const tier = getActiveTier();
+    state.levelTimeRemaining = tier.levelTimerSec;
+    state.levelTotalTime = tier.levelTimerSec;
+    if (hudLevelTimer) hudLevelTimer.textContent = `${tier.levelTimerSec.toFixed(1)}s`;
+    if (hudShotclock) hudShotclock.textContent = `${tier.levelTimerSec.toFixed(1)}`;
+    if (hudLevelTimerBar) hudLevelTimerBar.style.width = "100%";
+    if (hudLevelTimerPill) {
+      hudLevelTimerPill.className = "flex items-center gap-1.5 rounded-2xl border-2 border-emerald-500 bg-[#060d1f] px-3 sm:px-4 py-1 shadow-2xl transition-all";
+    }
+
     gameoverModal?.classList.add("hidden");
     gameoverModal?.classList.remove("flex");
     levelsModalOverlay?.classList.add("hidden");
@@ -1286,7 +1325,7 @@
     setupNextShot();
   }
 
-  function endSeries() {
+  function endSeries(timeExpired = false) {
     state.phase = "gameover";
     const tier = getActiveTier();
 
@@ -1303,11 +1342,21 @@
 
     const hasNextTier = state.currentTierIndex + 1 < TIERS.length;
 
-    if (goTitle) goTitle.textContent = passed ? "VICTOIRE À LIMETE ! 🔥" : "SÉANCE NON VALIDÉE";
+    if (goTitle) {
+      if (timeExpired && !passed) {
+        goTitle.textContent = "TEMPS DU NIVEAU ÉCOULÉ ! ⏱️🚨";
+      } else {
+        goTitle.textContent = passed ? "VICTOIRE À LIMETE ! 🔥" : "SÉANCE NON VALIDÉE";
+      }
+    }
     if (goDesc) {
-      goDesc.textContent = passed
-        ? `Magnifique performance ! ${state.goalsInSeries}/5 tirs rentrés (objectif ${tier.targetGoals}/5 atteint). ${hasNextTier ? `Niveau ${tier.id + 1} débloqué !` : "Tu as conquis tous les niveaux du playground !"}`
-        : `Tu as inscrit ${state.goalsInSeries}/5 tirs (objectif : ${tier.targetGoals}/5 pour valider ce niveau). Retente ta chance !`;
+      if (timeExpired && !passed) {
+        goDesc.textContent = `Chronomètre de ${tier.levelTimerSec}s expiré (0.0s) ! Tu as réussi ${state.goalsInSeries}/5 tirs (objectif : ${tier.targetGoals}/5 pour valider le Niveau ${tier.id}). Enchaîne plus rapidement dès le coup d'envoi !`;
+      } else {
+        goDesc.textContent = passed
+          ? `Magnifique performance ! ${state.goalsInSeries}/5 tirs rentrés (objectif ${tier.targetGoals}/5 atteint). ${hasNextTier ? `Niveau ${tier.id + 1} débloqué !` : "Tu as conquis tous les niveaux du playground !"}`
+          : `Tu as inscrit ${state.goalsInSeries}/5 tirs (objectif : ${tier.targetGoals}/5 pour valider ce niveau). Retente ta chance !`;
+      }
     }
     if (goStatStreak) goStatStreak.textContent = `${state.goalsInSeries}/5`;
     if (goStatLevel) goStatLevel.textContent = `Niv. ${tier.id}`;
@@ -1720,7 +1769,7 @@
         </div>
         <div class="mt-2.5 flex items-center justify-between border-t border-[#1e3a6e] pt-2 text-[0.62rem] font-bold uppercase tracking-wider text-slate-400">
           <span>Objectif : <strong class="text-emerald-400">${t.targetGoals}/5 tirs</strong></span>
-          <span>Chrono : <strong class="text-feu">${t.shotClockSec}s</strong> · Vent : <strong class="text-sky-300">${t.windMaxKmh} km/h</strong></span>
+          <span>Timer Niveau : <strong class="text-red-400 font-black">${t.levelTimerSec}s</strong> · Vent : <strong class="text-sky-300">${t.windMaxKmh} km/h</strong></span>
         </div>
       `;
       if (unlocked) card.addEventListener("click", () => startSeries(idx));
@@ -1948,16 +1997,37 @@
     ballContactShadow.scale.set(sScale, sScale, 1);
     (ballContactShadow.material as THREE.MeshBasicMaterial).opacity = Math.max(0.08, 0.65 * Math.exp(-h * 0.9));
 
-    // Décompte de l'horloge des 24 secondes (ou chrono réduit selon le niveau)
-    if (state.phase === "aiming" || state.phase === "charging") {
-      state.shotClockRemaining -= dt;
-      if (hudShotclock) {
-        hudShotclock.textContent = Math.max(0, state.shotClockRemaining).toFixed(1);
+    // Décompte du chrono global du niveau (Timer immersif sous haute pression)
+    if (state.phase !== "gameover" && !state.paused) {
+      state.levelTimeRemaining -= dt;
+      const tRem = Math.max(0, state.levelTimeRemaining);
+
+      if (hudLevelTimer) hudLevelTimer.textContent = `${tRem.toFixed(1)}s`;
+      if (hudShotclock) hudShotclock.textContent = `${tRem.toFixed(1)}`;
+
+      if (hudLevelTimerBar) {
+        const total = getActiveTier().levelTimerSec;
+        const pct = Math.max(0, Math.min(100, (tRem / total) * 100));
+        hudLevelTimerBar.style.width = `${pct}%`;
+        if (tRem <= 4.0 || pct < 25) {
+          hudLevelTimerBar.className = "h-full bg-red-500 animate-pulse";
+          hudLevelTimerPill?.classList.remove("border-emerald-500", "border-amber-400");
+          hudLevelTimerPill?.classList.add("border-red-500", "animate-pulse");
+        } else if (pct < 55) {
+          hudLevelTimerBar.className = "h-full bg-amber-400";
+          hudLevelTimerPill?.classList.remove("border-emerald-500", "border-red-500", "animate-pulse");
+          hudLevelTimerPill?.classList.add("border-amber-400");
+        } else {
+          hudLevelTimerBar.className = "h-full bg-emerald-400";
+          hudLevelTimerPill?.classList.remove("border-red-500", "border-amber-400", "animate-pulse");
+          hudLevelTimerPill?.classList.add("border-emerald-500");
+        }
       }
-      if (state.shotClockRemaining <= 0) {
-        // Violation des 24s / Buzzer expiré : tir annulé & raté !
+
+      if (state.levelTimeRemaining <= 0) {
+        state.levelTimeRemaining = 0;
         playRimClangAudio();
-        onShotResolved(false, "BUZZER EXPIRÉ (0.0s) ! 🚨");
+        endSeries(true); // Expiré par le timer du niveau !
       }
     }
 
