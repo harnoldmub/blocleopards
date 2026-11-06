@@ -136,11 +136,9 @@
     </span>
     <div class="relative h-56 w-5 overflow-hidden rounded-full border-2 border-[#1e3a6e] bg-[#030712] p-0.5 shadow-2xl">
       <!-- Zone Trop Forte (>= 92%) : Tir raté violent -->
-      <div class="absolute inset-x-0 top-0 h-[8%] bg-red-600 border-b border-red-400"></div>
-      <!-- Zone Idéale / Réussite (54% - 91%) : Panier garanti (Swish ou Rebond Planche) -->
-      <div class="absolute inset-x-0 top-[8%] h-[38%] bg-emerald-500/80 border-y-2 border-emerald-300"></div>
-      <!-- Zone Trop Faible (< 54%) : Trop court -->
-      <div class="absolute inset-x-0 bottom-0 h-[54%] bg-sky-950/40"></div>
+      <div class="absolute inset-x-0 top-0 h-[8%] bg-red-600/80 border-b border-red-400"></div>
+      <!-- Zone Cible Dynamique (Réussite selon la distance et le niveau) -->
+      <div id="power-meter-target-zone" class="absolute inset-x-0 bottom-[60%] h-[20%] bg-emerald-500/85 border-y-2 border-emerald-300 transition-all duration-200"></div>
       <!-- Remplissage dynamique -->
       <div id="power-meter-fill" class="absolute inset-x-0.5 bottom-0.5 rounded-full bg-gradient-to-t from-sky-400 via-emerald-400 to-red-500" style="height: 0%"></div>
     </div>
@@ -593,11 +591,11 @@
       id: 1,
       name: "Échauffement 7ᵉ Rue",
       subtitle: "Lancers francs & tirs ouverts",
-      desc: "5 lancers francs pour caler le poignet. 24 secondes, vent nul, tolérance large et jauge facile.",
-      targetGoals: 2,
-      tolerancePct: 15.0,
-      gaugeSpeed: 34,
-      shotClockSec: 24,
+      desc: "5 lancers francs pour caler le poignet. 20 secondes, vent nul, tolérance souple et jauge accessible.",
+      targetGoals: 3,
+      tolerancePct: 12.0,
+      gaugeSpeed: 44,
+      shotClockSec: 20,
       windMaxKmh: 0,
       spots: SPOTS_WARMUP
     },
@@ -605,84 +603,84 @@
       id: 2,
       name: "Playground Limete",
       subtitle: "Tour de l'arc classique",
-      desc: "Rotation 45° et tirs à mi-distance. Jauge agréable et légère brise.",
+      desc: "Rotation 45° et mi-distance. Jauge plus dynamique et légère brise (6 km/h).",
       targetGoals: 3,
-      tolerancePct: 13.0,
-      gaugeSpeed: 40,
-      shotClockSec: 18,
-      windMaxKmh: 4,
+      tolerancePct: 9.5,
+      gaugeSpeed: 56,
+      shotClockSec: 16,
+      windMaxKmh: 6,
       spots: SPOTS_STANDARD
     },
     {
       id: 3,
       name: "Tournoi Urbain Kin",
-      subtitle: "Tirs primés & chrono 14s",
-      desc: "3 points dans les corners et à 45°. Chrono offensif FIBA 14s et vent latéral sensible.",
-      targetGoals: 3,
-      tolerancePct: 11.5,
-      gaugeSpeed: 48,
-      shotClockSec: 14,
-      windMaxKmh: 8,
+      subtitle: "Tirs primés 3pts & chrono 13s",
+      desc: "3 points dans les corners et à 45°. Chrono offensif 13s, vent latéral 12 km/h et 4/5 exigés !",
+      targetGoals: 4,
+      tolerancePct: 7.5,
+      gaugeSpeed: 70,
+      shotClockSec: 13,
+      windMaxKmh: 12,
       spots: SPOTS_CLUTCH
     },
     {
       id: 4,
       name: "Money Time Léopards",
       subtitle: "Chrono 10s sous pression",
-      desc: "Lancers serrés, 10s avant le buzzer et brise à Limete. 4/5 exigés !",
+      desc: "Tirs longue distance, 10s avant le buzzer et brise à 16 km/h. Réflexe vif et 4/5 obligatoires !",
       targetGoals: 4,
-      tolerancePct: 10.0,
-      gaugeSpeed: 56,
+      tolerancePct: 6.0,
+      gaugeSpeed: 86,
       shotClockSec: 10,
-      windMaxKmh: 12,
+      windMaxKmh: 16,
       spots: SPOTS_CLUTCH
     },
     {
       id: 5,
       name: "Légende Buzzer Beater",
-      subtitle: "Logo 8m+ & Chrono éclair 7s",
-      desc: "Du logo du terrain à plus de 8 mètres ! 7 secondes par tir et vent modéré.",
+      subtitle: "Logo 8m+ & Chrono éclair 8s",
+      desc: "Du logo à plus de 8 mètres ! Chrono éclair 8s, vent à 20 km/h et zone verte très resserrée.",
       targetGoals: 4,
-      tolerancePct: 8.5,
-      gaugeSpeed: 64,
-      shotClockSec: 7,
-      windMaxKmh: 16,
+      tolerancePct: 4.8,
+      gaugeSpeed: 102,
+      shotClockSec: 8,
+      windMaxKmh: 20,
       spots: SPOTS_LOGO
     },
     {
       id: 6,
       name: "Shootout Matonge",
       subtitle: "Corners Zéro Degré & Rafales",
-      desc: "Tirs au ras de la ligne de touche et vent changeant. 9s par tir !",
+      desc: "Tirs au ras de la ligne de touche, chrono 7s, rafales 24 km/h et jauge rapide. Pas le droit à l'erreur !",
       targetGoals: 4,
-      tolerancePct: 7.5,
-      gaugeSpeed: 70,
-      shotClockSec: 9,
-      windMaxKmh: 20,
+      tolerancePct: 3.8,
+      gaugeSpeed: 120,
+      shotClockSec: 7,
+      windMaxKmh: 24,
       spots: SPOTS_MATONGE
     },
     {
       id: 7,
       name: "Finale Boulevard Triomphal",
       subtitle: "Distance Parking 8.8m+",
-      desc: "Chrono éclair 8s à très longue distance. Reste concentré sur la zone verte pour valider 4/5 !",
-      targetGoals: 4,
-      tolerancePct: 6.8,
-      gaugeSpeed: 76,
-      shotClockSec: 8,
-      windMaxKmh: 24,
+      desc: "Chrono 6s à très longue distance. Vent 28 km/h et 5/5 exigé pour accéder au trône !",
+      targetGoals: 5,
+      tolerancePct: 3.0,
+      gaugeSpeed: 138,
+      shotClockSec: 6,
+      windMaxKmh: 28,
       spots: SPOTS_BOULEVARD
     },
     {
       id: 8,
       name: "Roi du Playground Léopards",
-      subtitle: "Le Défi Suprême · 5/5 Exigé !",
-      desc: "Du milieu de terrain à 10.2 mètres, chrono 6s et vent à 28 km/h. Seuls les tireurs d'élite font le 5/5 !",
+      subtitle: "Le Défi Suprême · 5/5 Parfait !",
+      desc: "Du milieu de terrain à 10.2 mètres, chrono 5s, vent à 32 km/h et jauge éclair. Seuls les dieux du shoot l'emportent !",
       targetGoals: 5,
-      tolerancePct: 6.0,
-      gaugeSpeed: 84,
-      shotClockSec: 6,
-      windMaxKmh: 28,
+      tolerancePct: 2.2,
+      gaugeSpeed: 155,
+      shotClockSec: 5,
+      windMaxKmh: 32,
       spots: SPOTS_LEOPARDS_ROYAL
     }
   ];
@@ -706,6 +704,31 @@
     return TIERS[state.currentTierIndex] || TIERS[0];
   }
 
+  function getShotTargetWindow(tier: BasketTier, spot: CourtSpot) {
+    const dist = Math.hypot(spot.x, spot.z);
+    // Distance entre 4.4m (lancer franc) et 10.2m (milieu de terrain)
+    const distFactor = Math.min(1, Math.max(0, (dist - 4.4) / (10.2 - 4.4)));
+    // Plus la distance augmente, plus le sweet spot monte (de 68% à 84%)
+    const sweetCenter = 68 + distFactor * 16;
+    const tolerance = tier.tolerancePct;
+    const minMake = Math.max(25, sweetCenter - tolerance);
+    const maxMake = Math.min(92, sweetCenter + tolerance);
+    // Zone du swish net : coeur à ±30% de la tolérance
+    const swishHalf = Math.max(1.6, tolerance * 0.32);
+    const minSwish = sweetCenter - swishHalf;
+    const maxSwish = sweetCenter + swishHalf;
+
+    return {
+      dist,
+      sweetCenter,
+      tolerance,
+      minMake,
+      maxMake,
+      minSwish,
+      maxSwish
+    };
+  }
+
   /* -------------------------------------------------------------------------- */
   /*  DOM REFERENCES                                                            */
   /* -------------------------------------------------------------------------- */
@@ -721,6 +744,7 @@
   const hudKickDots = document.querySelectorAll<HTMLSpanElement>(".dot-shot");
 
   const powerMeterWrap = document.getElementById("power-meter-wrap");
+  const powerMeterTargetZone = document.getElementById("power-meter-target-zone");
   const powerMeterFill = document.getElementById("power-meter-fill");
   const powerMeterPct = document.getElementById("power-meter-pct");
   const powerMeterZoneBadge = document.getElementById("power-meter-zone-badge");
@@ -1234,6 +1258,12 @@
     applyPlayableFraming();
     updateHud();
 
+    const targetWin = getShotTargetWindow(tier, getCurrentSpot());
+    if (powerMeterTargetZone) {
+      powerMeterTargetZone.style.bottom = `${targetWin.minMake}%`;
+      powerMeterTargetZone.style.height = `${Math.max(4, targetWin.maxMake - targetWin.minMake)}%`;
+    }
+
     swipeCtx.clearRect(0, 0, swipeCanvas.width, swipeCanvas.height);
     if (powerMeterWrap) powerMeterWrap.classList.add("opacity-0");
     if (powerMeterFill) powerMeterFill.style.height = "0%";
@@ -1324,6 +1354,7 @@
     hitBackboard: false,
     hitRim: false,
     scoredTriggered: false,
+    missedReason: "",
     elapsed: 0
   };
 
@@ -1331,13 +1362,16 @@
     if (!chargeActive || state.phase !== "charging" || state.paused) return;
 
     const tier = getActiveTier();
+    const spot = getCurrentSpot();
+    const targetWin = getShotTargetWindow(tier, spot);
+
     lockedPowerPct = Math.min(100, lockedPowerPct + dt * tier.gaugeSpeed);
     const displayPct = Math.round(lockedPowerPct);
 
     if (powerMeterFill) powerMeterFill.style.height = `${displayPct}%`;
     const isOverload = lockedPowerPct >= 92;
-    const isMakeRange = lockedPowerPct >= 54 && lockedPowerPct < 92;
-    const isSwishRange = lockedPowerPct >= 68 && lockedPowerPct <= 88;
+    const isMakeRange = lockedPowerPct >= targetWin.minMake && lockedPowerPct <= targetWin.maxMake;
+    const isSwishRange = lockedPowerPct >= targetWin.minSwish && lockedPowerPct <= targetWin.maxSwish;
 
     if (powerMeterPct) {
       powerMeterPct.textContent = isOverload ? "MAX !" : `${displayPct}%`;
@@ -1360,14 +1394,16 @@
       } else if (isMakeRange) {
         powerMeterZoneBadge.textContent = "ZONE PANIER 🏀";
         powerMeterZoneBadge.className = "rounded bg-amber-400 px-2 py-0.5 text-[0.52rem] font-black uppercase tracking-wider text-slate-950 shadow";
-      } else {
+      } else if (lockedPowerPct < targetWin.minMake) {
         powerMeterZoneBadge.textContent = "TROP COURT";
         powerMeterZoneBadge.className = "rounded bg-sky-500 px-2 py-0.5 text-[0.52rem] font-black uppercase tracking-wider text-white shadow";
+      } else {
+        powerMeterZoneBadge.textContent = "TROP FORT";
+        powerMeterZoneBadge.className = "rounded bg-rose-500 px-2 py-0.5 text-[0.52rem] font-black uppercase tracking-wider text-white shadow";
       }
     }
 
     // Le ballon monte légèrement dans la phase d'armé du shoot
-    const spot = getCurrentSpot();
     ballMesh.position.y = 1.55 + Math.min(0.35, (lockedPowerPct / 100) * 0.35);
 
     drawSwipeTrail();
@@ -1386,9 +1422,13 @@
     swipeCtx.lineCap = "round";
     swipeCtx.lineJoin = "round";
 
+    const tier = getActiveTier();
+    const spot = getCurrentSpot();
+    const targetWin = getShotTargetWindow(tier, spot);
+
     const isOverload = lockedPowerPct >= 92;
-    const isSwishRange = lockedPowerPct >= 68 && lockedPowerPct <= 88;
-    const isMakeRange = lockedPowerPct >= 54 && lockedPowerPct < 92;
+    const isSwishRange = lockedPowerPct >= targetWin.minSwish && lockedPowerPct <= targetWin.maxSwish;
+    const isMakeRange = lockedPowerPct >= targetWin.minMake && lockedPowerPct <= targetWin.maxMake;
     const color = isOverload ? "#ef4444" : isSwishRange ? "#34d399" : isMakeRange ? "#facc15" : "#38bdf8";
 
     swipeCtx.strokeStyle = color;
@@ -1414,17 +1454,37 @@
 
     const tier = getActiveTier();
     const spot = getCurrentSpot();
+    const targetWin = getShotTargetWindow(tier, spot);
+
     const isOverload = lockedPowerPct >= 92;
-    // Zone idéale élargie (54% - 91%) : Panier Réussi !
-    const isMakeRange = lockedPowerPct >= 54 && lockedPowerPct < 92;
-    // Swish net sans toucher le cercle
-    const isSwishRange = lockedPowerPct >= 68 && lockedPowerPct <= 88;
+    let isMakeRange = lockedPowerPct >= targetWin.minMake && lockedPowerPct <= targetWin.maxMake;
+    const isSwishRange = lockedPowerPct >= targetWin.minSwish && lockedPowerPct <= targetWin.maxSwish;
+
+    let missedReason = "";
+    if (isOverload) {
+      missedReason = "TROP FORT (JAUGE AU MAX) !";
+    } else if (lockedPowerPct < targetWin.minMake) {
+      missedReason = "TIR TROP COURT !";
+    } else if (lockedPowerPct > targetWin.maxMake) {
+      missedReason = "TIR TROP FORT !";
+    }
+
+    // Effet du vent sur les tirs limites (niveaux 3 à 8) :
+    // Si on n'est pas dans le swish parfait et que le vent souffle, il dévie la balle
+    if (isMakeRange && !isSwishRange && Math.abs(state.currentWindKmh) >= 12) {
+      const distFromCenter = Math.abs(lockedPowerPct - targetWin.sweetCenter);
+      if (distFromCenter > targetWin.tolerance * 0.65) {
+        isMakeRange = false;
+        missedReason = `DÉVIÉ PAR LE VENT (${state.currentWindKmh > 0 ? "+" : ""}${state.currentWindKmh} km/h) ! 💨`;
+      }
+    }
 
     ballPhys.active = true;
     ballPhys.elapsed = 0;
     ballPhys.hitBackboard = false;
     ballPhys.hitRim = false;
     ballPhys.scoredTriggered = false;
+    ballPhys.missedReason = missedReason;
 
     if (isOverload) {
       // Trop violent / max : échec
@@ -1432,12 +1492,11 @@
       ballPhys.isSwish = false;
       ballPhys.isBankMake = false;
     } else if (isMakeRange) {
-      // Panier garanti : swish net si dosage optimal ou panier avec planche/arceau rentrant
       ballPhys.isMake = true;
       ballPhys.isSwish = isSwishRange;
-      ballPhys.isBankMake = !isSwishRange;
+      // Panier avec planche si tir excentré ou léger surdosage
+      ballPhys.isBankMake = !isSwishRange && (Math.abs(spot.x) > 2.0 || lockedPowerPct > targetWin.sweetCenter);
     } else {
-      // Moins de 54% : trop court
       ballPhys.isMake = false;
       ballPhys.isSwish = false;
       ballPhys.isBankMake = false;
@@ -1454,16 +1513,29 @@
     if (ballPhys.isBankMake) {
       targetZ = HOOP.boardZ + BALL_R + 0.04;
       targetY = HOOP.rimY + 0.36;
+      targetX = spot.x * 0.08;
     } else if (!ballPhys.isMake) {
       if (isOverload) {
         // Trop fort : tape le haut du panneau plexiglas
         targetZ = HOOP.boardZ + BALL_R + 0.04;
         targetY = HOOP.boardY + 0.35;
         targetX = (Math.random() - 0.5) * 0.35;
+      } else if (lockedPowerPct > targetWin.maxMake) {
+        // Trop fort : tape l'arrière de l'arceau
+        targetZ = HOOP.rimZ - HOOP.rimR * 0.85;
+        targetY = HOOP.rimY + 0.04;
+        targetX = (Math.random() - 0.5) * 0.15;
+      } else if (missedReason.includes("VENT")) {
+        // Dévié latéralement par le vent : tape le bord gauche ou droit du cercle
+        const windDir = Math.sign(state.currentWindKmh) || 1;
+        targetX = windDir * (HOOP.rimR + 0.04);
+        targetZ = HOOP.rimZ;
+        targetY = HOOP.rimY + 0.02;
       } else {
         // Trop court : tape l'avant de l'arceau
         targetZ = HOOP.rimZ + HOOP.rimR + 0.06;
         targetY = HOOP.rimY - 0.04;
+        targetX = (Math.random() - 0.5) * 0.12;
       }
     }
 
@@ -1480,7 +1552,7 @@
     state.phase = "charging";
     chargeActive = true;
     swipePoints = [{ x: e.clientX, y: e.clientY }];
-    lockedPowerPct = 32;
+    lockedPowerPct = 10;
 
     powerMeterWrap?.classList.remove("opacity-0");
   });
@@ -1571,7 +1643,7 @@
           ballPhys.vy = Math.abs(ballPhys.vy) * 0.48;
           ballPhys.vz = 2.4 + Math.random() * 1.5;
           ballPhys.vx = (Math.random() - 0.5) * 3.0;
-          onShotResolved(false, lockedPowerPct >= 92 ? "TROP FORT (JAUGE AU MAX) !" : "REBOND SUR L'ARCEAU !");
+          onShotResolved(false, ballPhys.missedReason || "REBOND SUR L'ARCEAU !");
         }
       }
 
