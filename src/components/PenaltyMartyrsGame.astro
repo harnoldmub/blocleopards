@@ -492,6 +492,24 @@
               </a>
             </div>
           </div>
+
+          <div class="rounded-2xl border border-white/10 bg-white/5 p-3.5">
+            <span class="block text-[0.65rem] font-black uppercase tracking-widest text-or mb-2">Démonstrations Physiques 3D (4 Cas Officiels)</span>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" data-demo-case="goal" class="btn-demo-case rounded-xl border border-emerald-400/35 bg-emerald-500/15 px-3 py-2 text-[0.68rem] font-bold uppercase tracking-wider text-emerald-200 hover:bg-emerald-500/25">
+                ⚽ 1. But dans le filet
+              </button>
+              <button type="button" data-demo-case="save" class="btn-demo-case rounded-xl border border-sky-400/35 bg-sky-500/15 px-3 py-2 text-[0.68rem] font-bold uppercase tracking-wider text-sky-200 hover:bg-sky-500/25">
+                🧤 2. Arrêt du gardien
+              </button>
+              <button type="button" data-demo-case="post_in" class="btn-demo-case rounded-xl border border-amber-400/35 bg-amber-500/15 px-3 py-2 text-[0.68rem] font-bold uppercase tracking-wider text-amber-200 hover:bg-amber-500/25">
+                🥅 3. Poteau rentrant
+              </button>
+              <button type="button" data-demo-case="post_out" class="btn-demo-case rounded-xl border border-rose-400/35 bg-rose-500/15 px-3 py-2 text-[0.68rem] font-bold uppercase tracking-wider text-rose-200 hover:bg-rose-500/25">
+                💥 4. Poteau sortant
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- ONGLET 3 : PHOTOS OFFICIELLES SDM -->
@@ -1841,18 +1859,21 @@
   let netImpactX = 0;
   let netImpactY = 1.2;
   let netImpactStrength = 0;
+  let netWaveTime = 0;
 
   function triggerNetDeformation(hitX: number, hitY: number, speed: number) {
     netImpactActive = true;
+    netWaveTime = 0;
     netImpactX = THREE.MathUtils.clamp(hitX, -GOAL.width / 2 + 0.2, GOAL.width / 2 - 0.2);
     netImpactY = THREE.MathUtils.clamp(hitY, 0.2, GOAL.height - 0.2) - GOAL.height / 2;
-    netImpactStrength = Math.min(0.75, Math.max(0.28, speed * 0.025));
+    netImpactStrength = Math.min(0.88, Math.max(0.34, speed * 0.028));
     playNetSwishAudio();
   }
 
   function updateNetMesh(dt: number) {
     if (!netImpactActive) return;
-    netImpactStrength = THREE.MathUtils.lerp(netImpactStrength, 0, dt * 5.2);
+    netWaveTime += dt;
+    netImpactStrength = THREE.MathUtils.lerp(netImpactStrength, 0, dt * 3.8);
     const posAttr = netBackGeo.attributes.position as THREE.BufferAttribute;
     for (let i = 0; i < posAttr.count; i++) {
       const ox = netBackOrigPos[i * 3];
@@ -1860,11 +1881,14 @@
       const edgeFactorX = 1 - Math.pow(Math.abs(ox) / (GOAL.width / 2), 4);
       const edgeFactorY = 1 - Math.pow(Math.abs(oy) / (GOAL.height / 2), 4);
       const dist = Math.hypot(ox - netImpactX, oy - netImpactY);
-      const pull = Math.max(0, 1 - dist / 1.85) * netImpactStrength * edgeFactorX * edgeFactorY;
+      // Poche d'impact principale + onde concentrique qui se propage dans les mailles
+      const pocket = Math.max(0, 1 - dist / 1.95);
+      const ripple = 0.28 * Math.cos(dist * 6.8 - netWaveTime * 24.0) * Math.exp(-dist * 0.95);
+      const pull = (pocket + ripple) * netImpactStrength * edgeFactorX * edgeFactorY;
       posAttr.setZ(i, -pull);
     }
     posAttr.needsUpdate = true;
-    if (netImpactStrength < 0.01) {
+    if (netImpactStrength < 0.008) {
       netImpactActive = false;
       for (let i = 0; i < posAttr.count; i++) posAttr.setZ(i, 0);
       posAttr.needsUpdate = true;
@@ -1872,7 +1896,7 @@
   }
 
   /* -------------------------------------------------------------------------- */
-  /*  GARDIEN DE BUT 3D EN POSTURE ATHLÉTIQUE DE GARDE                          */
+  /*  GARDIEN ARTICULÉ : APPUIS AU SOL, CRAMPONS, GANTS & 8 ANIMATIONS          */
   /* -------------------------------------------------------------------------- */
   function createKeeperJerseyTexture() {
     const cv = document.createElement("canvas");
@@ -1882,22 +1906,29 @@
 
     const grad = ctx.createLinearGradient(0, 0, 0, 512);
     grad.addColorStop(0, "#10b981");
-    grad.addColorStop(1, "#047857");
+    grad.addColorStop(0.55, "#059669");
+    grad.addColorStop(1, "#065f46");
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 512, 512);
 
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.14)";
-    ctx.lineWidth = 12;
-    for (let y = 70; y < 440; y += 52) {
+    // Motifs chevrons dynamiques de maillot gardien pro
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+    ctx.lineWidth = 10;
+    for (let y = 64; y < 440; y += 48) {
       ctx.beginPath();
-      ctx.moveTo(100, y);
-      ctx.lineTo(256, y + 34);
-      ctx.lineTo(412, y);
+      ctx.moveTo(90, y);
+      ctx.lineTo(256, y + 32);
+      ctx.lineTo(422, y);
       ctx.stroke();
     }
 
+    // Liserés épaules or & numéro 1 dorsal/pectoral
     ctx.fillStyle = "#facc15";
-    ctx.fillRect(0, 0, 512, 26);
+    ctx.fillRect(0, 0, 512, 24);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.88)";
+    ctx.font = "900 110px Impact, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("1", 256, 250);
 
     const tex = new THREE.CanvasTexture(cv);
     tex.colorSpace = THREE.SRGBColorSpace;
@@ -1906,21 +1937,31 @@
 
   const keeperGroup = new THREE.Group();
   const kitMat = new THREE.MeshStandardMaterial({ map: createKeeperJerseyTexture(), roughness: 0.44 });
-  const sleeveMat = new THREE.MeshStandardMaterial({ color: 0x059669, roughness: 0.46 });
-  const shortMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.65 });
-  const skinMat = new THREE.MeshStandardMaterial({ color: 0x4e3020, roughness: 0.6 });
+  const sleeveMat = new THREE.MeshStandardMaterial({ color: 0x047857, roughness: 0.46 });
+  const shortMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.62 });
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0x4e3020, roughness: 0.56 });
   const hairMat = new THREE.MeshStandardMaterial({ color: 0x0f1117, roughness: 0.85 });
-  const gloveLatexMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.25, metalness: 0.1 });
-  const glovePalmMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.35 });
+  const gloveLatexMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.24, metalness: 0.08 });
+  const glovePalmMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.32 });
   const socksMat = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.5 });
-  const bootMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.3, metalness: 0.2 });
+  const bootMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.28, metalness: 0.22 });
+  const studMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.2, metalness: 0.85 });
+
+  // Ombres d'appui au sol sous les crampons du gardien (ancrage GTA V au sol)
+  const keeperGroundShadow = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.95, 0.46),
+    new THREE.MeshBasicMaterial({ color: 0x020604, transparent: true, opacity: 0.52, depthWrite: false })
+  );
+  keeperGroundShadow.rotation.x = -Math.PI / 2;
+  keeperGroundShadow.position.set(0, 0.012, 0.28);
+  scene.add(keeperGroundShadow);
 
   const upperBodyGroup = new THREE.Group();
-  upperBodyGroup.position.set(0, 0.92, 0);
-  upperBodyGroup.rotation.x = 0.08;
+  upperBodyGroup.position.set(0, 0.90, 0);
+  upperBodyGroup.rotation.x = 0.14; // Buste athlétique penché vers l'avant en prise d'appui
 
   const kChest = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.22, 0.52, 18), kitMat);
-  kChest.scale.set(1.22, 1, 0.68);
+  kChest.scale.set(1.24, 1, 0.68);
   kChest.position.y = 0.46;
   kChest.castShadow = true;
   upperBodyGroup.add(kChest);
@@ -1993,7 +2034,7 @@
 
     const elbowPivot = new THREE.Group();
     elbowPivot.position.set(0, -0.32, 0);
-    elbowPivot.rotation.x = -0.65;
+    elbowPivot.rotation.x = -0.68;
     elbowPivot.rotation.z = side * -0.35;
 
     const forearm = new THREE.Mesh(new THREE.CylinderGeometry(0.064, 0.052, 0.32, 14), skinMat);
@@ -2008,26 +2049,26 @@
     wristStrap.position.y = 0.06;
     gloveGroup.add(wristStrap);
 
-    const palm = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.19, 0.06), glovePalmMat);
+    const palm = new THREE.Mesh(new THREE.BoxGeometry(0.175, 0.195, 0.06), glovePalmMat);
     palm.position.z = 0.015;
-    const backhand = new THREE.Mesh(new THREE.BoxGeometry(0.175, 0.195, 0.045), gloveLatexMat);
+    const backhand = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.20, 0.045), gloveLatexMat);
     backhand.position.z = -0.015;
     gloveGroup.add(palm, backhand);
 
     [-0.06, -0.02, 0.02, 0.06].forEach((fx, fi) => {
-      const len = fi === 1 || fi === 2 ? 0.10 : 0.085;
+      const len = fi === 1 || fi === 2 ? 0.105 : 0.088;
       const finger = new THREE.Mesh(new THREE.CapsuleGeometry(0.016, len, 6, 8), gloveLatexMat);
       finger.position.set(fx, -0.12, 0);
       gloveGroup.add(finger);
     });
-    const thumb = new THREE.Mesh(new THREE.CapsuleGeometry(0.018, 0.075, 6, 8), gloveLatexMat);
+    const thumb = new THREE.Mesh(new THREE.CapsuleGeometry(0.018, 0.078, 6, 8), gloveLatexMat);
     thumb.position.set(side * -0.10, -0.03, 0.02);
     thumb.rotation.z = side * 0.55;
     gloveGroup.add(thumb);
 
     elbowPivot.add(gloveGroup);
     shoulderPivot.add(elbowPivot);
-    return { shoulderPivot, elbowPivot };
+    return { shoulderPivot, elbowPivot, gloveGroup };
   }
 
   const armL = createKeeperArm(true);
@@ -2041,40 +2082,67 @@
   keeperGroup.add(upperBodyGroup);
 
   const kPelvis = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.24, 0.30), shortMat);
-  kPelvis.position.y = 0.88;
+  kPelvis.position.y = 0.86;
   kPelvis.castShadow = true;
   keeperGroup.add(kPelvis);
 
-  function createAthleticLeg(isLeft: boolean) {
+  // Jambes articulées avec Hanche -> Genou -> Cheville/Crampons pour les prises d'appui et la poussée
+  function createArticulatedLeg(isLeft: boolean) {
     const side = isLeft ? -1 : 1;
-    const legGroup = new THREE.Group();
-    legGroup.position.set(side * 0.22, 0.80, 0);
-    legGroup.rotation.z = side * -0.08;
+    const hipPivot = new THREE.Group();
+    hipPivot.position.set(side * 0.23, 0.80, 0);
+    hipPivot.rotation.z = side * -0.09;
+    hipPivot.rotation.x = -0.22; // Flexion hanche en posture d'attente
 
-    const thighShort = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.095, 0.30, 14), shortMat);
-    thighShort.position.y = -0.13;
+    const thighShort = new THREE.Mesh(new THREE.CylinderGeometry(0.118, 0.096, 0.32, 14), shortMat);
+    thighShort.position.y = -0.15;
     thighShort.castShadow = true;
-    legGroup.add(thighShort);
+    hipPivot.add(thighShort);
 
-    const knee = new THREE.Mesh(new THREE.SphereGeometry(0.076, 12, 12), skinMat);
-    knee.position.set(0, -0.31, 0.02);
-    legGroup.add(knee);
+    const kneePivot = new THREE.Group();
+    kneePivot.position.set(0, -0.32, 0.01);
+    kneePivot.rotation.x = 0.42; // Flexion genou athlétique
 
-    const calfSock = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.055, 0.42, 14), socksMat);
-    calfSock.position.set(0, -0.53, 0.01);
+    const kneeCap = new THREE.Mesh(new THREE.SphereGeometry(0.078, 12, 12), skinMat);
+    kneePivot.add(kneeCap);
+
+    const calfSock = new THREE.Mesh(new THREE.CylinderGeometry(0.076, 0.056, 0.40, 14), socksMat);
+    calfSock.position.set(0, -0.21, 0);
     calfSock.castShadow = true;
-    legGroup.add(calfSock);
+    kneePivot.add(calfSock);
 
-    const boot = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.09, 0.27), bootMat);
-    boot.position.set(0, -0.75, 0.06);
+    const anklePivot = new THREE.Group();
+    anklePivot.position.set(0, -0.43, 0.02);
+    anklePivot.rotation.x = -0.20; // Pied bien à plat sur la pelouse malgré la flexion du genou
+
+    const boot = new THREE.Mesh(new THREE.BoxGeometry(0.125, 0.088, 0.28), bootMat);
+    boot.position.set(0, -0.02, 0.05);
     boot.castShadow = true;
-    legGroup.add(boot);
+    anklePivot.add(boot);
 
-    return legGroup;
+    // 6 crampons métalliques visibles sous chaque chaussure
+    [
+      [-0.04, -0.07, -0.04],
+      [0.04, -0.07, -0.04],
+      [-0.04, -0.07, 0.08],
+      [0.04, -0.07, 0.08],
+      [-0.035, -0.07, 0.15],
+      [0.035, -0.07, 0.15]
+    ].forEach(([sx, sy, sz]) => {
+      const stud = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.006, 0.028, 6), studMat);
+      stud.position.set(sx, sy, sz);
+      anklePivot.add(stud);
+    });
+
+    kneePivot.add(anklePivot);
+    hipPivot.add(kneePivot);
+    return { hipPivot, kneePivot, anklePivot };
   }
 
-  const kLegL = createAthleticLeg(true);
-  const kLegR = createAthleticLeg(false);
+  const legL = createArticulatedLeg(true);
+  const legR = createArticulatedLeg(false);
+  const kLegL = legL.hipPivot;
+  const kLegR = legR.hipPivot;
   keeperGroup.add(kLegL, kLegR);
 
   keeperGroup.position.set(0, 0, 0.28);
@@ -2112,16 +2180,17 @@
   }
 
   /* -------------------------------------------------------------------------- */
-  /*  BALLON OFFICIEL 3D + OMBRE DE CONTACT + PARTICULES DE PELOUSE & RUBAN 3D  */
+  /*  BALLON PBR "TRIONDA — BLOC LÉOPARDS" AVEC NORMAL MAP & JONCTIONS          */
   /* -------------------------------------------------------------------------- */
   const BALL_R = 0.142;
-  function createBallTexture() {
+
+  function createTriondaBallMaps(): { diffuse: THREE.CanvasTexture; normal: THREE.CanvasTexture } {
+    // 1. DIFFUSE MAP (1024x512) : Panneaux en onde type Adidas Trionda + graphisme Bloc Léopards
     const cv = document.createElement("canvas");
     cv.width = 1024;
     cv.height = 512;
     const ctx = cv.getContext("2d")!;
 
-    // Base cuir perlé haute réflectance
     const baseGrad = ctx.createLinearGradient(0, 0, 0, 512);
     baseGrad.addColorStop(0, "#ffffff");
     baseGrad.addColorStop(0.5, "#f8fafc");
@@ -2129,68 +2198,132 @@
     ctx.fillStyle = baseGrad;
     ctx.fillRect(0, 0, 1024, 512);
 
-    // Micro-grain de surface thermocollée
-    ctx.fillStyle = "rgba(15, 23, 42, 0.035)";
-    for (let i = 0; i < 1800; i++) {
-      ctx.fillRect((i * 73) % 1024, (i * 41) % 512, 2, 2);
-    }
+    // 4 grands panneaux "Trionda" en vague dynamique aux couleurs RDC / Bloc Léopards
+    for (let p = 0; p < 4; p++) {
+      const cx = p * 256 + 128;
 
-    // Sillons des panneaux thermocollés
-    ctx.strokeStyle = "rgba(30, 41, 59, 0.28)";
-    ctx.lineWidth = 4;
-    for (let x = 0; x <= 1024; x += 128) {
+      // Vague extérieure Bleu Congo
+      ctx.save();
       ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, 512);
-      ctx.stroke();
-    }
-
-    // Motifs étoiles / pentagones officiels CAF/FIFA aux couleurs des Léopards RDC
-    for (let x = 0; x < 1024; x += 256) {
-      // Anneau extérieur bleu Congo
-      ctx.strokeStyle = "#007fff";
-      ctx.lineWidth = 16;
-      ctx.beginPath();
-      ctx.arc(x + 128, 256, 76, 0, Math.PI * 2);
+      ctx.moveTo(cx - 98, 95);
+      ctx.bezierCurveTo(cx - 30, 35, cx + 80, 120, cx + 96, 256);
+      ctx.bezierCurveTo(cx + 80, 392, cx - 30, 475, cx - 98, 415);
+      ctx.bezierCurveTo(cx - 42, 345, cx + 22, 300, cx + 22, 256);
+      ctx.bezierCurveTo(cx + 22, 212, cx - 42, 165, cx - 98, 95);
+      ctx.closePath();
+      ctx.fillStyle = "#0066cc";
+      ctx.fill();
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = "#0f172a";
       ctx.stroke();
 
-      // Ruban rouge & or dynamique
+      // Taches de léopard stylisées subtiles dans le ruban bleu
+      ctx.fillStyle = "rgba(5, 15, 35, 0.35)";
+      for (let r = 0; r < 7; r++) {
+        ctx.beginPath();
+        ctx.arc(cx - 10 + (r % 3) * 24, 150 + r * 34, 8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      // Arche Or Impérial & Rouge Feu (Trionda Tri-Wave)
+      ctx.strokeStyle = "#f7d618";
+      ctx.lineWidth = 14;
+      ctx.beginPath();
+      ctx.arc(cx + 8, 256, 68, -Math.PI * 0.65, Math.PI * 0.65);
+      ctx.stroke();
+
       ctx.strokeStyle = "#ce1021";
       ctx.lineWidth = 10;
       ctx.beginPath();
-      ctx.arc(x + 128, 256, 56, 0.3, Math.PI * 1.4);
+      ctx.arc(cx + 8, 256, 50, Math.PI * 0.45, Math.PI * 1.55);
       ctx.stroke();
 
-      ctx.strokeStyle = "#f7d618";
-      ctx.lineWidth = 10;
-      ctx.beginPath();
-      ctx.arc(x + 128, 256, 56, Math.PI * 1.4, Math.PI * 2.3);
-      ctx.stroke();
-
-      // Noyau carbone sombre pour lire la rotation (spin) en plein vol
+      // Étoile centrale sombre pour rendre la vitesse de rotation (spin) immédiatement lisible
       ctx.fillStyle = "#0f172a";
       ctx.beginPath();
-      ctx.arc(x + 128, 256, 36, 0, Math.PI * 2);
+      ctx.arc(cx + 8, 256, 26, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#f7d618";
+      ctx.beginPath();
+      ctx.arc(cx + 8, 256, 10, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // Bande équatoriale tricolore pour bien lire l'effet Magnus en vol
-    ctx.fillStyle = "#007fff";
-    ctx.fillRect(0, 230, 1024, 16);
-    ctx.fillStyle = "#f7d618";
-    ctx.fillRect(0, 246, 1024, 18);
-    ctx.fillStyle = "#ce1021";
-    ctx.fillRect(0, 264, 1024, 16);
+    // Sillons profonds de jonction des panneaux thermocollés (visibles au premier plan)
+    ctx.strokeStyle = "rgba(15, 23, 42, 0.52)";
+    ctx.lineWidth = 5.5;
+    for (let p = 0; p < 4; p++) {
+      const x0 = p * 256;
+      ctx.beginPath();
+      ctx.moveTo(x0, 0);
+      ctx.bezierCurveTo(x0 + 64, 160, x0 - 64, 352, x0, 512);
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.moveTo(0, 148);
+    ctx.bezierCurveTo(256, 200, 768, 96, 1024, 148);
+    ctx.moveTo(0, 364);
+    ctx.bezierCurveTo(256, 312, 768, 416, 1024, 364);
+    ctx.stroke();
 
-    const t = new THREE.CanvasTexture(cv);
-    t.colorSpace = THREE.SRGBColorSpace;
-    t.anisotropy = 4;
-    return t;
+    const diffuse = new THREE.CanvasTexture(cv);
+    diffuse.colorSpace = THREE.SRGBColorSpace;
+    diffuse.anisotropy = 4;
+
+    // 2. NORMAL MAP (512x256) : Micro-grain "Speedshell" + sillons creusés des jonctions de panneaux
+    const nCv = document.createElement("canvas");
+    nCv.width = 512;
+    nCv.height = 256;
+    const nCtx = nCv.getContext("2d")!;
+    nCtx.fillStyle = "rgb(128, 128, 255)";
+    nCtx.fillRect(0, 0, 512, 256);
+
+    // Micro-alvéoles d'adhérence aérodynamique sur toute la surface du cuir
+    for (let y = 4; y < 252; y += 6) {
+      for (let x = 4; x < 508; x += 6) {
+        nCtx.fillStyle = "rgb(108, 148, 245)";
+        nCtx.fillRect(x, y, 2, 2);
+        nCtx.fillStyle = "rgb(148, 108, 245)";
+        nCtx.fillRect(x + 1, y + 1, 2, 2);
+      }
+    }
+
+    // Sillons normaux creusés le long des coutures thermocollées
+    nCtx.lineWidth = 5;
+    nCtx.strokeStyle = "rgb(75, 75, 210)";
+    for (let p = 0; p < 4; p++) {
+      const x0 = p * 128;
+      nCtx.beginPath();
+      nCtx.moveTo(x0, 0);
+      nCtx.bezierCurveTo(x0 + 32, 80, x0 - 32, 176, x0, 256);
+      nCtx.stroke();
+    }
+    nCtx.beginPath();
+    nCtx.moveTo(0, 74);
+    nCtx.bezierCurveTo(128, 100, 384, 48, 512, 74);
+    nCtx.moveTo(0, 182);
+    nCtx.bezierCurveTo(128, 156, 384, 208, 512, 182);
+    nCtx.stroke();
+
+    const normal = new THREE.CanvasTexture(nCv);
+    normal.anisotropy = 4;
+
+    return { diffuse, normal };
   }
 
+  const ballMaps = createTriondaBallMaps();
   const ballMesh = new THREE.Mesh(
-    new THREE.SphereGeometry(BALL_R, 36, 36),
-    new THREE.MeshStandardMaterial({ map: createBallTexture(), roughness: 0.22, metalness: 0.14 })
+    new THREE.SphereGeometry(BALL_R, 42, 42),
+    new THREE.MeshPhysicalMaterial({
+      map: ballMaps.diffuse,
+      normalMap: ballMaps.normal,
+      normalScale: new THREE.Vector2(0.82, 0.82),
+      roughness: 0.28,
+      metalness: 0.05,
+      clearcoat: 0.42,
+      clearcoatRoughness: 0.24
+    })
   );
   ballMesh.castShadow = true;
   scene.add(ballMesh);
@@ -2424,10 +2557,21 @@
 
     keeperGroup.position.set(0, 0, 0.28);
     keeperGroup.rotation.set(0, 0, 0);
-    kArmL.rotation.z = 0.52;
-    kArmR.rotation.z = -0.52;
-    armL.elbowPivot.rotation.set(-0.65, 0, 0.35);
-    armR.elbowPivot.rotation.set(-0.65, 0, -0.35);
+    keeperGroundShadow.position.set(0, 0.012, 0.28);
+    keeperGroundShadow.scale.set(1, 1, 1);
+    upperBodyGroup.position.set(0, 0.90, 0);
+    upperBodyGroup.rotation.set(0.14, 0, 0);
+    kPelvis.position.set(0, 0.86, 0);
+    kArmL.rotation.set(0, 0, 0.52);
+    kArmR.rotation.set(0, 0, -0.52);
+    armL.elbowPivot.rotation.set(-0.68, 0, 0.35);
+    armR.elbowPivot.rotation.set(-0.68, 0, -0.35);
+    legL.hipPivot.rotation.set(-0.22, 0, 0.09);
+    legR.hipPivot.rotation.set(-0.22, 0, -0.09);
+    legL.kneePivot.rotation.set(0.42, 0, 0);
+    legR.kneePivot.rotation.set(0.42, 0, 0);
+    legL.anklePivot.rotation.set(-0.20, 0, 0);
+    legR.anklePivot.rotation.set(-0.20, 0, 0);
 
     swipeCtx.clearRect(0, 0, swipeCanvas.width, swipeCanvas.height);
     hudCurvePill?.classList.add("hidden");
@@ -2504,6 +2648,11 @@
     keeperDiveDir: 0,
     keeperReadsRight: true,
     wallJumping: false,
+    caughtByKeeper: false,
+    parriedByKeeper: false,
+    touchedGlove: false,
+    touchedPost: "" as "" | "in" | "out" | "bar",
+    postContactElapsed: 0,
     resolved: false
   };
 
@@ -2771,12 +2920,17 @@
     if (chargeActive && state.phase === "charging" && !state.paused) commitShotRelease();
   });
 
-  function fireShot(powerPct: number, traj: ExactShotTrajectory) {
+  function fireShot(powerPct: number, traj: ExactShotTrajectory, forceKeeperSave?: boolean) {
     state.phase = "shooting";
 
     shotPhys.active = true;
     shotPhys.inGoalCage = false;
     shotPhys.resolved = false;
+    shotPhys.caughtByKeeper = false;
+    shotPhys.parriedByKeeper = false;
+    shotPhys.touchedGlove = false;
+    shotPhys.touchedPost = "";
+    shotPhys.postContactElapsed = 0;
     shotPhys.flightElapsed = 0;
     shotPhys.vz = -traj.speedMs;
     shotPhys.vx = traj.vx0;
@@ -2804,10 +2958,16 @@
     // Un fort effet enroulé (spinCurve) trompe davantage le gardien !
     const isCentralShot = Math.abs(predX) < 1.15;
     const curveDeception = Math.min(Math.abs(traj.spinCurve) * 0.015, 0.30);
-    shotPhys.keeperReadsRight = isCentralShot || Math.random() < (tier.keeperReadProb - curveDeception);
+    shotPhys.keeperReadsRight =
+      forceKeeperSave !== undefined
+        ? forceKeeperSave
+        : isCentralShot || Math.random() < (tier.keeperReadProb - curveDeception);
 
     if (shotPhys.keeperReadsRight) {
-      const spinOffset = -Math.sign(traj.spinCurve) * Math.min(0.46, Math.abs(traj.spinCurve) * 0.02);
+      const spinOffset =
+        forceKeeperSave === true
+          ? 0
+          : -Math.sign(traj.spinCurve) * Math.min(0.46, Math.abs(traj.spinCurve) * 0.02);
       shotPhys.keeperTargetX = THREE.MathUtils.clamp(predX + spinOffset, -3.55, 3.55);
       shotPhys.keeperTargetY = THREE.MathUtils.clamp(predY, 0.35, 2.35);
       shotPhys.keeperDiveDir = Math.sign(predX || 1);
@@ -2819,8 +2979,70 @@
     }
   }
 
+  // Permet de déclencher à la demande les 4 cas physiques exigés (But, Arrêt, Poteau rentrant, Poteau sortant)
+  (window as unknown as Record<string, unknown>).triggerPenaltyDemoCase = (
+    demoCase: "goal" | "save" | "post_in" | "post_out"
+  ) => {
+    initAudio();
+    setupNextKick();
+    const speedMs = 26.5;
+    const flightTime = PENALTY_Z / speedMs;
+    let targetX = -2.85;
+    let targetY = 1.72;
+    let midWorldX = -1.85;
+    let forceSave: boolean | undefined = false;
+
+    if (demoCase === "goal") {
+      // Lucarne gauche enroulée dans le filet
+      targetX = -2.92;
+      targetY = 1.88;
+      midWorldX = -1.95;
+      forceSave = false;
+    } else if (demoCase === "save") {
+      // Frappe cadrée à mi-hauteur interceptée par le plongeon du gardien
+      targetX = 1.85;
+      targetY = 1.18;
+      midWorldX = 0.92;
+      forceSave = true;
+    } else if (demoCase === "post_in") {
+      // Impact sur le bord intérieur du montant droit (X = +3.57m) -> Poteau rentrant dans le filet !
+      targetX = GOAL.width / 2 - 0.09;
+      targetY = 1.32;
+      midWorldX = targetX * 0.5;
+      forceSave = false;
+    } else if (demoCase === "post_out") {
+      // Impact sur le bord extérieur du montant gauche (X = -3.69m) -> Poteau sortant !
+      targetX = -(GOAL.width / 2 + 0.03);
+      targetY = 1.36;
+      midWorldX = targetX * 0.5;
+      forceSave = false;
+    }
+
+    const totalAx = (4 * (targetX - 2 * midWorldX)) / (flightTime * flightTime);
+    const vx0 = (targetX - 0.5 * totalAx * flightTime * flightTime) / flightTime;
+    const vy0 = ((targetY - BALL_R) + 0.5 * FLIGHT_GRAVITY * flightTime * flightTime) / flightTime;
+
+    aimInstruction?.classList.add("opacity-0");
+    ballGlowRing.visible = false;
+    fireShot(
+      78,
+      {
+        targetX,
+        targetY,
+        midWorldX,
+        spinCurve: totalAx,
+        speedMs,
+        flightTime,
+        vx0,
+        vy0,
+        totalAx
+      },
+      forceSave
+    );
+  };
+
   /* -------------------------------------------------------------------------- */
-  /*  PHYSIQUE PAR SOUS-PAS (SUB-STEPPING FIDÈLE À 100% AU TRACÉ)               */
+  /*  PHYSIQUE CCD PAR SOUS-PAS + 8 ANIMATIONS DU GARDIEN + POTEAU RENTRANT     */
   /* -------------------------------------------------------------------------- */
   function updatePhysics(dt: number) {
     const tier = getActiveTier();
@@ -2839,13 +3061,34 @@
 
     shotPhys.flightElapsed += dt;
 
-    if (shotPhys.flightElapsed >= tier.keeperReactionSec) {
-      const desiredTorsoX = THREE.MathUtils.clamp(
-        shotPhys.keeperTargetX - shotPhys.keeperDiveDir * (tier.keeperArmSpan * 0.55),
-        -2.55,
-        2.55
-      );
-      const desiredTorsoY = THREE.MathUtils.clamp(shotPhys.keeperTargetY - 0.95, 0, 1.05);
+    // 1. Prise d'appui (Split-Step) avant le plongeon : flexion des genoux et transfert de poids
+    if (shotPhys.flightElapsed < tier.keeperReactionSec) {
+      const prepRatio = shotPhys.flightElapsed / Math.max(0.01, tier.keeperReactionSec);
+      keeperGroup.position.y = -0.06 * Math.sin(prepRatio * Math.PI);
+      legL.kneePivot.rotation.x = 0.42 + 0.25 * prepRatio;
+      legR.kneePivot.rotation.x = 0.42 + 0.25 * prepRatio;
+      upperBodyGroup.rotation.x = 0.14 + 0.10 * prepRatio;
+    } else {
+      // 2. Déclenchement de l'arrêt debout, du plongeon bas/haut, de la retombée et du relevé
+      const diveElapsed = shotPhys.flightElapsed - tier.keeperReactionSec;
+      const isStandingSave = Math.abs(shotPhys.keeperTargetX) < 0.78;
+      const isHighDive = shotPhys.keeperTargetY >= 1.15;
+
+      const desiredTorsoX = isStandingSave
+        ? shotPhys.keeperTargetX * 0.75
+        : THREE.MathUtils.clamp(
+            shotPhys.keeperTargetX - shotPhys.keeperDiveDir * (tier.keeperArmSpan * 0.55),
+            -2.65,
+            2.65
+          );
+
+      // Après l'extension maximale (diveElapsed > 0.44s), le gardien retombe au sol avec du poids (landing -> getup)
+      const inLanding = !isStandingSave && diveElapsed > 0.44;
+      const desiredTorsoY = isStandingSave
+        ? Math.max(0, (shotPhys.keeperTargetY - 1.15) * 0.35)
+        : inLanding
+          ? 0.04
+          : THREE.MathUtils.clamp(shotPhys.keeperTargetY - 0.92, 0.02, 1.12);
 
       keeperGroup.position.x = THREE.MathUtils.lerp(
         keeperGroup.position.x,
@@ -2855,18 +3098,56 @@
       keeperGroup.position.y = THREE.MathUtils.lerp(
         keeperGroup.position.y,
         desiredTorsoY,
-        Math.min(1, dt * tier.keeperDiveSpeed * 0.95)
+        Math.min(1, dt * (inLanding ? 8.5 : tier.keeperDiveSpeed * 0.95))
       );
 
-      const diveTilt = THREE.MathUtils.clamp(-shotPhys.keeperTargetX * 0.46, -1.35, 1.35);
-      keeperGroup.rotation.z = THREE.MathUtils.lerp(keeperGroup.rotation.z, diveTilt, dt * 18);
-      kArmL.rotation.z = THREE.MathUtils.lerp(kArmL.rotation.z, 2.75, dt * 20);
-      kArmR.rotation.z = THREE.MathUtils.lerp(kArmR.rotation.z, -2.75, dt * 20);
-      armL.elbowPivot.rotation.x = THREE.MathUtils.lerp(armL.elbowPivot.rotation.x, 0, dt * 20);
-      armR.elbowPivot.rotation.x = THREE.MathUtils.lerp(armR.elbowPivot.rotation.x, 0, dt * 20);
+      keeperGroundShadow.position.x = keeperGroup.position.x;
+      keeperGroundShadow.scale.set(isStandingSave ? 1 : 1.45, 1, 1);
+
+      if (isStandingSave) {
+        // Arrêt debout : buste droit, gants projetés devant le visage/poitrine
+        keeperGroup.rotation.z = THREE.MathUtils.lerp(keeperGroup.rotation.z, -shotPhys.keeperTargetX * 0.18, dt * 16);
+        kArmL.rotation.z = THREE.MathUtils.lerp(kArmL.rotation.z, 2.25, dt * 20);
+        kArmR.rotation.z = THREE.MathUtils.lerp(kArmR.rotation.z, -2.25, dt * 20);
+        armL.elbowPivot.rotation.x = THREE.MathUtils.lerp(armL.elbowPivot.rotation.x, -0.35, dt * 20);
+        armR.elbowPivot.rotation.x = THREE.MathUtils.lerp(armR.elbowPivot.rotation.x, -0.35, dt * 20);
+      } else {
+        // Plongeon bas ou haut + poussée de la jambe d'appui + retombée au sol
+        const targetTilt = inLanding
+          ? -shotPhys.keeperDiveDir * 1.42
+          : THREE.MathUtils.clamp(-shotPhys.keeperTargetX * (isHighDive ? 0.48 : 0.54), -1.38, 1.38);
+        keeperGroup.rotation.z = THREE.MathUtils.lerp(keeperGroup.rotation.z, targetTilt, dt * 18);
+        kArmL.rotation.z = THREE.MathUtils.lerp(kArmL.rotation.z, 2.82, dt * 22);
+        kArmR.rotation.z = THREE.MathUtils.lerp(kArmR.rotation.z, -2.82, dt * 22);
+        armL.elbowPivot.rotation.x = THREE.MathUtils.lerp(armL.elbowPivot.rotation.x, 0, dt * 22);
+        armR.elbowPivot.rotation.x = THREE.MathUtils.lerp(armR.elbowPivot.rotation.x, 0, dt * 22);
+
+        // Extension de la jambe de poussée et flexion de la jambe libre
+        if (shotPhys.keeperDiveDir > 0) {
+          legR.kneePivot.rotation.x = THREE.MathUtils.lerp(legR.kneePivot.rotation.x, 0.06, dt * 18);
+          legL.kneePivot.rotation.x = THREE.MathUtils.lerp(legL.kneePivot.rotation.x, 0.68, dt * 18);
+        } else {
+          legL.kneePivot.rotation.x = THREE.MathUtils.lerp(legL.kneePivot.rotation.x, 0.06, dt * 18);
+          legR.kneePivot.rotation.x = THREE.MathUtils.lerp(legR.kneePivot.rotation.x, 0.68, dt * 18);
+        }
+      }
     }
 
-    const SUBSTEPS = 6;
+    // Si le gardien a capté franchement le ballon entre ses gants, le ballon suit les mains du gardien
+    if (shotPhys.caughtByKeeper) {
+      ballMesh.position.set(
+        keeperGroup.position.x + shotPhys.keeperDiveDir * 0.25,
+        Math.max(BALL_R, keeperGroup.position.y + 1.05),
+        0.34
+      );
+      shotPhys.postContactElapsed += dt;
+      if (!shotPhys.resolved && shotPhys.postContactElapsed >= 0.32) {
+        resolveShot(false, "PRISE FRANCHE DU GARDIEN !", "Ballon capté en deux temps par le portier !");
+      }
+      return;
+    }
+
+    const SUBSTEPS = 8;
     const subDt = dt / SUBSTEPS;
 
     for (let step = 0; step < SUBSTEPS; step++) {
@@ -2874,10 +3155,16 @@
       const prevY = ballMesh.position.y;
       const prevZ = ballMesh.position.z;
 
-      // Tant que le ballon est en vol vers le but (non résolu), il suit EXACTEMENT la cinématique de la courbe tracée
-      const grav = shotPhys.inGoalCage || shotPhys.resolved ? 9.81 : FLIGHT_GRAVITY;
+      const afterImpact =
+        shotPhys.inGoalCage ||
+        shotPhys.resolved ||
+        shotPhys.parriedByKeeper ||
+        shotPhys.touchedGlove ||
+        shotPhys.touchedPost !== "";
+
+      const grav = afterImpact ? 9.81 : FLIGHT_GRAVITY;
       shotPhys.vy -= grav * subDt;
-      if (!shotPhys.inGoalCage && !shotPhys.resolved) {
+      if (!afterImpact) {
         shotPhys.vx += shotPhys.totalAx * subDt;
       }
 
@@ -2889,10 +3176,10 @@
       ballMesh.rotation.y += shotPhys.spinY * subDt * 0.78;
       ballMesh.rotation.z -= shotPhys.spinY * subDt * 0.35;
 
-      // Pas de rebond parasite avant la ligne de but (le ballon rase l'herbe sans freiner)
+      // Contact avec le gazon
       if (ballMesh.position.y < BALL_R) {
         ballMesh.position.y = BALL_R;
-        if (shotPhys.inGoalCage || shotPhys.resolved) {
+        if (afterImpact) {
           shotPhys.vy = Math.abs(shotPhys.vy) * (shotPhys.inGoalCage ? 0.35 : 0.52);
           shotPhys.vx *= shotPhys.inGoalCage ? 0.72 : 0.85;
           shotPhys.vz *= shotPhys.inGoalCage ? 0.72 : 0.85;
@@ -2901,6 +3188,7 @@
         }
       }
 
+      // Confinement physique dans le filet une fois que le ballon entier est entré dans le but
       if (shotPhys.inGoalCage) {
         const maxSideX = GOAL.width / 2 - BALL_R - 0.08;
         const minBackZ = -GOAL.depth + BALL_R + 0.12;
@@ -2923,11 +3211,13 @@
           ballMesh.position.x = -maxSideX;
           shotPhys.vx = Math.abs(shotPhys.vx) * 0.22;
           shotPhys.vz *= 0.45;
+          if (Math.abs(shotPhys.vx) > 0.8) triggerNetDeformation(-GOAL.width / 2 + 0.3, ballMesh.position.y, 12);
         }
         if (ballMesh.position.x > maxSideX) {
           ballMesh.position.x = maxSideX;
           shotPhys.vx = -Math.abs(shotPhys.vx) * 0.22;
           shotPhys.vz *= 0.45;
+          if (Math.abs(shotPhys.vx) > 0.8) triggerNetDeformation(GOAL.width / 2 - 0.3, ballMesh.position.y, 12);
         }
         if (ballMesh.position.y > maxTopY) {
           ballMesh.position.y = maxTopY;
@@ -2967,6 +3257,7 @@
           shotPhys.vz = Math.abs(shotPhys.vz) * 0.38;
           shotPhys.vx += (Math.random() - 0.5) * 5;
           shotPhys.vy = 2.8;
+          shotPhys.parriedByKeeper = true;
           spawnTurfBurst(crossX, crossY, 5.25, 14, true);
           playSaveAudio();
           resolveShot(false, "CONTRÉ PAR LE MUR !", "Enroule ton geste avec le doigt pour contourner le mur !");
@@ -2974,71 +3265,151 @@
         }
       }
 
-      // 2. Gardien
-      if (prevZ >= 0.28 && ballMesh.position.z <= 0.28) {
+      // 2. Gardien : Prise franche (Catch), Parade repoussée (Parry) ou Ballon effleuré (Deflection)
+      if (!shotPhys.parriedByKeeper && !shotPhys.touchedGlove && prevZ >= 0.28 && ballMesh.position.z <= 0.28) {
         const alpha = (prevZ - 0.28) / Math.max(0.00001, prevZ - ballMesh.position.z);
         const crossX = THREE.MathUtils.lerp(prevX, ballMesh.position.x, alpha);
         const crossY = THREE.MathUtils.lerp(prevY, ballMesh.position.y, alpha);
 
         const torsoX = keeperGroup.position.x;
         const diveDir = shotPhys.keeperDiveDir;
-        const minCoverX = Math.min(torsoX - 0.65, torsoX + diveDir * tier.keeperArmSpan - 0.35);
-        const maxCoverX = Math.max(torsoX + 0.65, torsoX + diveDir * tier.keeperArmSpan + 0.35);
+        const minCoverX = Math.min(torsoX - 0.62, torsoX + diveDir * tier.keeperArmSpan - 0.32);
+        const maxCoverX = Math.max(torsoX + 0.62, torsoX + diveDir * tier.keeperArmSpan + 0.32);
         const maxCoverY = keeperGroup.position.y + 1.98;
 
-        if (crossX >= minCoverX && crossX <= maxCoverX && crossY >= 0 && crossY <= maxCoverY) {
-          ballMesh.position.set(crossX, crossY, 0.34);
-          shotPhys.vz = Math.abs(shotPhys.vz) * 0.42;
-          shotPhys.vx = (diveDir || 1) * 6.8;
-          shotPhys.vy = 3.0;
-          spawnTurfBurst(crossX, crossY, 0.34, 16, true);
-          cameraShakeAmp = 0.045;
-          playSaveAudio();
-          resolveShot(false, "ARRÊT DU GARDIEN !", "Parade du portier · Continue ta séance de 5 tirs !");
-          break;
+        if (crossY >= 0 && crossY <= maxCoverY) {
+          // Cas A : Prise franche près du buste / entre les deux gants
+          if (Math.abs(crossX - torsoX) < 0.32 && crossY >= 0.55 && crossY <= 1.58 && Math.abs(shotPhys.vz) < 25.5) {
+            shotPhys.caughtByKeeper = true;
+            playSaveAudio();
+            break;
+          }
+          // Cas B : Parade ferme de la paume du gant (ballon repoussé)
+          if (crossX >= minCoverX && crossX <= maxCoverX) {
+            ballMesh.position.set(crossX, crossY, 0.34);
+            shotPhys.vz = Math.abs(shotPhys.vz) * 0.44;
+            shotPhys.vx = (diveDir || 1) * 6.6;
+            shotPhys.vy = 2.8;
+            shotPhys.parriedByKeeper = true;
+            spawnTurfBurst(crossX, crossY, 0.34, 16, true);
+            cameraShakeAmp = 0.045;
+            playSaveAudio();
+          } else if (crossX >= minCoverX - 0.16 && crossX <= maxCoverX + 0.16) {
+            // Cas C : Ballon effleuré du bout des gants ! La trajectoire est déviée mais continue vers le but
+            shotPhys.touchedGlove = true;
+            shotPhys.vx += (diveDir || 1) * 2.8;
+            shotPhys.vy += 1.1;
+            shotPhys.vz *= 0.82;
+            spawnTurfBurst(crossX, crossY, 0.30, 10, true);
+            playSaveAudio();
+          }
         }
       }
 
-      // 3. Ligne de but
-      if (prevZ >= 0 && ballMesh.position.z <= 0) {
+      // 3. Collision continue (CCD) avec les montants (Poteau rentrant vs Poteau sortant) et la barre
+      if (shotPhys.touchedPost === "" && prevZ >= 0 && ballMesh.position.z <= 0) {
         const alpha = prevZ / Math.max(0.00001, prevZ - ballMesh.position.z);
         const crossX = THREE.MathUtils.lerp(prevX, ballMesh.position.x, alpha);
         const crossY = THREE.MathUtils.lerp(prevY, ballMesh.position.y, alpha);
         const halfW = GOAL.width / 2;
+        const postRadiusSum = GOAL.postR + BALL_R * 0.85; // ~0.188m
 
-        const hitLeftPost = Math.abs(crossX + halfW) < 0.16 && crossY <= GOAL.height + 0.14;
-        const hitRightPost = Math.abs(crossX - halfW) < 0.16 && crossY <= GOAL.height + 0.14;
-        const hitBar = Math.abs(crossY - GOAL.height) < 0.16 && Math.abs(crossX) <= halfW + 0.14;
+        const distLeftPost = Math.abs(crossX + halfW);
+        const distRightPost = Math.abs(crossX - halfW);
+        const distBar = Math.abs(crossY - GOAL.height);
+
+        const hitLeftPost = distLeftPost < postRadiusSum && crossY <= GOAL.height + 0.14;
+        const hitRightPost = distRightPost < postRadiusSum && crossY <= GOAL.height + 0.14;
+        const hitBar = distBar < postRadiusSum && Math.abs(crossX) <= halfW + 0.14;
 
         if (hitLeftPost || hitRightPost || hitBar) {
-          ballMesh.position.set(crossX, crossY, 0.1);
-          shotPhys.vz = Math.abs(shotPhys.vz) * 0.45;
-          if (hitBar) shotPhys.vy = Math.abs(shotPhys.vy) * 0.55;
-          else shotPhys.vx = -shotPhys.vx * 0.65;
-          spawnTurfBurst(crossX, crossY, 0.08, 22, true);
-          cameraShakeAmp = 0.08;
-          goalFrameVibration = 0.22;
+          spawnTurfBurst(crossX, crossY, 0.06, 22, true);
+          cameraShakeAmp = 0.085;
+          goalFrameVibration = 0.25;
           playPostAudio();
-          resolveShot(false, hitBar ? "BARRE TRANSVERSALE !" : "POTEAU SORTANT !", "Le montant repousse ta frappe !");
-          break;
-        }
 
-        const insideX = Math.abs(crossX) < halfW - 0.08;
-        const insideY = crossY > 0 && crossY < GOAL.height - 0.06;
+          if (hitBar) {
+            // Barre transversale : si le ballon tape sous la barre (crossY < GOAL.height - 0.02), il peut rentrer, sinon il rebondit dehors
+            const barIn = crossY < GOAL.height - 0.035 && Math.abs(crossX) < halfW - BALL_R;
+            if (barIn) {
+              shotPhys.touchedPost = "in";
+              ballMesh.position.set(crossX, GOAL.height - BALL_R - 0.02, -0.02);
+              shotPhys.vy = -Math.abs(shotPhys.vy) * 0.45;
+              shotPhys.vz *= 0.68;
+            } else {
+              shotPhys.touchedPost = "bar";
+              ballMesh.position.set(crossX, crossY, 0.08);
+              shotPhys.vz = Math.abs(shotPhys.vz) * 0.42;
+              shotPhys.vy = Math.abs(shotPhys.vy) * 0.58 + 2.2;
+            }
+          } else {
+            // Poteau gauche ou droit :
+            // Si le centre du ballon frappe la face INTÉRIEURE du poteau (|crossX| < halfW - 0.015), le rebond dévie le ballon DANS le but (Poteau rentrant !)
+            const isInnerFace = Math.abs(crossX) < halfW - 0.015;
+            const postSign = hitRightPost ? 1 : -1;
+            if (isInnerFace) {
+              shotPhys.touchedPost = "in";
+              ballMesh.position.set(postSign * (halfW - BALL_R - 0.02), crossY, -0.02);
+              shotPhys.vx = -postSign * Math.max(3.8, Math.abs(shotPhys.vz) * 0.28);
+              shotPhys.vz = -Math.abs(shotPhys.vz) * 0.58;
+            } else {
+              shotPhys.touchedPost = "out";
+              ballMesh.position.set(crossX, crossY, 0.10);
+              shotPhys.vx = postSign * Math.max(4.8, Math.abs(shotPhys.vx) * 0.7 + 3.5);
+              shotPhys.vz = Math.abs(shotPhys.vz) * 0.44;
+            }
+          }
+        }
+      }
+
+      // 4. Validation du BUT : uniquement quand le ballon ENTIER a franchi la ligne (z <= -BALL_R) dans l'ouverture du but
+      const halfW = GOAL.width / 2;
+      if (ballMesh.position.z <= -BALL_R && !shotPhys.inGoalCage) {
+        const insideX = Math.abs(ballMesh.position.x) <= halfW - BALL_R * 0.65;
+        const insideY = ballMesh.position.y > 0 && ballMesh.position.y <= GOAL.height - BALL_R * 0.55;
 
         if (insideX && insideY) {
           shotPhys.inGoalCage = true;
-          ballMesh.position.x = THREE.MathUtils.clamp(crossX, -halfW + BALL_R + 0.1, halfW - BALL_R - 0.1);
-          ballMesh.position.y = THREE.MathUtils.clamp(crossY, BALL_R, GOAL.height - BALL_R - 0.1);
-          ballMesh.position.z = Math.max(ballMesh.position.z, -GOAL.depth + BALL_R + 0.15);
+          ballMesh.position.x = THREE.MathUtils.clamp(ballMesh.position.x, -halfW + BALL_R + 0.08, halfW - BALL_R - 0.08);
+          ballMesh.position.y = THREE.MathUtils.clamp(ballMesh.position.y, BALL_R, GOAL.height - BALL_R - 0.08);
+
           const curvedTag = Math.abs(shotPhys.spinY) > 3.2 ? " · FRAPPE ENROULÉE 🌀" : "";
-          resolveShot(true, "BUT AUX MARTYRS ! ⚽", `${shotPhys.speedKmh} km/h${curvedTag}`);
-        } else {
-          if (Math.abs(ballMesh.position.x) < halfW + 0.25 && ballMesh.position.y < GOAL.height + 0.2) {
-            ballMesh.position.x = Math.sign(ballMesh.position.x || 1) * (halfW + 0.3);
+          const goalTitle =
+            shotPhys.touchedPost === "in"
+              ? "POTEAU RENTRANT ! ⚽"
+              : shotPhys.touchedGlove
+                ? "DÉVIÉ AU FOND ! ⚽"
+                : "BUT AUX MARTYRS ! ⚽";
+          resolveShot(true, goalTitle, `${shotPhys.speedKmh} km/h${curvedTag}`);
+          continue;
+        } else if (shotPhys.touchedPost === "" && !shotPhys.parriedByKeeper) {
+          // Ballon passé derrière le plan de but en dehors du cadre sans avoir touché le poteau
+          const msg = ballMesh.position.y >= GOAL.height ? "AU-DESSUS DE LA BARRE !" : "À CÔTÉ DU CADRE !";
+          resolveShot(
+            false,
+            msg,
+            ballMesh.position.y >= GOAL.height ? "Vise un peu plus bas dans le but" : "Place le cercle de visée dans le cadre"
+          );
+          break;
+        }
+      }
+
+      // 5. Résolution différée après un contact avec un gant ou un montant sortant
+      if (shotPhys.parriedByKeeper || shotPhys.touchedPost === "out" || shotPhys.touchedPost === "bar" || shotPhys.touchedGlove) {
+        shotPhys.postContactElapsed += subDt;
+        const waitLimit = shotPhys.touchedGlove ? 0.52 : 0.38;
+        if (shotPhys.postContactElapsed >= waitLimit || ballMesh.position.z > 1.8 || Math.abs(ballMesh.position.x) > halfW + 1.6) {
+          if (shotPhys.parriedByKeeper || shotPhys.touchedGlove) {
+            resolveShot(
+              false,
+              shotPhys.touchedGlove ? "CLAQUETTE DU GARDIEN !" : "ARRÊT DU GARDIEN !",
+              "Parade décisive du portier · Continue ta séance de 5 tirs !"
+            );
+          } else if (shotPhys.touchedPost === "bar") {
+            resolveShot(false, "BARRE TRANSVERSALE !", "La transversale repousse ta frappe !");
+          } else {
+            resolveShot(false, "POTEAU SORTANT !", "Le montant repousse le ballon hors du but !");
           }
-          const msg = crossY >= GOAL.height ? "AU-DESSUS DE LA BARRE !" : "À CÔTÉ DU CADRE !";
-          resolveShot(false, msg, crossY >= GOAL.height ? "Vise un peu plus bas dans le but" : "Place le cercle de visée dans le cadre");
           break;
         }
       }
@@ -3339,6 +3710,15 @@
     aimInstruction?.classList.add("opacity-0");
   });
 
+  document.querySelectorAll(".btn-demo-case").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const demoCase = (btn as HTMLElement).dataset.demoCase as "goal" | "save" | "post_in" | "post_out";
+      closeMenu();
+      const fn = (window as unknown as { triggerPenaltyDemoCase?: (c: "goal" | "save" | "post_in" | "post_out") => void }).triggerPenaltyDemoCase;
+      if (fn && demoCase) fn(demoCase);
+    });
+  });
+
   /* -------------------------------------------------------------------------- */
   /*  BOUCLE PRINCIPALE D'ANIMATION                                             */
   /* -------------------------------------------------------------------------- */
@@ -3396,13 +3776,36 @@
       }
     } else if (state.phase === "aiming" || state.phase === "charging") {
       const tier = getActiveTier();
-      const swayFreq = 4.2 + tier.id * 0.95;
-      const swayAmp = 0.34 + tier.id * 0.09;
-      keeperGroup.position.x = Math.sin(elapsed * swayFreq) * swayAmp;
-      keeperGroup.position.y = Math.abs(Math.sin(elapsed * swayFreq * 2)) * 0.08;
-      keeperGroup.rotation.z = -Math.sin(elapsed * swayFreq) * 0.05;
-      kArmL.rotation.z = 0.52 + Math.sin(elapsed * 7.5) * 0.10;
-      kArmR.rotation.z = -0.52 - Math.sin(elapsed * 7.5) * 0.10;
+      const swayFreq = 3.8 + tier.id * 0.85;
+      const swayAmp = 0.28 + tier.id * 0.08;
+      const stepCycle = elapsed * swayFreq;
+      // Pas latéral articulé sans glissement des pieds : alternance d'appui gauche/droite
+      const stepPhase = Math.sin(stepCycle);
+      const liftL = Math.max(0, Math.sin(stepCycle * 2));
+      const liftR = Math.max(0, -Math.sin(stepCycle * 2));
+
+      keeperGroup.position.x = stepPhase * swayAmp;
+      keeperGroup.position.y = -0.04 + Math.max(liftL, liftR) * 0.055;
+      keeperGroup.rotation.z = -stepPhase * 0.04;
+      keeperGroup.rotation.x = 0.09; // Buste légèrement penché vers l'avant en posture d'attente
+
+      // Articulation genoux/chevilles pendant le pas latéral
+      legL.hipPivot.rotation.x = -0.18 - liftL * 0.28;
+      legL.kneePivot.rotation.x = 0.34 + liftL * 0.42;
+      legL.anklePivot.rotation.x = -0.16 - liftL * 0.14;
+
+      legR.hipPivot.rotation.x = -0.18 - liftR * 0.28;
+      legR.kneePivot.rotation.x = 0.34 + liftR * 0.42;
+      legR.anklePivot.rotation.x = -0.16 - liftR * 0.14;
+
+      // Bras prêts devant les hanches, coudes fléchis
+      kArmL.rotation.set(-0.28, 0, 0.48 + Math.sin(elapsed * 6.5) * 0.08);
+      kArmR.rotation.set(-0.28, 0, -0.48 - Math.sin(elapsed * 6.5) * 0.08);
+
+      // Ombre au sol ancrée sous les appuis du gardien
+      keeperGroundShadow.position.set(keeperGroup.position.x, 0.013, keeperGroup.position.z);
+      keeperGroundShadow.scale.set(1.05, 1, 1);
+      (keeperGroundShadow.material as THREE.MeshBasicMaterial).opacity = 0.46;
 
       // Pulsation douce de l'anneau sous le ballon avant le tir
       const pulse = 1 + Math.sin(elapsed * 4.5) * 0.06;
