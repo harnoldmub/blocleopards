@@ -1,78 +1,92 @@
 ---
 /**
  * BasketKinshasaGame.astro
- * Expérience 3D plein écran : « Shoot à la Sirène — Terrain de la 7ᵉ Rue Limete, Kinshasa »
- * - Reproduction 3D du terrain urbain relooké de Limete 7ᵉ Rue (revêtement peint bleu/jaune/rouge,
- *   clôtures grillagées, immeubles de Limete, palmiers, lampadaires urbains, panneaux partenaires & Bloc Léopards)
- * - 7 positions de tir autour de l'arc (Lancer franc, 45° Gauche, 45° Droite, Tête de raquette, Corner G, Corner D, Logo Buzzer)
- * - Physique réaliste du ballon de basket (gravité, backspin, rebond au sol, choc sur la planche plexiglas,
- *   arceau métallique + filet de panier déformable avec distinction sonore Swish / Planche / Arceau / Sol)
- * - Jauge de puissance irréversible (ne redescend jamais, tir engagé dès l'appui)
- * - Niveau évolutif à mesure que le joueur enchaîne les paniers + Défenseur contestataire aux niveaux supérieurs
- * - Bouton Pause (⏸) + Séparation stricte entre la modale Niveaux et le Menu Général
+ * Expérience 3D pure et immersive : « Shoot à la Sirène — Terrain de la 7ᵉ Rue Limete, Kinshasa »
+ * - Vue subjective à la 1ère personne (PAS DE JOUEUR VISIBLE, JUSTE LE BALLON DE BASKET DANS LES MAINS / EN L'AIR)
+ * - Zéro glassmorphism : UI solide, broadcast TV, typographie percutante, contrastes nets
+ * - Gestuelle tactile naturelle au doigt :
+ *   * Swipe / glisser direct vers le panier pour doser et diriger le tir
+ *   * Cloche parabolique réaliste (arc tendu ou haut avec backspin visible)
+ *   * Jauge irréversible : ne jamais arriver au MAX (sinon tir raté sur l'arceau/panneau)
+ * - Terrain urbain emblématique de Limete 7ᵉ Rue (Kinshasa) :
+ *   * Bitume peint aux couleurs de la RDC (Bleu roi, raquette or & rouge, lignes blanches)
+ *   * Panier FIBA détaillé : potence, panneau plexiglas avec carré de visée, arceau acier orange, filet tressé swish
+ *   * Décor urbain : palmiers, immeubles de Kinshasa, panneaux partenaires (Equity BCDC, Sonas, Visa, Fonarev, Bloc Léopards)
+ * - Physique réaliste du ballon de basket :
+ *   * Trajectoire 3D exacte calculée selon le geste
+ *   * Rebonds multiples, backspin en vol, collisions planche et arceau métallique
+ *   * Détection swish pur avec animation physique du filet tressé
+ * - Playlist musicale officielle en boucle (5 musiques dans /audio/jeu/ aléatoires / sélectionnables)
+ * - Mode 5 tirs par série & progression de spots autour de l'arc (Lancer franc, Aile 45°, Tête de raquette, Corner, Logo)
  */
 ---
 
-<div class="relative h-[100dvh] w-screen overflow-hidden bg-[#070b16] font-body select-none" id="basket-root">
+<div class="relative h-[100dvh] w-screen overflow-hidden bg-[#050914] font-body select-none" id="basket-root">
   <!-- CANVAS WEBGL 3D PLEIN ÉCRAN -->
   <canvas id="basket-canvas" class="block h-full w-full touch-none cursor-crosshair"></canvas>
 
-  <!-- ================= HUD BROADCAST COMPACT ================= -->
+  <!-- CANVAS 2D POUR LE TRACÉ TACTILE DE VISÉE (SWIPE TRAIL) -->
+  <canvas id="swipe-canvas" class="pointer-events-none absolute inset-0 z-10 h-full w-full"></canvas>
+
+  <!-- ================= HUD BROADCAST COMPACT (100% SOLIDE, ZÉRO GLASSMORPHISME) ================= -->
   <div class="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between p-2.5 sm:p-4">
     
-    <!-- GAUCHE : SCOREBUG FIBA / KINSHASA & POSITION -->
+    <!-- GAUCHE : SCOREBUG KINSHASA & SÉRIE DE 5 TIRS -->
     <div class="flex flex-col gap-1.5">
-      <div class="pointer-events-auto flex items-center overflow-hidden rounded-xl border border-white/15 bg-[#070d1f]/90 shadow-2xl backdrop-blur-md">
+      <div class="pointer-events-auto flex items-center overflow-hidden rounded-xl border-2 border-[#1e3a6e] bg-[#060d1f] shadow-2xl">
         <!-- Logo Bloc Léopards -->
-        <div class="flex items-center justify-center bg-white/95 px-2 py-1.5">
+        <div class="flex items-center justify-center bg-white px-2.5 py-1.5 border-r border-[#1e3a6e]">
           <img src="/brand/logo.png" alt="Bloc Léopards" class="h-6 w-auto object-contain" />
         </div>
-        <!-- Horloge Buzzer 24s -->
-        <div class="bg-feu px-2 py-1.5 text-center font-display text-xs font-black tracking-wider text-white">
-          <span id="hud-shotclock">02.4</span>s
+        <!-- Chrono 24s Shot Clock -->
+        <div class="bg-[#b91c1c] px-2.5 py-1.5 text-center font-display text-xs font-black tracking-wider text-white border-r border-[#1e3a6e]">
+          <span id="hud-shotclock">24.0</span>s
         </div>
-        <!-- Série de Paniers -->
-        <div class="flex items-center gap-2 px-2.5 py-1">
+        <!-- Série en cours / 5 tirs -->
+        <div class="flex items-center gap-2 px-3 py-1 bg-[#071024]">
           <div class="flex items-center gap-1.5">
             <img src="/flags/cd.svg" alt="RDC" class="h-3.5 w-5 rounded-[2px] object-cover" onerror="this.style.display='none'" />
-            <span class="font-display text-sm tracking-wider text-white sm:text-base">KIN</span>
+            <span class="font-display text-sm tracking-wider text-white">KIN</span>
           </div>
-          <div class="flex items-center gap-1 rounded bg-black/65 px-2 py-0.5 font-display text-lg font-black tracking-wider text-or">
-            <span id="hud-streak">0</span>
-            <span class="text-[0.55rem] font-sans font-bold uppercase tracking-wider text-slate-400">PTS</span>
+          <div class="flex items-center gap-1 rounded bg-[#030712] px-2 py-0.5 font-display text-lg font-black tracking-wider text-or border border-[#1e3a6e]">
+            <span id="hud-score-made">0</span>
+            <span class="text-[0.6rem] font-sans font-bold text-slate-400">/ 5</span>
           </div>
         </div>
-        <!-- Record -->
-        <div class="border-l border-white/10 px-2.5 py-1 text-right">
-          <span class="block text-[0.48rem] font-bold uppercase tracking-wider text-slate-400 leading-none">Record</span>
-          <span id="hud-record" class="font-display text-xs font-black text-emerald-400">0 🏆</span>
+        <!-- Pastilles des 5 tirs -->
+        <div class="flex items-center gap-1 border-l border-[#1e3a6e] bg-[#040917] px-2.5 py-1" id="hud-kick-dots">
+          <span class="dot-shot inline-block h-2 w-2 rounded-full border border-white/40 bg-slate-700"></span>
+          <span class="dot-shot inline-block h-2 w-2 rounded-full border border-white/40 bg-slate-700"></span>
+          <span class="dot-shot inline-block h-2 w-2 rounded-full border border-white/40 bg-slate-700"></span>
+          <span class="dot-shot inline-block h-2 w-2 rounded-full border border-white/40 bg-slate-700"></span>
+          <span class="dot-shot inline-block h-2 w-2 rounded-full border border-white/40 bg-slate-700"></span>
         </div>
       </div>
 
-      <!-- Mini barre Niveau + Spot de tir (eyebrow réduit) -->
+      <!-- Bandeau Spot & Niveau -->
       <div class="flex items-center gap-1.5">
         <button
           type="button"
           id="btn-open-levels"
-          class="pointer-events-auto flex items-center gap-1.5 rounded-md border border-or/40 bg-[#070d1f]/85 px-2 py-0.5 backdrop-blur-md transition-all hover:border-or active:scale-95"
+          class="pointer-events-auto flex items-center gap-1.5 rounded-lg border border-or bg-[#09142e] px-2.5 py-1 transition-all hover:bg-[#0c1b3a] active:scale-95 shadow-md"
         >
           <span class="h-1.5 w-1.5 rounded-full bg-or animate-pulse"></span>
-          <span id="hud-level-badge" class="font-display text-[0.65rem] uppercase tracking-wider text-or">NIV. 1 · LANCER FRANC</span>
+          <span id="hud-level-badge" class="font-display text-[0.65rem] uppercase tracking-wider text-or font-black">NIV. 1 · LANCER FRANC</span>
         </button>
 
-        <div class="flex items-center gap-1 rounded-md border border-white/10 bg-[#070d1f]/85 px-2 py-0.5 text-[0.65rem] font-bold text-sky-300 backdrop-blur-md">
+        <div class="flex items-center gap-1 rounded-lg border border-[#1e3a6e] bg-[#071024] px-2.5 py-1 text-[0.65rem] font-bold text-sky-300 shadow-md">
           <span>📍</span>
-          <span id="hud-spot-label">Spot 1/7 · 4.6m</span>
+          <span id="hud-spot-label">Tir 1/5 · Lancer Franc (4.6m)</span>
         </div>
       </div>
     </div>
 
-    <!-- DROITE : PAUSE + SON + MENU -->
+    <!-- DROITE : BOUTONS DE COMMANDE (PAUSE + SON + MENU) -->
     <div class="pointer-events-auto flex items-center gap-1.5">
       <button
         type="button"
         id="btn-pause"
-        class="flex h-9 w-9 items-center justify-center rounded-xl border border-white/15 bg-[#070d1f]/88 text-xs font-bold text-white shadow-lg backdrop-blur-md transition-all hover:bg-slate-800 active:scale-95"
+        class="flex h-9 w-9 items-center justify-center rounded-xl border border-[#1e3a6e] bg-[#060d1f] text-xs font-bold text-white shadow-lg transition-all hover:bg-[#0c1b3a] active:scale-95"
         aria-label="Mettre en pause"
       >
         <span id="icon-pause">⏸</span>
@@ -81,7 +95,7 @@
       <button
         type="button"
         id="btn-sound"
-        class="flex h-9 w-9 items-center justify-center rounded-xl border border-white/15 bg-[#070d1f]/88 text-sm text-white shadow-lg backdrop-blur-md transition-all hover:bg-slate-800 active:scale-95"
+        class="flex h-9 w-9 items-center justify-center rounded-xl border border-[#1e3a6e] bg-[#060d1f] text-sm text-white shadow-lg transition-all hover:bg-[#0c1b3a] active:scale-95"
         aria-label="Activer ou couper le son"
       >
         <span id="icon-sound">🔊</span>
@@ -90,7 +104,7 @@
       <button
         type="button"
         id="btn-open-menu"
-        class="flex h-9 items-center gap-1.5 rounded-xl border border-white/20 bg-congo px-3 text-[0.7rem] font-black uppercase tracking-wider text-white shadow-lg shadow-congo/30 transition-all hover:bg-congo-bright active:scale-95"
+        class="flex h-9 items-center gap-1.5 rounded-xl border-2 border-or bg-congo px-3 text-[0.7rem] font-black uppercase tracking-wider text-white shadow-lg transition-all hover:bg-congo-bright active:scale-95"
       >
         <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
           <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
@@ -100,48 +114,47 @@
     </div>
   </div>
 
-  <!-- ================= JAUGE DE TIR IRRÉVERSIBLE (DROITE) ================= -->
-  <div id="power-meter-wrap" class="pointer-events-none absolute right-3.5 top-1/2 z-20 -translate-y-1/2 flex flex-col items-center gap-1 opacity-0 transition-opacity duration-100">
-    <span class="rounded bg-red-600/95 px-1.5 py-0.5 text-[0.52rem] font-black uppercase tracking-wider text-white shadow">LONG</span>
-    <div class="relative h-48 w-4 overflow-hidden rounded-full border-2 border-white/35 bg-slate-950/90 p-0.5 shadow-2xl backdrop-blur-md">
-      <!-- Zone Swish idéale (74% - 88%) -->
-      <div class="absolute inset-x-0 top-[12%] h-[16%] border-y-2 border-emerald-400 bg-emerald-500/30"></div>
-      <!-- Zone trop forte (>88%) -->
-      <div class="absolute inset-x-0 top-0 h-[12%] bg-red-600/60"></div>
+  <!-- ================= JAUGE DE TIR SOLIDE (DROITE) ================= -->
+  <div id="power-meter-wrap" class="pointer-events-none absolute right-3.5 top-1/2 z-20 -translate-y-1/2 flex flex-col items-center gap-1.5 opacity-0 transition-opacity duration-150">
+    <span id="power-meter-zone-badge" class="rounded bg-[#040917] border border-[#1e3a6e] px-2 py-0.5 text-[0.55rem] font-black uppercase tracking-wider text-slate-300 shadow">
+      DOSAGE
+    </span>
+    <div class="relative h-56 w-5 overflow-hidden rounded-full border-2 border-[#1e3a6e] bg-[#030712] p-0.5 shadow-2xl">
+      <!-- Zone Trop Forte (>= 92%) : Tir raté au-dessus ou violent sur la planche -->
+      <div class="absolute inset-x-0 top-0 h-[10%] bg-red-600 border-b border-red-400"></div>
+      <!-- Zone Parfaite (72% - 90%) : Swish net ou planche parfaite ! -->
+      <div class="absolute inset-x-0 top-[10%] h-[18%] bg-emerald-500/80 border-y-2 border-emerald-300"></div>
+      <!-- Zone Moyenne (50% - 71%) : Un peu court ou premier arceau -->
+      <div class="absolute inset-x-0 top-[28%] h-[22%] bg-amber-500/60 border-b border-amber-300"></div>
+      <!-- Remplissage dynamique -->
       <div id="power-meter-fill" class="absolute inset-x-0.5 bottom-0.5 rounded-full bg-gradient-to-t from-sky-400 via-emerald-400 to-red-500" style="height: 0%"></div>
     </div>
-    <span id="power-meter-pct" class="rounded bg-black/90 px-1.5 py-0.5 font-display text-xs tracking-wider text-or shadow">0%</span>
+    <span id="power-meter-pct" class="rounded bg-[#060d1f] border border-[#1e3a6e] px-2 py-0.5 font-display text-xs tracking-wider text-or shadow font-bold">
+      0%
+    </span>
   </div>
 
-  <!-- ================= INDICATION DISCRÈTE EN BAS ================= -->
-  <div id="aim-instruction" class="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex flex-col items-center justify-center px-3 transition-opacity duration-300">
-    <div class="flex items-center gap-2 rounded-full border border-white/15 bg-[#070d1f]/85 px-3.5 py-1 text-[0.7rem] font-semibold text-slate-200 shadow-xl backdrop-blur-md text-center">
-      <span class="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-or"></span>
-      <span>Maintiens pour armer ton shoot · Relâche dans la zone verte (irréversible)</span>
-    </div>
-  </div>
-
-  <!-- ================= BANDEAU RÉSULTAT DU TIR ================= -->
-  <div id="shot-toast" class="pointer-events-none absolute inset-x-0 top-16 z-30 flex justify-center opacity-0 transition-all duration-200 -translate-y-4 px-3">
-    <div class="flex items-center gap-2.5 rounded-2xl border border-white/20 bg-[#070d1f]/95 px-4 py-2 shadow-2xl backdrop-blur-xl">
-      <span id="toast-emoji" class="text-xl">🏀</span>
+  <!-- ================= TOAST RÉSULTAT DU TIR ================= -->
+  <div id="shot-toast" class="pointer-events-none absolute inset-x-0 top-18 z-30 flex justify-center opacity-0 transition-all duration-200 -translate-y-4 px-3">
+    <div class="flex items-center gap-3 rounded-2xl border-2 border-[#1e3a6e] bg-[#060d1f] px-5 py-2.5 shadow-2xl">
+      <span id="toast-emoji" class="text-2xl">🏀</span>
       <div>
-        <h3 id="toast-title" class="font-display text-lg uppercase tracking-wider text-or leading-none">SWISH !</h3>
-        <p id="toast-subtitle" class="mt-0.5 text-[0.68rem] font-semibold text-slate-300">Panier net à la sirène</p>
+        <h3 id="toast-title" class="font-display text-lg sm:text-xl uppercase tracking-wider text-or leading-none font-black">SWISH !</h3>
+        <p id="toast-subtitle" class="mt-0.5 text-xs font-semibold text-slate-300">Panier net sans toucher l'arceau</p>
       </div>
     </div>
   </div>
 
-  <!-- ================= ÉCRAN DE PAUSE ================= -->
-  <div id="pause-modal" class="pointer-events-none fixed inset-0 z-40 hidden items-center justify-center bg-black/70 p-4 backdrop-blur-md">
-    <div class="pointer-events-auto w-full max-w-xs overflow-hidden rounded-3xl border border-white/20 bg-[#070f22] p-5 text-center shadow-2xl">
-      <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white/95 p-1.5 shadow">
+  <!-- ================= MODALE DE PAUSE (100% SOLIDE) ================= -->
+  <div id="pause-modal" class="pointer-events-none fixed inset-0 z-40 hidden items-center justify-center bg-black/80 p-4">
+    <div class="pointer-events-auto w-full max-w-xs overflow-hidden rounded-3xl border-2 border-[#1e3a6e] bg-[#060d1f] p-5 text-center shadow-2xl">
+      <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white p-1.5 shadow">
         <img src="/brand/logo.png" alt="Bloc Léopards" class="h-full w-auto object-contain" />
       </div>
-      <span class="mt-2.5 block text-[0.55rem] font-bold uppercase tracking-widest text-or">Temps Mort</span>
+      <span class="mt-2.5 block text-[0.55rem] font-bold uppercase tracking-widest text-or">Temps Mort 7ᵉ Rue</span>
       <h2 class="mt-0.5 font-display text-2xl uppercase tracking-wide text-white">PAUSE BASKET</h2>
-      <p class="mt-1 text-[0.7rem] text-slate-400">
-        Série en cours : <strong id="pause-streak-val" class="text-or">0</strong> panier(s)
+      <p class="mt-1 text-xs text-slate-300">
+        Tirs réussis dans la série : <strong id="pause-streak-val" class="text-or">0/5</strong>
       </p>
 
       <div class="mt-4 flex flex-col gap-2">
@@ -150,49 +163,49 @@
           id="btn-pause-resume"
           class="w-full rounded-xl bg-or py-2.5 text-xs font-black uppercase tracking-wider text-slate-950 shadow-lg hover:bg-yellow-300 active:scale-95 transition-transform"
         >
-          ▶ Reprendre le match
+          ▶ Reprendre le tir
         </button>
         <button
           type="button"
           id="btn-pause-restart"
-          class="w-full rounded-xl border border-white/15 bg-white/10 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-white/20"
+          class="w-full rounded-xl border border-[#1e3a6e] bg-[#0c1b3a] py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#162a52]"
         >
-          🔄 Recommencer à 0
+          🔄 Recommencer la série
         </button>
         <a
           href="/penalty"
-          class="w-full rounded-xl border border-or/30 bg-congo/40 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-congo"
+          class="w-full rounded-xl border border-or/40 bg-congo py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-congo-bright"
         >
-          ⚽ Mode Foot · Penalty aux Martyrs
+          ⚽ Passer au Penalty aux Martyrs
         </a>
       </div>
     </div>
   </div>
 
-  <!-- ================= ÉCRAN FIN DE SÉRIE (PREMIER RATÉ) ================= -->
-  <div id="gameover-modal" class="pointer-events-none fixed inset-0 z-40 hidden items-center justify-center bg-black/75 p-4 backdrop-blur-md">
-    <div class="pointer-events-auto w-full max-w-sm overflow-hidden rounded-3xl border border-white/20 bg-[#081126] p-5 text-center shadow-2xl">
-      <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/20 text-2xl border border-red-500/40">
+  <!-- ================= ÉCRAN FIN DE SÉRIE (5 TIRS TERMINÉS) ================= -->
+  <div id="gameover-modal" class="pointer-events-none fixed inset-0 z-40 hidden items-center justify-center bg-black/85 p-4">
+    <div class="pointer-events-auto w-full max-w-sm overflow-hidden rounded-3xl border-2 border-or bg-[#060d1f] p-5 text-center shadow-2xl">
+      <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0b2247] border border-sky-400 text-2xl">
         🏀
       </div>
-      <span class="mt-2 block text-[0.55rem] font-bold uppercase tracking-widest text-red-400">Buzzer Beater Manqué</span>
-      <h2 id="go-title" class="mt-0.5 font-display text-2xl uppercase tracking-wide text-white">REBOND SUR L'ARCEAU !</h2>
+      <span id="go-badge" class="mt-2.5 block text-[0.55rem] font-bold uppercase tracking-widest text-or">Séance de 5 Tirs Terminée</span>
+      <h2 id="go-title" class="mt-0.5 font-display text-2xl uppercase tracking-wide text-white">SÉRIE TERMINÉE</h2>
       <p id="go-desc" class="mt-1 text-xs text-slate-300">
-        Ta série à Limete 7ᵉ Rue s'arrête ici.
+        Résultat de ta séance sur le playground de la 7ᵉ Rue à Limete.
       </p>
 
-      <div class="mt-4 grid grid-cols-3 gap-2 rounded-2xl border border-white/10 bg-black/40 p-2.5">
+      <div class="mt-4 grid grid-cols-3 gap-2 rounded-2xl border border-[#1e3a6e] bg-[#040917] p-2.5">
         <div>
-          <span class="block text-[0.55rem] font-bold uppercase tracking-wider text-slate-400">Série</span>
-          <span id="go-stat-streak" class="font-display text-xl text-or">0</span>
+          <span class="block text-[0.55rem] font-bold uppercase tracking-wider text-slate-400">Paniers</span>
+          <span id="go-stat-streak" class="font-display text-xl text-or">0/5</span>
         </div>
-        <div class="border-x border-white/10">
+        <div class="border-x border-[#1e3a6e]">
           <span class="block text-[0.55rem] font-bold uppercase tracking-wider text-slate-400">Niveau</span>
           <span id="go-stat-level" class="font-display text-xl text-white">Niv. 1</span>
         </div>
         <div>
           <span class="block text-[0.55rem] font-bold uppercase tracking-wider text-slate-400">Record</span>
-          <span id="go-stat-record" class="font-display text-xl text-emerald-400">0</span>
+          <span id="go-stat-record" class="font-display text-xl text-emerald-400">0 🏆</span>
         </div>
       </div>
 
@@ -200,49 +213,49 @@
         <button
           type="button"
           id="btn-go-levels"
-          class="rounded-xl border border-white/15 bg-white/10 px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-white/20"
+          class="rounded-xl border border-[#1e3a6e] bg-[#0c1b3a] px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#162a52]"
         >
           🏆 Niveaux
         </button>
         <button
           type="button"
           id="btn-go-retry"
-          class="flex-1 rounded-xl bg-or px-4 py-2.5 text-xs font-black uppercase tracking-wider text-slate-950 shadow-lg shadow-or/25 hover:bg-yellow-300 active:scale-95 transition-transform"
+          class="flex-1 rounded-xl bg-or px-4 py-2.5 text-xs font-black uppercase tracking-wider text-slate-950 shadow-lg hover:bg-yellow-300 active:scale-95 transition-transform"
         >
-          🔄 Rejouer
+          🔄 Rejouer la série
         </button>
       </div>
     </div>
   </div>
 
-  <!-- ================= MODALE DÉDIÉE AUX NIVEAUX ================= -->
-  <div id="levels-modal-overlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 p-3 sm:p-6 backdrop-blur-lg">
-    <div class="relative flex max-h-[88dvh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-or/30 bg-[#070f22] shadow-2xl">
-      <div class="flex items-center justify-between border-b border-white/10 px-5 py-3.5 bg-[#050a18]">
+  <!-- ================= MODALE NIVEAUX (100% SOLIDE) ================= -->
+  <div id="levels-modal-overlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/85 p-3 sm:p-6">
+    <div class="relative flex max-h-[88dvh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border-2 border-or bg-[#060d1f] shadow-2xl">
+      <div class="flex items-center justify-between border-b border-[#1e3a6e] px-5 py-3.5 bg-[#040917]">
         <div>
-          <span class="text-[0.55rem] font-bold uppercase tracking-widest text-or">Progression Streetball Kinshasa</span>
+          <span class="text-[0.55rem] font-bold uppercase tracking-widest text-or">Streetball Kinshasa</span>
           <h2 class="font-display text-lg uppercase tracking-wider text-white leading-none">
-            🏆 Paliers & Spots de Tir (Limete 7ᵉ Rue)
+            🏆 Niveaux & Spots (Limete 7ᵉ Rue)
           </h2>
         </div>
         <button
           type="button"
           id="btn-close-levels"
-          class="flex h-8 w-8 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-slate-300 hover:bg-white/15 hover:text-white"
+          class="flex h-8 w-8 items-center justify-center rounded-xl border border-[#1e3a6e] bg-[#0c1b3a] text-slate-300 hover:text-white"
         >
           ✕
         </button>
       </div>
 
       <div class="flex-1 overflow-y-auto p-4 space-y-3">
-        <div class="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-3.5 py-2 text-xs text-slate-300">
-          <span>Chaque panier réussi te déplace vers la prochaine position et fait évoluer le niveau :</span>
+        <div class="flex items-center justify-between rounded-xl border border-[#1e3a6e] bg-[#040917] px-3.5 py-2 text-xs text-slate-300">
+          <span>Chaque niveau propose une séance de 5 tirs avec difficulté et distances accrues :</span>
           <span class="font-bold text-or">Record : <strong id="levels-best-streak">0</strong> paniers</span>
         </div>
         <div id="levels-grid" class="grid gap-2.5 sm:grid-cols-2"></div>
       </div>
 
-      <div class="flex items-center justify-end border-t border-white/10 bg-[#050a18] px-5 py-2.5">
+      <div class="flex items-center justify-end border-t border-[#1e3a6e] bg-[#040917] px-5 py-2.5">
         <button type="button" id="btn-resume-from-levels" class="rounded-xl bg-or px-4 py-2 text-xs font-black uppercase tracking-wider text-slate-950 hover:bg-yellow-300">
           Retour au terrain
         </button>
@@ -250,16 +263,16 @@
     </div>
   </div>
 
-  <!-- ================= MENU GÉNÉRAL ================= -->
-  <div id="game-menu-overlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 p-3 sm:p-6 backdrop-blur-lg">
-    <div class="relative flex max-h-[88dvh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-white/15 bg-[#070f22] shadow-2xl">
-      <div class="flex items-center justify-between border-b border-white/10 px-5 py-3.5 bg-[#050a18]">
+  <!-- ================= MENU GÉNÉRAL & MUSIQUE (100% SOLIDE) ================= -->
+  <div id="game-menu-overlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/85 p-3 sm:p-6">
+    <div class="relative flex max-h-[88dvh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border-2 border-[#1e3a6e] bg-[#060d1f] shadow-2xl">
+      <div class="flex items-center justify-between border-b border-[#1e3a6e] px-5 py-3.5 bg-[#040917]">
         <div class="flex items-center gap-3">
           <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-white p-1">
             <img src="/brand/logo.png" alt="Bloc Léopards" class="h-full w-auto object-contain" />
           </div>
           <div>
-            <span class="text-[0.55rem] font-bold uppercase tracking-widest text-or">Terrain de la 7ᵉ Rue · Limete, Kinshasa</span>
+            <span class="text-[0.55rem] font-bold uppercase tracking-widest text-or">Terrain 7ᵉ Rue · Limete</span>
             <h2 class="font-display text-lg uppercase tracking-wider text-white leading-none">
               Menu · Shoot à la Sirène
             </h2>
@@ -268,56 +281,57 @@
         <button
           type="button"
           id="btn-close-menu"
-          class="flex h-8 w-8 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-slate-300 hover:bg-white/15 hover:text-white"
+          class="flex h-8 w-8 items-center justify-center rounded-xl border border-[#1e3a6e] bg-[#0c1b3a] text-slate-300 hover:text-white"
         >
           ✕
         </button>
       </div>
 
-      <div class="flex-1 overflow-y-auto p-4 space-y-3.5">
-        <div class="grid gap-3.5 sm:grid-cols-2">
-          <div class="rounded-2xl border border-white/10 bg-black/30 p-3.5">
-            <span class="text-[0.58rem] font-bold uppercase tracking-wider text-or">Lumière de Kinshasa</span>
-            <h4 class="mt-0.5 font-display text-base uppercase text-white">Golden Hour / Projecteurs</h4>
-            <p class="mt-1 text-xs text-slate-400">
-              Joue sous le soleil de fin d'après-midi à Limete ou sous les projecteurs urbains nocturnes.
-            </p>
+      <div class="flex-1 overflow-y-auto p-4 space-y-4">
+        <!-- Playlist Kinshasa -->
+        <div class="rounded-2xl border border-[#1e3a6e] bg-[#040917] p-3.5">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-[0.55rem] font-bold uppercase tracking-widest text-or">Ambiance Sonore</span>
+              <h4 class="font-display text-base uppercase text-white">Chants & Musiques des Léopards</h4>
+            </div>
+            <button
+              type="button"
+              id="btn-menu-audio-toggle"
+              class="rounded-xl border border-emerald-500 bg-[#063023] px-3 py-1.5 text-xs font-bold text-emerald-300"
+            >
+              🔊 Son Activé
+            </button>
+          </div>
+          <div id="menu-playlist-list" class="mt-3 grid gap-2"></div>
+        </div>
+
+        <!-- Réglage jour / nuit -->
+        <div class="grid gap-3 sm:grid-cols-2">
+          <div class="rounded-2xl border border-[#1e3a6e] bg-[#040917] p-3.5">
+            <span class="text-[0.55rem] font-bold uppercase tracking-widest text-or">Lumière Kinshasa</span>
+            <h4 class="font-display text-base uppercase text-white">Heure de Match</h4>
             <div class="mt-3 flex gap-2">
-              <button type="button" id="btn-set-day" class="flex-1 rounded-xl border border-white/15 bg-white/5 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-white/15">
-                ☀️ Golden Hour
+              <button type="button" id="btn-set-day" class="flex-1 rounded-xl border border-[#1e3a6e] bg-[#0c1b3a] py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#162a52]">
+                ☀️ Après-midi
               </button>
-              <button type="button" id="btn-set-night" class="flex-1 rounded-xl border border-or/40 bg-congo py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-congo-bright">
-                🌙 Nuit Urbaine
+              <button type="button" id="btn-set-night" class="flex-1 rounded-xl border-2 border-or bg-congo py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-congo-bright">
+                🌙 Nuit Projecteurs
               </button>
             </div>
           </div>
 
-          <div class="rounded-2xl border border-white/10 bg-black/30 p-3.5">
-            <span class="text-[0.58rem] font-bold uppercase tracking-wider text-or">Signatures Sonores</span>
-            <h4 class="mt-0.5 font-display text-base uppercase text-white">Swish, Planche, Arceau & Sol</h4>
-            <p class="mt-1 text-xs text-slate-400">
-              Chaque contact (rebond bitume, planche plexiglas, arceau acier, filet net) produit son propre son.
-            </p>
-            <button type="button" id="btn-menu-audio-toggle" class="mt-3 w-full rounded-xl border border-emerald-500/40 bg-emerald-500/20 py-2 text-xs font-bold uppercase tracking-wider text-emerald-300">
-              🔊 Son Activé
-            </button>
-          </div>
-        </div>
-
-        <div class="rounded-2xl border border-white/10 bg-black/30 p-3.5">
-          <h4 class="font-display text-sm uppercase tracking-wider text-white">Changer de Discipline</h4>
-          <div class="mt-2.5 flex flex-wrap gap-2">
-            <a href="/penalty" class="rounded-xl border border-or/40 bg-congo px-4 py-2 text-xs font-black uppercase tracking-wider text-white hover:bg-congo-bright">
-              ⚽ Basculer sur Penalty aux Martyrs
+          <div class="rounded-2xl border border-[#1e3a6e] bg-[#040917] p-3.5">
+            <span class="text-[0.55rem] font-bold uppercase tracking-widest text-or">Autre Jeu</span>
+            <h4 class="font-display text-base uppercase text-white">Mode Football</h4>
+            <a href="/penalty" class="mt-3 block w-full text-center rounded-xl border border-or/40 bg-congo py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-congo-bright">
+              ⚽ Penalty aux Martyrs (3D)
             </a>
-            <button type="button" id="btn-menu-restart" class="rounded-xl border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-white/20">
-              🔄 Recommencer à 0
-            </button>
           </div>
         </div>
       </div>
 
-      <div class="flex items-center justify-between border-t border-white/10 bg-[#050a18] px-5 py-2.5">
+      <div class="flex items-center justify-between border-t border-[#1e3a6e] bg-[#040917] px-5 py-2.5">
         <span class="text-[0.65rem] text-slate-400">Raccourci Pause : touche <strong>Espace</strong> ou <strong>P</strong></span>
         <button type="button" id="btn-resume-game" class="rounded-xl bg-or px-4 py-2 text-xs font-black uppercase tracking-wider text-slate-950 hover:bg-yellow-300">
           Reprendre
@@ -331,7 +345,33 @@
   import * as THREE from "three";
 
   /* -------------------------------------------------------------------------- */
-  /*  POSITIONS DE TIR AUTOUR DU TERRAIN DE LIMETE 7ᵉ RUE                       */
+  /*  PLAYLIST AUDIO EN BOUCLE (Chants officiels des Léopards)                  */
+  /* -------------------------------------------------------------------------- */
+  const PLAYLIST = [
+    { id: "cest-fait", title: "C'est Fait (3-1 Merci les Léopards)", file: "/audio/jeu/cest-fait-3-1.mp3" },
+    { id: "esimbi", title: "Esimbi Mondial Bolukaki Yangoyooo", file: "/audio/jeu/esimbi-mondial.mp3" },
+    { id: "oh-yaya", title: "Oh Yaya · Célébration Qualification", file: "/audio/jeu/oh-yaya.mp3" },
+    { id: "destin", title: "Le Rendez-vous avec le Destin", file: "/audio/jeu/rendez-vous-destin.mp3" },
+    { id: "ti-na-trois", title: "Tout droit Ti Na Trois", file: "/audio/jeu/ti-na-trois.mp3" }
+  ];
+
+  let currentTrackIdx = Math.floor(Math.random() * PLAYLIST.length);
+  const bgMusic = new Audio();
+  bgMusic.src = PLAYLIST[currentTrackIdx].file;
+  bgMusic.loop = true;
+  bgMusic.volume = 0.45;
+
+  function setTrack(idx: number) {
+    currentTrackIdx = (idx + PLAYLIST.length) % PLAYLIST.length;
+    const track = PLAYLIST[currentTrackIdx];
+    bgMusic.src = track.file;
+    bgMusic.currentTime = 0;
+    if (state.audioEnabled) bgMusic.play().catch(() => {});
+    renderPlaylistUi();
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*  SPOTS DE TIR (SÉANCE DE 5 TIRS)                                           */
   /* -------------------------------------------------------------------------- */
   interface CourtSpot {
     name: string;
@@ -340,107 +380,88 @@
     distLabel: string;
   }
 
-  // Panier situé en (0, 3.05, 0)
-  const SPOTS: CourtSpot[] = [
+  // Panier situé en (0, 3.05, 0.42)
+  const SPOTS_5: CourtSpot[] = [
     { name: "Lancer Franc", x: 0, z: 4.6, distLabel: "4.6m" },
-    { name: "Aile Gauche 45°", x: -4.2, z: 4.5, distLabel: "6.1m" },
-    { name: "Aile Droite 45°", x: 4.2, z: 4.5, distLabel: "6.1m" },
+    { name: "Aile Gauche 45°", x: -4.1, z: 4.5, distLabel: "6.1m" },
     { name: "Tête de Raquette 3pts", x: 0, z: 6.75, distLabel: "6.75m" },
-    { name: "Corner Gauche", x: -5.6, z: 2.2, distLabel: "6.0m" },
-    { name: "Corner Droit", x: 5.6, z: 2.2, distLabel: "6.0m" },
-    { name: "Logo Buzzer Limete", x: 0, z: 8.2, distLabel: "8.2m" }
+    { name: "Aile Droite 45°", x: 4.1, z: 4.5, distLabel: "6.1m" },
+    { name: "Corner Droit", x: 5.6, z: 2.2, distLabel: "6.0m" }
   ];
 
   interface BasketTier {
     id: number;
-    minMade: number;
     name: string;
     desc: string;
-    tolerancePct: number; // Largeur de la fenêtre de réussite
-    hasDefender: boolean;
-    defenderJumpH: number;
+    tolerancePct: number;
+    windKmh: number;
   }
 
   const TIERS: BasketTier[] = [
     {
       id: 1,
-      minMade: 0,
-      name: "Shootaround 7ᵉ Rue",
-      desc: "Tirs ouverts sans défenseur pour régler ta mécanique de bras.",
-      tolerancePct: 9.0,
-      hasDefender: false,
-      defenderJumpH: 0
+      name: "Shootaround Limete",
+      desc: "5 tirs pour régler la mécanique du poignet sans vent.",
+      tolerancePct: 9.5,
+      windKmh: 0
     },
     {
       id: 2,
-      minMade: 1,
-      name: "Quartier Limete",
-      desc: "Rotation sur les ailes et à 3 points · Tolérance resserrée.",
-      tolerancePct: 7.5,
-      hasDefender: false,
-      defenderJumpH: 0
+      name: "Playground 7ᵉ Rue",
+      desc: "Précision renforcée sur les ailes et à mi-distance.",
+      tolerancePct: 8.0,
+      windKmh: 4
     },
     {
       id: 3,
-      minMade: 2,
-      name: "Contestation Défensive",
-      desc: "Un défenseur monte au contre devant toi : arme une cloche haute !",
+      name: "Money Time Kinshasa",
+      desc: "Tirs lointains avec brise urbaine et tolérance resserrée.",
       tolerancePct: 6.8,
-      hasDefender: true,
-      defenderJumpH: 0.45
+      windKmh: 8
     },
     {
       id: 4,
-      minMade: 4,
-      name: "Money Time Kinshasa",
-      desc: "Défenseur athlétique en extension + tirs longue distance.",
-      tolerancePct: 5.8,
-      hasDefender: true,
-      defenderJumpH: 0.72
-    },
-    {
-      id: 5,
-      minMade: 6,
       name: "Légende Buzzer Beater",
-      desc: "Précision chirurgicale exigée pour faire swisher le filet à la sirène !",
-      tolerancePct: 4.8,
-      hasDefender: true,
-      defenderJumpH: 0.92
+      desc: "Tolérance chirurgicale pour faire swisher le filet à la sirène !",
+      tolerancePct: 5.2,
+      windKmh: 12
     }
   ];
 
   const state = {
     phase: "aiming" as "aiming" | "charging" | "flying" | "result" | "gameover",
     paused: false,
-    streak: 0,
-    spotIndex: 0,
-    baseTierIndex: 0,
+    currentTierIndex: 0,
+    shotIndex: 0, // 0..4 (5 tirs par série)
+    shotsHistory: [] as boolean[],
+    goalsInSeries: 0,
     maxUnlockedTier: Number(localStorage.getItem("kin_basket_max_tier") || 1),
-    bestStreak: Number(localStorage.getItem("kin_basket_best") || 0),
-    isNight: false,
+    bestScore: Number(localStorage.getItem("kin_basket_best_score") || 0),
+    isNight: true,
     audioEnabled: true
   };
 
   function getActiveTier(): BasketTier {
-    let tier = TIERS[state.baseTierIndex] || TIERS[0];
-    for (const t of TIERS) {
-      if (state.streak >= t.minMade && t.id > tier.id) tier = t;
-    }
-    return tier;
+    return TIERS[state.currentTierIndex] || TIERS[0];
   }
 
   /* -------------------------------------------------------------------------- */
-  /*  DOM                                                                       */
+  /*  DOM REFERENCES                                                            */
   /* -------------------------------------------------------------------------- */
   const canvas = document.getElementById("basket-canvas") as HTMLCanvasElement;
-  const hudStreak = document.getElementById("hud-streak");
-  const hudRecord = document.getElementById("hud-record");
+  const swipeCanvas = document.getElementById("swipe-canvas") as HTMLCanvasElement;
+  const swipeCtx = swipeCanvas.getContext("2d")!;
+
+  const hudShotclock = document.getElementById("hud-shotclock");
+  const hudScoreMade = document.getElementById("hud-score-made");
   const hudLevelBadge = document.getElementById("hud-level-badge");
   const hudSpotLabel = document.getElementById("hud-spot-label");
+  const hudKickDots = document.querySelectorAll<HTMLSpanElement>(".dot-shot");
+
   const powerMeterWrap = document.getElementById("power-meter-wrap");
   const powerMeterFill = document.getElementById("power-meter-fill");
   const powerMeterPct = document.getElementById("power-meter-pct");
-  const aimInstruction = document.getElementById("aim-instruction");
+  const powerMeterZoneBadge = document.getElementById("power-meter-zone-badge");
 
   const shotToast = document.getElementById("shot-toast");
   const toastEmoji = document.getElementById("toast-emoji");
@@ -479,22 +500,29 @@
   const btnSound = document.getElementById("btn-sound");
   const iconSound = document.getElementById("icon-sound");
   const btnMenuAudioToggle = document.getElementById("btn-menu-audio-toggle");
-  const btnMenuRestart = document.getElementById("btn-menu-restart");
+  const menuPlaylistList = document.getElementById("menu-playlist-list");
+
+  function resizeSwipeCanvas() {
+    swipeCanvas.width = window.innerWidth;
+    swipeCanvas.height = window.innerHeight;
+  }
+  resizeSwipeCanvas();
 
   /* -------------------------------------------------------------------------- */
-  /*  SONS DIFFÉRENCIÉS : REBOND SOL / PLANCHE / ARCEAU / FILET SWISH / SIRÈNE  */
+  /*  SONS : REBOND BITUME / PLANCHE / ARCEAU / FILET SWISH                     */
   /* -------------------------------------------------------------------------- */
   let audioCtx: AudioContext | null = null;
-
   function initAudio() {
     if (!audioCtx) {
       const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (AC) audioCtx = new AC();
     }
     if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+    if (state.audioEnabled && bgMusic.paused) {
+      bgMusic.play().catch(() => {});
+    }
   }
 
-  // 1. Son du rebond sur le revêtement béton/bitume de Limete
   function playCourtBounceAudio(intensity = 0.6) {
     if (!state.audioEnabled || !audioCtx) return;
     try {
@@ -503,7 +531,7 @@
       const gain = audioCtx.createGain();
       osc.type = "sine";
       osc.frequency.setValueAtTime(165, now);
-      osc.frequency.exponentialRampToValueAtTime(52, now + 0.11);
+      osc.frequency.exponentialRampToValueAtTime(50, now + 0.11);
       gain.gain.setValueAtTime(intensity * 0.55, now);
       gain.gain.exponentialRampToValueAtTime(0.005, now + 0.12);
       osc.connect(gain);
@@ -513,7 +541,6 @@
     } catch {}
   }
 
-  // 2. Choc sourd sur la planche en plexiglas
   function playBackboardHitAudio() {
     if (!state.audioEnabled || !audioCtx) return;
     try {
@@ -522,8 +549,8 @@
       const gain = audioCtx.createGain();
       osc.type = "triangle";
       osc.frequency.setValueAtTime(240, now);
-      osc.frequency.exponentialRampToValueAtTime(75, now + 0.09);
-      gain.gain.setValueAtTime(0.5, now);
+      osc.frequency.exponentialRampToValueAtTime(70, now + 0.09);
+      gain.gain.setValueAtTime(0.55, now);
       gain.gain.exponentialRampToValueAtTime(0.008, now + 0.1);
       osc.connect(gain);
       gain.connect(audioCtx.destination);
@@ -532,7 +559,6 @@
     } catch {}
   }
 
-  // 3. Contact métallique sur l'arceau en acier ("clang")
   function playRimClangAudio() {
     if (!state.audioEnabled || !audioCtx) return;
     try {
@@ -552,12 +578,11 @@
     } catch {}
   }
 
-  // 4. Panier net ("Swish" cristallin du filet)
   function playSwishAudio() {
     if (!state.audioEnabled || !audioCtx) return;
     try {
       const now = audioCtx.currentTime;
-      const dur = 0.26;
+      const dur = 0.28;
       const bufSize = Math.floor(audioCtx.sampleRate * dur);
       const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
       const data = buf.getChannelData(0);
@@ -568,11 +593,11 @@
       src.buffer = buf;
       const filter = audioCtx.createBiquadFilter();
       filter.type = "bandpass";
-      filter.frequency.setValueAtTime(2400, now);
-      filter.frequency.exponentialRampToValueAtTime(1200, now + dur);
+      filter.frequency.setValueAtTime(2500, now);
+      filter.frequency.exponentialRampToValueAtTime(1100, now + dur);
       filter.Q.value = 1.6;
       const gain = audioCtx.createGain();
-      gain.gain.setValueAtTime(0.55, now);
+      gain.gain.setValueAtTime(0.65, now);
       gain.gain.exponentialRampToValueAtTime(0.01, now + dur);
       src.connect(filter);
       filter.connect(gain);
@@ -583,7 +608,7 @@
   }
 
   /* -------------------------------------------------------------------------- */
-  /*  SCÈNE 3D : TERRAIN DE BASKET DE LA 7ᵉ RUE LIMETE (KINSHASA)               */
+  /*  SCÈNE 3D WEBGL : TERRAIN 7ᵉ RUE LIMETE (KINSHASA)                         */
   /* -------------------------------------------------------------------------- */
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -593,56 +618,54 @@
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(48, window.innerWidth / window.innerHeight, 0.1, 220);
+  const camera = new THREE.PerspectiveCamera(52, window.innerWidth / window.innerHeight, 0.1, 200);
 
-  const hemiLight = new THREE.HemisphereLight(0xffedd5, 0x1e293b, 0.75);
+  const hemiLight = new THREE.HemisphereLight(0xffedd5, 0x0f172a, 0.7);
   scene.add(hemiLight);
 
-  const sunLight = new THREE.DirectionalLight(0xfff7ed, 1.85);
-  sunLight.position.set(14, 24, 16);
+  const sunLight = new THREE.DirectionalLight(0xfff7ed, 1.8);
+  sunLight.position.set(12, 22, 14);
   sunLight.castShadow = true;
   sunLight.shadow.mapSize.set(2048, 2048);
   scene.add(sunLight);
 
-  // Revêtement peint du terrain de Limete 7ᵉ Rue (Bleu Roi / Raquette Jaune Or & Rouge / Lignes Blanches)
+  // Sol bitume officiel Limete 7ᵉ Rue
   function createLimeteCourtTexture() {
     const cv = document.createElement("canvas");
     cv.width = 1024;
     cv.height = 1024;
     const ctx = cv.getContext("2d")!;
 
-    // Bordure extérieure ocre/terracotta
-    ctx.fillStyle = "#9a3412";
+    ctx.fillStyle = "#7c2d12"; // Ocre Kinshasa en pourtour
     ctx.fillRect(0, 0, 1024, 1024);
 
-    // Terrain principal bleu Congo
-    ctx.fillStyle = "#1d4ed8";
+    ctx.fillStyle = "#1d4ed8"; // Bleu roi RDC
     ctx.fillRect(64, 64, 896, 896);
 
-    // Grain bitume urbain
-    for (let i = 0; i < 18000; i++) {
+    // Grain bitume
+    for (let i = 0; i < 20000; i++) {
       ctx.fillStyle = Math.random() > 0.5 ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.04)";
       ctx.fillRect(Math.random() * 1024, Math.random() * 1024, 2, 2);
     }
 
-    // Raquette peinte en Jaune Or & Rouge RDC
-    ctx.fillStyle = "#eab308";
+    // Raquette Jaune Or & Rouge
+    ctx.fillStyle = "#facc15";
     ctx.fillRect(362, 64, 300, 360);
     ctx.fillStyle = "#dc2626";
     ctx.fillRect(392, 64, 240, 330);
 
-    // Lignes blanches FIBA
+    // Lignes blanches
     ctx.strokeStyle = "#ffffff";
     ctx.lineWidth = 10;
     ctx.strokeRect(64, 64, 896, 896);
     ctx.strokeRect(362, 64, 300, 360);
 
-    // Demi-cercle lancer franc
+    // Demi-cercle LF
     ctx.beginPath();
     ctx.arc(512, 424, 115, 0, Math.PI);
     ctx.stroke();
 
-    // Arc à 3 points
+    // Arc 3 pts
     ctx.beginPath();
     ctx.arc(512, 155, 390, 0.12 * Math.PI, 0.88 * Math.PI);
     ctx.stroke();
@@ -654,37 +677,14 @@
 
   const courtMesh = new THREE.Mesh(
     new THREE.PlaneGeometry(18, 22),
-    new THREE.MeshStandardMaterial({ map: createLimeteCourtTexture(), roughness: 0.78 })
+    new THREE.MeshStandardMaterial({ map: createLimeteCourtTexture(), roughness: 0.82 })
   );
   courtMesh.rotation.x = -Math.PI / 2;
   courtMesh.position.set(0, 0, 6.5);
   courtMesh.receiveShadow = true;
   scene.add(courtMesh);
 
-  // Clôtures grillagées typiques autour du terrain de Limete + Immeubles de Kinshasa en arrière-plan
-  const fenceMat = new THREE.MeshStandardMaterial({
-    color: 0x64748b,
-    wireframe: true,
-    transparent: true,
-    opacity: 0.42
-  });
-  const backFence = new THREE.Mesh(new THREE.PlaneGeometry(20, 4.2, 40, 10), fenceMat);
-  backFence.position.set(0, 2.1, -2.5);
-  scene.add(backFence);
-
-  // Immeubles urbains de Limete derrière le panier
-  const buildingColors = [0xd97706, 0xe2e8f0, 0x0284c7, 0xb45309, 0xcbd5e1];
-  [-14, -7, 0, 7.5, 14.5].forEach((bx, idx) => {
-    const h = 7 + (idx % 3) * 3.2;
-    const bMesh = new THREE.Mesh(
-      new THREE.BoxGeometry(5.5, h, 4.5),
-      new THREE.MeshStandardMaterial({ color: buildingColors[idx % buildingColors.length], roughness: 0.85 })
-    );
-    bMesh.position.set(bx, h / 2, -8.5 - (idx % 2) * 2);
-    scene.add(bMesh);
-  });
-
-  // Panneaux Partenaires & Bloc Léopards au pied de la clôture derrière le panier
+  // Panneaux Partenaires & Bloc Léopards le long du terrain
   const PARTNER_ADS = [
     { name: "BLOC LÉOPARDS", src: "/brand/logo.png" },
     { name: "R.D. CONGO", src: "/logo-rdc.png" },
@@ -695,7 +695,7 @@
     { name: "VISA", src: "/media/partenaires/logo-visa.png" }
   ];
 
-  function createCourtsidePartnerTex() {
+  function createCourtsideAdTexture() {
     const cv = document.createElement("canvas");
     cv.width = 2048;
     cv.height = 256;
@@ -704,23 +704,23 @@
     tex.colorSpace = THREE.SRGBColorSpace;
     const slotW = cv.width / PARTNER_ADS.length;
 
-    ctx.fillStyle = "#081126";
+    ctx.fillStyle = "#060d1f";
     ctx.fillRect(0, 0, cv.width, cv.height);
     PARTNER_ADS.forEach((ad, i) => {
       const x0 = i * slotW;
-      ctx.fillStyle = "#f7d618";
-      ctx.fillRect(x0, 0, slotW, 12);
+      ctx.fillStyle = "#facc15";
+      ctx.fillRect(x0, 0, slotW, 10);
       ctx.fillStyle = "#ffffff";
-      ctx.fillRect(x0 + 14, 20, slotW - 28, cv.height - 36);
+      ctx.fillRect(x0 + 12, 18, slotW - 24, cv.height - 32);
       const img = new Image();
       img.crossOrigin = "anonymous";
       img.onload = () => {
         ctx.fillStyle = "#ffffff";
-        ctx.fillRect(x0 + 14, 20, slotW - 28, cv.height - 36);
-        const scale = Math.min((slotW - 60) / img.width, (cv.height - 56) / img.height);
+        ctx.fillRect(x0 + 12, 18, slotW - 24, cv.height - 32);
+        const scale = Math.min((slotW - 50) / img.width, (cv.height - 48) / img.height);
         const w = img.width * scale;
         const h = img.height * scale;
-        ctx.drawImage(img, x0 + (slotW - w) / 2, 20 + (cv.height - 36 - h) / 2, w, h);
+        ctx.drawImage(img, x0 + (slotW - w) / 2, 18 + (cv.height - 32 - h) / 2, w, h);
         tex.needsUpdate = true;
       };
       img.src = ad.src;
@@ -731,19 +731,33 @@
 
   const courtsideAd = new THREE.Mesh(
     new THREE.BoxGeometry(14, 0.9, 0.15),
-    new THREE.MeshBasicMaterial({ map: createCourtsidePartnerTex() })
+    new THREE.MeshBasicMaterial({ map: createCourtsideAdTexture() })
   );
   courtsideAd.position.set(0, 0.45, -2.2);
   scene.add(courtsideAd);
 
+  // Clôture grillagée & Immeubles de Kinshasa
+  const fenceMat = new THREE.MeshStandardMaterial({ color: 0x64748b, wireframe: true, transparent: true, opacity: 0.35 });
+  const backFence = new THREE.Mesh(new THREE.PlaneGeometry(20, 4.2, 36, 10), fenceMat);
+  backFence.position.set(0, 2.1, -2.4);
+  scene.add(backFence);
+
+  const bldgMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.9 });
+  [-14, -7, 0, 7.5, 14.5].forEach((bx, idx) => {
+    const h = 8 + (idx % 3) * 3.5;
+    const bMesh = new THREE.Mesh(new THREE.BoxGeometry(5.5, h, 4.5), bldgMat);
+    bMesh.position.set(bx, h / 2, -8.5 - (idx % 2) * 2);
+    scene.add(bMesh);
+  });
+
   /* -------------------------------------------------------------------------- */
-  /*  PANIER DE BASKET FIBA : POTENCE, PLANCHE PLEXIGLAS, ARCEAU & FILET        */
+  /*  PANIER DE BASKET FIBA (ARCEAU, PLANCHE, FILET)                            */
   /* -------------------------------------------------------------------------- */
   const HOOP = { rimY: 3.05, rimZ: 0.42, rimR: 0.23, boardZ: 0.0, boardY: 3.35 };
   const hoopGroup = new THREE.Group();
 
-  // Potence métallique bleue/jaune
-  const poleMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.6, roughness: 0.4 });
+  // Potence métallique
+  const poleMat = new THREE.MeshStandardMaterial({ color: 0x0a1128, metalness: 0.65, roughness: 0.35 });
   const mainPole = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 3.8, 16), poleMat);
   mainPole.position.set(0, 1.9, -1.2);
   mainPole.castShadow = true;
@@ -753,18 +767,18 @@
   armPole.position.set(0, 3.35, -0.6);
   hoopGroup.add(armPole);
 
-  // Planche plexiglas avec carré de visée blanc et logo Bloc Léopards en haut
+  // Planche en plexiglas
   function createBackboardTexture() {
     const cv = document.createElement("canvas");
     cv.width = 512;
     cv.height = 384;
     const ctx = cv.getContext("2d")!;
-    ctx.fillStyle = "rgba(241, 245, 249, 0.22)";
+    ctx.fillStyle = "rgba(240, 246, 255, 0.24)";
     ctx.fillRect(0, 0, 512, 384);
     ctx.strokeStyle = "#ffffff";
     ctx.lineWidth = 14;
     ctx.strokeRect(12, 12, 488, 360);
-    // Carré de visée officiel
+    // Carré de visée
     ctx.lineWidth = 10;
     ctx.strokeRect(176, 185, 160, 125);
     const tex = new THREE.CanvasTexture(cv);
@@ -780,14 +794,14 @@
   backboard.castShadow = true;
   hoopGroup.add(backboard);
 
-  // Arceau orange FIBA
+  // Arceau orange
   const rimMat = new THREE.MeshStandardMaterial({ color: 0xea580c, metalness: 0.7, roughness: 0.25 });
   const rimMesh = new THREE.Mesh(new THREE.TorusGeometry(HOOP.rimR, 0.016, 14, 32), rimMat);
   rimMesh.rotation.x = Math.PI / 2;
   rimMesh.position.set(0, HOOP.rimY, HOOP.rimZ);
   hoopGroup.add(rimMesh);
 
-  // Filet de basket tressé blanc déformable au passage du ballon
+  // Filet tressé
   const netGeo = new THREE.CylinderGeometry(HOOP.rimR, HOOP.rimR * 0.62, 0.44, 20, 8, true);
   const netOrigPos = new Float32Array((netGeo.attributes.position as THREE.BufferAttribute).array);
   const netMesh = new THREE.Mesh(
@@ -800,11 +814,10 @@
   scene.add(hoopGroup);
 
   let netSwishTimer = 0;
-  function triggerHoopNetSwish() {
+  function triggerNetSwish() {
     netSwishTimer = 1.0;
   }
-
-  function updateHoopNet(dt: number) {
+  function updateNetMesh(dt: number) {
     if (netSwishTimer <= 0) return;
     netSwishTimer = Math.max(0, netSwishTimer - dt * 2.8);
     const posAttr = netGeo.attributes.position as THREE.BufferAttribute;
@@ -820,36 +833,7 @@
   }
 
   /* -------------------------------------------------------------------------- */
-  /*  DÉFENSEUR CONTESTATAIRE (NIVEAUX 3+)                                      */
-  /* -------------------------------------------------------------------------- */
-  const defenderGroup = new THREE.Group();
-  const defBody = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.24, 0.2, 0.75, 14),
-    new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.5 })
-  );
-  defBody.position.y = 1.28;
-  const defHead = new THREE.Mesh(
-    new THREE.SphereGeometry(0.14, 14, 14),
-    new THREE.MeshStandardMaterial({ color: 0x5c3a28, roughness: 0.65 })
-  );
-  defHead.position.y = 1.82;
-  // Bras levés au contre
-  const defArms = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.05, 0.05, 0.85, 10),
-    new THREE.MeshStandardMaterial({ color: 0x5c3a28 })
-  );
-  defArms.position.set(0, 2.05, 0);
-  const defLegs = new THREE.Mesh(
-    new THREE.BoxGeometry(0.36, 0.82, 0.22),
-    new THREE.MeshStandardMaterial({ color: 0x0f172a })
-  );
-  defLegs.position.y = 0.44;
-  defenderGroup.add(defBody, defHead, defArms, defLegs);
-  defenderGroup.visible = false;
-  scene.add(defenderGroup);
-
-  /* -------------------------------------------------------------------------- */
-  /*  BALLON DE BASKET OFFICIEL AVEC POIDS & RAINURES                           */
+  /*  BALLON DE BASKET 3D (PAS DE PERSONNE DEVANT LA CAMÉRA)                   */
   /* -------------------------------------------------------------------------- */
   const BALL_R = 0.122;
   function createBasketballTexture() {
@@ -860,7 +844,7 @@
     ctx.fillStyle = "#d9531e";
     ctx.fillRect(0, 0, 512, 256);
     ctx.strokeStyle = "#111827";
-    ctx.lineWidth = 8;
+    ctx.lineWidth = 7;
     ctx.beginPath();
     ctx.moveTo(0, 128); ctx.lineTo(512, 128);
     ctx.moveTo(256, 0); ctx.lineTo(256, 256);
@@ -871,84 +855,144 @@
   }
 
   const ballMesh = new THREE.Mesh(
-    new THREE.SphereGeometry(BALL_R, 28, 28),
+    new THREE.SphereGeometry(BALL_R, 32, 32),
     new THREE.MeshStandardMaterial({ map: createBasketballTexture(), roughness: 0.62 })
   );
   ballMesh.castShadow = true;
   scene.add(ballMesh);
 
+  // Ombre de contact au sol sous le ballon
+  const shadowCanvas = document.createElement("canvas");
+  shadowCanvas.width = 128;
+  shadowCanvas.height = 128;
+  const sCtx = shadowCanvas.getContext("2d")!;
+  const sGrad = sCtx.createRadialGradient(64, 64, 0, 64, 64, 60);
+  sGrad.addColorStop(0, "rgba(0, 0, 0, 0.72)");
+  sGrad.addColorStop(0.5, "rgba(0, 0, 0, 0.35)");
+  sGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+  sCtx.fillStyle = sGrad;
+  sCtx.fillRect(0, 0, 128, 128);
+  const ballShadowTex = new THREE.CanvasTexture(shadowCanvas);
+
+  const ballContactShadow = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.38, 0.38),
+    new THREE.MeshBasicMaterial({ map: ballShadowTex, transparent: true, depthWrite: false })
+  );
+  ballContactShadow.rotation.x = -Math.PI / 2;
+  scene.add(ballContactShadow);
+
   /* -------------------------------------------------------------------------- */
-  /*  PRÉPARATION DE LA POSITION DE TIR                                         */
+  /*  CADRAGE & GESTION DE LA SÉANCE DE 5 TIRS                                  */
   /* -------------------------------------------------------------------------- */
-  function applyLightingMode(night: boolean) {
-    state.isNight = night;
-    if (night) {
-      scene.background = new THREE.Color("#070b16");
-      scene.fog = new THREE.FogExp2("#070b16", 0.015);
-      hemiLight.intensity = 0.45;
-      sunLight.intensity = 1.35;
-      btnSetNight?.classList.add("bg-congo", "border-or/40");
-      btnSetDay?.classList.remove("bg-congo", "border-or/40");
-    } else {
-      scene.background = new THREE.Color("#fdba74");
-      scene.fog = new THREE.FogExp2("#fed7aa", 0.008);
-      hemiLight.intensity = 0.9;
-      sunLight.intensity = 1.95;
-      btnSetDay?.classList.add("bg-congo", "border-or/40");
-      btnSetNight?.classList.remove("bg-congo", "border-or/40");
-    }
+  function applyPlayableFraming() {
+    const spot = SPOTS_5[state.shotIndex % SPOTS_5.length];
+    const dirToHoop = new THREE.Vector3(0 - spot.x, 0, HOOP.rimZ - spot.z).normalize();
+    const aspect = window.innerWidth / Math.max(1, window.innerHeight);
+    const isPortrait = aspect < 0.95;
+
+    // En vue 1ère personne : le ballon est positionné devant la caméra à hauteur de tir (1.65m)
+    const distCam = isPortrait ? 1.45 : 1.35;
+    camera.position.set(spot.x - dirToHoop.x * distCam, 1.82, spot.z - dirToHoop.z * distCam);
+    camera.lookAt(0, HOOP.rimY + 0.15, HOOP.rimZ);
+
+    ballMesh.position.set(spot.x, 1.55, spot.z);
+    ballMesh.rotation.set(0, 0, 0);
   }
 
   function updateHud() {
     const tier = getActiveTier();
-    const spot = SPOTS[state.spotIndex % SPOTS.length];
-    if (hudStreak) hudStreak.textContent = String(state.streak);
-    if (hudRecord) hudRecord.textContent = `${state.bestStreak} 🏆`;
+    const spot = SPOTS_5[state.shotIndex % SPOTS_5.length];
+
+    if (hudScoreMade) hudScoreMade.textContent = String(state.goalsInSeries);
     if (hudLevelBadge) hudLevelBadge.textContent = `NIV. ${tier.id} · ${tier.name.toUpperCase()}`;
-    if (hudSpotLabel) hudSpotLabel.textContent = `${spot.name} · ${spot.distLabel}`;
-    if (levelsBestStreak) levelsBestStreak.textContent = String(state.bestStreak);
-    if (pauseStreakVal) pauseStreakVal.textContent = String(state.streak);
+    if (hudSpotLabel) hudSpotLabel.textContent = `Tir ${state.shotIndex + 1}/5 · ${spot.name} (${spot.distLabel})`;
+    if (levelsBestStreak) levelsBestStreak.textContent = `${state.bestScore}/5`;
+    if (pauseStreakVal) pauseStreakVal.textContent = `${state.goalsInSeries}/5`;
+
+    hudKickDots.forEach((dot, idx) => {
+      dot.className = "dot-shot inline-block h-2 w-2 rounded-full border border-white/40 transition-all";
+      if (idx < state.shotsHistory.length) {
+        dot.classList.add(state.shotsHistory[idx] ? "bg-emerald-400" : "bg-red-500");
+      } else if (idx === state.shotIndex) {
+        dot.classList.add("bg-or", "animate-pulse");
+      } else {
+        dot.classList.add("bg-slate-700");
+      }
+    });
   }
 
-  function setupCurrentSpot() {
+  function setupNextShot() {
+    if (state.shotIndex >= 5) {
+      endSeries();
+      return;
+    }
+
+    state.phase = "aiming";
+    ballPhys.active = false;
+    ballPhys.scoredTriggered = false;
+    ballPhys.hitBackboard = false;
+    ballPhys.hitRim = false;
+
+    applyPlayableFraming();
+    updateHud();
+
+    swipeCtx.clearRect(0, 0, swipeCanvas.width, swipeCanvas.height);
+    if (powerMeterWrap) powerMeterWrap.classList.add("opacity-0");
+    if (powerMeterFill) powerMeterFill.style.height = "0%";
+  }
+
+  function startSeries(tierIdx = 0) {
+    state.currentTierIndex = THREE.MathUtils.clamp(tierIdx, 0, TIERS.length - 1);
+    state.shotIndex = 0;
+    state.shotsHistory = [];
+    state.goalsInSeries = 0;
+    state.paused = false;
+
+    gameoverModal?.classList.add("hidden");
+    gameoverModal?.classList.remove("flex");
+    levelsModalOverlay?.classList.add("hidden");
+    levelsModalOverlay?.classList.remove("flex");
+    gameMenuOverlay?.classList.add("hidden");
+    gameMenuOverlay?.classList.remove("flex");
+
+    setupNextShot();
+  }
+
+  function endSeries() {
+    state.phase = "gameover";
     const tier = getActiveTier();
-    if (tier.id > state.maxUnlockedTier) {
-      state.maxUnlockedTier = tier.id;
+
+    if (state.goalsInSeries > state.bestScore) {
+      state.bestScore = state.goalsInSeries;
+      localStorage.setItem("kin_basket_best_score", String(state.bestScore));
+    }
+
+    const passed = state.goalsInSeries >= 3;
+    if (passed && tier.id === state.maxUnlockedTier && state.maxUnlockedTier < TIERS.length) {
+      state.maxUnlockedTier++;
       localStorage.setItem("kin_basket_max_tier", String(state.maxUnlockedTier));
     }
 
-    const spot = SPOTS[state.spotIndex % SPOTS.length];
-    ballMesh.position.set(spot.x, 1.95, spot.z);
-    ballMesh.rotation.set(0, 0, 0);
-
-    // Placer la caméra juste derrière le tireur, orientée vers l'arceau
-    const dirToHoop = new THREE.Vector3(0 - spot.x, 0, HOOP.rimZ - spot.z).normalize();
-    camera.position.set(spot.x - dirToHoop.x * 1.85, 2.25, spot.z - dirToHoop.z * 1.85);
-    camera.lookAt(0, HOOP.rimY - 0.1, HOOP.rimZ);
-
-    // Défenseur contestataire aux niveaux 3+
-    if (tier.hasDefender) {
-      defenderGroup.visible = true;
-      defenderGroup.position.set(spot.x + dirToHoop.x * 1.55, 0, spot.z + dirToHoop.z * 1.55);
-      defenderGroup.lookAt(spot.x, 0, spot.z);
-    } else {
-      defenderGroup.visible = false;
+    if (goTitle) goTitle.textContent = passed ? "VICTOIRE À LIMETE ! 🔥" : "SÉANCE TERMINÉE";
+    if (goDesc) {
+      goDesc.textContent = passed
+        ? `Magnifique performance ! ${state.goalsInSeries}/5 tirs rentrés. Niveau suivant débloqué !`
+        : `Tu as inscrit ${state.goalsInSeries}/5 tirs. Entraîne-toi pour valider au moins 3/5 !`;
     }
+    if (goStatStreak) goStatStreak.textContent = `${state.goalsInSeries}/5`;
+    if (goStatLevel) goStatLevel.textContent = `Niv. ${tier.id}`;
+    if (goStatRecord) goStatRecord.textContent = `${state.bestScore}/5 🏆`;
 
-    if (powerMeterWrap) powerMeterWrap.classList.add("opacity-0");
-    if (powerMeterFill) powerMeterFill.style.height = "0%";
-    aimInstruction?.classList.remove("opacity-0");
-
-    state.phase = "aiming";
-    updateHud();
+    gameoverModal?.classList.remove("hidden");
+    gameoverModal?.classList.add("flex");
+    renderLevelsModal();
   }
 
   /* -------------------------------------------------------------------------- */
-  /*  JAUGE DE TIR IRRÉVERSIBLE                                                 */
+  /*  SWIPE & JAUGE IRRÉVERSIBLE (NE JAMAIS ARRIVER AU MAX)                     */
   /* -------------------------------------------------------------------------- */
   let chargeActive = false;
-  let chargeStartY = 0;
-  let chargePeakPushY = 0;
+  let swipePoints: { x: number; y: number }[] = [];
   let lockedPowerPct = 0;
 
   const ballPhys = {
@@ -962,79 +1006,143 @@
     hitBackboard: false,
     hitRim: false,
     scoredTriggered: false,
-    bounces: 0,
     elapsed: 0
   };
 
   function updateChargeGauge(dt: number) {
     if (!chargeActive || state.phase !== "charging" || state.paused) return;
-    const h = window.innerHeight;
-    const pushPower = Math.max(0, (chargePeakPushY / (h * 0.34)) * 100);
-    lockedPowerPct = Math.max(lockedPowerPct + dt * 62, pushPower);
 
-    const displayPct = Math.min(Math.round(lockedPowerPct), 105);
-    if (powerMeterFill) powerMeterFill.style.height = `${Math.min(displayPct, 100)}%`;
+    lockedPowerPct = Math.min(100, lockedPowerPct + dt * 56);
+    const displayPct = Math.round(lockedPowerPct);
+
+    if (powerMeterFill) powerMeterFill.style.height = `${displayPct}%`;
+    const isOverload = lockedPowerPct >= 92;
+    const isPerfect = lockedPowerPct >= 72 && lockedPowerPct < 92;
+
     if (powerMeterPct) {
-      powerMeterPct.textContent = `${displayPct}%`;
+      powerMeterPct.textContent = isOverload ? "MAX !" : `${displayPct}%`;
+      powerMeterPct.className = isOverload
+        ? "rounded bg-red-600 px-2 py-0.5 font-display text-xs tracking-wider text-white shadow animate-pulse font-black"
+        : isPerfect
+          ? "rounded bg-emerald-500 px-2 py-0.5 font-display text-xs tracking-wider text-slate-950 font-black shadow"
+          : "rounded bg-[#060d1f] px-2 py-0.5 font-display text-xs tracking-wider text-or shadow font-bold";
     }
 
-    // Élévation du ballon dans les mains du joueur pendant le jump-shot
-    const spot = SPOTS[state.spotIndex % SPOTS.length];
-    ballMesh.position.y = 1.95 + Math.min(0.45, (lockedPowerPct / 100) * 0.45);
-    ballMesh.position.x = spot.x;
-    ballMesh.position.z = spot.z;
+    if (powerMeterZoneBadge) {
+      if (isOverload) {
+        powerMeterZoneBadge.textContent = "TROP FORT (RATÉ) !";
+        powerMeterZoneBadge.className = "rounded bg-red-600 px-2 py-0.5 text-[0.52rem] font-black uppercase tracking-wider text-white shadow";
+      } else if (isPerfect) {
+        powerMeterZoneBadge.textContent = "ZONE PARFAITE ✨";
+        powerMeterZoneBadge.className = "rounded bg-emerald-400 px-2 py-0.5 text-[0.52rem] font-black uppercase tracking-wider text-slate-950 shadow";
+      } else if (lockedPowerPct >= 50) {
+        powerMeterZoneBadge.textContent = "CORRECT";
+        powerMeterZoneBadge.className = "rounded bg-amber-400 px-2 py-0.5 text-[0.52rem] font-black uppercase tracking-wider text-slate-950 shadow";
+      } else {
+        powerMeterZoneBadge.textContent = "TROP COURT";
+        powerMeterZoneBadge.className = "rounded bg-sky-500 px-2 py-0.5 text-[0.52rem] font-black uppercase tracking-wider text-white shadow";
+      }
+    }
 
-    if (lockedPowerPct >= 104) {
-      releaseJumpShot();
+    // Le ballon monte légèrement dans la phase d'armé du shoot
+    const spot = SPOTS_5[state.shotIndex % SPOTS_5.length];
+    ballMesh.position.y = 1.55 + Math.min(0.35, (lockedPowerPct / 100) * 0.35);
+
+    drawSwipeTrail();
+
+    // Si la jauge atteint 100% (MAX), le tir part tout seul obligatoirement raté !
+    if (lockedPowerPct >= 100) {
+      commitShotRelease();
     }
   }
 
-  function releaseJumpShot() {
+  function drawSwipeTrail() {
+    swipeCtx.clearRect(0, 0, swipeCanvas.width, swipeCanvas.height);
+    if (swipePoints.length < 2) return;
+
+    swipeCtx.save();
+    swipeCtx.lineCap = "round";
+    swipeCtx.lineJoin = "round";
+
+    const isOverload = lockedPowerPct >= 92;
+    const isPerfect = lockedPowerPct >= 72 && lockedPowerPct < 92;
+    const color = isOverload ? "#ef4444" : isPerfect ? "#34d399" : "#facc15";
+
+    swipeCtx.strokeStyle = color;
+    swipeCtx.lineWidth = 6;
+    swipeCtx.beginPath();
+    swipeCtx.moveTo(swipePoints[0].x, swipePoints[0].y);
+    for (let i = 1; i < swipePoints.length; i++) {
+      swipeCtx.lineTo(swipePoints[i].x, swipePoints[i].y);
+    }
+    swipeCtx.stroke();
+    swipeCtx.restore();
+  }
+
+  function commitShotRelease() {
     if (!chargeActive) return;
     chargeActive = false;
     state.phase = "flying";
 
-    setTimeout(() => powerMeterWrap?.classList.add("opacity-0"), 350);
+    setTimeout(() => {
+      swipeCtx.clearRect(0, 0, swipeCanvas.width, swipeCanvas.height);
+      powerMeterWrap?.classList.add("opacity-0");
+    }, 280);
 
     const tier = getActiveTier();
-    const spot = SPOTS[state.spotIndex % SPOTS.length];
-    // Puissance idéale = 81%
-    const idealPower = 81;
-    const err = lockedPowerPct - idealPower;
-    const absErr = Math.abs(err);
+    const spot = SPOTS_5[state.shotIndex % SPOTS_5.length];
+    const isOverload = lockedPowerPct >= 92;
+    const isPerfect = lockedPowerPct >= 72 && lockedPowerPct < 92;
 
     ballPhys.active = true;
     ballPhys.elapsed = 0;
     ballPhys.hitBackboard = false;
     ballPhys.hitRim = false;
     ballPhys.scoredTriggered = false;
-    ballPhys.bounces = 0;
 
-    // Déterminer le résultat physique selon la précision de la jauge irréversible
-    ballPhys.isSwish = absErr <= tier.tolerancePct * 0.55;
-    ballPhys.isBankMake = !ballPhys.isSwish && absErr <= tier.tolerancePct;
-    ballPhys.isMake = ballPhys.isSwish || ballPhys.isBankMake;
+    // Détermination stricte du résultat selon le respect de la jauge :
+    // - Si MAX (>=92%) : OBLIGATOIREMENT RATÉ (trop fort sur le panneau ou arrière de l'arceau)
+    // - Si Parfait (72-91%) : SWISH OU PLANCHE MAGNIFIQUE !
+    if (isOverload) {
+      ballPhys.isMake = false;
+      ballPhys.isSwish = false;
+      ballPhys.isBankMake = false;
+    } else if (isPerfect) {
+      ballPhys.isMake = true;
+      ballPhys.isSwish = Math.abs(lockedPowerPct - 81) <= tier.tolerancePct * 0.6;
+      ballPhys.isBankMake = !ballPhys.isSwish;
+    } else {
+      // Trop faible / moyen
+      ballPhys.isMake = false;
+      ballPhys.isSwish = false;
+      ballPhys.isBankMake = false;
+    }
 
-    // Calcul balistique exact vers la cible (centre de l'arceau, planche ou rebord)
     const startX = ballMesh.position.x;
     const startY = ballMesh.position.y;
     const startZ = ballMesh.position.z;
 
     let targetX = 0;
-    let targetY = HOOP.rimY + 0.04;
+    let targetY = HOOP.rimY + 0.05;
     let targetZ = HOOP.rimZ;
 
     if (ballPhys.isBankMake) {
-      // Rentré avec la planche !
       targetZ = HOOP.boardZ + BALL_R + 0.04;
-      targetY = HOOP.rimY + 0.34;
+      targetY = HOOP.rimY + 0.36;
     } else if (!ballPhys.isMake) {
-      // Trop court (arceau avant) ou trop long (planche/arceau arrière)
-      targetZ = err < 0 ? HOOP.rimZ + HOOP.rimR : HOOP.boardZ + BALL_R + 0.04;
-      targetX = (Math.random() - 0.5) * 0.28;
+      if (isOverload) {
+        // Trop fort : tape le haut du panneau plexiglas
+        targetZ = HOOP.boardZ + BALL_R + 0.04;
+        targetY = HOOP.boardY + 0.35;
+        targetX = (Math.random() - 0.5) * 0.35;
+      } else {
+        // Trop court : tape l'avant de l'arceau
+        targetZ = HOOP.rimZ + HOOP.rimR + 0.06;
+        targetY = HOOP.rimY - 0.04;
+      }
     }
 
-    const flightDuration = 0.88 + Math.hypot(spot.x, spot.z) * 0.045;
+    const flightDuration = 0.90 + Math.hypot(spot.x, spot.z) * 0.04;
     const g = 9.81;
     ballPhys.vx = (targetX - startX) / flightDuration;
     ballPhys.vz = (targetZ - startZ) / flightDuration;
@@ -1042,47 +1150,45 @@
   }
 
   canvas.addEventListener("pointerdown", (e) => {
-    if (state.phase !== "aiming" || state.paused) return;
     initAudio();
+    if (state.phase !== "aiming" || state.paused) return;
     state.phase = "charging";
     chargeActive = true;
-    chargeStartY = e.clientY;
-    chargePeakPushY = 0;
-    lockedPowerPct = 18;
-    aimInstruction?.classList.add("opacity-0");
+    swipePoints = [{ x: e.clientX, y: e.clientY }];
+    lockedPowerPct = 20;
+
     powerMeterWrap?.classList.remove("opacity-0");
   });
 
   window.addEventListener("pointermove", (e) => {
     if (!chargeActive || state.phase !== "charging" || state.paused) return;
-    const pushY = Math.max(0, chargeStartY - e.clientY);
-    if (pushY > chargePeakPushY) chargePeakPushY = pushY;
+    const last = swipePoints[swipePoints.length - 1];
+    if (last) {
+      const d = Math.hypot(e.clientX - last.x, e.clientY - last.y);
+      if (d > 4) {
+        swipePoints.push({ x: e.clientX, y: e.clientY });
+        if (lockedPowerPct < 80) {
+          lockedPowerPct = Math.min(80, lockedPowerPct + d * 0.06);
+        }
+      }
+    }
   });
 
   window.addEventListener("pointerup", () => {
-    if (chargeActive && state.phase === "charging" && !state.paused) releaseJumpShot();
+    if (chargeActive && state.phase === "charging" && !state.paused) commitShotRelease();
   });
   window.addEventListener("pointercancel", () => {
-    if (chargeActive && state.phase === "charging" && !state.paused) releaseJumpShot();
+    if (chargeActive && state.phase === "charging" && !state.paused) commitShotRelease();
   });
 
   /* -------------------------------------------------------------------------- */
-  /*  PHYSIQUE DU BALLON DE BASKET (PLANCHE, ARCEAU, FILET, REBOND SOL)         */
+  /*  PHYSIQUE & COLLISIONS DU BALLON                                           */
   /* -------------------------------------------------------------------------- */
   function updateBasketballPhysics(dt: number) {
-    const tier = getActiveTier();
-    if (tier.hasDefender && defenderGroup.visible) {
-      if (state.phase === "charging" || (state.phase === "flying" && ballPhys.elapsed < 0.35)) {
-        defenderGroup.position.y = Math.min(tier.defenderJumpH, defenderGroup.position.y + dt * 3.2);
-      } else {
-        defenderGroup.position.y = Math.max(0, defenderGroup.position.y - dt * 2.5);
-      }
-    }
-
     if (!ballPhys.active) return;
     ballPhys.elapsed += dt;
 
-    const SUBSTEPS = 5;
+    const SUBSTEPS = 6;
     const subDt = dt / SUBSTEPS;
 
     for (let s = 0; s < SUBSTEPS; s++) {
@@ -1091,10 +1197,10 @@
       ballMesh.position.y += ballPhys.vy * subDt;
       ballMesh.position.z += ballPhys.vz * subDt;
 
-      // Backspin réaliste du ballon de basket
-      ballMesh.rotation.x -= 9.5 * subDt;
+      // Backspin naturel
+      ballMesh.rotation.x -= 10.5 * subDt;
 
-      // 1. Choc avec la planche en plexiglas (Z = 0)
+      // 1. Choc avec la planche plexiglas (Z = 0)
       if (
         !ballPhys.hitBackboard &&
         ballMesh.position.z <= HOOP.boardZ + BALL_R + 0.04 &&
@@ -1108,13 +1214,13 @@
         ballMesh.position.z = HOOP.boardZ + BALL_R + 0.04;
 
         if (ballPhys.isBankMake) {
-          // Redirige proprement le ballon de la planche vers le centre de l'arceau !
+          // Rebond précis vers le centre de l'arceau
           ballPhys.vz = (HOOP.rimZ - ballMesh.position.z) * 3.8;
           ballPhys.vx = -ballMesh.position.x * 3.5;
           ballPhys.vy = -1.2;
         } else {
-          ballPhys.vz = Math.abs(ballPhys.vz) * 0.48;
-          ballPhys.vx += (Math.random() - 0.5) * 2.2;
+          ballPhys.vz = Math.abs(ballPhys.vz) * 0.52;
+          ballPhys.vx += (Math.random() - 0.5) * 2.4;
         }
       }
 
@@ -1122,30 +1228,25 @@
       if (!ballPhys.scoredTriggered && ballPhys.vy < 0 && Math.abs(ballMesh.position.y - HOOP.rimY) < 0.09) {
         if (ballPhys.isMake) {
           ballPhys.scoredTriggered = true;
-          // Guider la balle à travers le filet
           ballMesh.position.x = 0;
           ballMesh.position.z = HOOP.rimZ;
           ballPhys.vx = 0;
           ballPhys.vz = 0;
-          ballPhys.vy = -3.8;
-          triggerHoopNetSwish();
+          ballPhys.vy = -3.6;
+          triggerNetSwish();
           playSwishAudio();
-          onShotResolved(
-            true,
-            ballPhys.isSwish ? "SWISH NET ! 🔥" : "AVEC LA PLANCHE ! 🏀",
-            ballPhys.isSwish ? "Panier sans toucher l'arceau · Direction le spot suivant !" : "Belle utilisation du panneau à Limete !"
-          );
+          onShotResolved(true, ballPhys.isSwish ? "SWISH NET ! 🔥" : "AVEC LA PLANCHE ! 🏀");
         } else if (!ballPhys.hitRim) {
           ballPhys.hitRim = true;
           playRimClangAudio();
-          ballPhys.vy = Math.abs(ballPhys.vy) * 0.46;
+          ballPhys.vy = Math.abs(ballPhys.vy) * 0.48;
           ballPhys.vz = 2.4 + Math.random() * 1.5;
-          ballPhys.vx = (Math.random() - 0.5) * 3.2;
-          onShotResolved(false, "REBOND SUR L'ARCEAU !", "Ajuste le dosage de ta jauge sur la prochaine série.");
+          ballPhys.vx = (Math.random() - 0.5) * 3.0;
+          onShotResolved(false, lockedPowerPct >= 92 ? "TROP FORT (JAUGE AU MAX) !" : "REBOND SUR L'ARCEAU !");
         }
       }
 
-      // 3. Rebond au sol (bitume de Limete)
+      // 3. Rebond au sol bitume
       if (ballMesh.position.y < BALL_R) {
         ballMesh.position.y = BALL_R;
         if (Math.abs(ballPhys.vy) > 0.8) {
@@ -1154,139 +1255,92 @@
         ballPhys.vy = Math.abs(ballPhys.vy) * 0.62;
         ballPhys.vx *= 0.78;
         ballPhys.vz *= 0.78;
-        ballPhys.bounces++;
       }
     }
   }
 
-  function onShotResolved(made: boolean, title: string, subtitle: string) {
+  function onShotResolved(made: boolean, title: string) {
     state.phase = "result";
-    const prevTierId = getActiveTier().id;
+    state.shotsHistory.push(made);
+    if (made) state.goalsInSeries++;
 
-    if (made) {
-      state.streak++;
-      state.spotIndex = (state.spotIndex + 1) % SPOTS.length;
-      if (state.streak > state.bestStreak) {
-        state.bestStreak = state.streak;
-        localStorage.setItem("kin_basket_best", String(state.bestStreak));
-      }
-    }
-
-    const newTier = getActiveTier();
-    const leveledUp = made && newTier.id > prevTierId;
     updateHud();
 
     if (shotToast && toastTitle && toastSubtitle && toastEmoji) {
-      toastEmoji.textContent = leveledUp ? "🔥🆙" : made ? "🏀" : "❌";
-      toastTitle.textContent = leveledUp ? `PANIER ! NIVEAU ${newTier.id} (${newTier.name.toUpperCase()})` : title;
+      toastEmoji.textContent = made ? "🏀" : "❌";
+      toastTitle.textContent = title;
       toastTitle.className = made
-        ? "font-display text-lg uppercase tracking-wider text-or leading-none"
-        : "font-display text-lg uppercase tracking-wider text-red-400 leading-none";
-      toastSubtitle.textContent = leveledUp ? newTier.desc : subtitle;
+        ? "font-display text-lg uppercase tracking-wider text-or leading-none font-black"
+        : "font-display text-lg uppercase tracking-wider text-red-500 leading-none font-black";
+      toastSubtitle.textContent = made
+        ? `Tir ${state.shotIndex + 1}/5 réussi · En route vers le prochain spot !`
+        : `Tir ${state.shotIndex + 1}/5 manqué · Ajuste ton dosage !`;
       shotToast.classList.remove("opacity-0", "-translate-y-4");
     }
 
-    if (made) {
-      setTimeout(() => {
-        shotToast?.classList.add("opacity-0", "-translate-y-4");
-        ballPhys.active = false;
-        setupCurrentSpot();
-      }, 1550);
-    } else {
-      setTimeout(() => {
-        shotToast?.classList.add("opacity-0", "-translate-y-4");
-        ballPhys.active = false;
-        state.phase = "gameover";
-        if (goTitle) goTitle.textContent = title;
-        if (goDesc) goDesc.textContent = subtitle;
-        if (goStatStreak) goStatStreak.textContent = String(state.streak);
-        if (goStatLevel) goStatLevel.textContent = `Niv. ${prevTierId}`;
-        if (goStatRecord) goStatRecord.textContent = String(state.bestStreak);
-        gameoverModal?.classList.remove("hidden");
-        gameoverModal?.classList.add("flex");
-        renderLevelsModal();
-      }, 1450);
-    }
-  }
-
-  function restartGame(tierIdx = 0) {
-    state.paused = false;
-    if (iconPause) iconPause.textContent = "⏸";
-    state.baseTierIndex = tierIdx;
-    state.streak = TIERS[tierIdx]?.minMade || 0;
-    state.spotIndex = state.streak % SPOTS.length;
-    gameoverModal?.classList.add("hidden");
-    gameoverModal?.classList.remove("flex");
-    levelsModalOverlay?.classList.add("hidden");
-    levelsModalOverlay?.classList.remove("flex");
-    gameMenuOverlay?.classList.add("hidden");
-    gameMenuOverlay?.classList.remove("flex");
-    setupCurrentSpot();
-    renderLevelsModal();
+    setTimeout(() => {
+      shotToast?.classList.add("opacity-0", "-translate-y-4");
+      state.shotIndex++;
+      setupNextShot();
+    }, 1500);
   }
 
   /* -------------------------------------------------------------------------- */
-  /*  PAUSE & MODALES                                                           */
+  /*  MODALES & MENU                                                            */
   /* -------------------------------------------------------------------------- */
-  function setPaused(p: boolean) {
-    if (state.phase === "gameover") return;
-    state.paused = p;
-    if (iconPause) iconPause.textContent = state.paused ? "▶" : "⏸";
-    if (state.paused) {
-      updateHud();
-      pauseModal?.classList.remove("hidden");
-      pauseModal?.classList.add("flex");
-    } else {
-      pauseModal?.classList.add("hidden");
-      pauseModal?.classList.remove("flex");
-      prevTime = performance.now();
-    }
-  }
-
-  btnPause?.addEventListener("click", () => setPaused(!state.paused));
-  btnPauseResume?.addEventListener("click", () => setPaused(false));
-  btnPauseRestart?.addEventListener("click", () => restartGame(0));
-
-  window.addEventListener("keydown", (e) => {
-    if (e.code === "Space" || e.key === "p" || e.key === "P" || e.key === "Escape") {
-      e.preventDefault();
-      setPaused(!state.paused);
-    }
-  });
-
   function renderLevelsModal() {
     if (!levelsGrid) return;
     levelsGrid.innerHTML = "";
-    const activeTier = getActiveTier();
     TIERS.forEach((t, idx) => {
       const unlocked = t.id <= state.maxUnlockedTier;
-      const isCurrent = t.id === activeTier.id;
+      const isCurrent = idx === state.currentTierIndex;
       const card = document.createElement("button");
       card.type = "button";
       card.disabled = !unlocked;
-      card.className = `flex flex-col justify-between rounded-2xl border p-3.5 text-left transition-all ${
+      card.className = `flex flex-col justify-between rounded-2xl border-2 p-3.5 text-left transition-all ${
         isCurrent
-          ? "border-or bg-or/15 shadow-lg"
+          ? "border-or bg-[#162a14] shadow-lg"
           : unlocked
-            ? "border-white/15 bg-black/40 hover:border-white/35"
-            : "border-white/5 bg-black/20 opacity-45 cursor-not-allowed"
+            ? "border-[#1e3a6e] bg-[#040917] hover:border-sky-400 hover:bg-[#09142e]"
+            : "border-[#0f1f3d] bg-[#030712] opacity-45 cursor-not-allowed"
       }`;
       card.innerHTML = `
         <div>
           <div class="flex items-center justify-between gap-2">
-            <span class="rounded ${isCurrent ? "bg-or text-slate-950" : "bg-white/10 text-or"} px-2 py-0.5 font-display text-xs uppercase font-black">
+            <span class="rounded ${isCurrent ? "bg-or text-slate-950 font-black" : "bg-[#0c1b3a] text-or"} px-2 py-0.5 font-display text-xs uppercase">
               Niveau ${t.id}
             </span>
             <span class="text-[0.68rem] font-bold ${unlocked ? "text-emerald-400" : "text-slate-500"}">
-              ${unlocked ? (isCurrent ? "● En cours" : "✓ Débloqué") : `🔒 Dès ${t.minMade} paniers`}
+              ${unlocked ? (isCurrent ? "● En cours" : "✓ Débloqué") : "🔒 Verrouillé"}
             </span>
           </div>
           <h4 class="mt-1.5 font-display text-lg uppercase text-white">${t.name}</h4>
           <p class="mt-0.5 text-xs text-slate-300">${t.desc}</p>
         </div>
       `;
-      if (unlocked) card.addEventListener("click", () => restartGame(idx));
+      if (unlocked) card.addEventListener("click", () => startSeries(idx));
       levelsGrid.appendChild(card);
+    });
+  }
+
+  function renderPlaylistUi() {
+    if (!menuPlaylistList) return;
+    menuPlaylistList.innerHTML = "";
+    PLAYLIST.forEach((p, idx) => {
+      const active = idx === currentTrackIdx;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = `flex items-center justify-between rounded-xl border p-2.5 text-left transition-all ${
+        active
+          ? "border-or bg-[#1c1a0e] text-or font-bold"
+          : "border-[#1e3a6e] bg-[#060d1f] text-slate-300 hover:bg-[#0c1b3a] hover:text-white"
+      }`;
+      btn.innerHTML = `
+        <span class="text-xs truncate">${active ? "▶ " : ""}${p.title}</span>
+        <span class="text-[0.62rem] font-bold text-slate-400">Piste ${idx + 1}</span>
+      `;
+      btn.addEventListener("click", () => setTrack(idx));
+      menuPlaylistList.appendChild(btn);
     });
   }
 
@@ -1300,13 +1354,11 @@
     levelsModalOverlay?.classList.add("hidden");
     levelsModalOverlay?.classList.remove("flex");
     state.paused = false;
-    prevTime = performance.now();
   });
   btnResumeFromLevels?.addEventListener("click", () => {
     levelsModalOverlay?.classList.add("hidden");
     levelsModalOverlay?.classList.remove("flex");
     state.paused = false;
-    prevTime = performance.now();
   });
   btnGoLevels?.addEventListener("click", () => {
     gameoverModal?.classList.add("hidden");
@@ -1315,10 +1367,11 @@
     levelsModalOverlay?.classList.remove("hidden");
     levelsModalOverlay?.classList.add("flex");
   });
-  btnGoRetry?.addEventListener("click", () => restartGame(0));
+  btnGoRetry?.addEventListener("click", () => startSeries(state.currentTierIndex));
 
   btnOpenMenu?.addEventListener("click", () => {
     state.paused = true;
+    renderPlaylistUi();
     gameMenuOverlay?.classList.remove("hidden");
     gameMenuOverlay?.classList.add("flex");
   });
@@ -1326,22 +1379,45 @@
     gameMenuOverlay?.classList.add("hidden");
     gameMenuOverlay?.classList.remove("flex");
     state.paused = false;
-    prevTime = performance.now();
   });
   btnResumeGame?.addEventListener("click", () => {
     gameMenuOverlay?.classList.add("hidden");
     gameMenuOverlay?.classList.remove("flex");
     state.paused = false;
-    prevTime = performance.now();
   });
-  btnMenuRestart?.addEventListener("click", () => restartGame(0));
 
-  btnSetDay?.addEventListener("click", () => applyLightingMode(false));
-  btnSetNight?.addEventListener("click", () => applyLightingMode(true));
+  btnSetDay?.addEventListener("click", () => {
+    state.isNight = false;
+    scene.background = new THREE.Color("#fb923c");
+    hemiLight.intensity = 0.9;
+    sunLight.intensity = 1.9;
+  });
+  btnSetNight?.addEventListener("click", () => {
+    state.isNight = true;
+    scene.background = new THREE.Color("#050914");
+    hemiLight.intensity = 0.45;
+    sunLight.intensity = 1.35;
+  });
+
+  btnPause?.addEventListener("click", () => {
+    state.paused = !state.paused;
+    if (iconPause) iconPause.textContent = state.paused ? "▶" : "⏸";
+    pauseModal?.classList.toggle("hidden", !state.paused);
+    pauseModal?.classList.toggle("flex", state.paused);
+  });
+  btnPauseResume?.addEventListener("click", () => {
+    state.paused = false;
+    if (iconPause) iconPause.textContent = "⏸";
+    pauseModal?.classList.add("hidden");
+    pauseModal?.classList.remove("flex");
+  });
+  btnPauseRestart?.addEventListener("click", () => startSeries(state.currentTierIndex));
 
   function toggleAudio() {
     initAudio();
     state.audioEnabled = !state.audioEnabled;
+    if (state.audioEnabled) bgMusic.play().catch(() => {});
+    else bgMusic.pause();
     if (iconSound) iconSound.textContent = state.audioEnabled ? "🔊" : "🔇";
     if (btnMenuAudioToggle) {
       btnMenuAudioToggle.textContent = state.audioEnabled ? "🔊 Son Activé" : "🔇 Son Coupé";
@@ -1350,6 +1426,9 @@
   btnSound?.addEventListener("click", toggleAudio);
   btnMenuAudioToggle?.addEventListener("click", toggleAudio);
 
+  /* -------------------------------------------------------------------------- */
+  /*  BOUCLE DE RENDU 3D                                                        */
+  /* -------------------------------------------------------------------------- */
   let prevTime = performance.now();
   function animate() {
     requestAnimationFrame(animate);
@@ -1362,9 +1441,20 @@
       return;
     }
 
-    updateHoopNet(dt);
-    if (state.phase === "charging") updateChargeGauge(dt);
-    else if (state.phase === "flying" || state.phase === "result") updateBasketballPhysics(dt);
+    updateNetMesh(dt);
+
+    // Ombre de contact au sol
+    const h = Math.max(0, ballMesh.position.y - BALL_R);
+    ballContactShadow.position.set(ballMesh.position.x, 0.012, ballMesh.position.z);
+    const sScale = 1 + h * 0.4;
+    ballContactShadow.scale.set(sScale, sScale, 1);
+    (ballContactShadow.material as THREE.MeshBasicMaterial).opacity = Math.max(0.08, 0.65 * Math.exp(-h * 0.9));
+
+    if (state.phase === "charging") {
+      updateChargeGauge(dt);
+    } else if (state.phase === "flying" || state.phase === "result") {
+      updateBasketballPhysics(dt);
+    }
 
     renderer.render(scene, camera);
   }
@@ -1373,11 +1463,13 @@
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
+    resizeSwipeCanvas();
+    if (state.phase === "aiming") applyPlayableFraming();
   });
 
-  applyLightingMode(false);
-  setupCurrentSpot();
+  scene.background = new THREE.Color("#050914");
+  startSeries(0);
+  renderPlaylistUi();
   renderLevelsModal();
   animate();
 </script>
-
