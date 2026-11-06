@@ -140,11 +140,15 @@
 
   <!-- ================= JAUGE DE PUISSANCE IRRÉVERSIBLE (DROITE) ================= -->
   <div id="power-meter-wrap" class="pointer-events-none absolute right-3 top-1/2 z-20 -translate-y-1/2 flex flex-col items-center gap-1 opacity-0 transition-opacity duration-100">
-    <span class="rounded bg-red-600/95 px-1.5 py-0.5 text-[0.5rem] font-black uppercase tracking-wider text-white shadow">MAX</span>
-    <div class="relative h-44 sm:h-48 w-3.5 sm:w-4 overflow-hidden rounded-full border-2 border-white/35 bg-slate-950/90 p-0.5 shadow-2xl backdrop-blur-md">
-      <div class="absolute inset-x-0 top-[8%] h-[24%] border-y border-emerald-400/70 bg-emerald-500/20"></div>
-      <div class="absolute inset-x-0 top-0 h-[8%] bg-red-600/60"></div>
-      <div id="power-meter-fill" class="absolute inset-x-0.5 bottom-0.5 rounded-full bg-gradient-to-t from-sky-400 via-emerald-400 to-red-500" style="height: 0%"></div>
+    <span id="power-meter-zone-badge" class="rounded bg-red-600/95 px-1.5 py-0.5 text-[0.5rem] font-black uppercase tracking-wider text-white shadow">MAX = RATÉ</span>
+    <div class="relative h-44 sm:h-48 w-4 sm:w-4.5 overflow-hidden rounded-full border-2 border-white/35 bg-slate-950/90 p-0.5 shadow-2xl backdrop-blur-md">
+      <!-- Zone Rouge MAX (92% - 100%) : Surcharge = Tir au-dessus -->
+      <div class="absolute inset-x-0 top-0 h-[9%] border-b border-red-400/80 bg-red-600/75 z-10"></div>
+      <!-- Zone Verte Optimale (70% - 91%) : La plus belle frappe -->
+      <div class="absolute inset-x-0 top-[9%] h-[22%] border-y-2 border-emerald-300 bg-emerald-400/30 z-10 flex items-center justify-center">
+        <span class="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_6px_#6ee7b7]"></span>
+      </div>
+      <div id="power-meter-fill" class="absolute inset-x-0.5 bottom-0.5 rounded-full bg-gradient-to-t from-sky-400 via-emerald-400 to-red-500 transition-none" style="height: 0%"></div>
     </div>
     <span id="power-meter-pct" class="rounded bg-black/90 px-1.5 py-0.5 font-display text-xs tracking-wider text-or shadow">0%</span>
   </div>
@@ -794,6 +798,7 @@
   const powerMeterWrap = document.getElementById("power-meter-wrap");
   const powerMeterFill = document.getElementById("power-meter-fill");
   const powerMeterPct = document.getElementById("power-meter-pct");
+  const powerMeterZoneBadge = document.getElementById("power-meter-zone-badge");
   const aimInstruction = document.getElementById("aim-instruction");
   const cinematicBar = document.getElementById("cinematic-bar");
   const cinematicStepLabel = document.getElementById("cinematic-step-label");
@@ -2652,6 +2657,8 @@
     parriedByKeeper: false,
     touchedGlove: false,
     touchedPost: "" as "" | "in" | "out" | "bar",
+    gaugeZone: "perfect" as "weak" | "medium" | "perfect" | "overload",
+    powerPct: 78,
     postContactElapsed: 0,
     resolved: false
   };
@@ -2666,17 +2673,40 @@
     vx0: number;
     vy0: number;
     totalAx: number;
+    gaugeZone: "weak" | "medium" | "perfect" | "overload";
   }
 
-  // Calcule la trajectoire 3D EXACTE correspondant au tracé du doigt sur l'écran
+  // Calcule la trajectoire 3D EXACTE en respectant strictement les zones de la jauge :
+  // - < 48% ("weak")     : Frappe trop molle, retombe bas et lente
+  // - 48..69% ("medium") : Frappe correcte mais vitesse modérée
+  // - 70..91% ("perfect"): LA PLUS BELLE FRAPPE (Zone Verte) — précision 100%, vitesse & enroulé optimaux
+  // - >= 92% ("overload"): PUISSANCE AU MAX (Zone Rouge) — Frappe ratée qui s'envole au-dessus de la barre !
   function computeExactTrajectory(powerPct: number): ExactShotTrajectory {
-    const finalPower = Math.max(28, Math.min(powerPct, 112));
-    const normP = finalPower / 100;
-    const speedMs = 18.0 + normP * 15.5;
+    const finalPower = Math.max(18, Math.min(powerPct, 100));
+    const gaugeZone: "weak" | "medium" | "perfect" | "overload" =
+      finalPower >= 92
+        ? "overload"
+        : finalPower >= 70
+          ? "perfect"
+          : finalPower >= 48
+            ? "medium"
+            : "weak";
+
+    // Vitesse (m/s) calée sur la jauge
+    let speedMs = 24.0;
+    if (gaugeZone === "weak") {
+      speedMs = 15.5 + ((finalPower - 18) / 30) * 5.0; // ~56 - 74 km/h
+    } else if (gaugeZone === "medium") {
+      speedMs = 21.0 + ((finalPower - 48) / 22) * 6.5; // ~76 - 99 km/h
+    } else if (gaugeZone === "perfect") {
+      speedMs = 28.8 + ((finalPower - 70) / 21) * 3.6; // ~104 - 117 km/h (Frappe pure)
+    } else {
+      speedMs = 33.0 + ((finalPower - 92) / 8) * 3.5;  // > 119 km/h (Surcharge incontrôlable)
+    }
     const flightTime = PENALTY_Z / speedMs;
 
     if (swipePoints.length < 2) {
-      const defaultY = 1.15;
+      const defaultY = gaugeZone === "overload" ? GOAL.height + 1.25 : 1.15;
       const vy0 = ((defaultY - BALL_R) + 0.5 * FLIGHT_GRAVITY * flightTime * flightTime) / flightTime;
       return {
         targetX: 0,
@@ -2687,7 +2717,8 @@
         flightTime,
         vx0: 0,
         vy0,
-        totalAx: 0
+        totalAx: 0,
+        gaugeZone
       };
     }
 
@@ -2712,12 +2743,25 @@
       effEndY = goalBotScreen.y - ratioY * goalSpanPx;
     }
 
-    // Légère pénalité uniquement si la jauge dépasse 100% (zone rouge de surcharge)
-    const overloadLiftM = finalPower > 100 ? (finalPower - 100) * 0.035 : 0;
-
     const goalHit3D = screenToPlaneZ(effEndX, effEndY, 0);
-    const targetX = THREE.MathUtils.clamp(goalHit3D.x, -4.35, 4.35);
-    const targetY = THREE.MathUtils.clamp(goalHit3D.y + overloadLiftM, BALL_R + 0.04, 3.15);
+    let targetX = THREE.MathUtils.clamp(goalHit3D.x, -4.35, 4.35);
+    let targetY = THREE.MathUtils.clamp(goalHit3D.y, BALL_R + 0.04, 2.38);
+
+    // Respect strict de la jauge :
+    // 1. Si la jauge atteint le MAX / Zone Rouge (>= 92%), la frappe est OBLIGATOIREMENT RATÉE (s'envole au-dessus de la barre) !
+    if (gaugeZone === "overload") {
+      const overRatio = (finalPower - 92) / 8; // 0..1
+      targetY = GOAL.height + 0.88 + overRatio * 1.35; // 3.32m à 4.67m (au-dessus de la transversale !)
+      targetX += (targetX >= 0 ? 1 : -1) * (0.45 + overRatio * 0.65);
+    } else if (gaugeZone === "weak") {
+      // 2. Si la jauge est trop faible (< 48%), le ballon manque de levée et retombe bas
+      const weakFactor = (finalPower - 18) / 30; // 0..1
+      targetY = Math.max(BALL_R + 0.02, targetY * (0.38 + weakFactor * 0.42));
+    } else if (gaugeZone === "medium") {
+      // 3. Zone moyenne (48..69%) : légère perte de hauteur sur les lucarnes
+      targetY = Math.max(BALL_R + 0.04, targetY * 0.92);
+    }
+    // 4. En Zone Verte ("perfect", 70..91%) : targetX et targetY respectent à 100% la visée pour la plus belle frappe !
 
     // Mesure de la courbure ("ventre" du tracé du doigt entre start et end)
     let maxSignedDevX = 0;
@@ -2737,10 +2781,13 @@
       }
     }
 
+    // En Zone Verte ("perfect"), l'effet enroulé est pur et amplifié ; en surcharge ("overload"), l'effet dévisse
+    const curveGain = gaugeZone === "perfect" ? 1.15 : gaugeZone === "weak" ? 0.65 : 1.0;
+
     // Conversion exacte du ventre écran à mi-parcours (Z = 5.5m) en coordonnée 3D midWorldX
     const midZ = PENALTY_Z * 0.5;
     const straightMidScreen = worldToScreen(targetX * 0.5, (BALL_R + targetY) * 0.5, midZ);
-    const midWorld3D = screenToPlaneZ(straightMidScreen.x + maxSignedDevX, straightMidScreen.y, midZ);
+    const midWorld3D = screenToPlaneZ(straightMidScreen.x + maxSignedDevX * curveGain, straightMidScreen.y, midZ);
     const midWorldX = THREE.MathUtils.clamp(midWorld3D.x, -5.6, 5.6);
 
     // Cinématique exacte : X(0) = 0, X(T/2) = midWorldX, X(T) = targetX
@@ -2761,7 +2808,8 @@
       flightTime,
       vx0,
       vy0,
-      totalAx
+      totalAx,
+      gaugeZone
     };
   }
 
@@ -2770,6 +2818,8 @@
     if (swipePoints.length < 2) return;
 
     const traj = computeExactTrajectory(lockedPowerPct);
+    const isOverload = traj.gaugeZone === "overload";
+    const isPerfect = traj.gaugeZone === "perfect";
     const isCurved = Math.abs(traj.spinCurve) > 3.2;
 
     swipeCtx.save();
@@ -2800,8 +2850,27 @@
       screenPts.push(worldToScreen(x, y, z));
     }
 
+    // Couleur de la trajectoire selon le respect de la jauge :
+    // - Rouge vif si MAX/Surcharge (tir raté au-dessus)
+    // - Vert émeraude brillant si Zone Parfaite (70-91%) ou effet enroulé
+    // - Or en zone moyenne / Bleu ciel en zone faible
+    const haloColor = isOverload
+      ? "rgba(239, 68, 68, 0.52)"
+      : isPerfect || isCurved
+        ? "rgba(16, 185, 129, 0.48)"
+        : traj.gaugeZone === "weak"
+          ? "rgba(56, 189, 248, 0.38)"
+          : "rgba(250, 204, 21, 0.42)";
+    const coreColor = isOverload
+      ? "#ef4444"
+      : isPerfect || isCurved
+        ? "#34d399"
+        : traj.gaugeZone === "weak"
+          ? "#38bdf8"
+          : "#facc15";
+
     // Halo externe de la trajectoire 3D projetée
-    swipeCtx.strokeStyle = isCurved ? "rgba(16, 185, 129, 0.45)" : "rgba(250, 204, 21, 0.42)";
+    swipeCtx.strokeStyle = haloColor;
     swipeCtx.lineWidth = 13;
     swipeCtx.beginPath();
     swipeCtx.moveTo(screenPts[0].x, screenPts[0].y);
@@ -2811,19 +2880,19 @@
     swipeCtx.stroke();
 
     // Ligne principale lumineuse de la trajectoire exacte
-    swipeCtx.strokeStyle = isCurved ? "#34d399" : "#facc15";
+    swipeCtx.strokeStyle = coreColor;
     swipeCtx.lineWidth = 4.5;
     swipeCtx.stroke();
 
     // 3. Cible exacte d'impact sur le plan de but (Z = 0)
     const targetScreen = screenPts[screenPts.length - 1];
-    swipeCtx.strokeStyle = isCurved ? "#34d399" : "#facc15";
+    swipeCtx.strokeStyle = coreColor;
     swipeCtx.lineWidth = 2.5;
     swipeCtx.beginPath();
     swipeCtx.arc(targetScreen.x, targetScreen.y, 12, 0, Math.PI * 2);
     swipeCtx.stroke();
 
-    swipeCtx.fillStyle = "#ffffff";
+    swipeCtx.fillStyle = isOverload ? "#ef4444" : "#ffffff";
     swipeCtx.beginPath();
     swipeCtx.arc(targetScreen.x, targetScreen.y, 4.5, 0, Math.PI * 2);
     swipeCtx.fill();
@@ -2834,22 +2903,40 @@
   function updateChargeGauge(dt: number) {
     if (!chargeActive || state.phase !== "charging" || state.paused) return;
 
-    const h = window.innerHeight;
-    const pushRatio = Math.max(0, chargePeakPushY / (h * 0.36));
-    const pushPower = Math.min(96, pushRatio * 96);
+    // La jauge monte de façon strictement irréversible (ne redescend jamais) à vitesse maîtrisée (54%/s),
+    // sans sauter brutalement au max quand on vise la lucarne.
+    // Si le joueur maintient trop longtemps et atteint la zone rouge (>= 92%) ou 100% MAX, la frappe est ratée !
+    lockedPowerPct = Math.min(100, lockedPowerPct + dt * 54);
 
-    // La jauge monte de manière strictement irréversible (ne redescend jamais)
-    // Montée progressive (dt * 28) pour laisser le temps de dessiner une belle courbe avec le doigt
-    lockedPowerPct = Math.max(lockedPowerPct + dt * 28, pushPower);
+    const displayPct = Math.round(lockedPowerPct);
+    if (powerMeterFill) powerMeterFill.style.height = `${displayPct}%`;
 
-    const displayPct = Math.min(Math.round(lockedPowerPct), 112);
-    if (powerMeterFill) powerMeterFill.style.height = `${Math.min(displayPct, 100)}%`;
+    const isOverload = lockedPowerPct >= 92;
+    const isPerfect = lockedPowerPct >= 70 && lockedPowerPct < 92;
+
     if (powerMeterPct) {
-      powerMeterPct.textContent = displayPct > 100 ? "MAX !" : `${displayPct}%`;
-      powerMeterPct.className =
-        displayPct > 100
-          ? "rounded bg-red-600 px-1.5 py-0.5 font-display text-xs tracking-wider text-white shadow"
+      powerMeterPct.textContent = isOverload ? "MAX !" : `${displayPct}%`;
+      powerMeterPct.className = isOverload
+        ? "rounded bg-red-600 px-1.5 py-0.5 font-display text-xs tracking-wider text-white shadow animate-pulse"
+        : isPerfect
+          ? "rounded bg-emerald-500 px-1.5 py-0.5 font-display text-xs tracking-wider text-slate-950 font-black shadow"
           : "rounded bg-black/90 px-1.5 py-0.5 font-display text-xs tracking-wider text-or shadow";
+    }
+
+    if (powerMeterZoneBadge) {
+      if (isOverload) {
+        powerMeterZoneBadge.textContent = "TROP FORT !";
+        powerMeterZoneBadge.className = "rounded bg-red-600 px-1.5 py-0.5 text-[0.5rem] font-black uppercase tracking-wider text-white shadow";
+      } else if (isPerfect) {
+        powerMeterZoneBadge.textContent = "PARFAIT ✨";
+        powerMeterZoneBadge.className = "rounded bg-emerald-400 px-1.5 py-0.5 text-[0.5rem] font-black uppercase tracking-wider text-slate-950 shadow";
+      } else if (lockedPowerPct >= 48) {
+        powerMeterZoneBadge.textContent = "CORRECT";
+        powerMeterZoneBadge.className = "rounded bg-amber-400/90 px-1.5 py-0.5 text-[0.5rem] font-black uppercase tracking-wider text-slate-950 shadow";
+      } else {
+        powerMeterZoneBadge.textContent = "FAIBLE";
+        powerMeterZoneBadge.className = "rounded bg-sky-500/90 px-1.5 py-0.5 text-[0.5rem] font-black uppercase tracking-wider text-white shadow";
+      }
     }
 
     const traj = computeExactTrajectory(lockedPowerPct);
@@ -2867,7 +2954,8 @@
 
     drawSwipeTrail();
 
-    if (lockedPowerPct >= 112) {
+    // Si la jauge touche 100% (MAX), le tir part tout seul immédiatement en surcharge (au-dessus de la barre) !
+    if (lockedPowerPct >= 100) {
       commitShotRelease();
     }
   }
@@ -2893,7 +2981,7 @@
     chargeActive = true;
     swipePoints = [{ x: e.clientX, y: e.clientY }];
     chargePeakPushY = 0;
-    lockedPowerPct = 26;
+    lockedPowerPct = 18;
     currentCurveSpin = 0;
 
     aimInstruction?.classList.add("opacity-0");
@@ -2903,8 +2991,15 @@
   window.addEventListener("pointermove", (e) => {
     if (!chargeActive || state.phase !== "charging" || state.paused) return;
     const lastPt = swipePoints[swipePoints.length - 1];
-    if (!lastPt || Math.hypot(e.clientX - lastPt.x, e.clientY - lastPt.y) > 4) {
-      swipePoints.push({ x: e.clientX, y: e.clientY });
+    if (lastPt) {
+      const stepDist = Math.hypot(e.clientX - lastPt.x, e.clientY - lastPt.y);
+      if (stepDist > 4) {
+        swipePoints.push({ x: e.clientX, y: e.clientY });
+        // Légère montée liée à l'amplitude du geste, plafonnée pour laisser le joueur viser la zone verte (70-91%)
+        if (lockedPowerPct < 78) {
+          lockedPowerPct = Math.min(78, lockedPowerPct + stepDist * 0.055);
+        }
+      }
     }
     const startY = swipePoints[0].y;
     const currentPushY = Math.max(0, startY - e.clientY);
@@ -2930,6 +3025,8 @@
     shotPhys.parriedByKeeper = false;
     shotPhys.touchedGlove = false;
     shotPhys.touchedPost = "";
+    shotPhys.gaugeZone = traj.gaugeZone;
+    shotPhys.powerPct = Math.round(powerPct);
     shotPhys.postContactElapsed = 0;
     shotPhys.flightElapsed = 0;
     shotPhys.vz = -traj.speedMs;
@@ -2943,10 +3040,16 @@
 
     // Ruban aérodynamique 3D et particules d'herbe/craie à l'impact du pied
     trailHistory.length = 0;
-    trailMat.color.setHex(Math.abs(traj.spinCurve) > 3.2 ? 0x34d399 : 0xfacc15);
+    trailMat.color.setHex(
+      traj.gaugeZone === "overload"
+        ? 0xef4444
+        : traj.gaugeZone === "perfect" || Math.abs(traj.spinCurve) > 3.2
+          ? 0x34d399
+          : 0xfacc15
+    );
     ballTrailLine.visible = true;
     spawnTurfBurst(0, BALL_R * 0.5, PENALTY_Z, 26, false);
-    cameraShakeAmp = 0.032;
+    cameraShakeAmp = traj.gaugeZone === "overload" ? 0.065 : 0.032;
 
     playKickAudio(powerPct / 100);
 
@@ -2955,13 +3058,21 @@
     const predX = shotPhys.vx * tKeeper + 0.5 * shotPhys.totalAx * tKeeper * tKeeper;
     const predY = Math.max(BALL_R, BALL_R + shotPhys.vy * tKeeper - 0.5 * FLIGHT_GRAVITY * tKeeper * tKeeper);
 
-    // Un fort effet enroulé (spinCurve) trompe davantage le gardien !
-    const isCentralShot = Math.abs(predX) < 1.15;
-    const curveDeception = Math.min(Math.abs(traj.spinCurve) * 0.015, 0.30);
+    // La plus belle frappe (Zone Verte "perfect" 70-91% + effet enroulé) prend le gardien de vitesse !
+    // À l'inverse, une frappe trop faible ("weak" < 48%) est très facilement lue et captée par le gardien.
+    const isCentralShot = Math.abs(predX) < 1.05;
+    const curveDeception = Math.min(Math.abs(traj.spinCurve) * 0.015, 0.28);
+    const gaugeReadModifier =
+      traj.gaugeZone === "perfect"
+        ? -0.26
+        : traj.gaugeZone === "weak"
+          ? 0.30
+          : 0;
+
     shotPhys.keeperReadsRight =
       forceKeeperSave !== undefined
         ? forceKeeperSave
-        : isCentralShot || Math.random() < (tier.keeperReadProb - curveDeception);
+        : isCentralShot || Math.random() < (tier.keeperReadProb - curveDeception + gaugeReadModifier);
 
     if (shotPhys.keeperReadsRight) {
       const spinOffset =
@@ -3025,7 +3136,7 @@
     aimInstruction?.classList.add("opacity-0");
     ballGlowRing.visible = false;
     fireShot(
-      78,
+      80,
       {
         targetX,
         targetY,
@@ -3035,7 +3146,8 @@
         flightTime,
         vx0,
         vy0,
-        totalAx
+        totalAx,
+        gaugeZone: "perfect"
       },
       forceSave
     );
@@ -3363,33 +3475,51 @@
       }
 
       // 4. Validation du BUT : uniquement quand le ballon ENTIER a franchi la ligne (z <= -BALL_R) dans l'ouverture du but
+      // et que la jauge n'a JAMAIS atteint le MAX ("overload") !
       const halfW = GOAL.width / 2;
       if (ballMesh.position.z <= -BALL_R && !shotPhys.inGoalCage) {
         const insideX = Math.abs(ballMesh.position.x) <= halfW - BALL_R * 0.65;
-        const insideY = ballMesh.position.y > 0 && ballMesh.position.y <= GOAL.height - BALL_R * 0.55;
+        const insideY =
+          shotPhys.gaugeZone !== "overload" &&
+          ballMesh.position.y > 0 &&
+          ballMesh.position.y <= GOAL.height - BALL_R * 0.55;
 
         if (insideX && insideY) {
           shotPhys.inGoalCage = true;
           ballMesh.position.x = THREE.MathUtils.clamp(ballMesh.position.x, -halfW + BALL_R + 0.08, halfW - BALL_R - 0.08);
           ballMesh.position.y = THREE.MathUtils.clamp(ballMesh.position.y, BALL_R, GOAL.height - BALL_R - 0.08);
 
-          const curvedTag = Math.abs(shotPhys.spinY) > 3.2 ? " · FRAPPE ENROULÉE 🌀" : "";
+          const curvedTag = Math.abs(shotPhys.spinY) > 3.2 ? " · ENROULÉ 🌀" : "";
+          const gaugeTag =
+            shotPhys.gaugeZone === "perfect"
+              ? ` · JAUGE PARFAITE ✨ (${shotPhys.powerPct}%)`
+              : ` · Jauge ${shotPhys.powerPct}%`;
           const goalTitle =
             shotPhys.touchedPost === "in"
               ? "POTEAU RENTRANT ! ⚽"
               : shotPhys.touchedGlove
                 ? "DÉVIÉ AU FOND ! ⚽"
-                : "BUT AUX MARTYRS ! ⚽";
-          resolveShot(true, goalTitle, `${shotPhys.speedKmh} km/h${curvedTag}`);
+                : shotPhys.gaugeZone === "perfect"
+                  ? "FRAPPE PARFAITE ! ⚽✨"
+                  : "BUT AUX MARTYRS ! ⚽";
+          resolveShot(true, goalTitle, `${shotPhys.speedKmh} km/h${gaugeTag}${curvedTag}`);
           continue;
         } else if (shotPhys.touchedPost === "" && !shotPhys.parriedByKeeper) {
-          // Ballon passé derrière le plan de but en dehors du cadre sans avoir touché le poteau
-          const msg = ballMesh.position.y >= GOAL.height ? "AU-DESSUS DE LA BARRE !" : "À CÔTÉ DU CADRE !";
-          resolveShot(
-            false,
-            msg,
-            ballMesh.position.y >= GOAL.height ? "Vise un peu plus bas dans le but" : "Place le cercle de visée dans le cadre"
-          );
+          // Ballon passé derrière le plan de but en dehors du cadre ou jauge au MAX ("overload")
+          if (shotPhys.gaugeZone === "overload") {
+            resolveShot(
+              false,
+              "PUISSANCE MAX · TIR RATÉ !",
+              `Jauge dans le rouge (${shotPhys.powerPct}%) · Relâche dans la zone verte (70–91%) !`
+            );
+          } else {
+            const msg = ballMesh.position.y >= GOAL.height ? "AU-DESSUS DE LA BARRE !" : "À CÔTÉ DU CADRE !";
+            resolveShot(
+              false,
+              msg,
+              ballMesh.position.y >= GOAL.height ? "Vise un peu plus bas dans le but" : "Place le cercle de visée dans le cadre"
+            );
+          }
           break;
         }
       }
