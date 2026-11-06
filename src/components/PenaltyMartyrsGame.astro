@@ -842,93 +842,135 @@
   ];
 
   /* -------------------------------------------------------------------------- */
-  /*  5 NIVEAUX EN « MODE MENÉ » (SÉANCE DE 5 TIRS PAR NIVEAU)                  */
+  /*  5 NIVEAUX ÉVOLUTIFS : DU PENALTY AUX COUPS FRANCS DIRECTS                  */
   /* -------------------------------------------------------------------------- */
   interface LevelTier {
     id: number;
     name: string;
+    typeLabel: string;
+    distanceLabel: string;
+    isFreeKick: boolean;
     deficitLabel: string;
     oppScore: number;      // Score initial de l'adversaire (RDC démarre à 0)
     targetGoals: number;   // Nombre de buts à marquer sur 5 tirs pour remporter le niveau
     desc: string;
+    ballX: number;
+    ballZ: number;
+    wallPlayers: number;
+    wallDistance: number;
+    wallOffset: number;
     keeperReactionSec: number;
     keeperDiveSpeed: number;
     keeperArmSpan: number;
     keeperReadProb: number;
     windMaxKmh: number;
-    wallPlayers: number;
   }
 
   const TIERS: LevelTier[] = [
     {
       id: 1,
-      name: "Échauffement",
+      name: "Échauffement Penalty",
+      typeLabel: "PENALTY · 11M",
+      distanceLabel: "11m Plein Axe",
+      isFreeKick: false,
       deficitLabel: "RDC menée 0 – 2",
       oppScore: 2,
       targetGoals: 3,
-      desc: "Séance de 5 tirs : marque au moins 3 buts sur 5 pour renverser le score (3–2) !",
+      desc: "Séance de 5 penalties : marque au moins 3 buts sur 5 plein axe pour renverser le score (3–2) !",
+      ballX: 0,
+      ballZ: 11.0,
+      wallPlayers: 0,
+      wallDistance: 0,
+      wallOffset: 0,
       keeperReactionSec: 0.045,
       keeperDiveSpeed: 10.6,
       keeperArmSpan: 1.24,
-      keeperReadProb: 0.82,
-      windMaxKmh: 0,
-      wallPlayers: 0
+      keeperReadProb: 0.80,
+      windMaxKmh: 0
     },
     {
       id: 2,
-      name: "Éliminatoires CAN",
+      name: "Penalty Sous Pression",
+      typeLabel: "PENALTY · 11M",
+      distanceLabel: "11m Sous Pression",
+      isFreeKick: false,
       deficitLabel: "RDC menée 0 – 2",
       oppScore: 2,
       targetGoals: 3,
-      desc: "Séance de 5 tirs : vent léger (14 km/h) + gardien titulaire explosif. Objectif : 3/5 !",
+      desc: "Séance de 5 penalties : vent léger (14 km/h) et gardien titulaire explosif. Objectif : 3/5 !",
+      ballX: 0,
+      ballZ: 11.0,
+      wallPlayers: 0,
+      wallDistance: 0,
+      wallOffset: 0,
       keeperReactionSec: 0.032,
       keeperDiveSpeed: 12.2,
-      keeperArmSpan: 1.31,
-      keeperReadProb: 0.86,
-      windMaxKmh: 14,
-      wallPlayers: 0
+      keeperArmSpan: 1.30,
+      keeperReadProb: 0.85,
+      windMaxKmh: 14
     },
     {
       id: 3,
-      name: "Quart de Finale",
+      name: "Coup Franc 19m Surface",
+      typeLabel: "COUP FRANC · 19M",
+      distanceLabel: "19.5m Plein Axe (Mur 3 joueurs)",
+      isFreeKick: true,
       deficitLabel: "RDC menée 0 – 3",
       oppScore: 3,
       targetGoals: 4,
-      desc: "Séance de 5 tirs : RDC menée 0–3 ! Marque 4 buts sur 5 face à un gardien ultra-réactif.",
-      keeperReactionSec: 0.024,
-      keeperDiveSpeed: 13.6,
-      keeperArmSpan: 1.37,
-      keeperReadProb: 0.90,
-      windMaxKmh: 22,
-      wallPlayers: 0
+      desc: "Coup franc direct à l'entrée de la surface ! Contourne ou survole le mur de 3 joueurs pour tromper le gardien.",
+      ballX: 0,
+      ballZ: 19.5,
+      wallPlayers: 3,
+      wallDistance: 9.15,
+      wallOffset: -0.85,
+      keeperReactionSec: 0.026,
+      keeperDiveSpeed: 13.5,
+      keeperArmSpan: 1.36,
+      keeperReadProb: 0.88,
+      windMaxKmh: 18
     },
     {
       id: 4,
-      name: "Demi-Finale",
+      name: "Coup Franc 23m Côté Gauche",
+      typeLabel: "COUP FRANC · 23M",
+      distanceLabel: "23m Excentré Gauche (Mur 4 joueurs)",
+      isFreeKick: true,
       deficitLabel: "RDC menée 0 – 3",
       oppScore: 3,
       targetGoals: 4,
-      desc: "Séance de 5 tirs : Vent fort (28 km/h) et détente maximale du portier. Enroule tes tirs (4/5) !",
-      keeperReactionSec: 0.016,
-      keeperDiveSpeed: 15.0,
-      keeperArmSpan: 1.43,
-      keeperReadProb: 0.93,
-      windMaxKmh: 28,
-      wallPlayers: 0
+      desc: "Coup franc excentré côté gauche ! Enroule fort du pied droit par-dessus le mur de 4 joueurs malgré les rafales (25 km/h).",
+      ballX: -3.6,
+      ballZ: 23.0,
+      wallPlayers: 4,
+      wallDistance: 9.15,
+      wallOffset: 0.55,
+      keeperReactionSec: 0.018,
+      keeperDiveSpeed: 14.8,
+      keeperArmSpan: 1.42,
+      keeperReadProb: 0.92,
+      windMaxKmh: 25
     },
     {
       id: 5,
-      name: "Finale 90ᵉ · Martyrs",
+      name: "Grand Coup Franc 27m Martyrs",
+      typeLabel: "COUP FRANC · 27M",
+      distanceLabel: "27m Longue Distance (Mur 5 joueurs)",
+      isFreeKick: true,
       deficitLabel: "RDC menée 0 – 4",
       oppScore: 4,
-      targetGoals: 5,
-      desc: "Séance de 5 tirs : Sans-faute exigé (5/5) sous la pression des 80 000 supporters (rafales 36 km/h) !",
-      keeperReactionSec: 0.009,
-      keeperDiveSpeed: 16.5,
+      targetGoals: 4,
+      desc: "27 mètres des buts, mur compact de 5 joueurs sautant et rafales 32 km/h. Seuls les tireurs d'élite qualifient les Léopards !",
+      ballX: 1.8,
+      ballZ: 27.0,
+      wallPlayers: 5,
+      wallDistance: 9.15,
+      wallOffset: -0.45,
+      keeperReactionSec: 0.012,
+      keeperDiveSpeed: 16.2,
       keeperArmSpan: 1.48,
-      keeperReadProb: 0.96,
-      windMaxKmh: 36,
-      wallPlayers: 0
+      keeperReadProb: 0.95,
+      windMaxKmh: 32
     }
   ];
 
@@ -1527,28 +1569,34 @@
 
   const PENALTY_Z = 11.0;
 
-  // Cadrage pur et dégagé : ballon parfaitement centré en premier plan face au but et au gardien
+  // Cadrage pur et immersif : caméra calée derrière le ballon (penalty à 11m ou coup franc à 19m, 23m, 27m)
   function applyPlayableCameraFraming() {
     const aspect = window.innerWidth / Math.max(1, window.innerHeight);
     const isPortrait = aspect < 0.95;
+    const tier = getActiveTier();
+    const bX = tier.ballX ?? 0;
+    const bZ = tier.ballZ ?? PENALTY_Z;
 
-    // Ballon net au premier plan avec vue intégrale sur le gardien, les deux poteaux et la barre
-    const camZ = isPortrait ? 13.65 : 13.45;
+    // Recul de caméra adapté selon la distance du tir (penalty ou coup franc lointain)
+    const camDistBehind = isPortrait ? 2.65 : 2.45;
+    const camZ = bZ + camDistBehind;
     const camY = isPortrait ? 1.25 : 1.28;
+    const camX = bX * 0.90;
     const lookY = isPortrait ? 1.10 : 1.15;
+    const lookX = bX * 0.20; // Légère visée orientée vers le but
 
-    const minGoalLineHalfWidth = isPortrait ? 5.65 : 7.4;
+    const minGoalLineHalfWidth = isPortrait ? 5.8 : 7.6;
     const tanHalfHoriz = minGoalLineHalfWidth / camZ;
     const tanHalfVert = tanHalfHoriz / aspect;
     const computedFov = THREE.MathUtils.radToDeg(2 * Math.atan(tanHalfVert));
 
-    camera.fov = THREE.MathUtils.clamp(computedFov, 46, 84);
+    camera.fov = THREE.MathUtils.clamp(computedFov, 44, 84);
     camera.aspect = aspect;
     camera.updateProjectionMatrix();
 
     if (state.phase === "aiming" || state.phase === "charging" || state.phase === "runup" || state.phase === "shooting" || state.phase === "result") {
-      camera.position.set(0, camY, camZ);
-      camera.lookAt(0, lookY, 0);
+      camera.position.set(camX, camY, camZ);
+      camera.lookAt(lookX, lookY, 0);
     }
   }
 
@@ -1624,11 +1672,21 @@
   addPitchLine(0.12, 5.5, -9.16, 2.75);
   addPitchLine(0.12, 5.5, 9.16, 2.75);
 
-  // Point de penalty discret sous le ballon — aucun anneau jaune autour du ballon ("garde juste le ballon")
+  // Point de penalty discret sous le ballon
   const penSpotMesh = new THREE.Mesh(new THREE.CircleGeometry(0.075, 20), lineMat);
   penSpotMesh.rotation.x = -Math.PI / 2;
   penSpotMesh.position.set(0, 0.012, PENALTY_Z);
   scene.add(penSpotMesh);
+
+  // Marquage spray blanc d'arbitre pour les coups francs (Z = 19m, 23m, 27m)
+  const freeKickSpotMesh = new THREE.Mesh(
+    new THREE.RingGeometry(0.06, 0.11, 24),
+    new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85, side: THREE.DoubleSide })
+  );
+  freeKickSpotMesh.rotation.x = -Math.PI / 2;
+  freeKickSpotMesh.position.set(0, 0.012, PENALTY_Z);
+  freeKickSpotMesh.visible = false;
+  scene.add(freeKickSpotMesh);
 
   // Onde d'impact fugitive au moment exact où le pied frappe le ballon (cachée au repos)
   const ballGlowRing = new THREE.Mesh(
@@ -2903,12 +2961,16 @@
   const wallGroup = new THREE.Group();
   scene.add(wallGroup);
 
-  function buildDefensiveWall(count: number, side: number) {
+  function buildDefensiveWall(count: number, ballX: number, wallZ: number, offset = 0) {
     while (wallGroup.children.length > 0) wallGroup.remove(wallGroup.children[0]);
     if (count <= 0) return;
 
     const defKit = new THREE.MeshStandardMaterial({ color: 0xbe123c, roughness: 0.55 });
-    const startX = side * 1.1;
+    // Placement tactique du mur entre le ballon et le premier poteau couvert
+    const targetAimX = ballX > 0.5 ? -1.2 : ballX < -0.5 ? 1.2 : 0;
+    const tRatio = 9.15 / Math.max(10, wallZ + 9.15);
+    const centerX = THREE.MathUtils.lerp(ballX, targetAimX, tRatio) + offset;
+
     for (let i = 0; i < count; i++) {
       const player = new THREE.Group();
       const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.20, 0.68, 14), defKit);
@@ -2923,7 +2985,7 @@
       legs.position.y = 0.34;
       legs.castShadow = true;
       player.add(torso, head, shorts, legs);
-      player.position.set(startX + (i - (count - 1) / 2) * 0.58, 0, 5.2);
+      player.position.set(centerX + (i - (count - 1) / 2) * 0.54, 0, wallZ);
       wallGroup.add(player);
     }
   }
@@ -3206,14 +3268,16 @@
     const keeper = getActiveKeeper();
     if (hudRdcScore) hudRdcScore.textContent = String(state.goalsInSeries);
     if (hudOppScore) hudOppScore.textContent = String(tier.oppScore);
-    if (hudLevelBadge) hudLevelBadge.textContent = `NIV. ${tier.id} · ${tier.name.toUpperCase()}`;
+    if (hudLevelBadge) hudLevelBadge.textContent = `NIV. ${tier.id} · ${tier.typeLabel || tier.name.toUpperCase()}`;
     if (hudMatchupLabel) {
       hudMatchupLabel.textContent = `#${shooter.number} ${shooter.backName} vs #${keeper.number} ${keeper.shortName}`;
     }
 
     const currentShotNum = Math.min(state.kickIndex + 1, TOTAL_KICKS_PER_SERIES);
     if (hudKickCounter) {
-      hudKickCounter.textContent = `TIR ${currentShotNum}/${TOTAL_KICKS_PER_SERIES} · OBJECTIF ${tier.targetGoals} BUTS`;
+      hudKickCounter.textContent = tier.isFreeKick
+        ? `🎯 COUP FRANC (${tier.distanceLabel}) · TIR ${currentShotNum}/${TOTAL_KICKS_PER_SERIES}`
+        : `⚽ PENALTY · TIR ${currentShotNum}/${TOTAL_KICKS_PER_SERIES} · OBJECTIF ${tier.targetGoals} BUTS`;
     }
     if (pauseScoreSummary) {
       pauseScoreSummary.textContent = `RDC ${state.goalsInSeries} - ${tier.oppScore} ADV · Tir ${currentShotNum}/${TOTAL_KICKS_PER_SERIES}`;
@@ -3288,6 +3352,8 @@
 
   function setupNextKick() {
     const tier = getActiveTier();
+    const bX = tier.ballX ?? 0;
+    const bZ = tier.ballZ ?? PENALTY_Z;
 
     if (tier.windMaxKmh === 0) {
       state.windKmh = 0;
@@ -3296,20 +3362,31 @@
       state.windKmh = Math.round(dir * (tier.windMaxKmh * 0.55 + Math.random() * tier.windMaxKmh * 0.45));
     }
 
-    state.wallSide = Math.random() < 0.5 ? -1 : 1;
-    buildDefensiveWall(tier.wallPlayers, state.wallSide);
+    const wallZ = Math.max(3.8, bZ - (tier.wallDistance || 9.15));
+    buildDefensiveWall(tier.wallPlayers, bX, wallZ, tier.wallOffset || 0);
 
-    ballMesh.position.set(0, BALL_R, PENALTY_Z);
+    ballMesh.position.set(bX, BALL_R, bZ);
     ballMesh.rotation.set(0, 0, 0);
     ballMesh.scale.set(1, 1, 1);
-    ballContactShadow.position.set(0, 0.014, PENALTY_Z);
+    ballContactShadow.position.set(bX, 0.014, bZ);
     ballContactShadow.scale.set(1, 1, 1);
     (ballContactShadow.material as THREE.MeshBasicMaterial).opacity = 0.72;
+    ballGlowRing.position.set(bX, 0.018, bZ);
     ballGlowRing.visible = false;
     strikeShockTimer = 0;
     ballTrailLine.visible = false;
     trailHistory.length = 0;
     goalGroup.position.x = 0;
+
+    // Marquage spray blanc pour les coups francs
+    if (freeKickSpotMesh) {
+      if (tier.isFreeKick) {
+        freeKickSpotMesh.position.set(bX, 0.012, bZ);
+        freeKickSpotMesh.visible = true;
+      } else {
+        freeKickSpotMesh.visible = false;
+      }
+    }
 
     keeperGroup.position.set(0, 0, 0.28);
     keeperGroup.rotation.set(0, 0, 0);
@@ -3457,15 +3534,19 @@
     } else {
       speedMs = 33.0 + ((finalPower - 92) / 8) * 3.5;  // > 119 km/h (Surcharge incontrôlable)
     }
-    const flightTime = PENALTY_Z / speedMs;
+
+    const tier = getActiveTier();
+    const startX = tier.ballX ?? 0;
+    const startZ = tier.ballZ ?? PENALTY_Z;
+    const flightTime = startZ / speedMs;
 
     if (swipePoints.length < 2) {
       const defaultY = gaugeZone === "overload" ? GOAL.height + 1.25 : 1.15;
       const vy0 = ((defaultY - BALL_R) + 0.5 * FLIGHT_GRAVITY * flightTime * flightTime) / flightTime;
       return {
-        targetX: 0,
+        targetX: startX,
         targetY: defaultY,
-        midWorldX: 0,
+        midWorldX: startX,
         spinCurve: 0,
         speedMs,
         flightTime,
@@ -3478,7 +3559,7 @@
 
     const start = swipePoints[0];
     const end = swipePoints[swipePoints.length - 1];
-    const ballScreen = worldToScreen(0, BALL_R, PENALTY_Z);
+    const ballScreen = worldToScreen(startX, BALL_R, startZ);
     const goalBotScreen = worldToScreen(0, 0.16, 0);
     const goalTopScreen = worldToScreen(0, GOAL.height, 0);
 
@@ -3538,19 +3619,19 @@
     // En Zone Verte ("perfect"), l'effet enroulé est pur et amplifié ; en surcharge ("overload"), l'effet dévisse
     const curveGain = gaugeZone === "perfect" ? 1.15 : gaugeZone === "weak" ? 0.65 : 1.0;
 
-    // Conversion exacte du ventre écran à mi-parcours (Z = 5.5m) en coordonnée 3D midWorldX
-    const midZ = PENALTY_Z * 0.5;
-    const straightMidScreen = worldToScreen(targetX * 0.5, (BALL_R + targetY) * 0.5, midZ);
+    // Conversion exacte du ventre écran à mi-parcours en coordonnée 3D midWorldX
+    const midZ = startZ * 0.5;
+    const straightMidScreen = worldToScreen((startX + targetX) * 0.5, (BALL_R + targetY) * 0.5, midZ);
     const midWorld3D = screenToPlaneZ(straightMidScreen.x + maxSignedDevX * curveGain, straightMidScreen.y, midZ);
-    const midWorldX = THREE.MathUtils.clamp(midWorld3D.x, -5.6, 5.6);
+    const midWorldX = THREE.MathUtils.clamp(midWorld3D.x, -6.5, 6.5);
 
-    // Cinématique exacte : X(0) = 0, X(T/2) = midWorldX, X(T) = targetX
+    // Cinématique exacte : X(0) = startX, X(T/2) = midWorldX, X(T) = targetX
     const totalAx = THREE.MathUtils.clamp(
-      (4 * (targetX - 2 * midWorldX)) / (flightTime * flightTime),
-      -34.0,
-      34.0
+      (4 * (startX + targetX - 2 * midWorldX)) / (flightTime * flightTime),
+      -36.0,
+      36.0
     );
-    const vx0 = (targetX - 0.5 * totalAx * flightTime * flightTime) / flightTime;
+    const vx0 = (targetX - startX - 0.5 * totalAx * flightTime * flightTime) / flightTime;
     const vy0 = ((targetY - BALL_R) + 0.5 * FLIGHT_GRAVITY * flightTime * flightTime) / flightTime;
 
     return {
@@ -3595,12 +3676,15 @@
     // 2. Projection 2D de la VRAIE trajectoire 3D (X(t), Y(t), Z(t)) que le ballon va suivre exactement !
     const SAMPLES = 24;
     const screenPts: { x: number; y: number }[] = [];
+    const tTier = getActiveTier();
+    const sX = tTier.ballX ?? 0;
+    const sZ = tTier.ballZ ?? PENALTY_Z;
     for (let i = 0; i <= SAMPLES; i++) {
       const u = i / SAMPLES;
       const t = u * traj.flightTime;
-      const x = traj.vx0 * t + 0.5 * traj.totalAx * t * t;
+      const x = sX + traj.vx0 * t + 0.5 * traj.totalAx * t * t;
       const y = BALL_R + traj.vy0 * t - 0.5 * FLIGHT_GRAVITY * t * t;
-      const z = PENALTY_Z - traj.speedMs * t;
+      const z = sZ - traj.speedMs * t;
       screenPts.push(worldToScreen(x, y, z));
     }
 
@@ -3816,10 +3900,14 @@
     shotPhys.speedKmh = Math.round(traj.speedMs * 3.6);
     shotPhys.wallJumping = true;
 
+    const tier = getActiveTier();
+    const startX = tier.ballX ?? 0;
+    const startZ = tier.ballZ ?? PENALTY_Z;
+
     // Effet d'impact explosif au contact du crampon : onde de choc 3D, compression élastique du ballon et gerbe d'herbe/craie
     strikeShockTimer = 0.24;
     ballGlowRing.visible = true;
-    ballGlowRing.position.set(0, 0.02, PENALTY_Z);
+    ballGlowRing.position.set(startX, 0.02, startZ);
     ballGlowRing.scale.set(0.85, 0.85, 1);
     (ballGlowRing.material as THREE.MeshBasicMaterial).color.setHex(
       traj.gaugeZone === "overload"
@@ -3841,14 +3929,13 @@
           : 0xfacc15
     );
     ballTrailLine.visible = true;
-    spawnTurfBurst(0, BALL_R * 0.45, PENALTY_Z, 34, false);
+    spawnTurfBurst(startX, BALL_R * 0.45, startZ, 34, false);
     cameraShakeAmp = traj.gaugeZone === "overload" ? 0.075 : 0.048;
 
     playKickAudio(powerPct / 100);
 
-    const tier = getActiveTier();
-    const tKeeper = (PENALTY_Z - 0.28) / traj.speedMs;
-    const predX = shotPhys.vx * tKeeper + 0.5 * shotPhys.totalAx * tKeeper * tKeeper;
+    const tKeeper = (startZ - 0.28) / traj.speedMs;
+    const predX = startX + shotPhys.vx * tKeeper + 0.5 * shotPhys.totalAx * tKeeper * tKeeper;
     const predY = Math.max(BALL_R, BALL_R + shotPhys.vy * tKeeper - 0.5 * FLIGHT_GRAVITY * tKeeper * tKeeper);
 
     // La plus belle frappe (Zone Verte "perfect" 70-91% + effet enroulé) prend le gardien de vitesse !
@@ -3976,12 +4063,13 @@
   function updatePhysics(dt: number) {
     const tier = getActiveTier();
 
+    const wallThresholdZ = Math.max(3.8, (tier.ballZ || PENALTY_Z) - (tier.wallDistance || 9.15));
     if (shotPhys.wallJumping && wallGroup.children.length > 0) {
       wallGroup.children.forEach((p) => {
-        if (ballMesh.position.z > 4.2) {
-          p.position.y = Math.min(0.66, p.position.y + dt * 4.2);
+        if (ballMesh.position.z > wallThresholdZ - 0.6) {
+          p.position.y = Math.min(0.52, p.position.y + dt * 4.2);
         } else {
-          p.position.y = Math.max(0, p.position.y - dt * 2.5);
+          p.position.y = Math.max(0, p.position.y - dt * 2.8);
         }
       });
     }
@@ -3990,10 +4078,10 @@
 
     shotPhys.flightElapsed += dt;
 
-    // 1. Prise d'appui (Split-Step) avant le plongeon : flexion des genoux et transfert de poids
+    // 1. Prise d'appui (Split-Step) avant le plongeon : flexion athlétique sans jamais pénétrer la pelouse
     if (shotPhys.flightElapsed < tier.keeperReactionSec) {
       const prepRatio = shotPhys.flightElapsed / Math.max(0.01, tier.keeperReactionSec);
-      keeperGroup.position.y = -0.06 * Math.sin(prepRatio * Math.PI);
+      keeperGroup.position.y = 0;
       legL.kneePivot.rotation.x = 0.42 + 0.25 * prepRatio;
       legR.kneePivot.rotation.x = 0.42 + 0.25 * prepRatio;
       upperBodyGroup.rotation.x = 0.14 + 0.10 * prepRatio;
@@ -4011,13 +4099,17 @@
             2.65
           );
 
-      // Après l'extension maximale (diveElapsed > 0.44s), le gardien retombe au sol avec du poids (landing -> getup)
+      // Calcul de la garde minimale au sol : en plongeon couché, le flanc repose SUR la pelouse sans clipper à travers
+      const absTilt = Math.abs(keeperGroup.rotation.z);
+      const minClearanceY = THREE.MathUtils.lerp(0.0, 0.28, Math.sin(absTilt));
+
+      // Après l'extension maximale (diveElapsed > 0.44s), le gardien retombe au sol au ras du gazon
       const inLanding = !isStandingSave && diveElapsed > 0.44;
       const desiredTorsoY = isStandingSave
         ? Math.max(0, (shotPhys.keeperTargetY - 1.15) * 0.35)
         : inLanding
-          ? 0.04
-          : THREE.MathUtils.clamp(shotPhys.keeperTargetY - 0.92, 0.02, 1.12);
+          ? minClearanceY
+          : Math.max(minClearanceY, THREE.MathUtils.clamp(shotPhys.keeperTargetY - 0.78, minClearanceY, 1.25));
 
       keeperGroup.position.x = THREE.MathUtils.lerp(
         keeperGroup.position.x,
@@ -4027,11 +4119,14 @@
       keeperGroup.position.y = THREE.MathUtils.lerp(
         keeperGroup.position.y,
         desiredTorsoY,
-        Math.min(1, dt * (inLanding ? 8.5 : tier.keeperDiveSpeed * 0.95))
+        Math.min(1, dt * (inLanding ? 9.5 : tier.keeperDiveSpeed * 0.95))
       );
+      // Confinement strict : ne pénètre JAMAIS sous la pelouse
+      keeperGroup.position.y = Math.max(minClearanceY, keeperGroup.position.y);
 
       keeperGroundShadow.position.x = keeperGroup.position.x;
-      keeperGroundShadow.scale.set(isStandingSave ? 1 : 1.45, 1, 1);
+      keeperGroundShadow.position.y = 0.012;
+      keeperGroundShadow.scale.set(isStandingSave ? 1 : 1.35, 1, 1);
 
       if (isStandingSave) {
         // Arrêt debout : buste droit, gants projetés devant le visage/poitrine
@@ -4041,23 +4136,23 @@
         armL.elbowPivot.rotation.x = THREE.MathUtils.lerp(armL.elbowPivot.rotation.x, -0.35, dt * 20);
         armR.elbowPivot.rotation.x = THREE.MathUtils.lerp(armR.elbowPivot.rotation.x, -0.35, dt * 20);
       } else {
-        // Plongeon bas ou haut + poussée de la jambe d'appui + retombée au sol
+        // Plongeon bas ou haut + poussée de la jambe d'appui + retombée au sol sans traverser le gazon
         const targetTilt = inLanding
-          ? -shotPhys.keeperDiveDir * 1.42
-          : THREE.MathUtils.clamp(-shotPhys.keeperTargetX * (isHighDive ? 0.48 : 0.54), -1.38, 1.38);
+          ? -shotPhys.keeperDiveDir * 1.34
+          : THREE.MathUtils.clamp(-shotPhys.keeperTargetX * (isHighDive ? 0.44 : 0.50), -1.30, 1.30);
         keeperGroup.rotation.z = THREE.MathUtils.lerp(keeperGroup.rotation.z, targetTilt, dt * 18);
-        kArmL.rotation.z = THREE.MathUtils.lerp(kArmL.rotation.z, 2.82, dt * 22);
-        kArmR.rotation.z = THREE.MathUtils.lerp(kArmR.rotation.z, -2.82, dt * 22);
+        kArmL.rotation.z = THREE.MathUtils.lerp(kArmL.rotation.z, 2.65, dt * 22);
+        kArmR.rotation.z = THREE.MathUtils.lerp(kArmR.rotation.z, -2.65, dt * 22);
         armL.elbowPivot.rotation.x = THREE.MathUtils.lerp(armL.elbowPivot.rotation.x, 0, dt * 22);
         armR.elbowPivot.rotation.x = THREE.MathUtils.lerp(armR.elbowPivot.rotation.x, 0, dt * 22);
 
-        // Extension de la jambe de poussée et flexion de la jambe libre
+        // Extension de la jambe de poussée et flexion de la jambe libre au ras du sol
         if (shotPhys.keeperDiveDir > 0) {
-          legR.kneePivot.rotation.x = THREE.MathUtils.lerp(legR.kneePivot.rotation.x, 0.06, dt * 18);
-          legL.kneePivot.rotation.x = THREE.MathUtils.lerp(legL.kneePivot.rotation.x, 0.68, dt * 18);
+          legR.kneePivot.rotation.x = THREE.MathUtils.lerp(legR.kneePivot.rotation.x, 0.12, dt * 18);
+          legL.kneePivot.rotation.x = THREE.MathUtils.lerp(legL.kneePivot.rotation.x, 0.55, dt * 18);
         } else {
-          legL.kneePivot.rotation.x = THREE.MathUtils.lerp(legL.kneePivot.rotation.x, 0.06, dt * 18);
-          legR.kneePivot.rotation.x = THREE.MathUtils.lerp(legR.kneePivot.rotation.x, 0.68, dt * 18);
+          legL.kneePivot.rotation.x = THREE.MathUtils.lerp(legL.kneePivot.rotation.x, 0.12, dt * 18);
+          legR.kneePivot.rotation.x = THREE.MathUtils.lerp(legR.kneePivot.rotation.x, 0.55, dt * 18);
         }
       }
     }
@@ -4168,9 +4263,10 @@
         continue;
       }
 
-      // 1. Mur défensif
-      if (wallGroup.children.length > 0 && prevZ >= 5.2 && ballMesh.position.z <= 5.2) {
-        const alpha = (prevZ - 5.2) / Math.max(0.00001, prevZ - ballMesh.position.z);
+      // 1. Mur défensif dynamique (Coup Franc ou Penalty)
+      const currentWallZ = Math.max(3.8, (tier.ballZ || PENALTY_Z) - (tier.wallDistance || 9.15));
+      if (tier.wallPlayers > 0 && wallGroup.children.length > 0 && prevZ >= currentWallZ && ballMesh.position.z <= currentWallZ) {
+        const alpha = (prevZ - currentWallZ) / Math.max(0.00001, prevZ - ballMesh.position.z);
         const crossX = THREE.MathUtils.lerp(prevX, ballMesh.position.x, alpha);
         const crossY = THREE.MathUtils.lerp(prevY, ballMesh.position.y, alpha);
 
@@ -4182,14 +4278,14 @@
           }
         }
         if (blockedByWall) {
-          ballMesh.position.set(crossX, crossY, 5.25);
+          ballMesh.position.set(crossX, crossY, currentWallZ + 0.08);
           shotPhys.vz = Math.abs(shotPhys.vz) * 0.38;
           shotPhys.vx += (Math.random() - 0.5) * 5;
           shotPhys.vy = 2.8;
           shotPhys.parriedByKeeper = true;
-          spawnTurfBurst(crossX, crossY, 5.25, 14, true);
+          spawnTurfBurst(crossX, crossY, currentWallZ, 14, true);
           playSaveAudio();
-          resolveShot(false, "CONTRÉ PAR LE MUR !", "Enroule ton geste avec le doigt pour contourner le mur !");
+          resolveShot(false, "CONTRÉ PAR LE MUR !", "Enroule ton tir au-dessus ou contourne le mur !");
           break;
         }
       }
@@ -4544,8 +4640,8 @@
       card.innerHTML = `
         <div>
           <div class="flex items-center justify-between gap-2">
-            <span class="rounded ${isCurrent ? "bg-or text-slate-950" : "bg-[#0c1b3a] text-or"} px-2 py-0.5 font-display text-xs uppercase tracking-wider font-black">
-              Niveau ${t.id} · ${t.deficitLabel}
+            <span class="rounded ${isCurrent ? "bg-or text-slate-950 font-black" : "bg-[#0c1b3a] text-or font-bold"} px-2 py-0.5 font-display text-xs uppercase tracking-wider">
+              Niveau ${t.id} · ${t.typeLabel || t.deficitLabel}
             </span>
             <span class="text-[0.68rem] font-bold ${unlocked ? "text-emerald-400" : "text-slate-500"}">
               ${unlocked ? (isCurrent ? "● En cours" : "✓ Débloqué") : "🔒 Verrouillé"}
@@ -4555,8 +4651,8 @@
           <p class="mt-0.5 text-xs text-slate-300 leading-relaxed">${t.desc}</p>
         </div>
         <div class="mt-2.5 flex items-center justify-between border-t border-[#162a52] pt-2 text-[0.62rem] font-bold uppercase tracking-wider text-slate-400">
-          <span>Objectif : <strong class="text-emerald-400">${t.targetGoals}/5 buts</strong></span>
-          <span>Vent : <strong class="text-sky-300">${t.windMaxKmh} km/h</strong></span>
+          <span>Format : <strong class="text-or">${t.distanceLabel}</strong></span>
+          <span>Obj : <strong class="text-emerald-400">${t.targetGoals}/5</strong> · Vent : <strong class="text-sky-300">${t.windMaxKmh} km/h</strong></span>
         </div>
       `;
 
@@ -4955,7 +5051,7 @@
       const liftR = Math.max(0, -Math.sin(stepCycle * 2));
 
       keeperGroup.position.x = stepPhase * swayAmp;
-      keeperGroup.position.y = -0.04 + Math.max(liftL, liftR) * 0.055;
+      keeperGroup.position.y = Math.max(0, Math.max(liftL, liftR) * 0.04);
       keeperGroup.rotation.z = -stepPhase * 0.04;
       keeperGroup.rotation.x = 0.09; // Buste légèrement penché vers l'avant en posture d'attente
 
@@ -4988,8 +5084,8 @@
       const p = Math.min(1, state.runupElapsed / RUNUP_DURATION);
       updateShooterRunupPose(p);
 
-      // Pendant la course d'élan, le gardien fléchit les genoux et prépare son impulsion
-      keeperGroup.position.y = -0.06 - p * 0.05;
+      // Pendant la course d'élan, le gardien fléchit les genoux au ras du sol sans clipper dans l'herbe
+      keeperGroup.position.y = 0;
       keeperGroup.rotation.x = 0.14 + p * 0.06;
       legL.hipPivot.rotation.x = -0.26 - p * 0.18;
       legL.kneePivot.rotation.x = 0.48 + p * 0.28;
@@ -5018,24 +5114,29 @@
       ballMesh.scale.y += (1 - ballMesh.scale.y) * Math.min(1, dt * 18);
       ballMesh.scale.z += (1 - ballMesh.scale.z) * Math.min(1, dt * 18);
 
-      // Suivi caméra dynamique léger type EA FC + tremblement d'impact (Camera Shake)
+      // Suivi caméra dynamique calé sur le coup franc ou penalty
+      const tTier = getActiveTier();
+      const bX = tTier.ballX ?? 0;
+      const bZ = tTier.ballZ ?? PENALTY_Z;
       const aspect = window.innerWidth / Math.max(1, window.innerHeight);
       const isPortrait = aspect < 0.95;
-      const baseZ = isPortrait ? 13.65 : 13.45;
+      const baseZ = bZ + (isPortrait ? 2.65 : 2.45);
       const baseY = isPortrait ? 1.25 : 1.28;
+      const baseX = bX * 0.90;
       const lookY = isPortrait ? 1.10 : 1.15;
-      const pushIn = Math.min(0.85, shotPhys.flightElapsed * 1.35);
+      const lookX = bX * 0.20;
+      const pushIn = Math.min(1.2, shotPhys.flightElapsed * 1.35);
 
       const shakeX = cameraShakeAmp > 0.001 ? (Math.random() - 0.5) * cameraShakeAmp : 0;
       const shakeY = cameraShakeAmp > 0.001 ? (Math.random() - 0.5) * cameraShakeAmp : 0;
       cameraShakeAmp = Math.max(0, cameraShakeAmp - dt * 0.22);
 
       camera.position.set(
-        ballMesh.position.x * 0.08 + shakeX,
+        baseX + (ballMesh.position.x - bX) * 0.08 + shakeX,
         baseY + shakeY,
         baseZ - pushIn
       );
-      camera.lookAt(ballMesh.position.x * 0.18, lookY, 0);
+      camera.lookAt(lookX + (ballMesh.position.x - bX) * 0.18, lookY, 0);
     }
 
     renderer.render(scene, camera);

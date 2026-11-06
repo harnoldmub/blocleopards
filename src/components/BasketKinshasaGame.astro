@@ -214,21 +214,31 @@
         </div>
       </div>
 
-      <div class="mt-4 flex gap-2">
+      <div class="mt-4 flex flex-col gap-2">
         <button
           type="button"
-          id="btn-go-levels"
-          class="rounded-xl border border-[#1e3a6e] bg-[#0c1b3a] px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#162a52]"
+          id="btn-go-next-level"
+          class="hidden w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 via-or to-yellow-300 px-4 py-3 font-display text-xs font-black uppercase tracking-wider text-slate-950 shadow-xl hover:brightness-110 active:scale-95 transition-all"
         >
-          🏆 Niveaux
+          <span id="btn-go-next-label">Passer au Niveau Suivant</span>
+          <span class="text-base">▶</span>
         </button>
-        <button
-          type="button"
-          id="btn-go-retry"
-          class="flex-1 rounded-xl bg-or px-4 py-2.5 text-xs font-black uppercase tracking-wider text-slate-950 shadow-lg hover:bg-yellow-300 active:scale-95 transition-transform"
-        >
-          🔄 Rejouer la série
-        </button>
+        <div class="flex gap-2">
+          <button
+            type="button"
+            id="btn-go-levels"
+            class="rounded-xl border border-[#1e3a6e] bg-[#0c1b3a] px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#162a52]"
+          >
+            🏆 Niveaux
+          </button>
+          <button
+            type="button"
+            id="btn-go-retry"
+            class="flex-1 rounded-xl bg-or px-4 py-2.5 text-xs font-black uppercase tracking-wider text-slate-950 shadow-lg hover:bg-yellow-300 active:scale-95 transition-transform"
+          >
+            🔄 Rejouer la série
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -440,6 +450,30 @@
     { name: "Logo Buzzer Distance", x: 0, z: 9.2, distLabel: "9.2m" }
   ];
 
+  const SPOTS_MATONGE: CourtSpot[] = [
+    { name: "Corner Zéro Degré Gauche", x: -5.8, z: 1.9, distLabel: "6.1m" },
+    { name: "Aile 45° Profonde", x: -5.0, z: 6.0, distLabel: "7.8m" },
+    { name: "Tête de Raquette Reculée", x: 0, z: 7.6, distLabel: "7.6m" },
+    { name: "Aile Droite Step-Back", x: 5.0, z: 6.0, distLabel: "7.8m" },
+    { name: "Corner Zéro Degré Droit", x: 5.8, z: 1.9, distLabel: "6.1m" }
+  ];
+
+  const SPOTS_BOULEVARD: CourtSpot[] = [
+    { name: "Corner Gauche Long", x: -5.9, z: 2.4, distLabel: "6.3m" },
+    { name: "Parking 3pts Gauche", x: -4.6, z: 7.0, distLabel: "8.3m" },
+    { name: "Grand Axe 8.8m", x: 0, z: 8.8, distLabel: "8.8m" },
+    { name: "Parking 3pts Droit", x: 4.6, z: 7.0, distLabel: "8.3m" },
+    { name: "Logo Triomphal", x: 0, z: 9.6, distLabel: "9.6m" }
+  ];
+
+  const SPOTS_LEOPARDS_ROYAL: CourtSpot[] = [
+    { name: "Corner Extrême Gauche", x: -6.0, z: 2.0, distLabel: "6.3m" },
+    { name: "Aile NBA 8.2m", x: -5.2, z: 6.5, distLabel: "8.3m" },
+    { name: "Logo Milieu De Terrain", x: 0, z: 10.2, distLabel: "10.2m" },
+    { name: "Aile NBA Droite 8.2m", x: 5.2, z: 6.5, distLabel: "8.3m" },
+    { name: "Clutch Buzzer Royal", x: 1.8, z: 9.8, distLabel: "10.0m" }
+  ];
+
   const TIERS: BasketTier[] = [
     {
       id: 1,
@@ -500,6 +534,42 @@
       shotClockSec: 7,
       windMaxKmh: 22,
       spots: SPOTS_LOGO
+    },
+    {
+      id: 6,
+      name: "Shootout Matonge",
+      subtitle: "Corners Zéro Degré & Rafales 24 km/h",
+      desc: "Tirs au ras de la ligne de touche sans planche possible et vent changeant. 9s par tir !",
+      targetGoals: 4,
+      tolerancePct: 4.0,
+      gaugeSpeed: 88,
+      shotClockSec: 9,
+      windMaxKmh: 24,
+      spots: SPOTS_MATONGE
+    },
+    {
+      id: 7,
+      name: "Finale Boulevard Triomphal",
+      subtitle: "Distance Parking 8.8m+ & Rafales 28 km/h",
+      desc: "Chrono éclair 8s à très longue distance. Il faut une précision métronomique pour valider 4/5 !",
+      targetGoals: 4,
+      tolerancePct: 3.5,
+      gaugeSpeed: 95,
+      shotClockSec: 8,
+      windMaxKmh: 28,
+      spots: SPOTS_BOULEVARD
+    },
+    {
+      id: 8,
+      name: "Roi du Playground Léopards",
+      subtitle: "Le Défi Suprême · 5/5 Exigé !",
+      desc: "Du milieu de terrain à 10.2 mètres, chrono 6s et vent tempétueux à 32 km/h. Seuls les champions réussissent le sans-faute !",
+      targetGoals: 5,
+      tolerancePct: 3.0,
+      gaugeSpeed: 102,
+      shotClockSec: 6,
+      windMaxKmh: 32,
+      spots: SPOTS_LEOPARDS_ROYAL
     }
   ];
 
@@ -559,7 +629,9 @@
   const goStatStreak = document.getElementById("go-stat-streak");
   const goStatLevel = document.getElementById("go-stat-level");
   const goStatRecord = document.getElementById("go-stat-record");
-  const btnGoRetry = document.getElementById("btn-go-retry");
+  const btnGoNextLevel = document.getElementById("btn-go-next-level") as HTMLButtonElement | null;
+  const btnGoNextLabel = document.getElementById("btn-go-next-label");
+  const btnGoRetry = document.getElementById("btn-go-retry") as HTMLButtonElement | null;
   const btnGoLevels = document.getElementById("btn-go-levels");
 
   const levelsModalOverlay = document.getElementById("levels-modal-overlay");
@@ -1073,15 +1145,35 @@
       localStorage.setItem("kin_basket_max_tier", String(state.maxUnlockedTier));
     }
 
+    const hasNextTier = state.currentTierIndex + 1 < TIERS.length;
+
     if (goTitle) goTitle.textContent = passed ? "VICTOIRE À LIMETE ! 🔥" : "SÉANCE NON VALIDÉE";
     if (goDesc) {
       goDesc.textContent = passed
-        ? `Magnifique performance ! ${state.goalsInSeries}/5 tirs rentrés (objectif ${tier.targetGoals}/5 atteint). Niveau ${tier.id + 1 <= TIERS.length ? tier.id + 1 : "Max"} débloqué !`
+        ? `Magnifique performance ! ${state.goalsInSeries}/5 tirs rentrés (objectif ${tier.targetGoals}/5 atteint). ${hasNextTier ? `Niveau ${tier.id + 1} débloqué !` : "Tu as conquis tous les niveaux du playground !"}`
         : `Tu as inscrit ${state.goalsInSeries}/5 tirs (objectif : ${tier.targetGoals}/5 pour valider ce niveau). Retente ta chance !`;
     }
     if (goStatStreak) goStatStreak.textContent = `${state.goalsInSeries}/5`;
     if (goStatLevel) goStatLevel.textContent = `Niv. ${tier.id}`;
     if (goStatRecord) goStatRecord.textContent = `${state.bestScore}/5 🏆`;
+
+    if (btnGoNextLevel) {
+      if (passed && hasNextTier) {
+        const nextTier = TIERS[state.currentTierIndex + 1];
+        if (btnGoNextLabel) {
+          btnGoNextLabel.textContent = `Passer au Niveau ${nextTier.id} (${nextTier.name})`;
+        }
+        btnGoNextLevel.classList.remove("hidden");
+        btnGoNextLevel.classList.add("flex");
+        btnGoRetry?.classList.remove("bg-or", "text-slate-950");
+        btnGoRetry?.classList.add("bg-[#0c1b3a]", "text-slate-200", "border", "border-[#1e3a6e]");
+      } else {
+        btnGoNextLevel.classList.add("hidden");
+        btnGoNextLevel.classList.remove("flex");
+        btnGoRetry?.classList.remove("bg-[#0c1b3a]", "text-slate-200", "border", "border-[#1e3a6e]");
+        btnGoRetry?.classList.add("bg-or", "text-slate-950");
+      }
+    }
 
     gameoverModal?.classList.remove("hidden");
     gameoverModal?.classList.add("flex");
@@ -1475,6 +1567,11 @@
     renderLevelsModal();
     levelsModalOverlay?.classList.remove("hidden");
     levelsModalOverlay?.classList.add("flex");
+  });
+  btnGoNextLevel?.addEventListener("click", () => {
+    if (state.currentTierIndex + 1 < TIERS.length) {
+      startSeries(state.currentTierIndex + 1);
+    }
   });
   btnGoRetry?.addEventListener("click", () => startSeries(state.currentTierIndex));
 
