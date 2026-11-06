@@ -4517,17 +4517,23 @@
     const activeShooter = getActiveShooter();
     const activeKeeper = getActiveKeeper();
 
-    if (selectionSummaryText) {
-      selectionSummaryText.innerHTML = `<span class="text-sky-300 font-black">#${activeShooter.number} ${activeShooter.name}</span> face à <span class="text-or font-black">#${activeKeeper.number} ${activeKeeper.name}</span> (${activeKeeper.kitName})`;
+    if (selectedShooterPill) {
+      selectedShooterPill.textContent = `#${activeShooter.number} ${activeShooter.name}`;
     }
-    if (hudShooterBadge) {
-      hudShooterBadge.textContent = `#${activeShooter.number} ${activeShooter.backLabel} vs #${activeKeeper.number} ${activeKeeper.name.split(" ").pop()?.toUpperCase()}`;
+    if (selectedKeeperPill) {
+      selectedKeeperPill.textContent = `#${activeKeeper.number} ${activeKeeper.name}`;
+    }
+    if (selectionDuelSummary) {
+      selectionDuelSummary.textContent = `Tireur : #${activeShooter.number} ${activeShooter.name} (${activeShooter.position.split("·")[0].trim()}) vs Gardien : #${activeKeeper.number} ${activeKeeper.name}`;
+    }
+    if (hudMatchupLabel) {
+      hudMatchupLabel.textContent = `#${activeShooter.number} ${activeShooter.backName} vs #${activeKeeper.number} ${activeKeeper.shortName}`;
     }
 
     if (shootersGrid) {
       shootersGrid.innerHTML = "";
-      LEOPARD_SHOOTERS.forEach((s) => {
-        const isSelected = s.id === state.selectedShooterId;
+      LEOPARD_SHOOTERS.forEach((s, idx) => {
+        const isSelected = idx === state.selectedShooterIndex;
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = `group relative flex flex-col overflow-hidden rounded-2xl border text-left transition-all ${
@@ -4552,14 +4558,15 @@
             </div>
           </div>
           <div class="flex items-center justify-between px-2.5 py-1.5 text-[0.62rem] font-bold text-slate-300">
-            <span class="text-sky-300">${s.role}</span>
-            <span class="text-slate-400">${s.specialty}</span>
+            <span class="text-sky-300 truncate">${s.position.split("·")[0].trim()}</span>
+            <span class="text-slate-400 truncate">${s.specialty}</span>
           </div>
         `;
         btn.addEventListener("click", () => {
-          state.selectedShooterId = s.id;
+          state.selectedShooterIndex = idx;
           applyShooterProfile(s);
           renderSelectionModal();
+          updateHud();
         });
         shootersGrid.appendChild(btn);
       });
@@ -4567,8 +4574,8 @@
 
     if (keepersGrid) {
       keepersGrid.innerHTML = "";
-      GOALKEEPERS_CATALOG.forEach((k) => {
-        const isSelected = k.id === state.selectedKeeperId;
+      GOALKEEPERS_CATALOG.forEach((k, idx) => {
+        const isSelected = idx === state.selectedKeeperIndex;
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = `group relative flex flex-col overflow-hidden rounded-2xl border text-left transition-all ${
@@ -4593,17 +4600,17 @@
             </div>
           </div>
           <div class="flex items-center justify-between gap-1 px-2.5 py-1.5 text-[0.6rem] font-bold text-slate-300">
-            <span class="inline-flex items-center gap-1 text-amber-300">
-              <span class="inline-block h-2.5 w-2.5 rounded-full border border-white/40" style="background:${k.badgeColor}"></span>
+            <span class="inline-flex items-center gap-1 text-amber-300 truncate">
+              <span class="inline-block h-2.5 w-2.5 shrink-0 rounded-full border border-white/40" style="background:${k.shirtPrimary}"></span>
               ${k.kitName}
             </span>
-            <span class="text-slate-400 truncate">${k.style}</span>
           </div>
         `;
         btn.addEventListener("click", () => {
-          state.selectedKeeperId = k.id;
+          state.selectedKeeperIndex = idx;
           applyGoalkeeperKit(k);
           renderSelectionModal();
+          updateHud();
         });
         keepersGrid.appendChild(btn);
       });
