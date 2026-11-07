@@ -1,21 +1,24 @@
 ---
 import "../../styles/global.css";
 import SEO from "../../components/SEO.astro";
-import BasketKinshasaGame from "../../components/BasketKinshasaGame.astro";
+import ArenaApp from "../../components/arena/ArenaApp.tsx";
 
-const pageTitle = "Shoot à la Sirène · Limete 7ᵉ Rue (Kinshasa) | Jeux Bloc Léopards";
-const pageDescription = "Jeu 3D Streetball sur le playground de la 7ᵉ Rue à Limete, Kinshasa. 8 niveaux évolutifs, shot clock et vent physique.";
+const pageTitle = "Shoot à la sirène · L'Arène des Léopards | Bloc Léopards";
+const pageDescription = "Du lancer franc au tir du logo, au playground de Limete et en salle à Kinshasa. Chrono, duels et défis entre amis.";
 ---
 
 <!doctype html>
-<html lang="fr" class="dark overflow-hidden">
+<html lang="fr" class="h-full bg-[#040a1a]">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-    <SEO title={pageTitle} description={pageDescription} />
-    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#040a1a" />
+    <SEO title={pageTitle} description={pageDescription} url={`https://blocleopards.com/jeux${"basket" === "index" ? "" : "/basket"}`} />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="preload" as="image" href="/brand/logo-arena.webp" />
   </head>
-  <body class="m-0 h-[100dvh] w-screen overflow-hidden bg-[#070b16] text-white antialiased select-none">
-    <BasketKinshasaGame />
+  <body class="h-[100dvh] overflow-hidden bg-[#040a1a] text-white antialiased">
+    <noscript><p style="padding:24px;color:#fff">Les jeux de l'Arène des Léopards nécessitent JavaScript.</p></noscript>
+    <ArenaApp client:only="react" initialGame={"basket"} />
   </body>
 </html>

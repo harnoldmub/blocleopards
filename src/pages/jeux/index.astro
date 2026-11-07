@@ -1,163 +1,24 @@
 ---
 import "../../styles/global.css";
 import SEO from "../../components/SEO.astro";
+import ArenaApp from "../../components/arena/ArenaApp.tsx";
 
-const pageTitle = "Jeux 3D Officiels | Bloc Léopards";
-const pageDescription = "Découvrez les jeux 3D officiels des supporters des Léopards de la RDC : Penalty & Coups Francs au Stade des Martyrs et Shoot à la Sirène sur le playground de Limete.";
+const pageTitle = "L'Arène des Léopards · Jeux officiels | Bloc Léopards";
+const pageDescription = "Tirs au but au Stade des Martyrs et shoot au playground de Limete : deux mini-jeux des supporters des Léopards, à jouer seul ou à plusieurs.";
 ---
 
 <!doctype html>
-<html lang="fr" class="h-full bg-[#040814] text-white">
+<html lang="fr" class="h-full bg-[#040a1a]">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <SEO title={pageTitle} description={pageDescription} />
+    <meta name="theme-color" content="#040a1a" />
+    <SEO title={pageTitle} description={pageDescription} url={`https://blocleopards.com/jeux${"index" === "index" ? "" : "/index"}`} />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="preload" as="image" href="/brand/logo-arena.webp" />
   </head>
-  <body class="min-h-screen bg-[#040814] text-slate-100 antialiased flex flex-col justify-between selection:bg-or selection:text-slate-950">
-    <!-- En-tête sobre -->
-    <header class="border-b border-[#13284f] bg-[#060c1d] px-4 py-4 sm:px-8">
-      <div class="mx-auto flex max-w-6xl items-center justify-between">
-        <a href="/" class="flex items-center transition-opacity hover:opacity-90" aria-label="Accueil Bloc Léopards">
-          <img src="/brand/logo.png" alt="Bloc Léopards" class="h-12 w-auto lg:h-14 object-contain" />
-        </a>
-
-        <a
-          href="/"
-          class="flex items-center gap-1.5 rounded-xl border border-[#1e3a6e] bg-[#0a1630] px-3.5 py-1.5 text-xs font-bold text-slate-300 transition-all hover:bg-[#10224a] hover:text-white"
-        >
-          <span>←</span>
-          <span>Retour au site</span>
-        </a>
-      </div>
-    </header>
-
-    <!-- Contenu Principal -->
-    <main class="flex-1 px-4 py-8 sm:py-14">
-      <div class="mx-auto max-w-5xl">
-        <!-- Titre & Chapeau -->
-        <div class="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
-          <h1 class="font-display text-3xl sm:text-5xl uppercase tracking-tight text-white font-black leading-tight">
-            L'Arène des <span class="text-or">Léopards</span>
-          </h1>
-          <p class="mt-3 text-sm sm:text-base text-slate-300 leading-relaxed">
-            Défie la physique en temps réel sur les terrains mythiques de Kinshasa : du gazon vibrant des Martyrs au playground de Limete 7ᵉ Rue.
-          </p>
-        </div>
-
-        <!-- Grille des 2 Jeux -->
-        <div class="grid gap-6 md:grid-cols-2">
-          <!-- CARTE 1 : FOOTBALL / PENALTY & COUPS FRANCS -->
-          <article class="flex flex-col justify-between overflow-hidden rounded-3xl border-2 border-[#1e3a6e] bg-[#071026] p-6 shadow-2xl transition-all hover:border-or/60 hover:shadow-or/10">
-            <div>
-              <div class="flex items-center justify-between gap-3 mb-4">
-                <span class="flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-400/40 bg-[#0a2318] text-2xl shadow-inner">
-                  ⚽
-                </span>
-                <span class="rounded-lg border border-emerald-500/30 bg-emerald-950/70 px-2.5 py-1 font-display text-[0.65rem] uppercase font-bold tracking-wider text-emerald-400">
-                  Stade des Martyrs · 80 000 places
-                </span>
-              </div>
-
-              <span class="text-[0.65rem] font-bold uppercase tracking-widest text-or">Football 3D</span>
-              <h2 class="mt-1 font-display text-2xl sm:text-3xl uppercase tracking-tight text-white font-black leading-none">
-                Penalty & Coups Francs
-              </h2>
-              <p class="mt-2.5 text-xs sm:text-sm text-slate-300 leading-relaxed">
-                90ᵉ minute au Stade des Martyrs. La RDC est menée ! Enchaîne 5 tirs décisifs : démarre sur penalty plein axe puis recule aux coups francs directs (19m, 23m, 27m) en contournant le mur défensif d'un geste enroulé.
-              </p>
-
-              <!-- Points forts -->
-              <div class="mt-5 grid grid-cols-2 gap-2 text-[0.7rem] text-slate-300">
-                <div class="flex items-center gap-1.5 rounded-lg border border-[#162a52] bg-[#040817] p-2">
-                  <span class="text-or">🎯</span>
-                  <span>5 Niveaux & Coups francs</span>
-                </div>
-                <div class="flex items-center gap-1.5 rounded-lg border border-[#162a52] bg-[#040817] p-2">
-                  <span class="text-sky-400">💨</span>
-                  <span>Effet Magnus & Mur adverse</span>
-                </div>
-                <div class="flex items-center gap-1.5 rounded-lg border border-[#162a52] bg-[#040817] p-2">
-                  <span class="text-emerald-400">🧤</span>
-                  <span>Gardien physique au sol</span>
-                </div>
-                <div class="flex items-center gap-1.5 rounded-lg border border-[#162a52] bg-[#040817] p-2">
-                  <span class="text-feu">⚔️</span>
-                  <span>Défie un ami en ligne</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="mt-6 pt-5 border-t border-[#13284f]">
-              <a
-                href="/jeux/penalty"
-                class="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 via-or to-yellow-300 px-5 py-3.5 font-display text-sm font-black uppercase tracking-wider text-slate-950 shadow-xl transition-all hover:brightness-110 active:scale-95"
-              >
-                <span>Entrer sur la pelouse (Foot)</span>
-                <span class="text-base">▶</span>
-              </a>
-            </div>
-          </article>
-
-          <!-- CARTE 2 : BASKETBALL / SHOOT À LA SIRÈNE -->
-          <article class="flex flex-col justify-between overflow-hidden rounded-3xl border-2 border-[#1e3a6e] bg-[#071026] p-6 shadow-2xl transition-all hover:border-or/60 hover:shadow-or/10">
-            <div>
-              <div class="flex items-center justify-between gap-3 mb-4">
-                <span class="flex h-12 w-12 items-center justify-center rounded-2xl border border-sky-400/40 bg-[#081e3d] text-2xl shadow-inner">
-                  🏀
-                </span>
-                <span class="rounded-lg border border-sky-500/30 bg-sky-950/70 px-2.5 py-1 font-display text-[0.65rem] uppercase font-bold tracking-wider text-sky-400">
-                  Limete 7ᵉ Rue · Streetball
-                </span>
-              </div>
-
-              <span class="text-[0.65rem] font-bold uppercase tracking-widest text-or">Streetball 3D</span>
-              <h2 class="mt-1 font-display text-2xl sm:text-3xl uppercase tracking-tight text-white font-black leading-none">
-                Shoot à la Sirène
-              </h2>
-              <p class="mt-2.5 text-xs sm:text-sm text-slate-300 leading-relaxed">
-                Le playground le plus chaud de Kinshasa. Du lancer franc aux tirs clutchs du logo de milieu de terrain à plus de 10 mètres ! Gère le shot clock sous pression et le vent latéral pour enchaîner les paniers nets.
-              </p>
-
-              <!-- Points forts -->
-              <div class="mt-5 grid grid-cols-2 gap-2 text-[0.7rem] text-slate-300">
-                <div class="flex items-center gap-1.5 rounded-lg border border-[#162a52] bg-[#040817] p-2">
-                  <span class="text-or">🏆</span>
-                  <span>8 Niveaux évolutifs</span>
-                </div>
-                <div class="flex items-center gap-1.5 rounded-lg border border-[#162a52] bg-[#040817] p-2">
-                  <span class="text-feu">⏱️</span>
-                  <span>Chrono de 24s à 6s</span>
-                </div>
-                <div class="flex items-center gap-1.5 rounded-lg border border-[#162a52] bg-[#040817] p-2">
-                  <span class="text-emerald-400">🔥</span>
-                  <span>Swish & Planche réaliste</span>
-                </div>
-                <div class="flex items-center gap-1.5 rounded-lg border border-[#162a52] bg-[#040817] p-2">
-                  <span class="text-sky-400">🎵</span>
-                  <span>Playlist & Ambiance RDC</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="mt-6 pt-5 border-t border-[#13284f]">
-              <a
-                href="/jeux/basket"
-                class="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 via-or to-yellow-300 px-5 py-3.5 font-display text-sm font-black uppercase tracking-wider text-slate-950 shadow-xl transition-all hover:brightness-110 active:scale-95"
-              >
-                <span>Prendre le tir (Basket)</span>
-                <span class="text-base">▶</span>
-              </a>
-            </div>
-          </article>
-        </div>
-      </div>
-    </main>
-
-    <!-- Pied de page discret -->
-    <footer class="border-t border-[#13284f] bg-[#050a18] px-4 py-4 text-center text-xs text-slate-400">
-      <p>© {new Date().getFullYear()} Bloc Léopards · Tous droits réservés.</p>
-    </footer>
+  <body class="h-[100dvh] overflow-hidden bg-[#040a1a] text-white antialiased">
+    <noscript><p style="padding:24px;color:#fff">Les jeux de l'Arène des Léopards nécessitent JavaScript.</p></noscript>
+    <ArenaApp client:only="react" initialGame={null} />
   </body>
 </html>
-

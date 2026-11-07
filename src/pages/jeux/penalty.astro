@@ -1,21 +1,24 @@
 ---
 import "../../styles/global.css";
 import SEO from "../../components/SEO.astro";
-import PenaltyMartyrsGame from "../../components/PenaltyMartyrsGame.astro";
+import ArenaApp from "../../components/arena/ArenaApp.tsx";
 
-const pageTitle = "Penalty & Coups Francs aux Martyrs 3D | Jeux Bloc Léopards";
-const pageDescription = "90ᵉ minute au Stade des Martyrs de Kinshasa. 5 niveaux de difficulté, penalties sous pression, coups francs avec mur défensif et défi en ligne.";
+const pageTitle = "Tirs au but · L'Arène des Léopards | Bloc Léopards";
+const pageDescription = "Penalties et coups francs face à un gardien qui apprend tes habitudes. 5 paliers, 3 difficultés, défis entre amis.";
 ---
 
 <!doctype html>
-<html lang="fr" class="h-full w-full overflow-hidden bg-[#050811]">
+<html lang="fr" class="h-full bg-[#040a1a]">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-    <SEO title={pageTitle} description={pageDescription} />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#040a1a" />
+    <SEO title={pageTitle} description={pageDescription} url={`https://blocleopards.com/jeux${"penalty" === "index" ? "" : "/penalty"}`} />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="preload" as="image" href="/brand/logo-arena.webp" />
   </head>
-  <body class="h-[100dvh] w-screen overflow-hidden bg-[#050811] text-white select-none antialiased">
-    <PenaltyMartyrsGame />
+  <body class="h-[100dvh] overflow-hidden bg-[#040a1a] text-white antialiased">
+    <noscript><p style="padding:24px;color:#fff">Les jeux de l'Arène des Léopards nécessitent JavaScript.</p></noscript>
+    <ArenaApp client:only="react" initialGame={"foot"} />
   </body>
 </html>
