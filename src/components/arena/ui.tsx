@@ -321,8 +321,6 @@ export function CharacterPreview({ female, name, number, reduced }: { female: bo
       fit();
       await c3.load(["catch"]);
       if (disposed || !c3.ready) return c3.dispose();
-      await c3.loadFemale();
-      if (disposed) return c3.dispose();
       const { Camera } = await import("./engine/scene");
       const cam = new Camera();
       state.current = { c3, mod, actor: null, cam, key: "" };
@@ -332,7 +330,9 @@ export function CharacterPreview({ female, name, number, reduced }: { female: bo
         const st = state.current;
         if (!st || disposed) return;
         const p = props.current;
-        const key = `${p.female}|${p.name}|${p.number}`;
+        // la joueuse n'est chargée que si elle est choisie (calcul en arrière-plan)
+        if (p.female && !c3.femProto) c3.loadFemale();
+        const key = `${p.female && !!c3.femProto}|${p.name}|${p.number}`;
         if (key !== st.key) {
           if (st.actor) c3.remove(st.actor);
           st.actor = c3.actor({ ...mod.LEOPARDS_PAINT(p.name || "LÉOPARD", p.number, p.female ? "#6b4128" : "#5a3520"), female: p.female });

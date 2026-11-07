@@ -508,6 +508,7 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
           onKick={onKick}
           onPause={() => setSheet("pause")}
           onInteract={() => audio.unlock()}
+          needsFemale={session.players.some((p) => p.female)}
         />
       )}
 

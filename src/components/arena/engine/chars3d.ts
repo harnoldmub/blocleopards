@@ -7,6 +7,27 @@ import * as THREE from "three";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 import type { Camera } from "./scene";
+import { computeSkin, type SkinInput } from "./skinTransfer";
+
+/** Lance le transfert de peau dans un worker ; repli en direct si les workers sont indisponibles. */
+function runSkin(input: SkinInput): Promise<{ skI: Uint16Array; skW: Float32Array }> {
+  try {
+    const w = new Worker(new URL("./skin.worker.ts", import.meta.url), { type: "module" });
+    return new Promise((resolve) => {
+      w.onmessage = (e) => {
+        w.terminate();
+        resolve(e.data);
+      };
+      w.onerror = () => {
+        w.terminate();
+        resolve(computeSkin(input));
+      };
+      w.postMessage(input);
+    });
+  } catch {
+    return Promise.resolve(computeSkin(input));
+  }
+}
 
 export type ClipName = "kick" | "dive" | "catch" | "scoop" | "twist" | "bboy" | "dribble";
 const FILES: Record<ClipName, string> = {
@@ -635,7 +656,7 @@ export class Chars3D {
         const EMPTY = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
         manager.setURLModifier((url) => (/\.(png|jpe?g|tga|psd|bmp|tiff?)$/i.test(url) ? EMPTY : url));
         const fem = await new FBXLoader(manager).loadAsync(BASE + "femme.fbx");
-        this.femProto = this.transferSkin(fem);
+        this.femProto = await this.transferSkin(fem);
         this.onFemaleReady?.();
       } catch (e) {
         console.warn("[arène] joueuse 3D indisponible", e);
@@ -648,7 +669,7 @@ export class Chars3D {
    * Transfert des poids de peau : chaque sommet de la joueuse reprend les os et poids
    * des sommets les plus proches du joueur (même pose de référence en A).
    */
-  private transferSkin(fem: THREE.Object3D): THREE.Object3D {
+  private async transferSkin(fem: THREE.Object3D): Promise<THREE.Object3D> {
     const out = cloneSkinned(this.proto!);
     out.updateMatrixWorld(true);
     fem.updateMatrixWorld(true);
@@ -740,6 +761,9 @@ export class Chars3D {
     const skI = new Uint16Array(n * 4);
     const skW = new Float32Array(n * 4);
     const fNor = fg.attributes.normal;
+    const search = new Float32Array(n * 3);
+    const allowA = new Uint8Array(n);
+    const sideA = new Int8Array(n);
     // recalage des bras : l'épaule→bout des doigts de la joueuse est projeté sur celui du joueur
     const comp = (w: THREE.Vector3, ax: number) => (ax === 0 ? w.x : ax === 1 ? w.y : w.z);
     const setComp = (w: THREE.Vector3, ax: number, val: number) => (ax === 0 ? (w.x = val) : ax === 1 ? (w.y = val) : (w.z = val));
@@ -800,48 +824,31 @@ export class Chars3D {
       const region = h01 > 0.3 && h01 < 0.84 && Math.abs(side) > upSpan * 0.13 ? 1 : up < crotch ? 2 : 0;
       const allow = (cls: number) =>
         region === 1 ? cls === 1 : region === 2 ? cls === 2 || (cls === 0 && h01 > 0.42) : cls === 0 || (cls === 2 && h01 < 0.55);
-      const legs = region !== 0;
-      // point de recherche : bras recalés sur ceux du joueur
-      const sv = region === 1 ? mapArm(v.clone(), Math.sign(side) || 1) : v.clone();
-      const best: { j: number; d: number }[] = [];
-      const cx = Math.floor(sv.x / cell);
-      const cy = Math.floor(sv.y / cell);
-      const cz = Math.floor(sv.z / cell);
-      for (let r = 1; r <= 10 && best.length < 4; r++) {
-        best.length = 0;
-        for (let a = -r; a <= r; a++)
-          for (let b = -r; b <= r; b++)
-            for (let c = -r; c <= r; c++) {
-              const arr = grid.get(`${cx + a},${cy + b},${cz + c}`);
-              if (!arr) continue;
-              for (const j of arr) {
-                if (!allow(vClass[j])) continue;
-                const mLat = mx[j * 3 + latAxis] - latC;
-                if (legs && Math.sign(mLat) !== Math.sign(side) && Math.abs(side) > cell * 0.5) continue;
-                const d = (mx[j * 3] - sv.x) ** 2 + (mx[j * 3 + 1] - sv.y) ** 2 + (mx[j * 3 + 2] - sv.z) ** 2;
-                best.push({ j, d });
-              }
-            }
-      }
-      best.sort((p, q) => p.d - q.d);
-      const acc = new Map<number, number>();
-      for (const { j, d } of best.slice(0, 4)) {
-        const w = 1 / (Math.sqrt(d) + cell * 0.05) ** 2;
-        for (let c = 0; c < 4; c++) {
-          const bw = mSkW.getComponent(j, c);
-          if (bw <= 0) continue;
-          const bi0 = mSkI.getComponent(j, c);
-          const bi = remap[bi0] >= 0 ? remap[bi0] : bi0;
-          acc.set(bi, (acc.get(bi) || 0) + bw * w);
-        }
-      }
-      const top = [...acc.entries()].sort((p, q) => q[1] - p[1]).slice(0, 4);
-      const sum = top.reduce((a2, e) => a2 + e[1], 0) || 1;
-      top.forEach(([bi, w], c) => {
-        skI[i * 4 + c] = bi;
-        skW[i * 4 + c] = w / sum;
-      });
+      // point de recherche (bras recalés sur ceux du joueur), classes d'os autorisées, côté imposé
+      const sv = region === 1 ? mapArm(v.clone(), Math.sign(side) || 1) : v;
+      search[i * 3] = sv.x;
+      search[i * 3 + 1] = sv.y;
+      search[i * 3 + 2] = sv.z;
+      let mask = 0;
+      for (let cls = 0; cls < 3; cls++) if (allow(cls)) mask |= 1 << cls;
+      allowA[i] = mask;
+      sideA[i] = region !== 0 && Math.abs(side) > cell * 0.5 ? (Math.sign(side) as -1 | 1) : 0;
     }
+    // plus proches voisins : dans un worker (l'écran reste réactif), sinon en direct
+    const mSkIa = new Uint16Array(mPos.count * 4);
+    const mSkWa = new Float32Array(mPos.count * 4);
+    for (let j = 0; j < mPos.count; j++)
+      for (let c = 0; c < 4; c++) {
+        mSkIa[j * 4 + c] = mSkI.getComponent(j, c);
+        mSkWa[j * 4 + c] = mSkW.getComponent(j, c);
+      }
+    const input: SkinInput = {
+      n, search, allow: allowA, side: sideA, mx: Float32Array.from(mx), vClass, mSkI: mSkIa, mSkW: mSkWa,
+      remap: Int16Array.from(remap), cell, latAxis, latC
+    };
+    const res = await runSkin(input);
+    skI.set(res.skI);
+    skW.set(res.skW);
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
     if (fNor) geo.setAttribute("normal", new THREE.BufferAttribute(nor, 3));

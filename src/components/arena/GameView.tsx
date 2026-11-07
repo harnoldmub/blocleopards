@@ -53,6 +53,8 @@ export default function GameView(props: {
   onKick: () => void;
   onPause: () => void;
   onInteract: () => void;
+  /** Une joueuse est en jeu : charger son modèle 3D. */
+  needsFemale?: boolean;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvas3dRef = useRef<HTMLCanvasElement>(null);
@@ -107,7 +109,7 @@ export default function GameView(props: {
           attach();
           // joueuse : chargée en arrière-plan, puis les acteurs sont reconstruits
           c3.onFemaleReady = attach;
-          c3.loadFemale();
+          if (props.needsFemale) c3.loadFemale();
         })
         .catch(() => {});
     }

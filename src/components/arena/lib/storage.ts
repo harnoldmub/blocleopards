@@ -40,16 +40,21 @@ export const DEFAULT_SAVE: SaveData = {
 export function loadSave(): SaveData {
   try {
     const raw = localStorage.getItem(KEY);
-    if (!raw) return structuredClone(DEFAULT_SAVE);
+    if (!raw) return clone(DEFAULT_SAVE);
     const data = JSON.parse(raw);
     return {
-      ...structuredClone(DEFAULT_SAVE),
+      ...clone(DEFAULT_SAVE),
       ...data,
       tutorial: { ...DEFAULT_SAVE.tutorial, ...(data.tutorial || {}) }
     };
   } catch {
-    return structuredClone(DEFAULT_SAVE);
+    return clone(DEFAULT_SAVE);
   }
+}
+
+/** Copie profonde compatible avec les anciens navigateurs mobiles (pas de structuredClone). */
+function clone<T>(v: T): T {
+  return JSON.parse(JSON.stringify(v));
 }
 
 export function persist(data: SaveData) {
