@@ -69,7 +69,9 @@ export default function GameView(props: {
   const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
   const [loadAttempt, setLoadAttempt] = useState(0);
   const gameReady = loadState === "ready";
+  const inputEnabledRef = useRef(false);
   pausedRef.current = props.paused || !gameReady;
+  inputEnabledRef.current = !props.paused && gameReady;
 
   // création du moteur
   useEffect(() => {
@@ -182,6 +184,50 @@ export default function GameView(props: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.setupKey, props.game]);
 
+  // iOS/Safari : les Pointer Events peuvent être exposés mais ne pas fournir
+  // une séquence complète sur un canvas plein écran. Les Touch Events natifs
+  // deviennent donc la source de vérité pour le doigt. Les handlers pointer
+  // restent actifs pour la souris et le stylet.
+  useEffect(() => {
+    const cv = canvasRef.current;
+    if (!cv) return;
+    const point = (touch: Touch) => {
+      const r = cv.getBoundingClientRect();
+      return [touch.clientX - r.left, touch.clientY - r.top] as const;
+    };
+    const start = (ev: TouchEvent) => {
+      if (!inputEnabledRef.current || ev.touches.length === 0) return;
+      ev.preventDefault();
+      props.onInteract();
+      engineRef.current?.skip();
+      engineRef.current?.down(...point(ev.touches[0]));
+    };
+    const move = (ev: TouchEvent) => {
+      if (!inputEnabledRef.current || ev.touches.length === 0) return;
+      ev.preventDefault();
+      engineRef.current?.move(...point(ev.touches[0]));
+    };
+    const end = (ev: TouchEvent) => {
+      if (!inputEnabledRef.current || ev.changedTouches.length === 0) return;
+      ev.preventDefault();
+      engineRef.current?.up(...point(ev.changedTouches[0]));
+    };
+    const cancel = (ev: TouchEvent) => {
+      ev.preventDefault();
+      engineRef.current?.cancel();
+    };
+    cv.addEventListener("touchstart", start, { passive: false });
+    cv.addEventListener("touchmove", move, { passive: false });
+    cv.addEventListener("touchend", end, { passive: false });
+    cv.addEventListener("touchcancel", cancel, { passive: false });
+    return () => {
+      cv.removeEventListener("touchstart", start);
+      cv.removeEventListener("touchmove", move);
+      cv.removeEventListener("touchend", end);
+      cv.removeEventListener("touchcancel", cancel);
+    };
+  }, [props.game]);
+
   const pt = (ev: React.PointerEvent) => {
     const r = canvasRef.current!.getBoundingClientRect();
     return [ev.clientX - r.left, ev.clientY - r.top] as const;
@@ -197,6 +243,7 @@ export default function GameView(props: {
         role="img"
         aria-label={props.game === "foot" ? "Terrain : glisse le ballon vers la cage pour tirer" : "Terrain : maintiens appuyé et relâche au bon moment pour shooter"}
         onPointerDown={(ev) => {
+          if (ev.pointerType === "touch") return;
           ev.preventDefault();
           if (props.paused || !gameReady) return;
           // Safari/iOS peut exposer setPointerCapture mais lever NotFoundError
@@ -212,16 +259,20 @@ export default function GameView(props: {
           engineRef.current?.down(...pt(ev));
         }}
         onPointerMove={(ev) => {
+          if (ev.pointerType === "touch") return;
           if (!gameReady) return;
           ev.preventDefault();
           engineRef.current?.move(...pt(ev));
         }}
         onPointerUp={(ev) => {
+          if (ev.pointerType === "touch") return;
           if (!gameReady) return;
           ev.preventDefault();
           engineRef.current?.up(...pt(ev));
         }}
-        onPointerCancel={() => engineRef.current?.cancel()}
+        onPointerCancel={(ev) => {
+          if (ev.pointerType !== "touch") engineRef.current?.cancel();
+        }}
       />
 
       <canvas ref={canvas3dRef} className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden="true" />
