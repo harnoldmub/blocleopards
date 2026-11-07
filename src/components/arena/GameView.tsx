@@ -199,7 +199,14 @@ export default function GameView(props: {
         onPointerDown={(ev) => {
           ev.preventDefault();
           if (props.paused || !gameReady) return;
-          (ev.target as HTMLElement).setPointerCapture?.(ev.pointerId);
+          // Safari/iOS peut exposer setPointerCapture mais lever NotFoundError
+          // pour un pointeur tactile pourtant actif. Le tir doit continuer :
+          // le canvas plein écran + touch-action:none gardent déjà le geste.
+          try {
+            (ev.currentTarget as HTMLElement).setPointerCapture?.(ev.pointerId);
+          } catch {
+            // Capture optionnelle, jamais bloquante.
+          }
           props.onInteract();
           engineRef.current?.skip();
           engineRef.current?.down(...pt(ev));
