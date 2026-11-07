@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Star, X } from "lucide-react";
-import { BODIES, FEMALE_BODY, LEOPARDS_BASKET_KIT, LEOPARDS_KIT, POSES, drawFigure, skeleton, fimbuPose, lerpPose } from "./engine/people";
+import { BODIES, FEMALE_BODY, LEOPARDS_BASKET_KIT, LEOPARDS_KIT, POSES, drawFigure, skeleton, lerpPose } from "./engine/people";
 import { drawBasketball, drawFootball } from "./engine/scene";
 
 export function useReducedMotion() {
@@ -237,54 +237,17 @@ export function GamePreview({ game, reduced }: { game: "foot" | "basket"; reduce
   return <canvas ref={ref} className="block h-full w-full" aria-hidden="true" />;
 }
 
-/** Petite scène de fimbu pour l'écran de victoire. */
-export function FimbuMini({ reduced, name, number, female = false }: { reduced: boolean; name: string; number: number; female?: boolean }) {
-  const ref = useRef<HTMLCanvasElement>(null);
-  useEffect(() => {
-    const cv = ref.current;
-    if (!cv) return;
-    let raf = 0;
-    const start = performance.now();
-    const draw = () => {
-      const w = cv.clientWidth;
-      const h = cv.clientHeight;
-      const dpr = Math.min(2, window.devicePixelRatio || 1);
-      if (cv.width !== Math.round(w * dpr)) {
-        cv.width = Math.round(w * dpr);
-        cv.height = Math.round(h * dpr);
-      }
-      const ctx = cv.getContext("2d")!;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, w, h);
-      const t = reduced ? 0.3 : (performance.now() - start) / 1000;
-      const s = h * 0.36;
-      [
-        { x: 0.2, b: BODIES[2], n: 4 },
-        { x: 0.5, b: female ? FEMALE_BODY : BODIES[0], n: number },
-        { x: 0.8, b: BODIES[3], n: 8 }
-      ].forEach((m, i) => {
-        const sk = skeleton(fimbuPose(t), m.b);
-        drawFigure(ctx, sk, m.b, LEOPARDS_KIT(i === 1 ? name : "", m.n), { sx: w * m.x, sy: h * 0.96, s: i === 1 ? s : s * 0.92 }, { facing: "front" });
-      });
-      if (!reduced) raf = requestAnimationFrame(draw);
-    };
-    draw();
-    return () => cancelAnimationFrame(raf);
-  }, [reduced, name, number, female]);
-  return <canvas ref={ref} className="block h-full w-full" aria-hidden="true" />;
-}
-
 /**
  * Aperçu 3D du personnage choisi (joueur ou joueuse), qui tourne lentement :
  * maillot des Léopards avec le nom et le numéro saisis. Silhouette 2D pendant le chargement.
  */
-export function CharacterPreview({ female, name, number, reduced }: { female: boolean; name: string; number: number; reduced: boolean }) {
+export function CharacterPreview({ female, character, name, number, reduced }: { female: boolean; character?: string; name: string; number: number; reduced: boolean }) {
   const wrap = useRef<HTMLDivElement>(null);
   const cv2d = useRef<HTMLCanvasElement>(null);
   const cv3d = useRef<HTMLCanvasElement>(null);
   const state = useRef<{ c3: any; mod: any; actor: any; cam: any; key: string } | null>(null);
-  const props = useRef({ female, name, number, reduced });
-  props.current = { female, name, number, reduced };
+  const props = useRef({ female, character, name, number, reduced });
+  props.current = { female, character, name, number, reduced };
   const [ready, setReady] = useState(false);
 
   // silhouette 2D de secours
@@ -319,7 +282,12 @@ export function CharacterPreview({ female, name, number, reduced }: { female: bo
       const el = cv3d.current;
       const fit = () => c3.resize(el.clientWidth, el.clientHeight, Math.min(2, window.devicePixelRatio || 1));
       fit();
-      await c3.load(["catch"]);
+      // réseau capricieux (ou serveur relancé) : on réessaie avant de rester sur la silhouette 2D
+      for (let attempt = 0; attempt < 4 && !disposed && !c3.ready; attempt++) {
+        if (attempt) await new Promise((r) => setTimeout(r, 1500 * attempt));
+        c3.failed = false;
+        await c3.load(["catch"]);
+      }
       if (disposed || !c3.ready) return c3.dispose();
       const { Camera } = await import("./engine/scene");
       const cam = new Camera();
@@ -330,12 +298,14 @@ export function CharacterPreview({ female, name, number, reduced }: { female: bo
         const st = state.current;
         if (!st || disposed) return;
         const p = props.current;
-        // la joueuse n'est chargée que si elle est choisie (calcul en arrière-plan)
-        if (p.female && !c3.femProto) c3.loadFemale();
-        const key = `${p.female && !!c3.femProto}|${p.name}|${p.number}`;
-        if (key !== st.key) {
+        // personnage chargé à la demande ; l'ancien reste affiché en attendant
+        const cid = mod.charFor(p.character, p.female);
+        const loaded = c3.isLoaded([cid]);
+        if (!loaded) c3.ensureChars([cid]);
+        const key = `${loaded ? cid : "wait"}|${p.name}|${p.number}`;
+        if (key !== st.key && (loaded || !st.actor)) {
           if (st.actor) c3.remove(st.actor);
-          st.actor = c3.actor({ ...mod.LEOPARDS_PAINT(p.name || "LÉOPARD", p.number, p.female ? "#6b4128" : "#5a3520"), female: p.female });
+          st.actor = c3.actor({ ...mod.LEOPARDS_PAINT(p.name || "LÉOPARD", p.number, p.female ? "#6b4128" : "#5a3520"), female: p.female }, loaded ? cid : null);
           st.actor.inPlace = true;
           st.key = key;
         }
@@ -354,7 +324,9 @@ export function CharacterPreview({ female, name, number, reduced }: { female: bo
         // commence de dos (nom + numéro), puis tourne lentement
         const yaw = p.reduced ? 0.35 : Math.sin(t * 0.55) * 2.6;
         st.actor.place(0, 0, yaw);
-        st.actor.pose("catch", 0.02);
+        // Mixamo : posture debout naturelle (début de l'animation de tête)
+        if (st.actor.rig === "mx") st.actor.pose("header", 0.05);
+        else st.actor.pose("catch", 0.02);
         c3.render();
         raf = requestAnimationFrame(loop);
       };

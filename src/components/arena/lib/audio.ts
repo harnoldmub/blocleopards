@@ -7,7 +7,6 @@ const TRACKS = [
   { file: "oh-yaya.mp3", title: "Oh Yaya" },
   { file: "ti-na-trois.mp3", title: "Tout droit Ti Na Trois" },
   { file: "esimbi-mondial.mp3", title: "Esimbi, Mondial" },
-  { file: "cest-fait-3-1.mp3", title: "C'est fait 3-1" },
   { file: "rendez-vous-destin.mp3", title: "Rendez-vous avec le destin" }
 ];
 
@@ -21,6 +20,20 @@ class ArenaAudio {
   music: HTMLAudioElement | null = null;
   trackIdx = Math.floor(Math.random() * TRACKS.length);
   onTrack: ((title: string) => void) | null = null;
+
+  private drumTimer: any = null;
+
+  constructor() {
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+          this.pauseAll();
+        } else if (this.enabled) {
+          this.resumeAll();
+        }
+      });
+    }
+  }
 
   unlock() {
     if (typeof window === "undefined") return;
@@ -96,29 +109,38 @@ class ArenaAudio {
   }
 
   kick(power = 0.7) {
-    this.tone(140, 0.12, 0.5 * power + 0.2, "sine", 50);
-    this.burst({ dur: 0.07, freq: 1800, q: 0.7, gain: 0.25 });
+    const pitch = 130 + (Math.random() - 0.5) * 20;
+    this.tone(pitch, 0.13, 0.52 * power + 0.22, "sine", 45);
+    this.burst({ dur: 0.08, freq: 1700 + (Math.random() - 0.5) * 300, q: 0.7, gain: 0.26 });
   }
   bounce(v = 0.5) {
-    this.tone(110, 0.09, Math.min(0.4, v * 0.5), "sine", 60);
+    this.tone(110 + (Math.random() - 0.5) * 15, 0.09, Math.min(0.4, v * 0.5), "sine", 58);
   }
   net() {
-    this.burst({ dur: 0.35, freq: 3200, q: 0.5, gain: 0.18, type: "highpass", attack: 0.02 });
+    this.burst({ dur: 0.42, freq: 3000, q: 0.5, gain: 0.22, type: "highpass", attack: 0.02 });
   }
   swish() {
-    this.burst({ dur: 0.3, freq: 5000, sweep: 2500, q: 0.8, gain: 0.22, attack: 0.03 });
+    this.burst({ dur: 0.32, freq: 4800, sweep: 2300, q: 0.8, gain: 0.24, attack: 0.03 });
   }
   post() {
-    this.tone(880, 0.6, 0.18, "triangle", 860);
-    this.tone(1320, 0.4, 0.08, "sine", 1300);
+    // Impact métallique franc avec double harmonique brillante
+    this.tone(920, 0.65, 0.22, "triangle", 900);
+    this.tone(1380, 0.48, 0.12, "sine", 1340);
+    this.tone(2400, 0.2, 0.08, "square", 2200);
+    this.burst({ dur: 0.06, freq: 2800, q: 2.2, gain: 0.18 });
+  }
+  drum(accent = false) {
+    const f = accent ? 78 : 65;
+    this.tone(f, 0.22, accent ? 0.38 : 0.24, "sine", 38);
+    this.burst({ dur: 0.08, freq: 650, q: 1.1, gain: accent ? 0.16 : 0.09 });
   }
   rim() {
     this.tone(520, 0.28, 0.16, "triangle", 480);
     this.tone(1180, 0.18, 0.06, "square", 1100);
   }
   glove() {
-    this.burst({ dur: 0.1, freq: 900, q: 1.2, gain: 0.35 });
-    this.tone(90, 0.1, 0.3, "sine", 60);
+    this.burst({ dur: 0.12, freq: 920, q: 1.2, gain: 0.38 });
+    this.tone(95, 0.11, 0.32, "sine", 55);
   }
   whistle() {
     this.tone(2600, 0.32, 0.12, "sine", 2500);
@@ -131,14 +153,19 @@ class ArenaAudio {
   tick() {
     this.tone(1400, 0.05, 0.06, "square");
   }
-  crowd(kind: "goal" | "ooh" | "groan") {
+  crowd(kind: "goal" | "ooh" | "groan" | "cheer") {
     if (kind === "goal") {
-      this.burst({ dur: 2.4, freq: 700, q: 0.4, gain: 0.5, attack: 0.15 });
-      this.burst({ dur: 1.8, freq: 1500, q: 0.6, gain: 0.25, attack: 0.1 });
+      this.burst({ dur: 3.2, freq: 680, q: 0.35, gain: 0.58, attack: 0.12 });
+      this.burst({ dur: 2.4, freq: 1450, q: 0.55, gain: 0.32, attack: 0.1 });
+      this.burst({ dur: 1.6, freq: 2200, q: 0.8, gain: 0.18, attack: 0.25 });
+    } else if (kind === "cheer") {
+      this.burst({ dur: 1.8, freq: 800, q: 0.5, gain: 0.35, attack: 0.1 });
     } else if (kind === "ooh") {
-      this.burst({ dur: 1.2, freq: 420, sweep: 300, q: 1.5, gain: 0.3, attack: 0.12 });
+      this.burst({ dur: 1.3, freq: 440, sweep: 320, q: 1.4, gain: 0.32, attack: 0.08 });
     } else {
-      this.burst({ dur: 1.4, freq: 360, sweep: 220, q: 1.2, gain: 0.28, attack: 0.1 });
+      // groan : déception après arrêt ou tir hors cadre
+      this.burst({ dur: 1.6, freq: 340, sweep: 200, q: 1.2, gain: 0.32, attack: 0.1 });
+      this.tone(180, 0.5, 0.08, "sine", 120, 0.05);
     }
   }
   fanfare() {

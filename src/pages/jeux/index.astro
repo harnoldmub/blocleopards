@@ -3,8 +3,17 @@ import "../../styles/global.css";
 import SEO from "../../components/SEO.astro";
 import ArenaApp from "../../components/arena/ArenaApp.tsx";
 
-const pageTitle = "L'Arène des Léopards · Jeux officiels | Bloc Léopards";
-const pageDescription = "Tirs au but au Stade des Martyrs et shoot au playground de Limete : deux mini-jeux des supporters des Léopards, à jouer seul ou à plusieurs.";
+import { decodeChallenge } from "../../components/arena/lib/challenge";
+
+// lien de défi : aperçu de partage personnalisé (« X te défie »)
+const defi = decodeChallenge(Astro.url.searchParams.get("defi"));
+const gameName = defi ? (defi.g === "foot" ? "Tirs au but" : "Shoot à la sirène") : "";
+const pageTitle = defi
+  ? `${defi.n} te défie${defi.p > 0 ? ` : ${defi.p} points à battre` : ""} · L'Arène des Léopards`
+  : "L'Arène des Léopards · Jeux officiels | Bloc Léopards";
+const pageDescription = defi
+  ? `${gameName}${defi.st > 0 ? `, palier ${defi.st}` : ""} : mêmes tirs, mêmes conditions. Relève le défi et renvoie la revanche sur WhatsApp.`
+  : "Tirs au but au Stade des Martyrs et shoot au playground de Limete : deux mini-jeux des supporters des Léopards. Défie tes amis sur WhatsApp.";
 ---
 
 <!doctype html>

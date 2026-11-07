@@ -81,6 +81,8 @@ export interface KeeperCfg {
   learn: number;
   kit: { jersey: string; jersey2: string; trim: string; shorts: string; socks: string; gloves: string; gloves2: string };
   nickname: string;
+  /** Gardienne (et mur adverse féminin). */
+  female?: boolean;
 }
 
 export interface FootStage {
@@ -177,7 +179,7 @@ export const FOOT_STAGES: FootStage[] = [
     ballX: 0,
     wall: 0,
     clock: 8,
-    keeper: { reaction: 0.17, read: 0.52, reach: 1.75, stay: 0.14, learn: 1.4, kit: K.violet, nickname: "La Pieuvre" }
+    keeper: { reaction: 0.17, read: 0.52, reach: 1.75, stay: 0.14, learn: 1.4, kit: K.violet, nickname: "La Pieuvre", female: true }
   },
   {
     id: 6,
@@ -190,7 +192,7 @@ export const FOOT_STAGES: FootStage[] = [
     ballX: 3.5,
     wall: 4,
     clock: 8,
-    keeper: { reaction: 0.16, read: 0.50, reach: 1.8, stay: 0.08, learn: 1.0, kit: K.rose, nickname: "L'Acrobate" }
+    keeper: { reaction: 0.16, read: 0.50, reach: 1.8, stay: 0.08, learn: 1.0, kit: K.rose, nickname: "L'Acrobate", female: true }
   },
   {
     id: 7,
@@ -255,7 +257,7 @@ export const FOOT_STAGES: FootStage[] = [
     ballX: 4.2,
     wall: 5,
     clock: 6.5,
-    keeper: { reaction: 0.12, read: 0.60, reach: 1.98, stay: 0.08, learn: 1.8, kit: K.blanc, nickname: "Le Fantôme" }
+    keeper: { reaction: 0.12, read: 0.60, reach: 1.98, stay: 0.08, learn: 1.8, kit: K.blanc, nickname: "La Dame Blanche", female: true }
   },
   {
     id: 12,
@@ -281,7 +283,7 @@ export const FOOT_STAGES: FootStage[] = [
     ballX: 0,
     wall: 0,
     clock: 5.5,
-    keeper: { reaction: 0.09, read: 0.68, reach: 2.06, stay: 0.15, learn: 2.3, kit: K.violet, nickname: "L'Impassible" }
+    keeper: { reaction: 0.09, read: 0.68, reach: 2.06, stay: 0.15, learn: 2.3, kit: K.violet, nickname: "L'Impassible", female: true }
   },
   {
     id: 14,
@@ -307,7 +309,7 @@ export const FOOT_STAGES: FootStage[] = [
     ballX: -3.8,
     wall: 5,
     clock: 5,
-    keeper: { reaction: 0.075, read: 0.74, reach: 2.15, stay: 0.12, learn: 2.6, kit: K.noir, nickname: "La Légende Éternelle" }
+    keeper: { reaction: 0.075, read: 0.74, reach: 2.15, stay: 0.12, learn: 2.6, kit: K.noir, nickname: "La Légende Éternelle", female: true }
   }
 ];
 
@@ -340,7 +342,8 @@ export function survivalStage(goals: number): FootStage {
       stay: 0.12,
       learn: Math.min(2, k * 0.2),
       kit: [K.orange, K.lime, K.violet, K.teal, K.noir][Math.min(4, Math.floor(k / 3))],
-      nickname: ["Le Remplaçant", "Le Chat", "La Pieuvre", "Le Rempart", "Le Mur"][Math.min(4, Math.floor(k / 3))]
+      nickname: ["Le Remplaçant", "Le Chat", "La Pieuvre", "Le Rempart", "Le Mur"][Math.min(4, Math.floor(k / 3))],
+      female: Math.min(4, Math.floor(k / 3)) === 2
     }
   };
 }
@@ -359,6 +362,8 @@ export interface BasketStage {
   defender: boolean;
   /** Délai avant que le défenseur ne saute (s). */
   defenderJump: number;
+  /** Défenseure. */
+  defenderFemale?: boolean;
   clock: number;
   /** Lieu : playground extérieur ou salle couverte. */
   venue: "street" | "arena";
@@ -385,16 +390,16 @@ export const BASKET_STAGES: BasketStage[] = [
   { id: 1, name: "Lancer franc", place: "Playground · Limete 7ᵉ Rue", pitch: "Ligne des lancers · sans défense", shots: 5, toPass: 3, spots: [FT, FT, FT, FT, FT], window: 0.095, defender: false, defenderJump: 9, clock: 10, venue: "street" },
   { id: 2, name: "Mi-distance", place: "Playground · Limete 7ᵉ Rue", pitch: "Coudes et raquette ouverts", shots: 5, toPass: 3, spots: [ELBOW_L, FT, ELBOW_R, PAINT_L, ELBOW_R], window: 0.084, defender: false, defenderJump: 9, clock: 9, venue: "street" },
   { id: 3, name: "Tour du périmètre", place: "Playground · Limete 7ᵉ Rue", pitch: "Lignes de fond et mi-distance", shots: 5, toPass: 3, spots: [BASE_L, ELBOW_L, FT, ELBOW_R, BASE_R], window: 0.076, defender: false, defenderJump: 9, clock: 8.5, venue: "street" },
-  { id: 4, name: "Premier Opposant", place: "Playground · Limete 7ᵉ Rue", pitch: "Défenseur en place · déclenche vite", shots: 5, toPass: 3, spots: [ELBOW_L, FT, ELBOW_R, PAINT_R, ELBOW_L], window: 0.070, defender: true, defenderJump: 1.45, clock: 8, venue: "street" },
+  { id: 4, name: "Premier Opposant", place: "Playground · Limete 7ᵉ Rue", pitch: "Défenseur en place · déclenche vite", shots: 5, toPass: 3, spots: [ELBOW_L, FT, ELBOW_R, PAINT_R, ELBOW_L], window: 0.070, defender: true, defenderJump: 1.45, defenderFemale: true, clock: 8, venue: "street" },
   { id: 5, name: "Ligne à 3 points", place: "Playground · Limete 7ᵉ Rue", pitch: "Tirs primés sans contestation", shots: 5, toPass: 3, spots: [TOP, WING_L, WING_R, TOP, WING_L], window: 0.064, defender: false, defenderJump: 9, clock: 8, venue: "street" },
   { id: 6, name: "Closeout agressif", place: "Salle de Kinshasa", pitch: "Le défenseur sprinte et saute", shots: 5, toPass: 3, spots: [ELBOW_R, TOP, WING_L, ELBOW_L, WING_R], window: 0.060, defender: true, defenderJump: 1.25, clock: 7.5, venue: "arena" },
   { id: 7, name: "Corners de Limete", place: "Playground · Limete 7ᵉ Rue", pitch: "Tirs à 3 points en angle zéro", shots: 5, toPass: 3, spots: [CORNER_L, CORNER_R, CORNER_L, CORNER_R, TOP], window: 0.056, defender: false, defenderJump: 9, clock: 7.5, venue: "street" },
-  { id: 8, name: "Chasseur de contres", place: "Salle de Kinshasa", pitch: "Défenseur rapide · timing serré", shots: 5, toPass: 3, spots: [WING_L, TOP, WING_R, ELBOW_L, CORNER_R], window: 0.053, defender: true, defenderJump: 1.10, clock: 7, venue: "arena" },
+  { id: 8, name: "Chasseur de contres", place: "Salle de Kinshasa", pitch: "Défenseur rapide · timing serré", shots: 5, toPass: 3, spots: [WING_L, TOP, WING_R, ELBOW_L, CORNER_R], window: 0.053, defender: true, defenderJump: 1.10, defenderFemale: true, clock: 7, venue: "arena" },
   { id: 9, name: "Tour du Monde 3 Pts", place: "Salle de Kinshasa", pitch: "5 spots d'arc · 4 paniers exigés", shots: 5, toPass: 4, spots: [CORNER_L, WING_L, TOP, WING_R, CORNER_R], window: 0.049, defender: false, defenderJump: 9, clock: 7, venue: "arena" },
   { id: 10, name: "Roi du Playground", place: "Playground · Limete 7ᵉ Rue", pitch: "Défenseur rugueux · main au visage", shots: 5, toPass: 3, spots: [TOP, WING_L, LOGO, WING_R, TOP], window: 0.046, defender: true, defenderJump: 0.98, clock: 6.5, venue: "street" },
   { id: 11, name: "Deep Range", place: "Salle de Kinshasa", pitch: "Tirs très lointains (8.2 m)", shots: 5, toPass: 3, spots: [DEEP_WING_L, TOP, DEEP_WING_R, LOGO, DEEP_WING_L], window: 0.044, defender: false, defenderJump: 9, clock: 6.5, venue: "arena" },
   { id: 12, name: "Rideau de Fer", place: "Salle de Kinshasa", pitch: "Pivot de 2m05 · saut explosif", shots: 5, toPass: 4, spots: [WING_R, ELBOW_L, TOP, WING_L, LOGO], window: 0.042, defender: true, defenderJump: 0.88, clock: 6, venue: "arena" },
-  { id: 13, name: "Clutch Time", place: "Playground · Limete 7ᵉ Rue", pitch: "5.5s au shot clock · 4/5 exigés", shots: 5, toPass: 4, spots: [CORNER_L, TOP, WING_R, DEEP_WING_L, LOGO], window: 0.039, defender: true, defenderJump: 0.82, clock: 5.5, venue: "street" },
+  { id: 13, name: "Clutch Time", place: "Playground · Limete 7ᵉ Rue", pitch: "5.5s au shot clock · 4/5 exigés", shots: 5, toPass: 4, spots: [CORNER_L, TOP, WING_R, DEEP_WING_L, LOGO], window: 0.039, defender: true, defenderJump: 0.82, defenderFemale: true, clock: 5.5, venue: "street" },
   { id: 14, name: "Le Mur de Mutombo", place: "Salle de Kinshasa", pitch: "Hommage à Dikembe · envergure légendaire", shots: 5, toPass: 4, spots: [TOP, WING_L, DEEP_WING_R, LOGO, HALF_COURT], window: 0.036, defender: true, defenderJump: 0.76, clock: 5.5, venue: "arena" },
   { id: 15, name: "Légende des Léopards", place: "Sommet de Kinshasa · Salle comble", pitch: "Le défi ultime : du logo face au meilleur", shots: 5, toPass: 4, spots: [WING_L, LOGO, WING_R, HALF_COURT, LOGO], window: 0.033, defender: true, defenderJump: 0.70, clock: 5, venue: "arena" }
 ];

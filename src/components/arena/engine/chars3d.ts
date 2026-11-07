@@ -5,6 +5,8 @@
  */
 import * as THREE from "three";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { charById, charFor, type CharDef } from "../lib/roster";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 import type { Camera } from "./scene";
 import { computeSkin, type SkinInput } from "./skinTransfer";
@@ -29,8 +31,8 @@ function runSkin(input: SkinInput): Promise<{ skI: Uint16Array; skW: Float32Arra
   }
 }
 
-export type ClipName = "kick" | "dive" | "catch" | "scoop" | "twist" | "bboy" | "dribble";
-const FILES: Record<ClipName, string> = {
+export type ClipName = "kick" | "dive" | "catch" | "scoop" | "twist" | "bboy" | "dribble" | "header" | "jump" | "side" | "miss";
+const FILES: Record<"kick" | "dive" | "catch" | "scoop" | "twist" | "bboy" | "dribble", string> = {
   kick: "kick.fbx",
   dive: "dive.fbx",
   catch: "catch.fbx",
@@ -70,25 +72,141 @@ export interface GameView {
   oy: number;
 }
 
+/** Noms d'os canoniques, communs à tous les squelettes (alias posés sur chaque acteur). */
 export const BONE = {
-  root: "Bip001",
-  pelvis: "Bip001_Pelvis",
-  spine: "Bip001_Spine1",
-  neck: "Bip001_Neck",
-  head: "Bip001_Head",
-  lUpper: "Bip001_L_UpperArm",
-  lFore: "Bip001_L_Forearm",
-  lHand: "Bip001_L_Hand",
-  rUpper: "Bip001_R_UpperArm",
-  rFore: "Bip001_R_Forearm",
-  rHand: "Bip001_R_Hand",
-  lThigh: "Bip001_L_Thigh",
-  lCalf: "Bip001_L_Calf",
-  lFoot: "Bip001_L_Foot",
-  rThigh: "Bip001_R_Thigh",
-  rCalf: "Bip001_R_Calf",
-  rFoot: "Bip001_R_Foot"
+  root: "root",
+  pelvis: "pelvis",
+  spine: "spine",
+  neck: "neck",
+  head: "head",
+  lUpper: "lUpper",
+  lFore: "lFore",
+  lHand: "lHand",
+  rUpper: "rUpper",
+  rFore: "rFore",
+  rHand: "rHand",
+  lThigh: "lThigh",
+  lCalf: "lCalf",
+  lFoot: "lFoot",
+  rThigh: "rThigh",
+  rCalf: "rCalf",
+  rFoot: "rFoot",
+  spine2: "spine2"
 } as const;
+
+export type { Rig } from "../lib/roster";
+import type { Rig } from "../lib/roster";
+
+/** Correspondance os canoniques → os réels de chaque squelette. */
+export const RIG_BONES: Record<Rig, Record<keyof typeof BONE, string>> = {
+  bip: {
+    root: "Bip001", pelvis: "Bip001_Pelvis", spine: "Bip001_Spine1", spine2: "Bip001_Spine2", neck: "Bip001_Neck", head: "Bip001_Head",
+    lUpper: "Bip001_L_UpperArm", lFore: "Bip001_L_Forearm", lHand: "Bip001_L_Hand",
+    rUpper: "Bip001_R_UpperArm", rFore: "Bip001_R_Forearm", rHand: "Bip001_R_Hand",
+    lThigh: "Bip001_L_Thigh", lCalf: "Bip001_L_Calf", lFoot: "Bip001_L_Foot",
+    rThigh: "Bip001_R_Thigh", rCalf: "Bip001_R_Calf", rFoot: "Bip001_R_Foot"
+  },
+  mx: {
+    root: "mx_Hips", pelvis: "mx_Hips", spine: "mx_Spine1", spine2: "mx_Spine2", neck: "mx_Neck", head: "mx_Head",
+    lUpper: "mx_LeftArm", lFore: "mx_LeftForeArm", lHand: "mx_LeftHand",
+    rUpper: "mx_RightArm", rFore: "mx_RightForeArm", rHand: "mx_RightHand",
+    lThigh: "mx_LeftUpLeg", lCalf: "mx_LeftLeg", lFoot: "mx_LeftFoot",
+    rThigh: "mx_RightUpLeg", rCalf: "mx_RightLeg", rFoot: "mx_RightFoot"
+  }
+};
+
+/** Noms Mixamo normalisés : « mixamorig10:Hips » → « mx_Hips » (même nom quel que soit le préfixe). */
+export const mxName = (n: string) => n.replace(/mixamorig\d*:?/g, "mx_");
+
+export { ROSTER, charById, charFor, pickChar, defaultChar } from "../lib/roster";
+export type { CharDef } from "../lib/roster";
+
+/** Squelette classique : rôles sans fichier dédié → animation la plus proche. */
+const BIP_FALLBACK: Partial<Record<ClipName, ClipName>> = { jump: "catch", header: "catch", side: "catch", miss: "catch" };
+
+/** Rôles d'animation → fichiers Mixamo (danses selon le sexe). */
+const MX_ROLE: Record<string, { m: string; f: string }> = {
+  kick: { m: "kick", f: "kick" },
+  dive: { m: "dive-a", f: "dive-a" },
+  catch: { m: "catch-c", f: "catch-c" },
+  scoop: { m: "block-b", f: "block-b" },
+  jump: { m: "catch-a", f: "catch-a" },
+  twist: { m: "dance-arms", f: "dance-booty" },
+  bboy: { m: "dance-wave", f: "dance-macarena" },
+  header: { m: "header", f: "header" },
+  side: { m: "side-a", f: "side-a" },
+  miss: { m: "miss", f: "miss" }
+};
+const MX_FILES = ["kick", "dive-a", "catch-c", "catch-a", "block-b", "dance-arms", "dance-booty", "dance-wave", "dance-macarena", "header", "side-a", "miss"];
+
+/** Recolore un vêtement en gardant ses plis (luminance × couleur d'équipe). */
+const tintCache = new Map<string, THREE.Texture>();
+function tintTexture(src: THREE.Texture | null, color: string, key: string): THREE.Texture | null {
+  const ck = key + color;
+  const hit = tintCache.get(ck);
+  if (hit) return hit;
+  const im: any = src?.image;
+  if (!im || !im.width) return null;
+  const W = Math.min(512, im.width);
+  const H = Math.min(512, im.height);
+  const cv = document.createElement("canvas");
+  cv.width = W;
+  cv.height = H;
+  const c = cv.getContext("2d")!;
+  c.drawImage(im, 0, 0, W, H);
+  const d = c.getImageData(0, 0, W, H);
+  const col = new THREE.Color(color);
+  // gamma sRGB approx. pour la couleur cible
+  const tr = Math.round(Math.pow(col.r, 1 / 2.2) * 255);
+  const tg = Math.round(Math.pow(col.g, 1 / 2.2) * 255);
+  const tb = Math.round(Math.pow(col.b, 1 / 2.2) * 255);
+  let sum = 0;
+  for (let i = 0; i < d.data.length; i += 4) sum += d.data[i] * 0.3 + d.data[i + 1] * 0.59 + d.data[i + 2] * 0.11;
+  const mean = sum / (d.data.length / 4) || 128;
+  for (let i = 0; i < d.data.length; i += 4) {
+    const l = d.data[i] * 0.3 + d.data[i + 1] * 0.59 + d.data[i + 2] * 0.11;
+    const k = Math.max(0.45, Math.min(1.25, 0.85 + (l - mean) / 160));
+    d.data[i] = Math.min(255, tr * k);
+    d.data[i + 1] = Math.min(255, tg * k);
+    d.data[i + 2] = Math.min(255, tb * k);
+  }
+  c.putImageData(d, 0, 0);
+  const t = new THREE.CanvasTexture(cv);
+  t.flipY = src!.flipY;
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = src!.wrapS;
+  t.wrapT = src!.wrapT;
+  tintCache.set(ck, t);
+  return t;
+}
+
+/** Dossard (nom + numéro) collé dans le dos des personnages Mixamo. */
+function backPlate(kit: KitPaint): THREE.Mesh {
+  const cv = document.createElement("canvas");
+  cv.width = 256;
+  cv.height = 256;
+  const c = cv.getContext("2d")!;
+  c.textAlign = "center";
+  c.textBaseline = "middle";
+  if (kit.name) {
+    c.font = "800 34px Sora, system-ui, sans-serif";
+    c.lineWidth = 5;
+    c.strokeStyle = kit.numberStroke;
+    c.strokeText(kit.name.toUpperCase(), 128, 40, 236);
+    c.fillStyle = kit.numberColor;
+    c.fillText(kit.name.toUpperCase(), 128, 40, 236);
+  }
+  c.font = "170px 'Bebas Neue', Anton, Impact, sans-serif";
+  c.lineWidth = 10;
+  c.strokeStyle = kit.numberStroke;
+  c.strokeText(kit.number || "", 128, 158);
+  c.fillStyle = kit.numberColor;
+  c.fillText(kit.number || "", 128, 158);
+  const t = new THREE.CanvasTexture(cv);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshStandardMaterial({ map: t, transparent: true, alphaTest: 0.2, roughness: 0.6, side: THREE.DoubleSide }));
+}
+
 
 type V3 = { x: number; y: number; z: number };
 const tmpV = new THREE.Vector3();
@@ -346,8 +464,24 @@ export function paintKitFemale(k: KitPaint): HTMLCanvasElement {
 /* Acteur                                                             */
 /* ------------------------------------------------------------------ */
 
+export interface RigMeta {
+  kickContact: number;
+  kickFoot: THREE.Vector3;
+  dive: { te: number; hipLat: number; handLat: number; handY: number; dir: number };
+}
+
+export interface ProtoEntry {
+  obj: THREE.Object3D;
+  scale: number;
+  rig: Rig;
+  female: boolean;
+  def: CharDef | null;
+}
+
 export class Actor {
   root = new THREE.Group();
+  rig: Rig = "bip";
+  female = false;
   model: THREE.Object3D;
   mixer: THREE.AnimationMixer;
   bones: Record<string, THREE.Bone> = {};
@@ -359,11 +493,20 @@ export class Actor {
   /** Échelle du déplacement latéral / avant intégré (plongeons). */
   motionScale = { x: 1, y: 0, z: 1, lift: 0 };
 
-  constructor(public owner: Chars3D, proto: THREE.Object3D, kit: KitPaint, scale: number) {
-    this.model = cloneSkinned(proto);
-    this.model.scale.setScalar(scale);
+  charId = "leopard";
+  /** Facteur unité de l'os racine → mètres du modèle (Biped et Mixamo n'ont pas les mêmes unités). */
+  private motionUnit = 1;
+
+  constructor(public owner: Chars3D, entry: ProtoEntry, kit: KitPaint) {
+    this.rig = entry.rig;
+    this.charId = entry.def?.id || (entry.female ? "leoparde" : "leopard");
+    this.female = entry.female;
+    this.model = cloneSkinned(entry.obj);
+    this.model.scale.setScalar(entry.scale);
     this.root.add(this.model);
-    this.model.traverse((o: any) => {
+    if (this.rig === "mx") {
+      this.setupMixamo(entry, kit);
+    } else this.model.traverse((o: any) => {
       if (o.isBone) this.bones[o.name] = o;
       if (o.isMesh && !o.userData.hair) {
         o.frustumCulled = false;
@@ -405,32 +548,135 @@ export class Actor {
         o.frustumCulled = false;
       }
     });
+    // alias canoniques (même code de jeu pour tous les squelettes)
+    const real = RIG_BONES[this.rig];
+    for (const k of Object.keys(BONE) as (keyof typeof BONE)[]) {
+      const b = this.bones[real[k]];
+      if (b) this.bones[BONE[k]] = b;
+    }
     if (kit.gloves) {
+      this.model.updateMatrixWorld(true);
       for (const hb of [BONE.lHand, BONE.rHand]) {
         const bone = this.bones[hb];
         if (!bone) continue;
+        const ws = bone.getWorldScale(new THREE.Vector3()).x || 1;
+        const mx = this.rig === "mx";
         const glove = new THREE.Mesh(
           new THREE.SphereGeometry(1, 16, 12),
           new THREE.MeshStandardMaterial({ color: kit.gloves.main, roughness: 0.5 })
         );
-        glove.scale.set(7, 11.5, 4.6);
-        glove.position.set(7, 0, 0);
+        // os Mixamo orientés selon +y, os Biped selon +x
+        if (mx) {
+          glove.scale.set(0.06 / ws, 0.1 / ws, 0.045 / ws);
+          glove.position.set(0, 0.07 / ws, 0);
+        } else {
+          glove.scale.set(7, 11.5, 4.6);
+          glove.position.set(7, 0, 0);
+        }
         bone.add(glove);
-        const strap = new THREE.Mesh(new THREE.CylinderGeometry(4.6, 4.6, 3.4, 14), new THREE.MeshStandardMaterial({ color: kit.gloves.strap, roughness: 0.5 }));
-        strap.rotation.z = Math.PI / 2;
-        strap.position.set(0.5, 0, 0);
+        const strap = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 14), new THREE.MeshStandardMaterial({ color: kit.gloves.strap, roughness: 0.5 }));
+        if (mx) {
+          strap.scale.set(0.045 / ws, 0.035 / ws, 0.045 / ws);
+          strap.position.set(0, 0.005 / ws, 0);
+        } else {
+          strap.scale.set(4.6, 3.4, 4.6);
+          strap.rotation.z = Math.PI / 2;
+          strap.position.set(0.5, 0, 0);
+        }
         bone.add(strap);
       }
     }
     this.mixer = new THREE.AnimationMixer(this.model);
     const rb = this.bones[BONE.root];
-    if (rb) this.rootRest.copy(rb.position);
+    if (rb) {
+      this.rootRest.copy(rb.position);
+      this.model.updateMatrixWorld(true);
+      this.motionUnit = rb.parent ? Math.abs(rb.parent.getWorldScale(new THREE.Vector3()).x) : entry.scale;
+    }
+  }
+
+  /** Personnage Mixamo : vêtements aux couleurs de l'équipe, dossard, alias d'os. */
+  private setupMixamo(entry: ProtoEntry, kit: KitPaint) {
+    const def = entry.def;
+    this.model.traverse((o: any) => {
+      if (o.isBone) {
+        o.name = mxName(o.name);
+        this.bones[o.name] = o;
+      }
+      if (!o.isMesh) return;
+      o.frustumCulled = false;
+      o.castShadow = true;
+      if (def?.ownOutfit) return;
+      const nm = String(o.name || "");
+      const cat = /shirt|hood|sweater|cloth|suit|collar|upperbody|scarf|jacket|top/i.test(nm)
+        ? "top"
+        : /pant|lowerbody|short|jean|trouser|skirt/i.test(nm)
+          ? "bottom"
+          : /shoe|sneaker|heel|boot/i.test(nm)
+            ? "feet"
+            : /sock/i.test(nm)
+              ? "socks"
+              : "";
+      if (!cat) return;
+      const color = cat === "top" ? kit.base : cat === "bottom" ? kit.shorts : cat === "socks" ? kit.socks : kit.boots;
+      const mats = (Array.isArray(o.material) ? o.material : [o.material]).map((m: any) => {
+        const nmat = m.clone();
+        const t = tintTexture(m.map, color, `${def?.id}:${nm}:`);
+        if (t) {
+          nmat.map = t;
+          nmat.color = new THREE.Color(0xffffff);
+        } else {
+          nmat.map = null;
+          nmat.color = new THREE.Color(color);
+        }
+        nmat.needsUpdate = true;
+        return nmat;
+      });
+      o.material = Array.isArray(o.material) ? mats : mats[0];
+    });
+    // dossard dans le dos
+    if (kit.number) {
+      this.model.updateMatrixWorld(true);
+      const sp = this.bones[RIG_BONES.mx.spine2] || this.bones[RIG_BONES.mx.spine];
+      if (sp) {
+        const plate = backPlate(kit);
+        const wp = sp.getWorldPosition(new THREE.Vector3());
+        const unit = 1;
+        const target = wp.clone().add(new THREE.Vector3(0, 0.02 * unit, -0.15 * unit));
+        plate.position.copy(sp.worldToLocal(target));
+        const wq = sp.getWorldQuaternion(new THREE.Quaternion()).invert();
+        plate.quaternion.copy(wq.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI)));
+        const ws = sp.getWorldScale(new THREE.Vector3());
+        const size = entry.def?.cartoon ? 0.26 : 0.3;
+        plate.scale.set(size / ws.x, size / ws.y, size / ws.z);
+        sp.add(plate);
+      }
+    }
+  }
+
+  /** Fichier d'animation correspondant à un rôle pour ce personnage. */
+  private resolve(role: ClipName): THREE.AnimationClip | null {
+    if (this.rig === "bip") return this.owner.clips[(BIP_FALLBACK[role] || role) as keyof typeof FILES] || null;
+    const r = MX_ROLE[role];
+    const slug = r ? (this.female ? r.f : r.m) : role;
+    const id = this.charId;
+    if (this.owner.mxClips[slug]) return this.owner.mxClipFor(id, slug, this.rootRest.y);
+    return this.owner.mxClips["catch-c"] ? this.owner.mxClipFor(id, "catch-c", this.rootRest.y) : null;
+  }
+
+  /** Durée d'une animation (rôle) pour ce personnage. */
+  duration(role: ClipName) {
+    return this.resolve(role)?.duration ?? 1;
+  }
+
+  has(role: ClipName) {
+    return this.rig === "mx" ? !!MX_ROLE[role] && !!this.owner.mxClips[this.female ? MX_ROLE[role].f : MX_ROLE[role].m] : !!this.owner.clips[role as keyof typeof FILES];
   }
 
   action(name: ClipName) {
     let a = this.actions.get(name);
     if (!a) {
-      const clip = this.owner.clips[name];
+      const clip = this.resolve(name);
       if (!clip) return null;
       a = this.mixer.clipAction(clip);
       this.actions.set(name, a);
@@ -481,8 +727,9 @@ export class Actor {
   /** Déplacements intégrés à l'animation : appliqués comme décalage du modèle (jamais cumulés sur l'os). */
   private applyMotion(name: ClipName) {
     const rb = this.bones[BONE.root];
-    const start = this.owner.rootStart[name];
-    const sc = this.model.scale.x;
+    const clip = this.resolve(name);
+    const start = clip ? this.owner.rootStartOf(clip) : null;
+    const sc = this.motionUnit;
     this.model.position.set(0, 0, 0);
     if (!rb || !start) return;
     const raw = rb.position;
@@ -555,8 +802,44 @@ export class Chars3D {
   renderer: THREE.WebGLRenderer;
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(40, 1, 0.1, 400);
-  clips: Partial<Record<ClipName, THREE.AnimationClip>> = {};
-  rootStart: Partial<Record<ClipName, THREE.Vector3>> = {};
+  clips: Partial<Record<keyof typeof FILES, THREE.AnimationClip>> = {};
+  /** Animations Mixamo (fichier → clip), noms d'os normalisés. */
+  mxClips: Record<string, THREE.AnimationClip> = {};
+  private rootStarts = new Map<THREE.AnimationClip, THREE.Vector3>();
+  rootStartOf(clip: THREE.AnimationClip) {
+    let v = this.rootStarts.get(clip);
+    if (v === undefined) {
+      const tr = clip.tracks.find((t) => /(^Bip001|mx_Hips)\.position$/.test(t.name));
+      v = tr ? new THREE.Vector3(tr.values[0], tr.values[1], tr.values[2]) : new THREE.Vector3();
+      this.rootStarts.set(clip, v);
+    }
+    return v;
+  }
+  private mxRetarget = new Map<string, THREE.AnimationClip>();
+  /** Animation Mixamo adaptée à la taille du personnage (hauteur du bassin). */
+  mxClipFor(charId: string, slug: string, hipsRestY: number) {
+    const key = `${charId}:${slug}`;
+    let c = this.mxRetarget.get(key);
+    if (!c) {
+      const src = this.mxClips[slug];
+      c = src.clone();
+      const tr = c.tracks.find((t) => t.name === "mx_Hips.position");
+      if (tr && hipsRestY > 0) {
+        const y0 = tr.values[1];
+        const k = y0 > 0 ? hipsRestY / y0 : 1;
+        if (Math.abs(k - 1) > 0.01) for (let i = 0; i < tr.values.length; i++) tr.values[i] *= k;
+      }
+      this.mxRetarget.set(key, c);
+    }
+    return c;
+  }
+
+  /** Personnages Mixamo chargés (id → prototype). */
+  mxProtos = new Map<string, ProtoEntry>();
+  private mxLoading = new Map<string, Promise<void>>();
+  private mxClipsLoading: Promise<void> | null = null;
+  /** Mesures par squelette : contact de frappe et plongeon. */
+  metas: Partial<Record<Rig, RigMeta>> = {};
   proto: THREE.Object3D | null = null;
   scale = 0.01;
   ready = false;
@@ -625,13 +908,13 @@ export class Chars3D {
       this.scale = 1.85 / box.getSize(new THREE.Vector3()).y;
       this.proto = proto;
       for (const n of names) {
-        const g = await loader.loadAsync(BASE + FILES[n]);
+        if (!(n in FILES)) continue;
+        const key = n as keyof typeof FILES;
+        const g = await loader.loadAsync(BASE + FILES[key]);
         const clip = g.animations[0];
         if (!clip) continue;
         clip.name = n;
-        this.clips[n] = clip;
-        const tr = clip.tracks.find((t) => t.name === `${BONE.root}.position`);
-        if (tr) this.rootStart[n] = new THREE.Vector3(tr.values[0], tr.values[1], tr.values[2]);
+        this.clips[key] = clip;
       }
       if (this.clips.kick) this.measureKick();
       if (this.clips.dive) this.measureDive();
@@ -734,8 +1017,8 @@ export class Chars3D {
     // axe latéral = le plus large des deux axes horizontaux (bras en A)
     const latAxis = upAxis === 1 ? (lsize.x >= lsize.z ? 0 : 2) : lsize.x >= lsize.y ? 0 : 1;
     const latC = latAxis === 0 ? lc.x : latAxis === 1 ? lc.y : lc.z;
-    // classe de chaque sommet du joueur selon son os dominant : 0 tronc/tête, 1 bras, 2 jambes
-    const boneClass = M.skeleton.bones.map((b) => (/Thigh|Calf|Foot|Toe/.test(b.name) ? 2 : /UpperArm|Forearm|Hand|Finger/.test(b.name) ? 1 : 0));
+    // classe de chaque sommet du joueur selon son os dominant : 0 tronc/tête, 1 bras/épaules, 2 jambes
+    const boneClass = M.skeleton.bones.map((b) => (/Thigh|Calf|Foot|Toe/.test(b.name) ? 2 : /UpperArm|Forearm|Hand|Finger|Clavicle|Shoulder/.test(b.name) ? 1 : 0));
     // doigts rattachés rigidement à la main (évite les mains déformées)
     const bonesArr = M.skeleton.bones;
     const handIdx = (side: string) => bonesArr.findIndex((b) => b.name === `Bip001_${side}_Hand`);
@@ -801,9 +1084,12 @@ export class Chars3D {
       const df = m.T_f.clone().sub(m.S_f);
       const dm = m.T_m.clone().sub(m.S_m);
       const rel = w.clone().sub(m.S_f);
-      const t = rel.dot(df) / df.lengthSq();
-      const off = rel.sub(df.clone().multiplyScalar(t)).multiplyScalar(dm.length() / df.length());
-      return m.S_m.clone().add(dm.multiplyScalar(t)).add(off);
+      const lenSq = df.lengthSq();
+      if (lenSq < 0.0001) return w;
+      const t = Math.max(-0.08, Math.min(1.12, rel.dot(df) / lenSq));
+      const proj = df.clone().multiplyScalar(t);
+      const off = rel.clone().sub(proj).multiplyScalar(dm.length() / df.length());
+      return m.S_m.clone().add(dm.clone().multiplyScalar(t)).add(off);
     };
     for (let i = 0; i < n; i++) {
       v.fromBufferAttribute(fPos, i).applyMatrix4(toMale);
@@ -821,7 +1107,7 @@ export class Chars3D {
       const side = latV - latC;
       const h01 = (up - upMin) / upSpan;
       // région de la joueuse : bras (écartés en A), jambes, tronc
-      const region = h01 > 0.3 && h01 < 0.84 && Math.abs(side) > upSpan * 0.13 ? 1 : up < crotch ? 2 : 0;
+      const region = h01 > 0.28 && h01 < 0.88 && Math.abs(side) > upSpan * 0.11 ? 1 : up < crotch ? 2 : 0;
       const allow = (cls: number) =>
         region === 1 ? cls === 1 : region === 2 ? cls === 2 || (cls === 0 && h01 > 0.42) : cls === 0 || (cls === 2 && h01 < 0.55);
       // point de recherche (bras recalés sur ceux du joueur), classes d'os autorisées, côté imposé
@@ -887,7 +1173,7 @@ export class Chars3D {
           for (let c = 0; c < 4; c++) if (skI[i * 4 + c] === arm.up) wUp += skW[i * 4 + c];
           const ab = arm.b.clone().sub(arm.a);
           const t = q.clone().sub(arm.a).dot(ab) / ab.lengthSq();
-          if (wUp > 0.3 && t < 0.56 && t > -0.35) sleeve[i] = t > 0.47 ? 2 : 1;
+          if (wUp > 0.25 && t < 0.52 && t > -0.30) sleeve[i] = t > 0.44 ? 2 : 1;
         }
       }
       // queue de cheval (fait partie du maillage de la tête) : derrière et sous le crâne → couleur cheveux
@@ -904,8 +1190,8 @@ export class Chars3D {
         });
         return bw as THREE.Vector3 | null;
       };
-      const neckW = boneW(BONE.neck);
-      const headW = boneW(BONE.head);
+      const neckW = boneW(RIG_BONES.bip.neck);
+      const headW = boneW(RIG_BONES.bip.head);
       const hair = new Float32Array(n);
       if (neckW && headW) {
         const unitW = mH / 1.85;
@@ -934,7 +1220,7 @@ export class Chars3D {
     out.updateMatrixWorld(true);
     let head: THREE.Bone | null = null;
     out.traverse((o: any) => {
-      if (o.isBone && o.name === BONE.head) head = o;
+      if (o.isBone && o.name === RIG_BONES.bip.head) head = o;
     });
     if (head) {
       const H = head as THREE.Bone;
@@ -960,39 +1246,183 @@ export class Chars3D {
     return out;
   }
 
-  /** Trouve l'instant du contact (pied droit le plus rapide vers l'avant, près du sol). */
+  /** Mesures du squelette classique (compatibilité). */
   private measureKick() {
     const a = this.actor(LEOPARDS_PAINT("", 10, "#6b4128"));
+    const m = this.metas.bip || { kickContact: 0.83, kickFoot: new THREE.Vector3(), dive: { ...this.diveMeta } };
+    this.measureKickOn(a, m);
+    this.metas.bip = m;
+    this.kickContact = m.kickContact;
+    this.kickFoot.copy(m.kickFoot);
+    this.remove(a);
+  }
+
+  /** Trouve l'instant du contact (pied le plus rapide vers l'avant, près du sol). */
+  private measureKickOn(a: Actor, m: RigMeta) {
+    if (!a.has("kick")) return;
     let best = 0;
     let bestT = 0.83;
-    let prev: V3 | null = null;
+    let bestFoot: string = BONE.rFoot;
+    const prev: Record<string, V3 | null> = { [BONE.rFoot]: null, [BONE.lFoot]: null };
     const steps = 90;
-    const dur = this.clips.kick!.duration;
+    const dur = a.duration("kick");
     for (let i = 0; i <= steps; i++) {
       const t = (dur * i) / steps;
       a.pose("kick", t);
       a.root.updateMatrixWorld(true);
-      const f = a.bone(BONE.rFoot);
-      if (prev && t > 0.45 && t < 1.1 && f.y < 0.35) {
-        const v = (f.z - prev.z) / (dur / steps);
-        if (v > best) {
-          best = v;
-          bestT = t;
+      for (const fb of [BONE.rFoot, BONE.lFoot]) {
+        const f = a.bone(fb);
+        const p = prev[fb];
+        if (p && t > dur * 0.3 && t < dur * 0.85 && f.y < 0.35) {
+          const v = (f.z - p.z) / (dur / steps);
+          if (v > best) {
+            best = v;
+            bestT = t;
+            bestFoot = fb;
+          }
         }
+        prev[fb] = { ...f };
       }
-      prev = { ...f };
     }
-    this.kickContact = bestT;
+    m.kickContact = bestT;
     a.pose("kick", bestT);
     a.root.updateMatrixWorld(true);
-    const f = a.bone(BONE.rFoot);
-    this.kickFoot.set(f.x, f.y, f.z);
-    this.remove(a);
+    const f = a.bone(bestFoot);
+    m.kickFoot.set(f.x, f.y, f.z);
   }
 
-  actor(kit: KitPaint) {
-    const useF = kit.female && this.femProto;
-    const a = new Actor(this, useF ? this.femProto! : this.proto!, kit, this.scale);
+  /** Mesure du plongeon : instant d'extension maximale, décalages mains/bassin et sens natif. */
+  private measureDiveOn(a: Actor, m: RigMeta) {
+    if (!a.has("dive")) return;
+    const dur = a.duration("dive");
+    let best = 0;
+    // instant d'extension maximale en l'air (mains encore hautes), pas l'arrivée au sol
+    const mx = a.rig === "mx";
+    const t0 = mx ? dur * 0.1 : 0.35;
+    const t1 = mx ? dur * 0.6 : 1.45;
+    const minY = mx ? 0.6 : 0.45;
+    for (let i = 0; i <= 60; i++) {
+      const t = t0 + (i / 60) * (t1 - t0);
+      a.pose("dive", t);
+      a.root.updateMatrixWorld(true);
+      const l = a.bone(BONE.lHand);
+      const r = a.bone(BONE.rHand);
+      const hand = Math.abs(l.x) > Math.abs(r.x) ? l : r;
+      if (Math.abs(hand.x) > best && hand.y > minY) {
+        best = Math.abs(hand.x);
+        const hip = a.bone(BONE.pelvis);
+        m.dive = { te: t, hipLat: Math.abs(hip.x), handLat: Math.abs(hand.x), handY: (l.y + r.y) / 2, dir: Math.sign(hand.x) || -1 };
+      }
+    }
+  }
+
+  /* ---------------- Personnages Mixamo ---------------- */
+
+  /** Tous les personnages demandés sont-ils prêts ? (sans attente) */
+  isLoaded(ids: (string | undefined | null)[]) {
+    return ids.every((id) => {
+      const d = charById(id);
+      if (!d) return true;
+      if (d.rig === "bip") return d.female ? !!this.femProto : !!this.proto;
+      return this.mxProtos.has(d.id) && !!this.mxClips["kick"];
+    });
+  }
+
+  /** Charge les personnages (GLB) et les animations Mixamo nécessaires. */
+  async ensureChars(ids: (string | undefined | null)[]) {
+    const jobs: Promise<unknown>[] = [];
+    for (const id of new Set(ids)) {
+      const d = charById(id);
+      if (!d) continue;
+      if (d.rig === "bip") {
+        if (d.female) jobs.push(this.loadFemale() || Promise.resolve());
+        continue;
+      }
+      if (!this.mxLoading.has(d.id)) this.mxLoading.set(d.id, this.loadMxChar(d));
+      jobs.push(this.mxLoading.get(d.id)!);
+      jobs.push(this.loadMxClips());
+    }
+    await Promise.all(jobs);
+  }
+
+  private async loadMxChar(d: CharDef) {
+    try {
+      const gltf = await new GLTFLoader().loadAsync(BASE + d.file);
+      const obj = gltf.scene;
+      obj.traverse((o: any) => {
+        if (o.isBone) o.name = mxName(o.name);
+      });
+      const box = new THREE.Box3().setFromObject(obj);
+      const h = box.getSize(new THREE.Vector3()).y || 1;
+      const target = d.cartoon ? 1.55 : d.female ? 1.72 : 1.84;
+      this.mxProtos.set(d.id, { obj, scale: target / h, rig: "mx", female: d.female, def: d });
+    } catch (e) {
+      // on pourra réessayer au prochain appel
+      this.mxLoading.delete(d.id);
+      console.warn("[arène] personnage indisponible", d.id, e);
+    }
+  }
+
+  private loadMxClips() {
+    if (this.mxClipsLoading) return this.mxClipsLoading;
+    this.mxClipsLoading = (async () => {
+      const loader = new FBXLoader();
+      await Promise.all(
+        MX_FILES.map(async (f) => {
+          try {
+            const g = await loader.loadAsync(`${BASE}mx/${f}.fbx`);
+            const clip = g.animations[0];
+            if (!clip) return;
+            clip.name = f;
+            // on garde les rotations + le déplacement du bassin : les longueurs d'os restent celles du personnage
+            clip.tracks = clip.tracks.filter((t) => {
+              t.name = mxName(t.name);
+              return t.name.endsWith(".quaternion") || t.name === "mx_Hips.position";
+            });
+            this.mxClips[f] = clip;
+          } catch {
+            /* animation manquante : le rôle retombe sur une pose de base */
+          }
+        })
+      );
+      // animation de base manquante (réseau) : nouvel essai possible plus tard
+      if (!this.mxClips["kick"]) this.mxClipsLoading = null;
+    })();
+    return this.mxClipsLoading;
+  }
+
+  /** Entrée de prototype pour un personnage (repli sur le joueur classique). */
+  entryFor(charId?: string | null, female = false): ProtoEntry {
+    const d = charById(charId);
+    if (d && d.rig === "mx" && this.mxProtos.has(d.id) && this.mxClips["kick"]) return this.mxProtos.get(d.id)!;
+    const fem = d ? d.female : female;
+    // repli (personnage pas encore chargé) : le joueur classique, sous sa propre identité
+    if (fem && this.femProto) return { obj: this.femProto, scale: this.scale, rig: "bip", female: true, def: charById("leoparde") };
+    return { obj: this.proto!, scale: this.scale, rig: "bip", female: false, def: charById("leopard") };
+  }
+
+  /** Mesures (contact de frappe, plongeon) du squelette d'un acteur, calculées une seule fois. */
+  metaFor(a: Actor): RigMeta {
+    if (a.rig === "bip" && !a.female && this.metas.bip) return this.metas.bip;
+    const key = `${a.rig}:${a.charId}`;
+    let m = this.charMetas.get(key);
+    if (!m) {
+      const probe = new Actor(this, this.entryFor(a.charId, a.female), { ...LEOPARDS_PAINT("", 1, "#6b4128"), number: undefined });
+      this.scene.add(probe.root);
+      m = { kickContact: 0.83, kickFoot: new THREE.Vector3(), dive: { te: 1.15, hipLat: 2.3, handLat: 2.9, handY: 1.2, dir: -1 } };
+      this.measureKickOn(probe, m);
+      this.measureDiveOn(probe, m);
+      this.scene.remove(probe.root);
+      probe.mixer.stopAllAction();
+      this.charMetas.set(key, m);
+    }
+    return m;
+  }
+  private charMetas = new Map<string, RigMeta>();
+
+  actor(kit: KitPaint, charId?: string | null) {
+    const entry = this.entryFor(charId, !!kit.female);
+    const a = new Actor(this, entry, kit);
     this.scene.add(a.root);
     this.actors.push(a);
     return a;
@@ -1270,24 +1700,13 @@ export class Chars3D {
     }
   }
 
-  /** Mesure du plongeon : instant d'extension maximale et décalages mains/bassin (repère acteur). */
-  diveMeta = { te: 1.15, hipLat: 2.3, handLat: 2.9, handY: 1.2 };
+  diveMeta: RigMeta["dive"] = { te: 1.15, hipLat: 2.3, handLat: 2.9, handY: 1.2, dir: -1 };
   private measureDive() {
     const a = this.actor(LEOPARDS_PAINT("", 1, "#6b4128"));
-    let best = 0;
-    for (let i = 0; i <= 60; i++) {
-      const t = 0.35 + (i / 60) * 1.1;
-      a.pose("dive", t);
-      a.root.updateMatrixWorld(true);
-      const l = a.bone(BONE.lHand);
-      const r = a.bone(BONE.rHand);
-      const hand = Math.abs(l.x) > Math.abs(r.x) ? l : r;
-      if (Math.abs(hand.x) > best && hand.y > 0.45) {
-        best = Math.abs(hand.x);
-        const hip = a.bone(BONE.pelvis);
-        this.diveMeta = { te: t, hipLat: Math.abs(hip.x), handLat: Math.abs(hand.x), handY: (l.y + r.y) / 2 };
-      }
-    }
+    const m = this.metas.bip || { kickContact: this.kickContact, kickFoot: this.kickFoot.clone(), dive: { ...this.diveMeta } };
+    this.measureDiveOn(a, m);
+    this.metas.bip = m;
+    this.diveMeta = m.dive;
     this.remove(a);
   }
 

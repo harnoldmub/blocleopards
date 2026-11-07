@@ -6,7 +6,7 @@ import type { DiffCfg, FootStage } from "../lib/config";
 import { audio } from "../lib/audio";
 import { clamp, easeInOut, easeOutCubic, gauss, lerp, mulberry32 } from "../lib/rng";
 import {
-  BODIES, FEMALE_BODY, KICK, LEOPARDS_KIT, POSES, RIVAL_KIT, drawFigure, fimbuPose, lerpPose, lerpSag, mirrorPose, runSag, sagPose, skeleton,
+  BODIES, FEMALE_BODY, KICK, LEOPARDS_KIT, POSES, RIVAL_KIT, drawFigure, lerpPose, lerpSag, mirrorPose, runSag, sagPose, skeleton,
   type Body, type Sag, type Kit, type Pose, type Skeleton, type V
 } from "./people";
 import {
@@ -27,9 +27,9 @@ export interface FootSetup {
   reduced: boolean;
   /** Zones visées précédemment (-1 gauche, 0 centre, 1 droite) : le gardien apprend. */
   history: number[];
-  /** Dernier tir de la série : un but déclenche le fimbu collectif. */
-  finale?: boolean;
   female?: boolean;
+  /** Personnage choisi par le joueur (voir ROSTER). */
+  character?: string;
 }
 
 export interface ShotOutcome {
@@ -191,10 +191,14 @@ export class FootEngine {
   private zoom = 1;
   private shake = 0;
 
+  // poteau avec suspense et ambiance réactive
+  private postHitPending: { timer: number; inside: boolean; postHit: boolean; p: NonNullable<FootEngine["pending"]> } | null = null;
+  private crowdReaction: "idle" | "tense" | "goal" | "save" | "post" = "idle";
+
   // personnages 3D (facultatifs : repli 2D si WebGL indisponible)
   private c3: Chars3D | null = null;
   private c3m: C3Mod | null = null;
-  private A: { shooter?: Actor; keeper?: Actor; wall: Actor[]; mates: Actor[] } = { wall: [], mates: [] };
+  private A: { shooter?: Actor; keeper?: Actor; wall: Actor[] } = { wall: [] };
   private celeb = { x: 0, z: 0, captured: false };
   private viewOff = { x: 0, y: 0 };
 
@@ -214,15 +218,23 @@ export class FootEngine {
     if (!c3 || !m || !c3.ready) return;
     c3.clearActors();
     const s = this.setupData;
-    this.A = { wall: [], mates: [] };
-    this.A.shooter = c3.actor({ ...m.LEOPARDS_PAINT(s.name, s.number, this.shooterBody.skin), female: !!s.female });
-    // « La Pieuvre » utilise aussi le modèle féminin : la joueuse peut donc
-    // apparaître aussi bien au tir que dans les buts.
-    this.A.keeper = c3.actor({
-      ...m.KEEPER_PAINT(s.stage.keeper.kit, this.keeperBody.skin),
-      female: s.stage.keeper.nickname === "La Pieuvre"
-    });
-    for (let i = 0; i < s.stage.wall; i++) this.A.wall.push(c3.actor(m.RIVAL_PAINT(4 + i * 3, this.wallBodies[i].skin)));
+    this.A = { wall: [] };
+    // personnages : celui du joueur, gardien·ne et mur du même sexe (équipe adverse)
+    const fem = !!s.female;
+    const kFem = !!s.stage.keeper.female;
+    const pc = m.charById(s.character)?.female === fem ? s.character! : fem ? "leoparde" : "leopard";
+    const kc = m.pickChar(kFem, s.stage.id * 7 + 3, [pc]).id;
+    const wallIds = Array.from({ length: s.stage.wall }, (_, i) => m.pickChar(kFem, s.stage.id + i, [pc, kc]).id);
+    const need = [pc, kc, ...wallIds];
+    if (!c3.isLoaded(need)) {
+      const ref = s;
+      c3.ensureChars(need).then(() => {
+        if (this.setupData === ref && this.c3 === c3 && this.phase === "aim") this.build3D();
+      });
+    }
+    this.A.shooter = c3.actor({ ...m.LEOPARDS_PAINT(s.name, s.number, this.shooterBody.skin), female: fem }, pc);
+    this.A.keeper = c3.actor({ ...m.KEEPER_PAINT(s.stage.keeper.kit, this.keeperBody.skin), female: kFem }, kc);
+    for (let i = 0; i < s.stage.wall; i++) this.A.wall.push(c3.actor({ ...m.RIVAL_PAINT(4 + i * 3, this.wallBodies[i].skin), female: kFem }, wallIds[i]));
     this.celeb = { x: 0, z: 0, captured: false };
     c3.buildGoal(this.D);
     this.drive3D();
@@ -253,6 +265,8 @@ export class FootEngine {
     this.keeperRead = false;
     this.crossedKeeper = this.crossedWall = this.crossedGoal = this.inNet = false;
     this.ballHeld = false;
+    this.postHitPending = null;
+    this.crowdReaction = "idle";
     this.trail = [];
     this.curve = [];
     this.parts = [];
@@ -265,14 +279,18 @@ export class FootEngine {
     this.omega = { x: 0, y: 0, z: 0 };
     this.shooterBody = s.female ? FEMALE_BODY : BODIES[(s.number + s.name.length) % BODIES.length];
     this.shooterKit = LEOPARDS_KIT(s.name, s.number);
-    this.keeperBody = { ...BODIES[(s.stage.id + 1) % BODIES.length], height: 1.9 + s.stage.id * 0.01, bulk: 0.8 };
+    this.keeperBody = s.stage.keeper.female
+      ? { ...FEMALE_BODY, height: 1.8 + s.stage.id * 0.006 }
+      : { ...BODIES[(s.stage.id + 1) % BODIES.length], height: 1.9 + s.stage.id * 0.01, bulk: 0.8 };
     const k = s.stage.keeper.kit;
     this.keeperKit = {
       jersey: k.jersey, jersey2: k.jersey2, trim: k.trim, shorts: k.shorts, socks: k.socks,
       boots: "#111827", gloves: k.gloves, gloves2: k.gloves2, longSleeves: true, number: "1"
     };
     this.keeperX = s.stage.ballX * 0.12;
-    this.wallBodies = Array.from({ length: s.stage.wall }, (_, i) => BODIES[(i * 2 + 1) % BODIES.length]);
+    this.wallBodies = Array.from({ length: s.stage.wall }, (_, i) =>
+      s.stage.keeper.female ? { ...FEMALE_BODY, height: 1.7 + (i % 3) * 0.03 } : BODIES[(i * 2 + 1) % BODIES.length]
+    );
     this.bgDirty = true;
     this.layout();
     if (this.c3?.ready) this.build3D();
@@ -384,7 +402,9 @@ export class FootEngine {
       const b = cam.p(right, y, z);
       ctx.fillStyle = r % 2 ? "#111c38" : "#0e1830";
       ctx.fillRect(a.x, top, b.x - a.x, prevY - top + 0.5);
-      crowdRow(ctx, Math.max(-20, a.x), Math.min(W + 20, b.x), top, prevY, r * 13 + 5, r > 2);
+      // Texture des marches
+      ctx.fillStyle = "rgba(255, 255, 255, 0.025)";
+      ctx.fillRect(a.x, top, b.x - a.x, 1);
       prevY = top;
     }
     // ombre de toit + projecteurs
@@ -404,45 +424,6 @@ export class FootEngine {
       ctx.fillRect(0, 0, W, H);
       ctx.fillStyle = "#fffbe8";
       for (let i = 0; i < 6; i++) ctx.fillRect(lx - 15 + (i % 3) * 11, ly - 4 + Math.floor(i / 3) * 7, 8, 5);
-    }
-
-    // écran géant aux couleurs des deux marques
-    const standsTop = 64;
-    const standsBottom = cam.p(0, 0, boardZ).y - 30;
-    const avail = standsBottom - standsTop;
-    if (avail > 70) {
-      const sh = clamp(avail * 0.62, 60, 170);
-      const sw = Math.min(W * 0.86, sh * 2.5);
-      const sx = (W - sw) / 2;
-      const sy = standsTop + (avail - sh) * 0.38;
-      ctx.fillStyle = "#020617";
-      ctx.fillRect(sx - 6, sy - 6, sw + 12, sh + 12);
-      ctx.fillStyle = "#1e293b";
-      ctx.fillRect(sx + sw * 0.45, sy + sh + 6, sw * 0.1, standsBottom - sy - sh);
-      const gr = ctx.createLinearGradient(sx, sy, sx, sy + sh);
-      gr.addColorStop(0, "#0B47B0");
-      gr.addColorStop(1, "#08132B");
-      ctx.fillStyle = gr;
-      ctx.fillRect(sx, sy, sw, sh);
-      const logo = brandImage(LOGO_BL);
-      const lh = sh * 0.84;
-      if (logo) {
-        const lw = (lh * logo.naturalWidth) / logo.naturalHeight;
-        ctx.drawImage(logo, sx + sh * 0.1, sy + (sh - lh) / 2, lw, lh);
-        const rest = sw - lw - sh * 0.3;
-        drawBrandPanel(ctx, sx + lw + sh * 0.2, sy + sh * 0.24, rest, sh * 0.42, "rdc", "rgba(0,0,0,0)");
-      } else {
-        drawBrandPanel(ctx, sx, sy + sh * 0.3, sw, sh * 0.4, "rdc", "rgba(0,0,0,0)");
-      }
-      ctx.fillStyle = "rgba(255,255,255,0.06)";
-      for (let y = sy; y < sy + sh; y += 3) ctx.fillRect(sx, y, sw, 1);
-      if (final) {
-        ctx.fillStyle = "#F4C400";
-        ctx.font = `${Math.round(sh * 0.15)}px 'Bebas Neue', Anton, sans-serif`;
-        ctx.textAlign = "right";
-        ctx.fillText(this.setupData.stage.name.toUpperCase(), sx + sw - 8, sy + sh * 0.2);
-        ctx.textAlign = "left";
-      }
     }
 
     // pelouse
@@ -646,15 +627,15 @@ export class FootEngine {
     return { tx, ty, v, ax, w, zone, over };
   }
 
-  /** Durée d'affichage du résultat : on laisse le temps de danser le fimbu après un but. */
+  /** Durée d'affichage du résultat : célébration rythmée puis enchaînement rapide. */
   private resultDelay() {
     if (!this.outcome) return 99;
-    return this.outcome.scored && !this.setupData.reduced ? 3.8 : 1.6;
+    return this.outcome.scored && !this.setupData.reduced ? 2.5 : 1.3;
   }
 
-  /** Touche pendant la célébration : on passe au tir suivant. */
+  /** Touche pendant la célébration : on passe immédiatement au tir suivant. */
   skip() {
-    if (this.phase === "done" && this.outcome && !this.resultSent && this.t - this.resolvedAt > 0.5) {
+    if (this.phase === "done" && this.outcome && !this.resultSent && this.t - this.resolvedAt > 0.35) {
       this.resolvedAt = this.t - this.resultDelay();
     }
   }
@@ -814,6 +795,30 @@ export class FootEngine {
     }
     if (this.use3d) this.drive3D();
 
+    // suspense du rebond sur poteau / transversale
+    if (this.postHitPending) {
+      this.postHitPending.timer -= dt;
+      if (this.postHitPending.timer <= 0) {
+        const ph = this.postHitPending;
+        this.postHitPending = null;
+        if (ph.inside) {
+          this.crowdReaction = "goal";
+          this.goal(ph.p, ["post-in"], "Poteau rentrant !");
+        } else {
+          this.crowdReaction = "save";
+          this.resolve({
+            scored: false,
+            base: 0,
+            tags: ["post"],
+            label: ph.postHit ? "Poteau !" : "Transversale !",
+            detail: "À quelques centimètres…",
+            zone: ph.p.zone
+          });
+          audio.crowd("groan");
+        }
+      }
+    }
+
     // la physique continue après le résultat : le ballon retombe dans le filet, rebondit, roule
     if (this.phase === "flight" || (this.phase === "done" && this.kickT > 0 && this.pending)) {
       const steps = 6;
@@ -944,6 +949,8 @@ export class FootEngine {
         }
         const read = this.keeperRead;
         const learnt = this.setupData.stage.keeper.learn > 0.5 && this.setupData.history.filter((z) => z === this.pending!.zone).length >= 2;
+        this.crowdReaction = "save";
+        audio.crowd("groan");
         this.resolve({
           scored: false,
           base: 0,
@@ -968,18 +975,20 @@ export class FootEngine {
       const barHit = Math.abs(y - GOAL_H) < BALL_R + 0.06 && ax < GOAL_W + 0.06;
       if (postHit || barHit) {
         audio.post();
-        if (!this.setupData.reduced) this.shake = 0.7;
+        if (!this.setupData.reduced) this.shake = 0.75;
         const inside = postHit ? ax < GOAL_W - 0.02 && this.rng() < 0.45 : y < GOAL_H - 0.03 && this.rng() < 0.4;
         if (inside) {
-          this.vx *= -0.4;
-          this.vz *= 0.7;
-          this.goal(p, ["post-in"], "Poteau rentrant !");
+          this.vx *= -0.38;
+          this.vz = Math.abs(this.vz) * 0.58;
+          this.vy = Math.max(0.4, this.vy * -0.32);
         } else {
-          this.vz = -Math.abs(this.vz) * 0.4;
-          if (postHit) this.vx = Math.sign(x) * 3;
-          else this.vy = Math.abs(this.vy) * 0.5 + 1;
-          this.resolve({ scored: false, base: 0, tags: ["post"], label: postHit ? "Poteau !" : "Transversale !", detail: "À quelques centimètres…", zone: p.zone });
+          this.vz = -Math.abs(this.vz) * 0.42;
+          if (postHit) this.vx = Math.sign(x) * 3.2;
+          else this.vy = Math.abs(this.vy) * 0.5 + 1.2;
         }
+        audio.crowd("ooh");
+        this.crowdReaction = "post";
+        this.postHitPending = { timer: 0.38, inside, postHit, p };
         return;
       }
       if (ax < GOAL_W - BALL_R && y < GOAL_H - BALL_R) {
@@ -1030,6 +1039,7 @@ export class FootEngine {
 
   private goal(p: NonNullable<FootEngine["pending"]>, extra: string[], label: string) {
     this.inNet = true;
+    this.crowdReaction = "goal";
     const tags = [...extra];
     let base = this.D > 15 ? 150 : 100;
     const x = Math.abs(this.bx);
@@ -1108,6 +1118,8 @@ export class FootEngine {
       ctx.translate(-gc.x, -gc.y);
     }
     ctx.drawImage(this.bg!, 0, 0, this.w, this.h);
+    this.drawAnimatedCrowd(ctx);
+    this.drawJumboScreen(ctx);
 
     const D = this.D;
     const ballInside = this.bz > D;
@@ -1147,15 +1159,6 @@ export class FootEngine {
     const wz = this.wallZ();
     this.wallXs().forEach((x, i) => ents.push({ z: wz, draw: () => this.drawWallPlayer(ctx, x, i) }));
     ents.push({ z: this.shooterZ(), draw: () => this.drawShooter(ctx) });
-    for (const m of this.teammates()) {
-      ents.push({
-        z: m.z,
-        draw: () => {
-          const g = this.cam.p(m.x, 0, m.z);
-          drawFigure(ctx, skeleton(m.pose, m.body), m.body, m.kit, { sx: g.x, sy: g.y, s: g.s }, { facing: "front" });
-        }
-      });
-    }
     ents.sort((a, b) => b.z - a.z).forEach((e) => e.draw());
 
     drawParticles(ctx, this.parts);
@@ -1354,12 +1357,6 @@ export class FootEngine {
           return { x: lerp(P.x, CEL.x, easeInOut(k)), z: lerp(P.z, CEL.z, easeInOut(k)) };
         };
         const runFront = () => sagPose({ ...runSag((c * 3.6 / STRIDE) * 2 * Math.PI, 0.9), lean: 0.2 }, "front");
-        if (kind === "fimbu") {
-          // fin de série : demi-tour, sprint vers la caméra, puis fimbu avec les coéquipiers
-          if (c < 0.7) return { ...toCam(0.7), facing: "front", pose: runFront() };
-          const into = clamp((c - 0.7) / 0.25, 0, 1);
-          return { ...CEL, facing: "front", pose: lerpPose(sagPose(runSag(0, 0.3), "front"), fimbuPose(c - 0.7), into) };
-        }
         if (kind === "glissade") {
           // sprint puis glissade à genoux, bras ouverts vers la tribune
           if (c < 0.55) return { ...toCam(0.9), facing: "front", pose: runFront() };
@@ -1371,12 +1368,6 @@ export class FootEngine {
             x: base.x, z: base.z - extra, facing: "front",
             pose: lerpPose(runFront(), POSES.kneeSlide, easeOutCubic(clamp(k * 2, 0, 1)))
           };
-        }
-        if (kind === "nom") {
-          // dos à la caméra, les pouces vers le nom sur le maillot
-          const k = easeInOut(clamp(c / 0.35, 0, 1));
-          const bob = Math.abs(Math.sin(c * 5)) * 0.04 * k;
-          return { ...pos, facing: "back", pose: { ...lerpPose(sagPose(sg), POSES.thumbsName, k), air: bob } };
         }
         if (kind === "poing") {
           // face caméra, sauts poing levé
@@ -1400,39 +1391,15 @@ export class FootEngine {
     return { ...pos, facing: "back", pose: sagPose(sg) };
   }
 
-  /** Célébration variée à chaque but ; le fimbu est réservé au dernier but de la série. */
-  private celebrationKind(): "fimbu" | "glissade" | "nom" | "poing" | "avion" {
-    if (this.setupData.finale) return "fimbu";
-    const list = ["avion", "glissade", "nom", "poing"] as const;
-    return list[(this.setupData.shot + (this.setupData.seed % 4)) % list.length];
+  /** Célébration variée à chaque but. */
+  private celebrationKind(): "glissade" | "poing" | "avion" | "siuu" | "salut" | "coeur" {
+    const list = ["siuu", "salut", "avion", "coeur", "glissade", "poing"] as const;
+    return list[(this.setupData.shot + (this.setupData.seed % 7)) % list.length];
   }
 
   private celebrationSpot() {
     const bx = this.setupData.stage.ballX;
     return { x: bx + 0.2, z: -1.6 };
-  }
-
-  /** Deux coéquipiers accourent pour danser le fimbu avec le buteur. */
-  private teammates(): { x: number; z: number; pose: Pose; kit: Kit; body: Body }[] {
-    const o = this.outcome;
-    if (!o || !o.scored || this.setupData.reduced || !this.setupData.finale) return [];
-    const c = this.t - this.resolvedAt - 0.5;
-    if (c < 0) return [];
-    const CEL = this.celebrationSpot();
-    const mates = [
-      { from: -5.5, dx: -1.25, dz: 0.35, num: 4, boots: "#22d3ee", body: BODIES[2] },
-      { from: 5.5, dx: 1.25, dz: 0.5, num: 8, boots: "#f472b6", body: BODIES[3] }
-    ];
-    return mates.map((m) => {
-      const k = clamp(c / 0.9, 0, 1);
-      const x = lerp(CEL.x + m.from, CEL.x + m.dx, easeOutCubic(k));
-      const z = CEL.z + m.dz;
-      const pose =
-        k < 1
-          ? sagPose({ ...runSag((c * 4.2 / 2.1) * 2 * Math.PI, 0.95), lean: 0.2 }, "front")
-          : fimbuPose(c - 0.9 + 0.2);
-      return { x, z, pose, kit: LEOPARDS_KIT("", m.num, m.boots), body: m.body };
-    });
   }
 
   private shooterZ() {
@@ -1531,19 +1498,23 @@ export class FootEngine {
     const sh = A.shooter!;
     const kp = A.keeper!;
     const D = this.D;
-    const tc = c3.kickContact;
-    const foot = c3.kickFoot;
+    const SM = c3.metaFor(sh);
+    const tc = SM.kickContact;
+    const foot = SM.kickFoot;
     const rootX = s.stage.ballX - foot.x - 0.05;
     const rootZ = -foot.z - 0.14;
-    const END = Math.min(1.34, c3.clips.kick!.duration - 0.15);
+    const END = Math.min(tc + 0.5, sh.duration("kick") - 0.15);
 
     /* --- tireur --- */
     sh.motionScale = { x: 1, y: 0, z: 1, lift: 0 };
     sh.inPlace = false;
-    const tAim = D > 15 ? 0.22 : 0.02;
+    const tAim = sh.rig === "mx" ? (D > 15 ? 0.12 : 0.02) : D > 15 ? 0.22 : 0.02;
     if (this.phase === "aim") {
-      sh.place(rootX, rootZ, 0);
+      const breath = Math.sin(this.t * 2.8) * 0.015;
+      sh.place(rootX, rootZ, 0, false, breath * 0.5);
       sh.pose("kick", tAim);
+      const V = m.THREE.Vector3;
+      sh.aim(B.spine2, B.neck, new V(0, 1, breath * 0.4));
     } else if (this.phase === "runup") {
       sh.place(rootX, rootZ, 0);
       sh.pose("kick", tAim + ((tc - tAim) * this.phaseT) / RUN);
@@ -1574,21 +1545,22 @@ export class FootEngine {
     kp.motionScale = { x: 1, y: 0, z: 1, lift: 0 };
     if (this.phase === "aim" || this.phase === "runup" || !d) {
       const sway = Math.sin(this.t * 1.6) * 0.22 * (this.phase === "runup" ? 1 - clamp(this.phaseT / 0.35, 0, 1) : 1);
-      const hop = this.phase === "runup" ? 0.1 * Math.sin(clamp((this.phaseT - (RUN - 0.24)) / 0.24, 0, 1) * Math.PI) : 0;
+      const shuffle = this.phase === "aim" ? Math.sin(this.t * 5.2) * 0.035 : 0;
+      const hop = this.phase === "runup" ? 0.1 * Math.sin(clamp((this.phaseT - (RUN - 0.24)) / 0.24, 0, 1) * Math.PI) : (this.phase === "aim" ? Math.abs(Math.sin(this.t * 4.4)) * 0.025 : 0);
       kp.inPlace = true;
-      kp.place(kx + sway, kz, Math.PI, false, hop);
+      kp.place(kx + sway + shuffle, kz, Math.PI, false, hop);
       kp.pose("catch", 0.02);
       // posture de gardien : fléchi, sur les appuis, bras ouverts paumes vers le tireur
       {
         const V = this.c3m!.THREE.Vector3;
         const bounce = Math.abs(Math.sin(this.t * 4.2)) * (this.setupData.reduced ? 0 : 1);
-        kp.dropHips(0.13 + bounce * 0.03);
+        kp.dropHips(0.14 + bounce * 0.035);
         kp.aim(B.lThigh, B.lCalf, new V(0.32, -0.85, 0.4));
         kp.aim(B.rThigh, B.rCalf, new V(-0.32, -0.85, 0.4));
         kp.aim(B.lCalf, B.lFoot, new V(0.08, -1, -0.12));
         kp.aim(B.rCalf, B.rFoot, new V(-0.08, -1, -0.12));
-        kp.aim(B.lUpper, B.lFore, new V(0.75, -0.55, 0.45));
-        kp.aim(B.rUpper, B.rFore, new V(-0.75, -0.55, 0.45));
+        kp.aim(B.lUpper, B.lFore, new V(0.75 + Math.sin(this.t * 2.8) * 0.05, -0.55, 0.45));
+        kp.aim(B.rUpper, B.rFore, new V(-0.75 - Math.sin(this.t * 2.8) * 0.05, -0.55, 0.45));
         kp.aim(B.lFore, B.lHand, new V(0.3, 0.15, 1));
         kp.aim(B.rFore, B.rHand, new V(-0.3, 0.15, 1));
       }
@@ -1600,9 +1572,10 @@ export class FootEngine {
       }
     } else {
       // tirs longs (coups francs) : il ne plonge pas trop tôt, il se replace en pas chassés puis part au bon moment
-      const M0 = c3.diveMeta;
+      const KM = c3.metaFor(kp).dive;
+      const T0 = kp.rig === "mx" ? 0.3 : 0.32;
       const isDive = d.kind === "low" || d.kind === "mid" || d.kind === "high";
-      const natural = (M0.te - 0.32) / 1.9;
+      const natural = (KM.te - T0) / 1.9;
       const startEff = isDive ? Math.max(d.start, d.arrive - natural - 0.03) : d.start;
       const waitT = this.t - this.kickT - d.start;
       const shuffle = isDive && startEff > d.start ? clamp(d.tx - kx, -0.8, 0.8) * clamp(waitT / Math.max(0.2, startEff - d.start), 0, 1) * 0.75 : 0;
@@ -1610,9 +1583,14 @@ export class FootEngine {
       const since = this.t - this.kickT - startEff;
       if (since < 0) {
         kp.inPlace = true;
-        kp.place(kx2, kz, Math.PI, false, waitT > 0 ? Math.abs(Math.sin(waitT * 9)) * 0.05 : 0);
-        kp.pose("catch", 0.02);
-        if (waitT > 0) {
+        const stepping = kp.has("side") && Math.abs(shuffle) > 0.05;
+        kp.place(kx2, kz, Math.PI, stepping && shuffle < 0, stepping ? 0 : waitT > 0 ? Math.abs(Math.sin(waitT * 9)) * 0.05 : 0);
+        if (stepping) {
+          // pas chassés : animation de déplacement latéral, dans le sens du replacement
+          const sd = kp.duration("side");
+          kp.pose("side", Math.min(sd - 0.02, (Math.abs(shuffle) / 1.1) * sd));
+        } else kp.pose("catch", 0.02);
+        if (waitT > 0 && !stepping) {
           const V = this.c3m!.THREE.Vector3;
           kp.dropHips(0.12);
           kp.aim(B.lThigh, B.lCalf, new V(0.32, -0.85, 0.4));
@@ -1622,27 +1600,37 @@ export class FootEngine {
         }
       } else if (isDive) {
         // plongeon calé sur l'arrivée du ballon : les gants atteignent le point visé au bon moment
-        const M = c3.diveMeta;
+        const M = KM;
         const K = s.stage.keeper;
         const avail = Math.max(0.16, d.arrive - startEff);
-        const speed = clamp((M.te - 0.32) / avail, 1.45, 2.6);
-        const at = 0.32 + since * speed;
+        const speed = clamp((M.te - T0) / avail, 1.45, 2.6);
+        const at = T0 + since * speed;
         const armExtra = M.handLat - M.hipLat;
         const maxReach = K.reach * s.diff.keeperReach + armExtra;
         const want = Math.min(Math.abs(d.tx - kx2), maxReach);
         const k = clamp((want - armExtra) / M.hipLat, 0.06, 1.2);
         const lift = clamp(d.ty - M.handY, -0.6, 0.95);
         const bell = at < M.te + 0.15 ? clamp((at - 0.4) / (M.te - 0.4), 0, 1) : clamp(1 - (at - M.te - 0.15) / 0.45, 0, 1);
+        const landT = at - (M.te + 0.15);
+        const groundCompress = landT > 0 ? Math.max(0, Math.sin(Math.min(Math.PI, landT * 6.5))) * 0.08 : 0;
         kp.inPlace = false;
-        kp.motionScale = { x: k, y: d.ty < 0.6 ? -0.5 : 0, z: 0.22, lift: lift * bell };
-        kp.place(kx2, kz, Math.PI, d.side === 1);
-        kp.pose("dive", Math.min(at, 2.15));
+        kp.motionScale = { x: k, y: d.ty < 0.6 ? -0.5 : -groundCompress, z: 0.22, lift: lift * bell };
+        // sens natif du plongeon mesuré sur le squelette : on mire seulement si besoin
+        kp.place(kx2, kz, Math.PI, d.side === M.dir);
+        // Mixamo : l'animation enchaîne le relevé après la parade
+        kp.pose("dive", kp.rig === "mx" ? Math.min(at, kp.duration("dive") - 0.05) : Math.min(at, 2.15));
+        if (groundCompress > 0.02) kp.dropHips(groundCompress);
       } else {
         kp.inPlace = true;
+        const mxJ = kp.rig === "mx";
         const at = 0.15 + since * 1.6;
-        const jump = d.kind === "jump" ? 0.5 * Math.sin(clamp(since / 0.6, 0, 1) * Math.PI) : 0;
-        kp.place(kx + d.px * d.side * clamp(since / 0.25, 0, 1), kz, Math.PI, false, jump);
-        kp.pose(d.kind === "jump" ? "catch" : "scoop", Math.min(at, d.kind === "jump" ? 0.6 : 0.9));
+        // Mixamo : la détente est dans l'animation (saut bras tendus / plongeon court au sol)
+        const jump = d.kind === "jump" && !mxJ ? 0.5 * Math.sin(clamp(since / 0.6, 0, 1) * Math.PI) : 0;
+        kp.place(kx + d.px * d.side * clamp(since / 0.25, 0, 1), kz, Math.PI, mxJ && d.kind !== "jump" && d.side === 1, jump);
+        if (mxJ) {
+          if (d.kind === "jump") kp.pose("jump", Math.min(0.3 + since * 1.25, 1.3));
+          else kp.pose("scoop", Math.min(0.15 + since * 1.4, 0.66));
+        } else kp.pose(d.kind === "jump" ? "catch" : "scoop", Math.min(at, d.kind === "jump" ? 0.6 : 0.9));
       }
     }
 
@@ -1653,9 +1641,23 @@ export class FootEngine {
     const jumpK = sinceK < 0.1 ? 0 : Math.sin(clamp((sinceK - 0.1) / 0.55, 0, 1) * Math.PI);
     A.wall.forEach((w, i) => {
       w.inPlace = true;
+      const V = this.c3m!.THREE.Vector3;
+      if (w.has("header")) {
+        // vrai saut de la tête (impulsion légèrement décalée d'un joueur à l'autre)
+        const lag = i * 0.035;
+        const ht = sinceK < 0 ? 0.25 : Math.min(w.duration("header") - 0.02, 0.72 + Math.max(0, sinceK - lag) * 1.5);
+        w.place(xs[i], wz, Math.PI, i % 2 === 1);
+        w.pose("header", ht);
+        if (sinceK < 0) {
+          w.aim(B.lUpper, B.lFore, new V(0.25, -1, 0.35));
+          w.aim(B.rUpper, B.rFore, new V(-0.25, -1, 0.35));
+          w.aim(B.lFore, B.lHand, new V(-1, -0.4, 0.5));
+          w.aim(B.rFore, B.rHand, new V(1, -0.4, 0.5));
+        }
+        return;
+      }
       w.place(xs[i], wz, Math.PI, false, 0.36 * jumpK);
       w.pose("catch", 0.02);
-      const V = this.c3m!.THREE.Vector3;
       w.aim(B.lUpper, B.lFore, new V(0.25, -1, 0.35));
       w.aim(B.rUpper, B.rFore, new V(-0.25, -1, 0.35));
       w.aim(B.lFore, B.lHand, new V(-1, -0.4, 0.5));
@@ -1669,6 +1671,12 @@ export class FootEngine {
     const P = this.celeb;
     sh.inPlace = true;
     const into = clamp(c / 0.4, 0, 1);
+    if (!scored && !this.setupData.reduced && sh.has("miss")) {
+      // déception jouée (saut de rage, mains sur la tête)
+      sh.place(P.x, P.z, 0);
+      sh.blend("kick", END, "miss", Math.min(sh.duration("miss") - 0.05, c * 0.9), into);
+      return;
+    }
     if (!scored || this.setupData.reduced) {
       // déception : mains sur la tête
       sh.place(P.x, P.z, 0);
@@ -1687,25 +1695,49 @@ export class FootEngine {
     }
     const kind = this.celebrationKind();
     const turn = Math.PI * easeInOut(clamp(c / 0.45, 0, 1));
+    if (kind === "siuu") {
+      const jump = c < 0.65 ? Math.sin((c / 0.65) * Math.PI) * 0.42 : 0;
+      const rot = easeInOut(clamp(c / 0.55, 0, 1)) * Math.PI;
+      sh.place(P.x, P.z, rot, false, jump);
+      sh.blend("kick", END, "catch", 0.02, into);
+      if (c >= 0.5) {
+        sh.aim(B.lUpper, B.lFore, new V(0.5, -0.85, -0.35), into);
+        sh.aim(B.rUpper, B.rFore, new V(-0.5, -0.85, -0.35), into);
+        sh.aim(B.lFore, B.lHand, new V(0.2, -0.9, -0.2), into);
+        sh.aim(B.rFore, B.rHand, new V(-0.2, -0.9, -0.2), into);
+        sh.aim(B.lThigh, B.lCalf, new V(0.4, -0.85, 0.2), into);
+        sh.aim(B.rThigh, B.rCalf, new V(-0.4, -0.85, 0.2), into);
+      }
+      return;
+    }
+    if (kind === "salut") {
+      sh.place(P.x, P.z, turn);
+      sh.blend("kick", END, "catch", 0.02, into);
+      sh.aim(B.rUpper, B.rFore, new V(-0.7, 0.45, 0.35), into);
+      sh.aim(B.rFore, B.rHand, new V(0.75, 0.65, -0.1), into);
+      sh.aim(B.lUpper, B.lFore, new V(0.12, -0.95, 0.1), into);
+      sh.aim(B.lFore, B.lHand, new V(0.05, -0.95, 0.1), into);
+      return;
+    }
+    if (kind === "coeur") {
+      sh.place(P.x, P.z, turn, false, Math.sin(c * 4) * 0.02);
+      sh.blend("kick", END, "catch", 0.02, into);
+      sh.aim(B.lUpper, B.lFore, new V(0.65, 0.3, 0.35), into);
+      sh.aim(B.rUpper, B.rFore, new V(-0.65, 0.3, 0.35), into);
+      sh.aim(B.lFore, B.lHand, new V(-0.35, 0.45, 0.7), into);
+      sh.aim(B.rFore, B.rHand, new V(0.35, 0.45, 0.7), into);
+      return;
+    }
     if (kind === "avion" || kind === "glissade") {
       // danses Mixamo, face aux tribunes
       const clip = kind === "avion" ? "twist" : "bboy";
-      const dur = this.c3!.clips[clip]!.duration;
+      const dur = sh.duration(clip);
       sh.place(P.x, P.z, turn);
       sh.blend("kick", END, clip, (0.4 + c) % dur, into);
       return;
     }
-    if (kind === "nom") {
-      // dos aux caméras, les pouces vers le nom sur le maillot
-      sh.place(P.x, P.z, 0, false, Math.abs(Math.sin(c * 5)) * 0.04);
-      sh.blend("kick", END, "catch", 0.02, into);
-      sh.aim(B.lUpper, B.lFore, new V(0.75, 0.55, -0.25), into);
-      sh.aim(B.rUpper, B.rFore, new V(-0.75, 0.55, -0.25), into);
-      sh.aim(B.lFore, B.lHand, new V(-0.35, 0.15, -1), into);
-      sh.aim(B.rFore, B.rHand, new V(0.35, 0.15, -1), into);
-      return;
-    }
-    if (kind === "poing") {
+    {
+      // poing levé, petits sauts face aux tribunes
       const jump = c > 0.45 ? Math.max(0, Math.sin((c - 0.45) * 6.5)) * 0.3 : 0;
       sh.place(P.x, P.z, turn, false, jump);
       sh.blend("kick", END, "catch", 0.02, into);
@@ -1715,57 +1747,6 @@ export class FootEngine {
       sh.aim(B.lFore, B.lHand, new V(-0.2, 0.5, 1), into);
       return;
     }
-    // fimbu : dernier but de la série, avec deux coéquipiers
-    sh.place(P.x, P.z, turn);
-    sh.blend("kick", END, "catch", 0.02, into);
-    if (c > 0.35) this.fimbu3D(sh, c - 0.35, clamp((c - 0.35) / 0.3, 0, 1));
-    this.mates3D(c, P);
-  }
-
-  /** La danse fimbu, procédurale sur le squelette. */
-  private fimbu3D(a: Actor, t: number, w: number) {
-    const B = this.c3m!.BONE;
-    const V = this.c3m!.THREE.Vector3;
-    const beat = t * Math.PI * 2 * 1.05;
-    const s = Math.sin(beat);
-    const bounce = Math.abs(Math.sin(beat));
-    a.dropHips((0.15 + 0.04 * bounce) * w);
-    a.root.rotation.z = 0.1 * s * w;
-    a.aim(B.lThigh, B.lCalf, new V(0.55, -0.75, 0.3), w);
-    a.aim(B.rThigh, B.rCalf, new V(-0.55, -0.75, 0.3), w);
-    a.aim(B.lCalf, B.lFoot, new V(0.05, -1, -0.12), w);
-    a.aim(B.rCalf, B.rFoot, new V(-0.05, -1, -0.12), w);
-    a.aim(B.lUpper, B.lFore, new V(1, 0.08 * s, 0.12), w);
-    a.aim(B.rUpper, B.rFore, new V(-1, -0.08 * s, 0.12), w);
-    const whipL = Math.max(0, -s);
-    const whipR = Math.max(0, s);
-    a.aim(B.lFore, B.lHand, new V(1 - whipL, whipL * 1.2, 0.15), w);
-    a.aim(B.rFore, B.rHand, new V(-(1 - whipR), whipR * 1.2, 0.15), w);
-  }
-
-  private mates3D(c: number, P: { x: number; z: number }) {
-    const m = this.c3m!;
-    if (!this.A.mates.length) {
-      const skins = [BODIES[2].skin, BODIES[3].skin];
-      this.A.mates = [4, 8].map((n, i) => this.c3!.actor({ ...m.LEOPARDS_PAINT("", n, skins[i], i ? "#be185d" : "#0e7490"), female: !!this.setupData.female }));
-    }
-    const t = c - 0.15;
-    this.A.mates.forEach((a, i) => {
-      const side = i === 0 ? -1 : 1;
-      const tx = P.x + side * 1.3;
-      const tz = P.z + 0.45;
-      const k = clamp(t / 0.95, 0, 1);
-      a.inPlace = true;
-      if (k < 1) {
-        const x = lerp(tx + side * 5, tx, easeOutCubic(k));
-        a.place(x, tz, -side * Math.PI / 2);
-        a.pose("kick", 0.12 + ((Math.max(0, t) * 1.15) % 0.42));
-      } else {
-        a.place(tx, tz, Math.PI);
-        a.pose("catch", 0.02);
-        this.fimbu3D(a, t - 0.95 + 0.25, clamp((t - 0.95) / 0.25, 0, 1));
-      }
-    });
   }
 
   /** Collision balle / gardien 3D (gants, bras, tronc, tête, jambes). */
@@ -1827,7 +1808,7 @@ export class FootEngine {
 
   private drawShadows3D(ctx: CanvasRenderingContext2D) {
     const B = this.c3m!.BONE;
-    const all = [this.A.shooter, this.A.keeper, ...this.A.wall, ...this.A.mates].filter(Boolean) as Actor[];
+    const all = [this.A.shooter, this.A.keeper, ...this.A.wall].filter(Boolean) as Actor[];
     for (const a of all) {
       a.root.updateMatrixWorld(true);
       const h = a.bone(B.pelvis);
@@ -1863,6 +1844,512 @@ export class FootEngine {
       ctx.lineTo(pts[i].x, pts[i].y);
       ctx.stroke();
     }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Tribunes animées & Écran géant officiel (sans supporters devant)    */
+  /* ------------------------------------------------------------------ */
+
+  /** Rectangle écran de l'écran géant affichant les 2 logos les plus importants */
+  private getJumboRect(): { x: number; y: number; w: number; h: number } | null {
+    const W = this.w;
+    const cam = this.cam;
+    const D = this.D;
+    const boardZ = D + 3.2;
+    const standsTop = 64;
+    const standsBottom = cam.p(0, 0, boardZ).y - 30;
+    const avail = standsBottom - standsTop;
+    if (avail <= 70) return null;
+    const sh = clamp(avail * 0.62, 60, 170);
+    const sw = Math.min(W * 0.86, sh * 2.5);
+    const sx = (W - sw) / 2;
+    const sy = standsTop + (avail - sh) * 0.38;
+    return { x: sx, y: sy, w: sw, h: sh };
+  }
+
+  /** Affiche l'écran géant avec les deux logos officiels au premier plan net, sans aucun obstacle */
+  private drawJumboScreen(ctx: CanvasRenderingContext2D) {
+    const rect = this.getJumboRect();
+    if (!rect) return;
+    const { x: sx, y: sy, w: sw, h: sh } = rect;
+    const cam = this.cam;
+    const D = this.D;
+    const boardZ = D + 3.2;
+    const standsBottom = cam.p(0, 0, boardZ).y - 30;
+    const final = this.setupData.stage.id >= 15 || this.setupData.stage.id <= 0;
+
+    ctx.save();
+    // 1. Cadre sombre et pied sous l'écran
+    ctx.fillStyle = "#020617";
+    ctx.fillRect(sx - 6, sy - 6, sw + 12, sh + 12);
+    ctx.fillStyle = "#1e293b";
+    ctx.fillRect(sx + sw * 0.45, sy + sh + 6, sw * 0.1, Math.max(0, standsBottom - sy - sh));
+
+    // 2. Fond LED bleu officiel
+    const gr = ctx.createLinearGradient(sx, sy, sx, sy + sh);
+    gr.addColorStop(0, "#0B47B0");
+    gr.addColorStop(1, "#08132B");
+    ctx.fillStyle = gr;
+    ctx.fillRect(sx, sy, sw, sh);
+
+    // 3. Logo BLOC LÉOPARDS à gauche
+    const logo = brandImage(LOGO_BL);
+    const lh = sh * 0.84;
+    if (logo) {
+      const lw = (lh * logo.naturalWidth) / logo.naturalHeight;
+      ctx.drawImage(logo, sx + sh * 0.1, sy + (sh - lh) / 2, lw, lh);
+      const rest = sw - lw - sh * 0.3;
+      // 4. Logo RD CONGO CŒUR DE L'AFRIQUE à droite
+      drawBrandPanel(ctx, sx + lw + sh * 0.2, sy + sh * 0.24, rest, sh * 0.42, "rdc", "rgba(0,0,0,0)");
+    } else {
+      drawBrandPanel(ctx, sx, sy + sh * 0.3, sw, sh * 0.4, "rdc", "rgba(0,0,0,0)");
+    }
+
+    // 5. Lignes de balayage écran LED
+    ctx.fillStyle = "rgba(255,255,255,0.06)";
+    for (let y = sy; y < sy + sh; y += 3) ctx.fillRect(sx, y, sw, 1);
+
+    // 6. Bordure or nette délimitant l'écran
+    ctx.strokeStyle = "rgba(244, 196, 0, 0.75)";
+    ctx.lineWidth = 2.5;
+    ctx.strokeRect(sx, sy, sw, sh);
+
+    if (final) {
+      ctx.fillStyle = "#F4C400";
+      ctx.font = `${Math.round(sh * 0.15)}px 'Bebas Neue', Anton, sans-serif`;
+      ctx.textAlign = "right";
+      ctx.fillText(this.setupData.stage.name.toUpperCase(), sx + sw - 8, sy + sh * 0.2);
+      ctx.textAlign = "left";
+    }
+    ctx.restore();
+  }
+
+  private drawAnimatedCrowd(ctx: CanvasRenderingContext2D) {
+    const cam = this.cam;
+    const D = this.D;
+    const standZ0 = D + 7;
+    const rows = 26;
+    const W = this.w;
+    const t = this.t;
+    const reaction = this.crowdReaction;
+
+    // Zone d'exclusion totale pour préserver à 100% les 2 logos
+    const screen = this.getJumboRect();
+    const noGoLeft = screen ? screen.x - 20 : -999;
+    const noGoRight = screen ? screen.x + screen.w + 20 : -999;
+    const noGoTop = screen ? screen.y - 30 : -999;
+    const noGoBottom = screen ? screen.y + screen.h + 32 : -999;
+    const inScreen = (px: number, py: number) => !!(screen && px >= noGoLeft && px <= noGoRight && py >= noGoTop && py <= noGoBottom);
+
+    // 1. Gradins éloignés (r = 8 à 25) : rendu allégé LOD
+    for (let r = rows - 1; r >= 7; r -= 2) {
+      const z = standZ0 + r * 1.05;
+      const y = 1.2 + r * 0.72;
+      const top = cam.p(0, y + 0.72, z + 1.05).y;
+      const bot = cam.p(0, y, z).y;
+      if (bot < 0 || top > this.h) continue;
+      const h = Math.max(2, bot - top);
+      const a = cam.p(-45, y, z);
+      const b = cam.p(45, y, z);
+      const wave = Math.sin(t * 3.2 + r * 0.45) * (reaction === "goal" ? 2.5 : 0.8);
+      const lineY = top + wave;
+
+      ctx.fillStyle = r % 4 === 0 ? "#142247" : "#0d1730";
+      if (screen && lineY >= noGoTop && lineY <= noGoBottom) {
+        // Tronçon gauche de la tribune
+        const leftEndX = Math.min(b.x, noGoLeft);
+        if (leftEndX > a.x) {
+          ctx.fillRect(Math.max(0, a.x), lineY, leftEndX - Math.max(0, a.x), h);
+        }
+        // Tronçon droit de la tribune
+        const rightStartX = Math.max(a.x, noGoRight);
+        if (b.x > rightStartX) {
+          ctx.fillRect(rightStartX, lineY, Math.min(W, b.x) - rightStartX, h);
+        }
+      } else {
+        ctx.fillRect(Math.max(0, a.x), lineY, Math.min(W, b.x) - Math.max(0, a.x), h);
+      }
+      // silhouettes lointaines : têtes et maillots, qui sautent sur un but
+      if (h >= 2.5) {
+        const st = Math.max(2.4, h * 0.62);
+        let k = r * 53;
+        for (let x = Math.max(0, a.x) + (r % 3); x < Math.min(W, b.x); x += st) {
+          k++;
+          const hop = reaction === "goal" ? Math.abs(Math.sin(t * 8 + k)) * h * 0.35 : 0;
+          const fy = lineY + h * 0.18 - hop;
+          if (inScreen(x, fy)) continue;
+          ctx.fillStyle = FAN_SHIRTS[(k * 7) % FAN_SHIRTS.length];
+          ctx.fillRect(x - st * 0.36, fy + h * 0.32, st * 0.72, h * 0.62);
+          ctx.fillStyle = FAN_SKIN[(k * 5) % FAN_SKIN.length];
+          ctx.fillRect(x - st * 0.18, fy, st * 0.36, h * 0.34);
+          if (reaction === "goal" && k % 3 === 0) ctx.fillRect(x - st * 0.4, fy - h * 0.3, st * 0.12, h * 0.4);
+        }
+      }
+    }
+
+    // 2. Gradins intermédiaires (r = 3 à 6)
+    for (let r = 6; r >= 3; r--) {
+      const z = standZ0 + r * 1.05;
+      const y = 1.2 + r * 0.72;
+      const top = cam.p(0, y + 0.72, z + 1.05).y;
+      const bot = cam.p(0, y, z).y;
+      const h = bot - top;
+      if (h < 3) continue;
+      const a = cam.p(-30, y, z);
+      const b = cam.p(30, y, z);
+      const step = Math.max(7, h * 0.95);
+      const startX = Math.max(0, a.x);
+      const endX = Math.min(W, b.x);
+      let idx = r * 19;
+      for (let x = startX + (r % 4) * 3; x < endX; x += step) {
+        idx++;
+        const phase = (idx * 1.618) % (Math.PI * 2);
+        const freq = 2.6 + (idx % 3) * 0.8;
+        let bounce = 0;
+        let armsUp = false;
+        if (reaction === "goal") {
+          bounce = Math.abs(Math.sin(t * 8 + phase)) * h * 0.42;
+          armsUp = true;
+        } else if (reaction === "save") {
+          bounce = -h * 0.12;
+        } else if (reaction === "post") {
+          bounce = 0;
+        } else {
+          bounce = Math.sin(t * freq + phase) * h * 0.16;
+          armsUp = idx % 6 === 0;
+        }
+        const cy = top + h * 0.38 - bounce;
+
+        // Protection : AUCUN supporter ne doit entrer dans la zone de l'écran géant
+        if (inScreen(x, cy) || inScreen(x, cy - h * 0.75) || inScreen(x - h * 0.45, cy) || inScreen(x + h * 0.45, cy)) continue;
+
+        drawFan(ctx, x, cy, h, idx, armsUp ? (idx % 4 === 0 ? "phone" : "up") : idx % 5 === 0 ? "clap" : "rest", t);
+      }
+    }
+
+    // 3. Premiers rangs & Cœur du Bloc Léopards
+    this.drawBlocLeopardsCore(ctx, standZ0, screen);
+  }
+
+  /** Le cœur vibrant du Bloc Léopards : supporters, tambours et drapeaux placés autour de l'écran sans le cacher */
+  private drawBlocLeopardsCore(ctx: CanvasRenderingContext2D, standZ0: number, screen: { x: number; y: number; w: number; h: number } | null) {
+    const cam = this.cam;
+    const t = this.t;
+    const reaction = this.crowdReaction;
+    const noGoLeft = screen ? screen.x - 20 : -999;
+    const noGoRight = screen ? screen.x + screen.w + 20 : -999;
+    const noGoTop = screen ? screen.y - 30 : -999;
+    const noGoBottom = screen ? screen.y + screen.h + 32 : -999;
+    const inScreen = (px: number, py: number) => !!(screen && px >= noGoLeft && px <= noGoRight && py >= noGoTop && py <= noGoBottom);
+
+    // Rangs 0, 1, 2
+    for (let r = 2; r >= 0; r--) {
+      const z = standZ0 + r * 1.1;
+      const y = 1.25 + r * 0.74;
+      const pTop = cam.p(0, y + 0.74, z + 1.1);
+      const pBot = cam.p(0, y, z);
+      const h = pBot.y - pTop.y;
+      if (h < 4) continue;
+      const pLeft = cam.p(-25, y, z);
+      const pRight = cam.p(25, y, z);
+      const numSupporters = Math.round((pRight.x - pLeft.x) / (h * 0.88));
+      const step = (pRight.x - pLeft.x) / Math.max(16, numSupporters);
+
+      for (let i = 0; i < numSupporters; i++) {
+        const x = pLeft.x + i * step;
+        if (x < -20 || x > this.w + 20) continue;
+        const hash = (i * 37 + r * 101) % 1000;
+        const phase = (hash * 0.031) % (Math.PI * 2);
+        const speed = 2.8 + (hash % 5) * 0.4;
+        const worldX = -25 + (i / numSupporters) * 50;
+
+        let hop = 0;
+        let role: "drum" | "flag" | "cheer" | "clap" | "wave" = "cheer";
+
+        // Tambours positionnés sur les côtés des tribunes basses
+        if (r === 0 && (Math.abs(worldX - -12) < 1.4 || Math.abs(worldX - 12) < 1.4)) {
+          role = "drum";
+        }
+        // Drapeaux UNIQUEMENT sur les ailes latérales extérieures, strictement loin de l'écran des logos
+        else if ((worldX <= -11 || worldX >= 11) && (hash % 6 === 0 || (r === 1 && (worldX < -13 || worldX > 13)))) {
+          role = "flag";
+        } else if (hash % 4 === 0) {
+          role = "clap";
+        } else if (hash % 3 === 0) {
+          role = "wave";
+        }
+
+        if (reaction === "goal") {
+          hop = Math.abs(Math.sin(t * 9 + phase)) * h * 0.45;
+        } else if (reaction === "save") {
+          hop = -h * 0.14;
+        } else if (reaction === "post") {
+          hop = 0;
+        } else {
+          hop = Math.abs(Math.sin(t * speed + phase)) * h * 0.18;
+        }
+
+        const cy = pTop.y + h * 0.35 - hop;
+
+        // INTERDICTION FORMELLE : Aucun supporter dans la zone de l'écran géant
+        if (inScreen(x, cy) || inScreen(x, cy - h * 0.75) || inScreen(x - h * 0.45, cy) || inScreen(x + h * 0.45, cy)) continue;
+
+        const pose: FanPose =
+          role === "drum" ? "rest" : role === "flag" ? "flag" : role === "clap" ? "clap" : role === "wave" ? "wave" : reaction === "goal" || hash % 5 === 0 ? "up" : "rest";
+        drawFan(ctx, x, cy, h, hash, reaction === "goal" && pose !== "flag" && role !== "drum" ? "up" : pose, t);
+
+        // 1. TAMBOUR (sur les côtés latéraux uniquement)
+        if (role === "drum" && r === 0) {
+          const drumW = h * 0.52;
+          const drumH = h * 0.38;
+          const drumY = cy + h * 0.42;
+          ctx.fillStyle = "#F4C400";
+          ctx.fillRect(x - drumW / 2, drumY, drumW, drumH);
+          ctx.fillStyle = "#0B47B0";
+          ctx.fillRect(x - drumW / 2, drumY + drumH * 0.28, drumW, drumH * 0.44);
+          ctx.fillStyle = "#ce1021";
+          ctx.fillRect(x - drumW / 2, drumY + drumH * 0.42, drumW, drumH * 0.16);
+          ctx.fillStyle = "#fff8e7";
+          ctx.beginPath();
+          ctx.ellipse(x, drumY, drumW / 2, drumH * 0.22, 0, 0, Math.PI * 2);
+          ctx.fill();
+          const beatL = Math.sin(t * 8.5);
+          const beatR = Math.sin(t * 8.5 + Math.PI);
+          ctx.strokeStyle = "#5c3317";
+          ctx.lineWidth = Math.max(1.5, h * 0.09);
+          ctx.beginPath();
+          ctx.moveTo(x - h * 0.24, cy + h * 0.25);
+          ctx.lineTo(x - h * 0.12, drumY - drumH * 0.1 + beatL * 4);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(x + h * 0.24, cy + h * 0.25);
+          ctx.lineTo(x + h * 0.12, drumY - drumH * 0.1 + beatR * 4);
+          ctx.stroke();
+        }
+        // 2. DRAPEAU (sur les ailes uniquement, ne dépasse jamais sur les logos)
+        else if (role === "flag") {
+          const flagH = h * 0.85;
+          const flagW = flagH * 1.45;
+          const poleH = h * 1.55;
+          const topX = x + h * 0.35;
+          const topY = cy - poleH + h * 0.2;
+          // Sécurité stricte : la hampe et la toile du drapeau doivent rester entièrement hors de l'écran des logos
+          const okLeft = !screen || topX + flagW < screen.x - 12;
+          const okRight = !screen || topX > screen.x + screen.w + 12;
+          if (okLeft || okRight) {
+            const waveSpeed = reaction === "goal" ? 8 : 4.5;
+            const waveAmp = reaction === "goal" ? h * 0.16 : h * 0.09;
+            ctx.strokeStyle = "rgba(255,255,255,0.75)";
+            ctx.lineWidth = Math.max(1.5, h * 0.07);
+            ctx.beginPath();
+            ctx.moveTo(x + h * 0.15, cy + h * 0.2);
+            ctx.lineTo(topX, topY);
+            ctx.stroke();
+
+            const isRDC = hash % 2 === 0;
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(topX, topY);
+            for (let seg = 1; seg <= 6; seg++) {
+              const u = seg / 6;
+              const px = topX + u * flagW;
+              const py = topY + Math.sin(t * waveSpeed + u * 3.8 + phase) * waveAmp * u;
+              ctx.lineTo(px, py);
+            }
+            for (let seg = 6; seg >= 0; seg--) {
+              const u = seg / 6;
+              const px = topX + u * flagW;
+              const py = topY + flagH + Math.sin(t * waveSpeed + u * 3.8 + phase) * waveAmp * u;
+              ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+            ctx.fillStyle = isRDC ? "#007fff" : "#0B47B0";
+            ctx.fill();
+
+            if (isRDC) {
+              ctx.strokeStyle = "#ce1021";
+              ctx.lineWidth = Math.max(2, flagH * 0.22);
+              ctx.beginPath();
+              ctx.moveTo(topX, topY + flagH * 0.85);
+              ctx.lineTo(topX + flagW * 0.85, topY + flagH * 0.15);
+              ctx.stroke();
+              ctx.fillStyle = "#F4C400";
+              ctx.beginPath();
+              ctx.arc(topX + flagW * 0.22, topY + flagH * 0.3, flagH * 0.14, 0, Math.PI * 2);
+              ctx.fill();
+            } else {
+              ctx.fillStyle = "#F4C400";
+              ctx.font = `900 ${Math.round(flagH * 0.38)}px sans-serif`;
+              ctx.fillText("BL", topX + flagW * 0.2, topY + flagH * 0.65);
+            }
+            ctx.restore();
+          }
+        }
+      }
+    }
+  }
+}
+
+/* ---------- supporters dessinés ---------- */
+
+const FAN_SKIN = ["#3b2214", "#4a2c1a", "#5a3520", "#6b4128", "#7a4b2e", "#8d5a3b"];
+const FAN_SHIRTS = ["#2fa2e3", "#2fa2e3", "#1466E0", "#F4C400", "#d81e27", "#f8fafc", "#2fa2e3", "#0B47B0", "#111827"];
+const FAN_WAX = ["#d81e27", "#F4C400", "#16a34a", "#7c3aed", "#ea580c"];
+type FanPose = "rest" | "up" | "clap" | "wave" | "phone" | "flag";
+
+/** Un supporter en buste (épaules, cou, visage ombré, coiffure, maillot, écharpe), animé selon sa pose. */
+function drawFan(ctx: CanvasRenderingContext2D, x: number, cy: number, h: number, seed: number, pose: FanPose, t: number) {
+  const k = Math.abs(seed | 0);
+  const female = k % 5 === 1 || k % 5 === 3;
+  const skin = FAN_SKIN[(k * 7) % FAN_SKIN.length];
+  const shirt = FAN_SHIRTS[(k * 3) % FAN_SHIRTS.length];
+  const hr = h * (female ? 0.165 : 0.175); // rayon de tête
+  const hx = x + Math.sin(t * 1.3 + k) * h * 0.015;
+  const hy = cy + h * 0.13;
+  const shW = h * (female ? 0.27 : 0.31); // demi-largeur d'épaules
+  const shY = cy + h * 0.36;
+  const detail = h >= 9;
+
+  // bras derrière le buste quand ils sont levés
+  const arm = (side: -1 | 1, ex: number, ey: number, hx2: number, hy2: number) => {
+    ctx.strokeStyle = shirt;
+    ctx.lineCap = "round";
+    ctx.lineWidth = Math.max(1.4, h * 0.12);
+    ctx.beginPath();
+    ctx.moveTo(x + side * shW * 0.85, shY + h * 0.04);
+    ctx.lineTo(ex, ey);
+    ctx.stroke();
+    ctx.strokeStyle = skin;
+    ctx.lineWidth = Math.max(1.2, h * 0.09);
+    ctx.beginPath();
+    ctx.moveTo(ex, ey);
+    ctx.lineTo(hx2, hy2);
+    ctx.stroke();
+    ctx.fillStyle = skin;
+    ctx.beginPath();
+    ctx.arc(hx2, hy2, Math.max(0.8, h * 0.055), 0, Math.PI * 2);
+    ctx.fill();
+  };
+  const sw = Math.sin(t * 6 + k);
+  if (pose === "up") {
+    arm(-1, x - shW * 1.25, shY - h * 0.3, x - shW * 1.05 + sw * h * 0.06, shY - h * 0.66);
+    arm(1, x + shW * 1.25, shY - h * 0.3, x + shW * 1.05 + sw * h * 0.06, shY - h * 0.66);
+  } else if (pose === "wave") {
+    arm(1, x + shW * 1.3, shY - h * 0.25, x + shW * 1.25 + sw * h * 0.18, shY - h * 0.62);
+  } else if (pose === "phone") {
+    arm(1, x + shW * 1.1, shY - h * 0.32, x + shW * 0.85, shY - h * 0.6);
+    ctx.fillStyle = "#0f172a";
+    ctx.fillRect(x + shW * 0.85 - h * 0.05, shY - h * 0.74, h * 0.1, h * 0.16);
+    ctx.fillStyle = `rgba(255,255,255,${0.55 + 0.45 * Math.abs(Math.sin(t * 2 + k))})`;
+    ctx.fillRect(x + shW * 0.85 - h * 0.035, shY - h * 0.72, h * 0.07, h * 0.12);
+  }
+
+  // buste : épaules arrondies, maillot
+  ctx.fillStyle = shirt;
+  ctx.beginPath();
+  ctx.moveTo(x - shW, shY + h * 0.62);
+  ctx.lineTo(x - shW, shY + h * 0.08);
+  ctx.quadraticCurveTo(x - shW, shY - h * 0.02, x - shW * 0.55, shY - h * 0.03);
+  ctx.lineTo(x + shW * 0.55, shY - h * 0.03);
+  ctx.quadraticCurveTo(x + shW, shY - h * 0.02, x + shW, shY + h * 0.08);
+  ctx.lineTo(x + shW, shY + h * 0.62);
+  ctx.closePath();
+  ctx.fill();
+  if (detail) {
+    // ombre latérale (volume) + liseré du maillot des Léopards
+    ctx.fillStyle = "rgba(0,0,0,0.22)";
+    ctx.fillRect(x + shW * 0.35, shY + h * 0.02, shW * 0.65, h * 0.6);
+    if (shirt === "#2fa2e3" || shirt === "#1466E0") {
+      ctx.fillStyle = "#d81e27";
+      ctx.fillRect(x - shW, shY + h * 0.06, shW * 0.22, h * 0.05);
+      ctx.fillRect(x + shW * 0.78, shY + h * 0.06, shW * 0.22, h * 0.05);
+    }
+  }
+  // écharpe RDC (bleu, jaune, rouge) ou col
+  if (k % 3 === 0) {
+    const sy = shY + h * 0.0;
+    ctx.fillStyle = "#007fff";
+    ctx.fillRect(x - shW * 0.6, sy, shW * 1.2, h * 0.07);
+    ctx.fillStyle = "#F4C400";
+    ctx.fillRect(x - shW * 0.6, sy + h * 0.07, shW * 1.2, h * 0.03);
+    ctx.fillStyle = "#d81e27";
+    ctx.fillRect(x - shW * 0.22, sy + h * 0.1, shW * 0.24, h * 0.24);
+  }
+  // cou
+  ctx.fillStyle = skin;
+  ctx.fillRect(x - hr * 0.42, hy + hr * 0.6, hr * 0.84, shY - hy - hr * 0.5);
+
+  // cheveux longs derrière la tête (tresses)
+  const style = female ? (k * 7) % 4 : 4 + ((k * 3) % 4);
+  if (style === 0 && detail) {
+    ctx.fillStyle = "#120c08";
+    ctx.fillRect(hx - hr * 1.05, hy - hr * 0.2, hr * 2.1, hr * 2.1);
+  }
+  // tête ombrée
+  ctx.fillStyle = skin;
+  ctx.beginPath();
+  ctx.ellipse(hx, hy, hr * 0.88, hr, 0, 0, Math.PI * 2);
+  ctx.fill();
+  if (detail) {
+    ctx.fillStyle = "rgba(0,0,0,0.22)";
+    ctx.beginPath();
+    ctx.ellipse(hx + hr * 0.3, hy + hr * 0.1, hr * 0.55, hr * 0.85, 0, -Math.PI / 2, Math.PI / 2);
+    ctx.fill();
+    // bouche ouverte qui chante
+    ctx.fillStyle = "#2a0f08";
+    const mo = pose === "up" || pose === "wave" ? 0.16 + 0.1 * Math.abs(sw) : 0.07;
+    ctx.beginPath();
+    ctx.ellipse(hx, hy + hr * 0.48, hr * 0.2, hr * mo, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // coiffures
+  ctx.fillStyle = "#120c08";
+  if (style === 0 || style === 4) {
+    // tresses / coupe courte : calotte
+    ctx.beginPath();
+    ctx.ellipse(hx, hy - hr * 0.3, hr * 0.92, hr * 0.72, 0, Math.PI, Math.PI * 2);
+    ctx.fill();
+  } else if (style === 1 || style === 5) {
+    // afro
+    ctx.beginPath();
+    ctx.arc(hx, hy - hr * 0.35, hr * (female ? 1.08 : 0.98), Math.PI * 0.9, Math.PI * 2.1);
+    ctx.fill();
+  } else if (style === 2) {
+    // chignon haut
+    ctx.beginPath();
+    ctx.ellipse(hx, hy - hr * 0.3, hr * 0.9, hr * 0.7, 0, Math.PI, Math.PI * 2);
+    ctx.arc(hx, hy - hr * 1.05, hr * 0.42, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (style === 3) {
+    // foulard en wax
+    ctx.fillStyle = FAN_WAX[k % FAN_WAX.length];
+    ctx.beginPath();
+    ctx.ellipse(hx, hy - hr * 0.42, hr * 1.02, hr * 0.85, 0, Math.PI * 0.95, Math.PI * 2.05);
+    ctx.arc(hx + hr * 0.5, hy - hr * 1.0, hr * 0.38, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (style === 6) {
+    // casquette
+    ctx.fillStyle = k % 2 ? "#1466E0" : "#d81e27";
+    ctx.beginPath();
+    ctx.ellipse(hx, hy - hr * 0.35, hr * 0.95, hr * 0.68, 0, Math.PI, Math.PI * 2);
+    ctx.fill();
+    ctx.fillRect(hx - hr * 0.2, hy - hr * 0.42, hr * 1.25, hr * 0.18);
+  } else if (style === 7 && detail) {
+    // peinture tricolore sur le visage
+    ctx.fillStyle = "rgba(0,127,255,0.75)";
+    ctx.fillRect(hx - hr * 0.7, hy - hr * 0.15, hr * 0.4, hr * 0.5);
+    ctx.fillStyle = "rgba(244,196,0,0.8)";
+    ctx.fillRect(hx - hr * 0.3, hy - hr * 0.15, hr * 0.2, hr * 0.5);
+  }
+
+  // mains devant (applaudissements)
+  if (pose === "clap") {
+    const d = Math.abs(Math.sin(t * 8 + k)) * h * 0.14;
+    ctx.fillStyle = skin;
+    ctx.beginPath();
+    ctx.arc(x - d - h * 0.02, shY + h * 0.18, Math.max(0.8, h * 0.065), 0, Math.PI * 2);
+    ctx.arc(x + d + h * 0.02, shY + h * 0.18, Math.max(0.8, h * 0.065), 0, Math.PI * 2);
+    ctx.fill();
   }
 }
 

@@ -8,12 +8,13 @@ import {
   BASKET_CHRONO, BASKET_DUEL, BASKET_STAGES, CHRONO_SECONDS, DIFFS, FOOT_DUEL, FOOT_STAGES, GAME_META, MODE_META,
   comboMult, starsFor, survivalStage, type BasketStage, type Difficulty, type FootStage, type GameId, type Mode
 } from "./lib/config";
-import { addRecord, cleanName, loadSave, persist, progressOf, type SaveData, DEFAULT_SAVE } from "./lib/storage";
-import { challengeUrl, decodeChallenge, type Challenge } from "./lib/challenge";
+import { addDuel, addRecord, cleanName, loadSave, persist, progressOf, playerEvolution, DEFAULT_STATS, type DuelEntry, type SaveData, DEFAULT_SAVE } from "./lib/storage";
+import { challengeKey, challengeUrl, decodeChallenge, type Challenge } from "./lib/challenge";
 import { audio } from "./lib/audio";
 import { randomSeed } from "./lib/rng";
-import { CharacterPreview, ConfirmModal, FimbuMini, GamePreview, Sheet, Stars, Toast, useReducedMotion } from "./ui";
+import { CharacterPreview, ConfirmModal, GamePreview, Sheet, Stars, Toast, useReducedMotion } from "./ui";
 import { LOGO_BL, LOGO_RDC } from "./engine/scene";
+import { ROSTER, charFor } from "./lib/roster";
 
 const PLAYER_COLORS = ["#F4C400", "#72c3ec", "#f87171", "#a3e635"];
 
@@ -42,6 +43,8 @@ interface Session {
   global: number;
   chronoLeft: number;
   challenge: Challenge | null;
+  /** Défi lancé par le joueur (aucun score à battre : il l'envoie ensuite). */
+  creating?: boolean;
   over: boolean;
 }
 
@@ -178,6 +181,46 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
     else if (mode === "duel") setHandoff(0);
   }
 
+  /** Lance directement un défi : reçu (mêmes tirs que l'ami) ou nouveau (à envoyer ensuite). */
+  function startDefi(game: GameId, received: Challenge | null, again?: { st: number; d: Difficulty; seed: number }) {
+    audio.unlock();
+    const data = loadSave();
+    const n = cleanName(data.name || solo.name, "Léopard");
+    const total = game === "foot" ? FOOT_STAGES.length : BASKET_STAGES.length;
+    const c: Challenge = received || {
+      g: game,
+      st: Math.max(1, Math.min(total, progressOf(data, game, data.diff).unlocked)),
+      d: data.diff,
+      seed: randomSeed(),
+      n,
+      p: -1,
+      r: 0,
+      ...(again || {})
+    };
+    const s: Session = {
+      game: c.g,
+      mode: "defi",
+      diff: c.d,
+      stageIdx: Math.max(0, c.st - 1),
+      seed: c.seed,
+      players: [newPlayer(n, data.number || 10, PLAYER_COLORS[0], 5, !!data.female)],
+      current: 0,
+      shot: 0,
+      global: 0,
+      chronoLeft: CHRONO_SECONDS,
+      challenge: c,
+      creating: !received,
+      over: false
+    };
+    setSession(s);
+    setSheet(null);
+    setResult(null);
+    setSplash(null);
+    setHintOn(true);
+    setScreen("play");
+    if (!data.tutorial[c.g]) setTutorial(c.g);
+  }
+
   /* ---------------- Chrono global (basket) ---------------- */
   const playing = screen === "play" && !session?.over && !sheet && handoff === null && !tutorial && !confirmQuit;
   useEffect(() => {
@@ -231,6 +274,25 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
     if (o.scored && streak >= 2 && !reduced) audio.fanfare();
     splashKey.current += 1;
     setSplash({ key: splashKey.current, label: o.label, points: pts, detail: o.detail, tags: money ? [...o.tags, "money"] : o.tags, scored: o.scored });
+
+    // Sauvegarde en temps réel de l'évolution du joueur dans le localStorage
+    update((d) => {
+      const prev = d.stats || DEFAULT_STATS;
+      const isFoot = s.game === "foot";
+      return {
+        ...d,
+        stats: {
+          ...prev,
+          totalShots: prev.totalShots + 1,
+          totalGoals: prev.totalGoals + (isFoot && o.scored ? 1 : 0),
+          totalBaskets: prev.totalBaskets + (!isFoot && o.scored ? 1 : 0),
+          totalPoints: prev.totalPoints + pts,
+          bestStreakFoot: isFoot ? Math.max(prev.bestStreakFoot, streak) : prev.bestStreakFoot,
+          bestStreakBasket: !isFoot ? Math.max(prev.bestStreakBasket, streak) : prev.bestStreakBasket,
+          lastPlayedDate: Date.now()
+        }
+      };
+    });
 
     let next: Session = { ...s, players, shot: s.shot + 1, global: s.global + 1 };
     if (s.mode === "chrono" && o.tags.includes("swish")) next.chronoLeft = s.chronoLeft + 2;
@@ -289,7 +351,17 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
         const st = [...prog.stars];
         st[s.stageIdx] = Math.max(st[s.stageIdx] || 0, stars || 0);
         const unlocked = passed ? Math.max(prog.unlocked, Math.min(totalStages, s.stageIdx + 2)) : prog.unlocked;
-        return { ...d, progress: { ...d.progress, [key]: { unlocked, stars: st } } };
+        const prev = d.stats || DEFAULT_STATS;
+        return {
+          ...d,
+          progress: { ...d.progress, [key]: { unlocked, stars: st } },
+          stats: {
+            ...prev,
+            gamesPlayed: prev.gamesPlayed + 1,
+            stagesCleared: prev.stagesCleared + (passed ? 1 : 0),
+            lastPlayedDate: Date.now()
+          }
+        };
       });
     } else if (s.mode === "survie") {
       title = `${players[0].made} but${players[0].made > 1 ? "s" : ""} d'affilée`;
@@ -307,11 +379,25 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
       won = true;
     } else if (s.mode === "defi" && s.challenge) {
       const me = players[0];
-      won = me.score > s.challenge.p;
-      title = won ? "Défi relevé !" : me.score === s.challenge.p ? "Égalité parfaite" : "Défi perdu";
-      subtitle = won
-        ? `Tu bats ${s.challenge.n} de ${me.score - s.challenge.p} points.`
-        : `${s.challenge.n} garde l'avantage (${s.challenge.p} pts). Renvoie-lui un défi !`;
+      const c = s.challenge;
+      let entry: DuelEntry;
+      if (s.creating) {
+        won = me.made >= stage.toPass;
+        title = `${me.score} pts`;
+        subtitle = `${me.made}/${stage.shots} · Envoie ton score : tes amis joueront exactement les mêmes tirs.`;
+        entry = { key: challengeKey(c), friend: "", game: c.g, st: c.st, diff: c.d, seed: c.seed, me: me.score, them: null, outcome: "sent", round: 0, date: Date.now() };
+      } else {
+        won = me.score > c.p;
+        const tie = me.score === c.p;
+        title = won ? "Défi relevé !" : tie ? "Égalité parfaite" : "Défi perdu";
+        subtitle = won
+          ? `Tu bats ${c.n} de ${me.score - c.p} points. Envoie-lui la revanche !`
+          : tie
+            ? `Même score que ${c.n}. Départagez-vous !`
+            : `${c.n} garde l'avantage de ${c.p - me.score} points. Retente ta chance ou renvoie-lui un défi.`;
+        entry = { key: challengeKey(c), friend: c.n, game: c.g, st: c.st, diff: c.d, seed: c.seed, me: me.score, them: c.p, outcome: won ? "won" : tie ? "tie" : "lost", round: c.r || 0, date: Date.now() };
+      }
+      update((d) => addDuel(d, entry));
     }
     // classement local (appareil)
     if (s.mode !== "duel") {
@@ -332,7 +418,7 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
     setTimeout(() => {
       setResult({
         title, subtitle, stars, passed, ranking, rank, canNext, won,
-        shareable: s.mode === "carriere" || s.mode === "defi" || s.mode === "duel"
+        shareable: s.mode === "carriere" || s.mode === "defi" || s.mode === "duel" || s.mode === "survie" || s.mode === "chrono"
       });
       setScreen("results");
     }, 1700);
@@ -342,7 +428,7 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
 
   function replay(nextStage = false) {
     if (!session) return;
-    setStagePick(nextStage ? Math.min(4, session.stageIdx + 1) : session.stageIdx);
+    setStagePick(nextStage ? Math.min((session.game === "foot" ? FOOT_STAGES.length : BASKET_STAGES.length) - 1, session.stageIdx + 1) : session.stageIdx);
     setSetupGame(session.game);
     setSetupMode(session.mode);
     setTimeout(() => {
@@ -351,7 +437,7 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
       const players = s0.players.map((p) => newPlayer(p.name, p.number, p.color, s0.mode === "survie" || s0.mode === "chrono" ? 10 : 5, p.female));
       setSession({
         ...s0,
-        stageIdx: nextStage ? Math.min(4, s0.stageIdx + 1) : s0.stageIdx,
+        stageIdx: nextStage ? Math.min((s0.game === "foot" ? FOOT_STAGES.length : BASKET_STAGES.length) - 1, s0.stageIdx + 1) : s0.stageIdx,
         seed: s0.mode === "defi" ? s0.seed : randomSeed(),
         players,
         current: 0,
@@ -367,19 +453,52 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
     }, 0);
   }
 
-  async function share() {
-    if (!session) return;
+  /** Message + lien du défi à envoyer (nouveau défi, revanche ou score de partie). */
+  function buildShare() {
+    if (!session) return null;
     const me = session.mode === "duel" ? [...session.players].sort((a, b) => b.score - a.score)[0] : session.players[0];
+    const prev = session.challenge;
+    const total = session.game === "foot" ? FOOT_STAGES.length : BASKET_STAGES.length;
+    const st =
+      session.mode === "carriere" ? session.stageIdx + 1 : prev ? prev.st : Math.max(1, Math.min(total, progressOf(save, session.game, session.diff).unlocked));
+    // une partie hors carrière/défi devient un défi sur une série neuve au palier atteint
+    const sameSeries = session.mode === "carriere" || session.mode === "defi";
     const c: Challenge = {
       g: session.game,
-      st: session.mode === "carriere" ? session.stageIdx + 1 : session.mode === "defi" && session.challenge ? session.challenge.st : 0,
+      st,
       d: session.diff,
-      seed: session.seed,
+      seed: sameSeries ? session.seed : randomSeed(),
       n: me.name,
-      p: me.score
+      p: sameSeries ? me.score : 0,
+      r: prev && !session.creating ? (prev.r || 0) + 1 : 0
     };
     const url = challengeUrl(c);
-    const text = `${me.name} te défie aux ${GAME_META[session.game].title} de l'Arène des Léopards : ${me.score} points. Tu peux faire mieux ?`;
+    const icon = session.game === "foot" ? "⚽" : "🏀";
+    const game = GAME_META[session.game].title;
+    let text: string;
+    if (session.mode === "defi" && prev && !session.creating) {
+      text =
+        me.score > prev.p
+          ? `${icon} ${prev.n}, j'ai battu ton score aux ${game} : ${me.score} contre ${prev.p} ! À toi de reprendre la main 🐆`
+          : `${icon} Revanche ${prev.n} ! Tu m'as eu (${prev.p} contre ${me.score}). Mêmes tirs, à toi de défendre ton score 🐆`;
+    } else if (!sameSeries) {
+      text = `${icon} ${me.name} te défie aux ${game} de l'Arène des Léopards (palier ${st}). Mêmes tirs pour tout le monde : qui marque le plus ? 🐆`;
+    } else {
+      text = `${icon} ${me.name} te défie aux ${game} de l'Arène des Léopards : ${me.score} pts au palier ${st}. Mêmes tirs, mêmes conditions. Tu peux faire mieux ? 🐆`;
+    }
+    return { text, url };
+  }
+
+  function shareWhatsApp() {
+    const sh = buildShare();
+    if (!sh) return;
+    window.open(`https://wa.me/?text=${encodeURIComponent(`${sh.text}\n${sh.url}`)}`, "_blank", "noopener");
+  }
+
+  async function share() {
+    const sh = buildShare();
+    if (!sh) return;
+    const { text, url } = sh;
     try {
       if (navigator.share) {
         await navigator.share({ title: "Défi Bloc Léopards", text, url });
@@ -394,6 +513,13 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
     } catch {
       setToast("Copie impossible sur cet appareil");
     }
+  }
+
+  /** Rejoue un défi de l'historique (mêmes tirs). */
+  function replayDuel(d: DuelEntry) {
+    const c: Challenge = { g: d.game, st: d.st, d: d.diff, seed: d.seed, n: d.friend || "Toi", p: d.them ?? d.me, r: d.round };
+    if (d.outcome === "sent") startDefi(d.game, null, { st: d.st, d: d.diff, seed: d.seed });
+    else startDefi(d.game, c);
   }
 
   function toggleSound() {
@@ -421,11 +547,10 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
       name: p.name,
       number: p.number,
       female: p.female,
+      character: charFor(save.character, p.female),
       reduced
     };
-    // dernier tir d'une série de 5 (carrière, duel, défi) : un but déclenche le fimbu
-    const finale = session.mode !== "survie" && session.shot === (stage as FootStage).shots - 1;
-    if (session.game === "foot") return { ...base, stage: stage as FootStage, history: p.history, finale } as FootSetup;
+    if (session.game === "foot") return { ...base, stage: stage as FootStage, history: p.history } as FootSetup;
     return {
       ...base,
       stage: stage as BasketStage,
@@ -491,7 +616,9 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
           challenge={challenge}
           onPick={(g) => openSetup(g, "carriere")}
           onDuel={() => openSetup("foot", "duel")}
-          onChallenge={() => challenge && openSetup(challenge.g, "defi")}
+          onChallenge={() => challenge && startDefi(challenge.g, challenge)}
+          onNewDefi={(g) => (save.name ? startDefi(g, null) : setOnboarding(true))}
+          onDuelReplay={replayDuel}
           onRecords={() => setSheet("records")}
           onSound={toggleSound}
           onProfile={() => setSheet("profile")}
@@ -512,6 +639,8 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
           onKick={onKick}
           onPause={() => setSheet("pause")}
           onInteract={() => audio.unlock()}
+          soundOn={save.sound}
+          onToggleSound={toggleSound}
           needsFemale={session.players.some((p) => p.female)}
         />
       )}
@@ -554,6 +683,7 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
           onReplay={() => replay(false)}
           onNext={() => replay(true)}
           onShare={share}
+          onWhatsApp={shareWhatsApp}
           onHome={() => {
             setScreen("home");
             setSession(null);
@@ -596,14 +726,14 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
       {(onboarding || sheet === "profile") && (
         <ProfileSheet
           first={onboarding}
-          initial={{ name: save.name, number: save.number || 10, female: !!save.female }}
+          initial={{ name: save.name, number: save.number || 10, female: !!save.female, character: charFor(save.character, !!save.female) }}
           reduced={reduced}
           onClose={() => {
             if (!onboarding) setSheet(null);
           }}
           onSave={(pr) => {
             const n = cleanName(pr.name, "Léopard");
-            update((d) => ({ ...d, name: n, number: pr.number, female: pr.female }));
+            update((d) => ({ ...d, name: n, number: pr.number, female: pr.female, character: pr.character }));
             setSolo({ name: n, number: pr.number, female: pr.female });
             setNames((prev) => [n, ...prev.slice(1)]);
             setGenders((prev) => [pr.female, ...prev.slice(1)]);
@@ -681,6 +811,8 @@ function Home(props: {
   onPick: (g: GameId) => void;
   onDuel: () => void;
   onChallenge: () => void;
+  onNewDefi: (g: GameId) => void;
+  onDuelReplay: (d: DuelEntry) => void;
   onRecords: () => void;
   onSound: () => void;
   onProfile: () => void;
@@ -688,6 +820,7 @@ function Home(props: {
   const { save } = props;
   const best = (g: GameId) => (save.records[g] || [])[0]?.score ?? 0;
   const prog = (g: GameId) => progressOf(save, g, save.diff);
+  const evo = playerEvolution(save);
   return (
     <div className="flex h-full flex-col overflow-y-auto">
       <header className="safe-top flex items-center justify-between px-4 pb-2">
@@ -714,21 +847,92 @@ function Home(props: {
       </h1>
       <p className="mx-auto mt-1 max-w-sm px-6 text-center text-[14px] text-[var(--a-muted)]">Choisis ton terrain. Un geste du pouce suffit.</p>
 
+      {/* Évolution & statut de carrière du joueur */}
+      <div className="mx-auto mt-3 flex flex-wrap items-center justify-center gap-2 px-4">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-[rgba(244,196,0,0.15)] px-3 py-1 text-[13px] font-black text-[var(--a-gold)] shadow-[inset_0_0_0_1px_rgba(244,196,0,0.3)]">
+          ⭐ {evo.rankTitle}
+        </span>
+        <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(255,255,255,0.08)] px-2.5 py-1 text-[12px] font-bold text-white/90">
+          ★ {evo.totalStars} étoiles
+        </span>
+        {evo.goals > 0 && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(255,255,255,0.08)] px-2.5 py-1 text-[12px] font-bold text-white/90">
+            ⚽ {evo.goals} buts
+          </span>
+        )}
+        {evo.baskets > 0 && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(255,255,255,0.08)] px-2.5 py-1 text-[12px] font-bold text-white/90">
+            🏀 {evo.baskets} paniers
+          </span>
+        )}
+      </div>
+
       <main className="mx-auto mt-4 w-full max-w-3xl flex-1 px-4">
         {props.challenge && (
-          <button className="a-choice mb-3 flex items-center gap-3" onClick={props.onChallenge}>
+          <section className="a-defi-hero mb-4" aria-labelledby="defi-recu">
+            <span className="a-defi-tag">
+              <Swords size={14} /> {props.challenge.r ? `Revanche n°${props.challenge.r}` : "Défi reçu"}
+            </span>
+            <h2 id="defi-recu" className="display mt-2 text-[34px] leading-none sm:text-[44px]">
+              {props.challenge.n} te défie
+            </h2>
+            <p className="mt-1.5 text-[14px] text-white/80">
+              {GAME_META[props.challenge.g].title}
+              {props.challenge.st > 0 ? ` · palier ${props.challenge.st}` : ""} · {DIFFS[props.challenge.d].label} · mêmes tirs que ton ami
+            </p>
+            <div className="mt-3 flex items-end gap-3">
+              <span className="display text-[56px] leading-none text-[var(--a-gold)]">{Math.max(0, props.challenge.p)}</span>
+              <span className="pb-1.5 text-[13px] font-bold uppercase tracking-[0.12em] text-white/70">points à battre</span>
+            </div>
+            <button className="a-btn a-btn-primary mt-4 w-full text-[17px]" onClick={props.onChallenge}>
+              <Play size={16} fill="currentColor" /> Relever le défi
+            </button>
+          </section>
+        )}
+
+        <section className="a-defi-card mb-4" aria-labelledby="defi-amis">
+          <div className="flex items-start gap-3">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--a-red)]">
               <Swords size={22} />
             </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-[15px] font-extrabold">{props.challenge.n} te défie</span>
-              <span className="block text-[13px] text-[var(--a-muted)]">
-                {GAME_META[props.challenge.g].short} · {props.challenge.p} points à battre
-              </span>
-            </span>
-            <ChevronRight size={20} className="text-[var(--a-gold)]" />
-          </button>
-        )}
+            <div className="min-w-0 flex-1">
+              <h2 id="defi-amis" className="display text-[28px] leading-none">Défie tes amis</h2>
+              <p className="mt-1 text-[13px] text-[var(--a-muted)]">5 tirs, ton score part sur WhatsApp : tes amis jouent exactement les mêmes tirs pour te battre.</p>
+            </div>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2.5">
+            <button className="a-btn a-btn-primary min-h-[48px] text-[15px]" onClick={() => props.onNewDefi("foot")}>
+              ⚽ Défi foot
+            </button>
+            <button className="a-btn a-btn-primary min-h-[48px] text-[15px]" onClick={() => props.onNewDefi("basket")}>
+              🏀 Défi basket
+            </button>
+          </div>
+          {(save.duels || []).length > 0 && (
+            <div className="mt-4">
+              <h3 className="mb-2 text-[12px] font-bold uppercase tracking-[0.16em] text-[var(--a-muted)]">Tes derniers défis</h3>
+              <ul className="grid grid-cols-1 gap-1.5">
+                {(save.duels || []).slice(0, 4).map((d) => (
+                  <li key={d.key + d.friend} className="min-w-0">
+                    <button className="a-duel-row" onClick={() => props.onDuelReplay(d)}>
+                      <span className={`a-duel-badge is-${d.outcome}`}>
+                        {d.outcome === "won" ? "Gagné" : d.outcome === "lost" ? "Perdu" : d.outcome === "tie" ? "Égalité" : "Envoyé"}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-left text-[14px] font-bold">
+                        {d.friend ? `contre ${d.friend}` : "Ton défi"} · {GAME_META[d.game].short}
+                      </span>
+                      <span className="text-[13px] font-extrabold tabular-nums">
+                        {d.me}
+                        {d.them !== null ? ` – ${d.them}` : " pts"}
+                      </span>
+                      <span className="text-[12px] font-bold text-[var(--a-gold)]">{d.outcome === "lost" || d.outcome === "tie" ? "Revanche" : "Rejouer"}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
 
         <div className="grid grid-cols-2 gap-3 sm:gap-5">
           {(["foot", "basket"] as GameId[]).map((g) => (
@@ -1039,19 +1243,25 @@ function Tutorial({ game, onDone }: { game: GameId; onDone: () => void }) {
   );
 }
 
-function Results(props: { result: Result; session: Session; reduced: boolean; onReplay: () => void; onNext: () => void; onShare: () => void; onHome: () => void }) {
+function Results(props: {
+  result: Result;
+  session: Session;
+  reduced: boolean;
+  onReplay: () => void;
+  onNext: () => void;
+  onShare: () => void;
+  onWhatsApp: () => void;
+  onHome: () => void;
+}) {
   const { result, session } = props;
   const me = session.players[0];
   const duel = session.mode === "duel";
+  const defi = session.mode === "defi" && session.challenge;
+  const received = defi && !session.creating ? session.challenge : null;
   return (
     <div className="absolute inset-0 z-40 flex flex-col overflow-y-auto bg-[rgba(2,6,18,0.9)] backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="res-title">
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 safe-top">
-        {result.won && (
-          <div className="mx-auto mt-2 h-[170px] w-full max-w-[320px]">
-            <FimbuMini reduced={props.reduced} name={duel ? result.ranking[0].name : me.name} number={duel ? result.ranking[0].number : me.number} female={duel ? result.ranking[0].female : me.female} />
-          </div>
-        )}
-        <div className={`text-center ${result.won ? "" : "mt-16"}`}>
+        <div className="mt-16 text-center">
           {result.stars !== null && (
             <div className="mb-1 flex justify-center">
               <Stars n={result.stars} size={34} />
@@ -1063,7 +1273,21 @@ function Results(props: { result: Result; session: Session; reduced: boolean; on
           <p className="mx-auto mt-1 max-w-xs text-[15px] text-white/85">{result.subtitle}</p>
         </div>
 
-        {duel ? (
+        {received ? (
+          <div className="a-versus mt-5" aria-label="Face-à-face">
+            <div className={`a-versus-side ${me.score > received.p ? "is-win" : ""}`}>
+              <span className="block truncate text-[13px] font-bold uppercase tracking-[0.12em] text-white/70">Toi</span>
+              <span className="display block text-[46px] leading-none">{me.score}</span>
+              <span className="block text-[12px] text-[var(--a-muted)]">{me.made}/5</span>
+            </div>
+            <span className="display self-center text-[24px] text-[var(--a-gold)]">VS</span>
+            <div className={`a-versus-side ${received.p > me.score ? "is-win" : ""}`}>
+              <span className="block truncate text-[13px] font-bold uppercase tracking-[0.12em] text-white/70">{received.n}</span>
+              <span className="display block text-[46px] leading-none">{received.p}</span>
+              <span className="block text-[12px] text-[var(--a-muted)]">mêmes tirs</span>
+            </div>
+          </div>
+        ) : duel ? (
           <ol className="mt-5 grid gap-2">
             {result.ranking.map((p, i) => (
               <li key={p.name + i} className="a-choice flex items-center gap-3">
@@ -1087,33 +1311,57 @@ function Results(props: { result: Result; session: Session; reduced: boolean; on
         {result.rank === 0 && !duel && <p className="mt-3 text-center text-[14px] font-bold text-[var(--a-gold)]">Nouveau record sur cet appareil !</p>}
 
         <div className="mt-auto grid gap-2.5 py-5 safe-bottom">
-          {result.canNext ? (
-            <button className="a-btn a-btn-primary w-full text-[17px]" onClick={props.onNext} autoFocus>
-              Palier suivant <ChevronRight size={18} />
-            </button>
+          {defi ? (
+            <>
+              <button className="a-btn a-btn-whatsapp w-full text-[17px]" onClick={props.onWhatsApp} autoFocus>
+                <WhatsAppIcon /> {session.creating ? "Envoyer le défi sur WhatsApp" : received && me.score > received.p ? "Envoyer ma victoire" : "Envoyer la revanche"}
+              </button>
+              <button className="a-btn a-btn-secondary w-full" onClick={props.onShare}>
+                <Share2 size={18} /> Autre application ou copier le lien
+              </button>
+              <button className="a-btn a-btn-secondary w-full" onClick={props.onReplay}>
+                <RotateCcw size={18} /> {session.creating ? "Rejouer pour améliorer mon score" : "Retenter les mêmes tirs"}
+              </button>
+            </>
           ) : (
-            <button className="a-btn a-btn-primary w-full text-[17px]" onClick={props.onReplay} autoFocus>
-              <RotateCcw size={18} /> {duel ? "Revanche" : "Rejouer"}
-            </button>
-          )}
-          {result.shareable && (
-            <button className="a-btn a-btn-secondary w-full" onClick={props.onShare}>
-              <Share2 size={18} /> Défier un ami
-            </button>
+            <>
+              {result.canNext ? (
+                <button className="a-btn a-btn-primary w-full text-[17px]" onClick={props.onNext} autoFocus>
+                  Palier suivant <ChevronRight size={18} />
+                </button>
+              ) : (
+                <button className="a-btn a-btn-primary w-full text-[17px]" onClick={props.onReplay} autoFocus>
+                  <RotateCcw size={18} /> {duel ? "Revanche" : "Rejouer"}
+                </button>
+              )}
+              {result.shareable && (
+                <button className="a-btn a-btn-whatsapp w-full" onClick={props.onWhatsApp}>
+                  <WhatsAppIcon /> Défier un ami sur WhatsApp
+                </button>
+              )}
+            </>
           )}
           <div className="grid grid-cols-2 gap-2.5">
-            {result.canNext && (
+            {result.canNext && !defi && (
               <button className="a-btn a-btn-secondary" onClick={props.onReplay}>
                 <RotateCcw size={18} /> Rejouer
               </button>
             )}
-            <button className={`a-btn a-btn-ghost ${result.canNext ? "" : "col-span-2"}`} onClick={props.onHome}>
+            <button className={`a-btn a-btn-ghost ${result.canNext && !defi ? "" : "col-span-2"}`} onClick={props.onHome}>
               Menu des jeux
             </button>
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function WhatsAppIcon() {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
+      <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.1 5.1 0 0 0 1.1 2.7 11.6 11.6 0 0 0 4.4 3.9c1.6.7 2.3.8 3.1.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .2-1.3c-.1-.1-.2-.2-.5-.3Z" />
+    </svg>
   );
 }
 
@@ -1129,10 +1377,10 @@ function Stat({ label, value }: { label: string; value: number }) {
 /** Création / modification du joueur : sexe, nom, numéro (un seul formulaire). */
 function ProfileSheet(props: {
   first: boolean;
-  initial: { name: string; number: number; female: boolean };
+  initial: { name: string; number: number; female: boolean; character: string };
   reduced: boolean;
   onClose: () => void;
-  onSave: (p: { name: string; number: number; female: boolean }) => void;
+  onSave: (p: { name: string; number: number; female: boolean; character: string }) => void;
 }) {
   const [p, setP] = useState(props.initial);
   const ok = p.name.trim().length > 0;
@@ -1156,14 +1404,24 @@ function ProfileSheet(props: {
       >
         {props.first && <p className="text-[14px] text-[var(--a-muted)]">Ton nom et ton numéro s'afficheront sur ton maillot des Léopards.</p>}
         <div className="mx-auto h-[230px] w-full max-w-[260px]">
-          <CharacterPreview female={p.female} name={p.name} number={p.number} reduced={props.reduced} />
+          <CharacterPreview female={p.female} character={p.character} name={p.name} number={p.number} reduced={props.reduced} />
         </div>
         <fieldset className="min-w-0">
           <legend className="mb-2 text-[12px] font-bold uppercase tracking-[0.16em] text-[var(--a-muted)]">Tu joues avec</legend>
           <div className="a-seg" role="radiogroup" aria-label="Personnage">
             {[false, true].map((f) => (
-              <button type="button" key={String(f)} role="radio" aria-checked={p.female === f} onClick={() => setP({ ...p, female: f })}>
+              <button type="button" key={String(f)} role="radio" aria-checked={p.female === f} onClick={() => setP({ ...p, female: f, character: charFor(null, f) })}>
                 {f ? "Une joueuse" : "Un joueur"}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+        <fieldset className="min-w-0">
+          <legend className="mb-2 text-[12px] font-bold uppercase tracking-[0.16em] text-[var(--a-muted)]">Personnage</legend>
+          <div className="a-chars" role="radiogroup" aria-label="Personnage">
+            {ROSTER.filter((c) => c.female === p.female).map((c) => (
+              <button type="button" key={c.id} role="radio" aria-checked={p.character === c.id} onClick={() => setP({ ...p, character: c.id })}>
+                {c.label}
               </button>
             ))}
           </div>
@@ -1191,8 +1449,37 @@ function ProfileSheet(props: {
 function RecordsSheet({ save, onClose }: { save: SaveData; onClose: () => void }) {
   const [g, setG] = useState<GameId>("foot");
   const list = save.records[g] || [];
+  const evo = playerEvolution(save);
   return (
-    <Sheet title="Records" onClose={onClose}>
+    <Sheet title="Records & Évolution" onClose={onClose}>
+      {/* Statistiques d'évolution du joueur */}
+      <div className="mb-4 rounded-2xl bg-[rgba(255,255,255,0.06)] p-3.5 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]">
+        <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-2">
+          <span className="text-[13px] font-bold uppercase tracking-wider text-[var(--a-gold)]">
+            Rang : {evo.rankTitle}
+          </span>
+          <span className="text-[12px] font-semibold text-white/70">
+            ★ {evo.totalStars} étoiles
+          </span>
+        </div>
+        <div className="mt-2.5 grid grid-cols-3 gap-2 text-center">
+          <div className="rounded-xl bg-black/20 p-2">
+            <span className="display block text-[20px] text-white">{evo.goals}</span>
+            <span className="text-[11px] font-semibold text-white/60">Buts foot</span>
+          </div>
+          <div className="rounded-xl bg-black/20 p-2">
+            <span className="display block text-[20px] text-white">{evo.baskets}</span>
+            <span className="text-[11px] font-semibold text-white/60">Paniers</span>
+          </div>
+          <div className="rounded-xl bg-black/20 p-2">
+            <span className="display block text-[20px] text-[var(--a-gold)]">
+              {Math.max(evo.streakFoot, evo.streakBasket)}
+            </span>
+            <span className="text-[11px] font-semibold text-white/60">Record série</span>
+          </div>
+        </div>
+      </div>
+
       <div className="a-seg mb-3" role="radiogroup" aria-label="Jeu">
         {(["foot", "basket"] as GameId[]).map((x) => (
           <button type="button" key={x} role="radio" aria-checked={g === x} onClick={() => setG(x)}>

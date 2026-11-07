@@ -30,6 +30,8 @@ export interface BasketSetup {
   money: boolean;
   fast: boolean;
   female?: boolean;
+  /** Personnage choisi par le joueur (voir ROSTER). */
+  character?: string;
 }
 
 const G = 9.81;
@@ -133,10 +135,21 @@ export class BasketEngine {
     c3.clearActors();
     const s = this.s;
     this.A = {};
+    const fem = !!s.female;
+    const pc = m.charById(s.character)?.female === fem ? s.character! : fem ? "leoparde" : "leopard";
+    const dFem = !!s.stage.defenderFemale;
+    const dc = s.stage.defender ? m.pickChar(dFem, s.stage.id * 5 + 2, [pc]).id : null;
+    const need = [pc, dc];
+    if (!c3.isLoaded(need)) {
+      const ref = s;
+      c3.ensureChars(need).then(() => {
+        if (this.s === ref && this.c3 === c3 && (this.phase === "idle" || this.phase === "aim")) this.build3D();
+      });
+    }
     this.A.shooter = c3.actor({
       base: "#1d4fd8", collar: "#d81e27", cuff: "#d81e27", shorts: "#1d4fd8", socks: "#f8fafc", boots: "#f8fafc",
-      name: s.name, number: String(s.number), numberColor: "#f7d618", numberStroke: "#d81e27", skin: this.body.skin, sleeveless: true, flag: false, female: !!s.female
-    });
+      name: s.name, number: String(s.number), numberColor: "#f7d618", numberStroke: "#d81e27", skin: this.body.skin, sleeveless: true, flag: false, female: fem
+    }, pc);
     if (s.stage.defender) {
       const isMutombo = s.stage.id === 14;
       this.A.defender = c3.actor({
@@ -150,8 +163,9 @@ export class BasketEngine {
         numberColor: isMutombo ? "#f59e0b" : "#fef2f2",
         numberStroke: isMutombo ? "#000000" : "#7f1d1d",
         skin: this.defBody.skin,
-        sleeveless: true
-      });
+        sleeveless: true,
+        female: dFem
+      }, dc);
     }
     c3.buildHoop(BOARD_Z, brandImage(LOGO_BL));
     c3.setShadowCenter(this.S.x * 0.5, this.S.z * 0.5);
@@ -170,8 +184,22 @@ export class BasketEngine {
     const t = this.t;
     if (this.phase === "idle") {
       sh.place(this.S.x, this.S.z, yaw);
-      const dur = this.c3!.clips.dribble!.duration;
-      sh.pose("dribble", t % dur);
+      if (sh.has("dribble")) {
+        sh.pose("dribble", t % sh.duration("dribble"));
+      } else {
+        // dribble procédural (personnages Mixamo) : genoux fléchis, main droite qui pousse le ballon
+        const ph = (t * 1.9) % 1;
+        sh.pose("catch", 0.02);
+        sh.dropHips(0.09);
+        sh.aim(B.lThigh, B.lCalf, new V(0.14, -1, 0.32));
+        sh.aim(B.rThigh, B.rCalf, new V(-0.14, -1, 0.32));
+        sh.aim(B.lCalf, B.lFoot, new V(0.03, -1, -0.2));
+        sh.aim(B.rCalf, B.rFoot, new V(-0.03, -1, -0.2));
+        sh.aim(B.rUpper, B.rFore, new V(-0.35, -0.78, 0.42));
+        sh.aim(B.rFore, B.rHand, new V(-0.08, -0.5 - 0.35 * Math.cos(ph * Math.PI * 2), 0.72));
+        sh.aim(B.lUpper, B.lFore, new V(0.4, -0.82, 0.3));
+        sh.aim(B.lFore, B.lHand, new V(0.25, -0.25, 1));
+      }
     } else {
       // jambes et bras du tir en suspension
       const since = this.phase === "aim" ? -1 : t - this.releaseT;
@@ -268,8 +296,8 @@ export class BasketEngine {
     const isEliteDef = s.stage.id >= 12;
     const defHeight = isMutombo ? 2.18 : isEliteDef ? 2.08 : 1.98 + Math.max(0, s.stage.id - 4) * 0.01;
     this.defBody = {
-      ...BODIES[(s.shot + 3) % BODIES.length],
-      height: defHeight,
+      ...(s.stage.defenderFemale ? FEMALE_BODY : BODIES[(s.shot + 3) % BODIES.length]),
+      height: s.stage.defenderFemale ? defHeight - 0.14 : defHeight,
       headband: isMutombo ? "#111827" : "#fef2f2"
     };
     this.phase = "idle";
@@ -1235,8 +1263,13 @@ export class BasketEngine {
         sh.root.updateMatrixWorld(true);
         if (this.phase === "idle") {
           const h = sh.bone(B.rHand);
-          const k = clamp((h.y - 0.85) / 0.4, 0, 1);
-          c3.setBall(h.x, R + (h.y - 0.08 - R) * k, h.z + 0.08);
+          if (sh.has("dribble")) {
+            const k = clamp((h.y - 0.85) / 0.4, 0, 1);
+            c3.setBall(h.x, R + (h.y - 0.08 - R) * k, h.z + 0.08);
+          } else {
+            const k = Math.abs(Math.cos(((this.t * 1.9) % 1) * Math.PI));
+            c3.setBall(h.x, R + Math.max(0, h.y - 0.1 - R) * k, h.z + 0.06);
+          }
         } else {
           const l = sh.bone(B.lHand);
           const r = sh.bone(B.rHand);

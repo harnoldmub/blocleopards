@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Flame, Hand, LoaderCircle, Pause, RotateCcw } from "lucide-react";
+import { Flame, Hand, LoaderCircle, Pause, RotateCcw, Volume2, VolumeX } from "lucide-react";
 import type { GameId } from "./lib/config";
 import { FootEngine, type FootSetup, type ShotOutcome } from "./engine/foot";
 import { BasketEngine, type BasketSetup } from "./engine/basket";
@@ -53,6 +53,8 @@ export default function GameView(props: {
   onKick: () => void;
   onPause: () => void;
   onInteract: () => void;
+  soundOn?: boolean;
+  onToggleSound?: () => void;
   /** Une joueuse est en jeu : charger son modèle 3D. */
   needsFemale?: boolean;
 }) {
@@ -344,6 +346,17 @@ export default function GameView(props: {
           ) : props.clockMax > 0 ? (
             <ClockRing value={clock} max={props.clockMax} low={lowClock} />
           ) : null}
+
+          {props.onToggleSound && (
+            <button
+              className="a-icon-btn pointer-events-auto h-[52px] w-[52px] shrink-0 rounded-2xl flex items-center justify-center bg-[rgba(4,10,26,0.66)] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)] backdrop-blur transition-transform active:scale-95"
+              onClick={props.onToggleSound}
+              aria-label={props.soundOn ? "Couper le son" : "Activer le son"}
+              title={props.soundOn ? "Couper le son" : "Activer le son"}
+            >
+              {props.soundOn ? <Volume2 size={22} className="text-[var(--a-gold)]" /> : <VolumeX size={22} className="text-red-400" />}
+            </button>
+          )}
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           {hud.mult > 1 && (
