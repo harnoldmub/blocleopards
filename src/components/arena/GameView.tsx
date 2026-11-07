@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Flame, Hand, Pause } from "lucide-react";
+import { Flame, Hand, LoaderCircle, Pause, RotateCcw } from "lucide-react";
 import type { GameId } from "./lib/config";
 import { FootEngine, type FootSetup, type ShotOutcome } from "./engine/foot";
 import { BasketEngine, type BasketSetup } from "./engine/basket";
@@ -66,9 +66,14 @@ export default function GameView(props: {
   const clockRef = useRef({ left: props.clockMax, running: false });
   const [clock, setClock] = useState(props.clockMax);
   const [aiming, setAiming] = useState(false);
+  const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const gameReady = loadState === "ready";
+  pausedRef.current = props.paused || !gameReady;
 
   // création du moteur
   useEffect(() => {
+    setLoadState("loading");
     const cv = canvasRef.current!;
     const cb = {
       onKick: () => {
@@ -100,18 +105,32 @@ export default function GameView(props: {
           }
           fit();
           await c3.load(props.game === "foot" ? ["kick", "dive", "catch", "scoop", "twist", "bboy"] : ["dribble", "catch"]);
-          if (disposed || !c3.ready) return;
+          if (disposed) return;
+          if (!c3.ready) {
+            setLoadState("error");
+            return;
+          }
           const attach = () => {
             if (disposed || !c3) return;
             if (props.game === "foot") (engine as FootEngine).attach3D(c3, mod);
             else (engine as BasketEngine).attach3D(c3, mod);
           };
+          if (props.needsFemale) {
+            await c3.loadFemale();
+            if (disposed) return;
+            if (!c3.femProto) {
+              setLoadState("error");
+              return;
+            }
+          }
           attach();
-          // joueuse : chargée en arrière-plan, puis les acteurs sont reconstruits
-          c3.onFemaleReady = attach;
-          if (props.needsFemale) c3.loadFemale();
+          setLoadState("ready");
         })
-        .catch(() => {});
+        .catch(() => {
+          if (!disposed) setLoadState("error");
+        });
+    } else {
+      setLoadState("error");
     }
     fit();
     const ro = new ResizeObserver(fit);
@@ -151,7 +170,7 @@ export default function GameView(props: {
       engineRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.game]);
+  }, [props.game, props.needsFemale, loadAttempt]);
 
   // nouveau tir
   useEffect(() => {
@@ -178,18 +197,49 @@ export default function GameView(props: {
         role="img"
         aria-label={props.game === "foot" ? "Terrain : glisse le ballon vers la cage pour tirer" : "Terrain : maintiens appuyé et relâche au bon moment pour shooter"}
         onPointerDown={(ev) => {
-          if (props.paused) return;
+          ev.preventDefault();
+          if (props.paused || !gameReady) return;
           (ev.target as HTMLElement).setPointerCapture?.(ev.pointerId);
           props.onInteract();
           engineRef.current?.skip();
           engineRef.current?.down(...pt(ev));
         }}
-        onPointerMove={(ev) => engineRef.current?.move(...pt(ev))}
-        onPointerUp={(ev) => engineRef.current?.up(...pt(ev))}
+        onPointerMove={(ev) => {
+          if (!gameReady) return;
+          ev.preventDefault();
+          engineRef.current?.move(...pt(ev));
+        }}
+        onPointerUp={(ev) => {
+          if (!gameReady) return;
+          ev.preventDefault();
+          engineRef.current?.up(...pt(ev));
+        }}
         onPointerCancel={() => engineRef.current?.cancel()}
       />
 
       <canvas ref={canvas3dRef} className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden="true" />
+
+      {loadState !== "ready" && (
+        <div className="absolute inset-0 z-[70] flex items-center justify-center bg-[#020617] px-6 text-center" role="status" aria-live="polite">
+          <div className="max-w-xs">
+            {loadState === "loading" ? (
+              <>
+                <LoaderCircle className="mx-auto animate-spin text-[var(--a-gold)]" size={42} aria-hidden="true" />
+                <h2 className="display mt-4 text-[34px]">Entrée sur le terrain…</h2>
+                <p className="mt-2 text-[14px] text-[var(--a-muted)]">Chargement du joueur 3D et de ses animations.</p>
+              </>
+            ) : (
+              <>
+                <h2 className="display text-[34px]">Le joueur n’a pas chargé</h2>
+                <p className="mt-2 text-[14px] text-[var(--a-muted)]">Vérifie ta connexion puis réessaie.</p>
+                <button className="a-btn a-btn-primary mt-5" onClick={() => setLoadAttempt((n) => n + 1)}>
+                  <RotateCcw size={18} /> Réessayer
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* HUD haut */}
       <div className="pointer-events-none absolute inset-x-0 top-0 safe-top px-3">
