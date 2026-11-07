@@ -178,7 +178,7 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
   }
 
   /* ---------------- Chrono global (basket) ---------------- */
-  const playing = screen === "play" && !sheet && handoff === null && !tutorial && !confirmQuit;
+  const playing = screen === "play" && !session?.over && !sheet && handoff === null && !tutorial && !confirmQuit;
   useEffect(() => {
     if (!playing || !session || session.mode !== "chrono" || session.over) return;
     const id = setInterval(() => {
@@ -250,7 +250,9 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
           setTimeout(() => setHandoff(next.current), 450);
           return;
         }
-        return finish({ ...next, over: true });
+        // Conserver l'index du 5e tir pendant la transition vers les résultats.
+        // Passer à `shot === shots` recréerait sinon un 6e shoot dans GameView.
+        return finish({ ...next, shot: s.shot, over: true });
       }
       void remaining;
     }
