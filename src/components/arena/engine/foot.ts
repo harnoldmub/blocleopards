@@ -355,7 +355,7 @@ export class FootEngine {
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     const cam = this.cam;
     const D = this.D;
-    const final = this.setupData.stage.id === 5 || this.setupData.stage.id <= 0;
+    const final = this.setupData.stage.id >= 15 || this.setupData.stage.id <= 0;
 
     // ciel nocturne
     const sky = ctx.createLinearGradient(0, 0, 0, cam.hz);

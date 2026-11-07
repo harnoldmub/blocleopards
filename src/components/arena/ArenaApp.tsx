@@ -132,7 +132,8 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
     setSetupGame(game);
     setSetupMode(mode);
     const prog = progressOf(loadSave(), game, loadSave().diff);
-    setStagePick(Math.max(0, Math.min(4, prog.unlocked - 1)));
+    const maxStage = (game === "foot" ? FOOT_STAGES.length : BASKET_STAGES.length) - 1;
+    setStagePick(Math.max(0, Math.min(maxStage, prog.unlocked - 1)));
     setSheet("setup");
   }
 
@@ -276,17 +277,18 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
       stars = starsFor(players[0].made, stage.shots, stage.toPass);
       passed = stars > 0;
       won = passed;
-      title = passed ? (s.stageIdx === 4 ? "Champion !" : "Palier réussi !") : "Pas cette fois";
+      const totalStages = s.game === "foot" ? FOOT_STAGES.length : BASKET_STAGES.length;
+      title = passed ? (s.stageIdx === totalStages - 1 ? "Grand Champion !" : "Palier réussi !") : "Pas cette fois";
       subtitle = passed
         ? `${players[0].made}/${stage.shots} · ${stage.name}`
         : `Il fallait ${stage.toPass} ${s.game === "foot" ? "buts" : "paniers"} sur ${stage.shots}. Tu en as ${players[0].made}.`;
-      canNext = passed && s.stageIdx < 4;
+      canNext = passed && s.stageIdx < totalStages - 1;
       const key = `${s.game}:${s.diff}`;
       update((d) => {
         const prog = progressOf(d, s.game, s.diff);
         const st = [...prog.stars];
         st[s.stageIdx] = Math.max(st[s.stageIdx] || 0, stars || 0);
-        const unlocked = passed ? Math.max(prog.unlocked, Math.min(5, s.stageIdx + 2)) : prog.unlocked;
+        const unlocked = passed ? Math.max(prog.unlocked, Math.min(totalStages, s.stageIdx + 2)) : prog.unlocked;
         return { ...d, progress: { ...d.progress, [key]: { unlocked, stars: st } } };
       });
     } else if (s.mode === "survie") {
@@ -738,8 +740,8 @@ function Home(props: {
                 <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[var(--a-gold)]">{GAME_META[g].short}</span>
                 <span className="display mt-0.5 text-[25px] sm:text-[34px]">{GAME_META[g].title}</span>
                 <span className="mt-1 flex items-center gap-2 text-[12px] text-[var(--a-muted)]">
-                  <span className="font-bold text-white/85">Palier {prog(g).unlocked}/5</span>
-                  <span aria-label="Étoiles gagnées">★ {prog(g).stars.reduce((a, b) => a + b, 0)}/15</span>
+                  <span className="font-bold text-white/85">Palier {prog(g).unlocked}/{g === "foot" ? FOOT_STAGES.length : BASKET_STAGES.length}</span>
+                  <span aria-label="Étoiles gagnées">★ {prog(g).stars.reduce((a, b) => a + b, 0)}/{(g === "foot" ? FOOT_STAGES.length : BASKET_STAGES.length) * 3}</span>
                 </span>
                 {best(g) > 0 && <span className="mt-0.5 text-[12px] text-white/70">Record : {best(g)} pts</span>}
                 <span className="h-3" aria-hidden="true" />

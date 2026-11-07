@@ -66,7 +66,13 @@ export function persist(data: SaveData) {
 }
 
 export function progressOf(data: SaveData, game: GameId, diff: Difficulty) {
-  return data.progress[`${game}:${diff}`] || { unlocked: 1, stars: [0, 0, 0, 0, 0] };
+  const p = data.progress[`${game}:${diff}`];
+  if (!p) return { unlocked: 1, stars: Array(15).fill(0) };
+  const stars = Array(15).fill(0);
+  (p.stars || []).forEach((st, i) => {
+    if (i < 15) stars[i] = st;
+  });
+  return { unlocked: p.unlocked || 1, stars };
 }
 
 export function addRecord(data: SaveData, game: GameId, entry: RecordEntry): { data: SaveData; rank: number } {

@@ -137,11 +137,22 @@ export class BasketEngine {
       base: "#1d4fd8", collar: "#d81e27", cuff: "#d81e27", shorts: "#1d4fd8", socks: "#f8fafc", boots: "#f8fafc",
       name: s.name, number: String(s.number), numberColor: "#f7d618", numberStroke: "#d81e27", skin: this.body.skin, sleeveless: true, flag: false, female: !!s.female
     });
-    if (s.stage.defender)
+    if (s.stage.defender) {
+      const isMutombo = s.stage.id === 14;
       this.A.defender = c3.actor({
-        base: "#b91c1c", collar: "#fef2f2", cuff: "#fef2f2", shorts: "#b91c1c", socks: "#f8fafc", boots: "#111827",
-        number: "7", numberColor: "#fef2f2", numberStroke: "#7f1d1d", skin: this.defBody.skin, sleeveless: true
+        base: isMutombo ? "#18181b" : "#b91c1c",
+        collar: isMutombo ? "#f59e0b" : "#fef2f2",
+        cuff: isMutombo ? "#f59e0b" : "#fef2f2",
+        shorts: isMutombo ? "#18181b" : "#b91c1c",
+        socks: "#f8fafc",
+        boots: isMutombo ? "#f59e0b" : "#111827",
+        number: isMutombo ? "55" : String(7 + ((s.stage.id * 3) % 90)),
+        numberColor: isMutombo ? "#f59e0b" : "#fef2f2",
+        numberStroke: isMutombo ? "#000000" : "#7f1d1d",
+        skin: this.defBody.skin,
+        sleeveless: true
       });
+    }
     c3.buildHoop(BOARD_Z, brandImage(LOGO_BL));
     c3.setShadowCenter(this.S.x * 0.5, this.S.z * 0.5);
     this.drive3D();
@@ -203,23 +214,33 @@ export class BasketEngine {
     // défenseur
     const df = this.A.defender;
     if (df) {
-      const pos = { x: this.S.x + this.u.x * 1.35 + this.perp.x * 0.3, z: this.S.z + this.u.z * 1.35 + this.perp.z * 0.3 };
+      // Closeout dynamique : se rapproche du tireur quand il arme son tir
+      const closeout = this.defT0 < 0 ? 0 : clamp((t - this.defT0) / 0.28, 0, 1);
+      const defDist = 1.55 - closeout * 0.38; // passe de 1.55m à 1.17m
+      const lateralSway = this.defT0 < 0 ? Math.sin(t * 2.8) * 0.16 : this.perp.x * 0.12 * (1 - closeout);
+      const pos = {
+        x: this.S.x + this.u.x * defDist + this.perp.x * (0.22 + lateralSway),
+        z: this.S.z + this.u.z * defDist + this.perp.z * (0.22 + lateralSway)
+      };
       const air = this.defenderAir(t);
       const pre = this.defT0 < 0 ? 9 : this.defJumpAt - t;
-      const crouch = pre > 0 && pre < 0.3 ? 1 - pre / 0.3 : 0;
+      const crouch = pre > 0 && pre < 0.28 ? 1 - pre / 0.28 : 0;
       df.inPlace = true;
-      df.place(pos.x + (this.defT0 < 0 ? Math.sin(t * 2.4) * 0.12 : 0), pos.z, yaw + Math.PI, false, air);
+      df.place(pos.x, pos.z, yaw + Math.PI, false, air);
       df.pose("catch", 0.02);
-      df.dropHips(0.14 + crouch * 0.12);
-      df.aim(B.lThigh, B.lCalf, new V(0.35, -0.85, 0.35));
-      df.aim(B.rThigh, B.rCalf, new V(-0.35, -0.85, 0.35));
-      df.aim(B.lCalf, B.lFoot, new V(0.06, -1, -0.15));
-      df.aim(B.rCalf, B.rFoot, new V(-0.06, -1, -0.15));
-      const up = clamp(air / 0.25, 0, 1);
-      df.aim(B.lUpper, B.lFore, new V(1 - up * 0.85, 0.15 + up * 0.9, 0.2));
-      df.aim(B.rUpper, B.rFore, new V(-1 + up * 0.7, 0.15 + up * 0.8, 0.25));
-      df.aim(B.lFore, B.lHand, new V(0.6 - up * 0.5, 0.6 + up * 0.5, 0.2));
-      df.aim(B.rFore, B.rHand, new V(-0.6 + up * 0.5, 0.6 + up * 0.5, 0.2));
+      df.dropHips(0.16 + crouch * 0.18);
+      df.aim(B.lThigh, B.lCalf, new V(0.28, -0.88, 0.3));
+      df.aim(B.rThigh, B.rCalf, new V(-0.28, -0.88, 0.3));
+      df.aim(B.lCalf, B.lFoot, new V(0.04, -1, -0.12));
+      df.aim(B.rCalf, B.rFoot, new V(-0.04, -1, -0.12));
+      const up = clamp(air / 0.22, 0, 1);
+      // En l'air : les deux bras se dressent vers le ciel et vers la trajectoire de la balle
+      // Au sol : une main active basse, une main haute devant les yeux du tireur
+      const handInFace = closeout * (1 - up);
+      df.aim(B.lUpper, B.lFore, new V(0.7 - up * 0.65 - handInFace * 0.3, 0.15 + up * 0.82 + handInFace * 0.45, 0.2 + handInFace * 0.25));
+      df.aim(B.rUpper, B.rFore, new V(-0.7 + up * 0.65, 0.15 + up * 0.85, 0.25));
+      df.aim(B.lFore, B.lHand, new V(0.5 - up * 0.45, 0.5 + up * 0.5 + handInFace * 0.3, 0.2));
+      df.aim(B.rFore, B.rHand, new V(-0.5 + up * 0.45, 0.5 + up * 0.5, 0.2));
     }
   }
 
@@ -243,7 +264,14 @@ export class BasketEngine {
     this.S = { x: -this.u.x * d, z: -this.u.z * d };
     this.body = s.female ? FEMALE_BODY : BODIES[(s.number + s.name.length) % BODIES.length];
     this.kit = LEOPARDS_BASKET_KIT(s.name, s.number);
-    this.defBody = { ...BODIES[(s.shot + 3) % BODIES.length], height: 1.98, headband: "#fef2f2" };
+    const isMutombo = s.stage.id === 14;
+    const isEliteDef = s.stage.id >= 12;
+    const defHeight = isMutombo ? 2.18 : isEliteDef ? 2.08 : 1.98 + Math.max(0, s.stage.id - 4) * 0.01;
+    this.defBody = {
+      ...BODIES[(s.shot + 3) % BODIES.length],
+      height: defHeight,
+      headband: isMutombo ? "#111827" : "#fef2f2"
+    };
     this.phase = "idle";
     this.phaseT = 0;
     this.touch = null;
@@ -791,10 +819,33 @@ export class BasketEngine {
     return { power: this.power, ideal: this.ideal, window: this.windowW, aiming: this.phase === "aim" };
   }
 
+  private get defenderJumpHeight(): number {
+    const id = this.s.stage.id;
+    if (id === 14) return 0.78; // Mutombo
+    if (id >= 12) return 0.68;
+    if (id >= 8) return 0.60;
+    return 0.48 + Math.max(0, id - 4) * 0.015;
+  }
+
   private defenderAir(t: number): number {
     if (!this.s.stage.defender || t < this.defJumpAt) return 0;
-    const k = ((t - this.defJumpAt) % 1.25) / 0.7;
-    return k < 1 ? Math.sin(k * Math.PI) * 0.55 : 0;
+    const dt = t - this.defJumpAt;
+    const dur = 0.74;
+    // Premier saut de contestation explosif
+    if (dt < dur) {
+      const k = dt / dur;
+      return Math.sin(k * Math.PI) * this.defenderJumpHeight;
+    }
+    // Phase d'atterrissage et reprise d'appuis (feinte de tir réussie)
+    const recovery = 0.62;
+    if (dt < dur + recovery) return 0;
+    // Deuxième impulsion si le tireur garde la balle trop longtemps
+    const dt2 = dt - (dur + recovery);
+    if (dt2 < dur * 0.8) {
+      const k2 = dt2 / (dur * 0.8);
+      return Math.sin(k2 * Math.PI) * (this.defenderJumpHeight * 0.72);
+    }
+    return 0;
   }
 
   /* ---------------- Physique réelle du tir ---------------- */
@@ -963,12 +1014,18 @@ export class BasketEngine {
   private planShot() {
     const s = this.s;
     const diff = s.diff;
-    // contre du défenseur
+    // Détection physique du contre (Block)
     if (s.stage.defender) {
-      const air = this.defenderAir(this.t + 0.08);
-      if (air > 0.25 && this.rng() < 0.8) {
-        this.kind = "block";
-        return;
+      const airAtRelease = this.defenderAir(this.t + 0.1);
+      const isPeakJump = airAtRelease > 0.28;
+      const isPerfectGreen = Math.abs(this.power - this.ideal) < this.windowW * 0.45;
+      if (isPeakJump) {
+        // En pleine extension : un tir parfait passe au-dessus, un tir moyen est rejeté
+        const blockChance = isPerfectGreen ? 0.22 : 0.85;
+        if (this.rng() < blockChance) {
+          this.kind = "block";
+          return;
+        }
       }
     }
     this.kind = "swish";
@@ -989,11 +1046,13 @@ export class BasketEngine {
     this.rimTouched = false;
     this.boardTouched = false;
     if (this.kind === "block") {
-      this.vx = this.perp.x * 3 + (this.rng() - 0.5) * 2;
-      this.vz = -this.u.z * 1.5;
-      this.vy = 4;
+      this.vx = this.perp.x * (2.8 + this.rng() * 1.5) + (this.rng() - 0.5) * 1.6;
+      this.vz = -this.u.z * (1.8 + this.rng() * 0.8);
+      this.vy = 4.3;
+      this.spin = (this.rng() - 0.5) * 14;
       audio.glove();
-      this.resolve(false, "Contré !", "Tire avant que le défenseur ne saute", ["block"]);
+      const defName = this.s.stage.id === 14 ? "Dikembe Mutombo" : this.s.stage.id >= 12 ? "Le Pivot d'Élite" : "Le Défenseur";
+      this.resolve(false, "REJETÉ ! (BLOC)", `${defName} claque ton tir en plein vol ! Feinte ou shoote plus vite.`, ["block"]);
     } else {
       const v = this.launchVel(this.mUsed, this.latAng);
       this.vx = v.x;
@@ -1202,7 +1261,9 @@ export class BasketEngine {
 
     const ents: { z: number; draw: () => void }[] = [];
     if (this.s.stage.defender) {
-      const dz = this.depthOf(this.S.x + this.u.x * 1.35 + this.perp.x * 0.3, this.S.z + this.u.z * 1.35 + this.perp.z * 0.3);
+      const closeout = this.defT0 < 0 ? 0 : clamp((this.t - this.defT0) / 0.28, 0, 1);
+      const defDist = 1.55 - closeout * 0.38;
+      const dz = this.depthOf(this.S.x + this.u.x * defDist + this.perp.x * 0.22, this.S.z + this.u.z * defDist + this.perp.z * 0.22);
       ents.push({ z: dz, draw: () => this.drawDefender(ctx) });
     }
     if (!this.held && !ballBehindRim) ents.push({ z: this.depthOf(this.bx, this.bz), draw: () => this.drawBall(ctx) });
@@ -1359,21 +1420,26 @@ export class BasketEngine {
     const t = this.t;
     let p: Pose;
     const air = this.defenderAir(t);
+    const closeout = this.defT0 < 0 ? 0 : clamp((t - this.defT0) / 0.28, 0, 1);
+    const defDist = 1.55 - closeout * 0.38;
     if (this.defT0 < 0) {
-      p = { ...POSES.guard, px: Math.sin(t * 2.4) * 0.12 };
+      p = { ...POSES.guard, px: Math.sin(t * 2.8) * 0.16 };
     } else {
       const pre = this.defJumpAt - t;
       if (pre > 0) {
-        const crouch = pre < 0.3 ? 1 - pre / 0.3 : 0;
-        p = lerpPose(POSES.guard, { ...POSES.guard, lean: 0.6, hipL: -0.55, knL: 0.95, hipR: 0.55, knR: -0.95 }, crouch);
-        p = { ...p, px: Math.sin(t * 5) * 0.08 };
+        const crouch = pre < 0.28 ? 1 - pre / 0.28 : 0;
+        p = lerpPose(POSES.guard, { ...POSES.guard, lean: 0.65, hipL: -0.6, knL: 1.0, hipR: 0.6, knR: -1.0 }, crouch);
+        p = { ...p, px: Math.sin(t * 5.5) * 0.08 };
       } else {
-        p = lerpPose(POSES.guard, POSES.contest, clamp(air / 0.3, 0, 1));
+        p = lerpPose(POSES.guard, POSES.contest, clamp(air / 0.25, 0, 1));
         p = { ...p, air };
       }
     }
     const sk = skeleton(p, this.defBody);
-    const pos = { x: this.S.x + this.u.x * 1.35 + this.perp.x * 0.3, z: this.S.z + this.u.z * 1.35 + this.perp.z * 0.3 };
+    const pos = {
+      x: this.S.x + this.u.x * defDist + this.perp.x * 0.22,
+      z: this.S.z + this.u.z * defDist + this.perp.z * 0.22
+    };
     const g = this.cam.p(pos.x, 0, pos.z);
     drawFigure(ctx, sk, this.defBody, RIVAL_BASKET_KIT, { sx: g.x, sy: g.y, s: g.s }, { facing: "front" });
   }
