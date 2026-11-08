@@ -78,7 +78,7 @@ export const DEFAULT_SAVE: SaveData = {
   sound: true,
   music: false,
   diff: "pro",
-  tutorial: { foot: false, basket: false },
+  tutorial: { foot: false, basket: false, envol: false },
   progress: {},
   records: {},
   stats: DEFAULT_STATS

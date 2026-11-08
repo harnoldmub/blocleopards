@@ -103,7 +103,7 @@ export function Stars({ n, size = 18, total = 3 }: { n: number; size?: number; t
 }
 
 /** Illustration de carte : les vrais personnages du jeu, dessinés en direct. */
-export function GamePreview({ game, reduced }: { game: "foot" | "basket"; reduced: boolean }) {
+export function GamePreview({ game, reduced }: { game: "foot" | "basket" | "envol"; reduced: boolean }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const cv = ref.current;
@@ -196,6 +196,60 @@ export function GamePreview({ game, reduced }: { game: "foot" | "basket"; reduce
           br = h * 0.045;
         }
         drawFootball(ctx, bx, by, br, reduced ? 0.5 : t * 5);
+      } else if (game === "envol") {
+        const g = ctx.createLinearGradient(0, 0, 0, h);
+        g.addColorStop(0, "#f59e0b");
+        g.addColorStop(0.45, "#e28743");
+        g.addColorStop(0.7, "#1e293b");
+        g.addColorStop(1, "#0f172a");
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, w, h);
+
+        // Fleuve Congo miroitant
+        ctx.fillStyle = "#1d4ed8";
+        ctx.beginPath();
+        ctx.ellipse(w * 0.5, h * 0.72, w * 0.6, h * 0.08, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Silhouette urbaine / Stade
+        ctx.fillStyle = "#334155";
+        ctx.fillRect(w * 0.1, h * 0.68, w * 0.12, h * 0.1);
+        ctx.fillRect(w * 0.25, h * 0.64, w * 0.08, h * 0.14);
+        ctx.fillRect(w * 0.7, h * 0.66, w * 0.15, h * 0.12);
+
+        // Stade des Martyrs miniature
+        ctx.fillStyle = "#94a3b8";
+        ctx.beginPath();
+        ctx.ellipse(w * 0.45, h * 0.76, w * 0.14, h * 0.05, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#15803d";
+        ctx.beginPath();
+        ctx.ellipse(w * 0.45, h * 0.76, w * 0.08, h * 0.025, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Avion Léopards montant
+        const osc = reduced ? 0 : Math.sin(t * 2) * 6;
+        const ax = w * 0.52;
+        const ay = h * 0.38 + osc;
+        ctx.save();
+        ctx.translate(ax, ay);
+        ctx.rotate(-0.15);
+
+        // Fuselage bleu
+        ctx.fillStyle = "#2fa2e3";
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 24, 7, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Ailes rouges
+        ctx.fillStyle = "#e0263a";
+        ctx.fillRect(-6, -14, 12, 28);
+
+        // Hélice dorée
+        ctx.fillStyle = "#f4c400";
+        ctx.fillRect(23, -6, 3, 12);
+
+        ctx.restore();
       } else {
         const g = ctx.createLinearGradient(0, 0, 0, h);
         g.addColorStop(0, "#475569");

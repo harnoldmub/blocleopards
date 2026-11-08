@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, ChevronRight, Pencil, Lock, Minus, Music, Play, Plus, RotateCcw, Share2, Swords, Trophy, Volume2, VolumeX } from "lucide-react";
+import { ArrowLeft, ChevronRight, Pencil, Lock, Minus, Music, Play, Plus, RotateCcw, Share2, Swords, Trophy, Volume2, VolumeX, Plane } from "lucide-react";
 import "./arena.css";
 import GameView, { type Hud, type Splash } from "./GameView";
+import EnvolGameView from "./EnvolGameView";
+import ChampionsLeaderboard from "./ChampionsLeaderboard";
 import type { ShotOutcome, FootSetup } from "./engine/foot";
 import type { BasketSetup } from "./engine/basket";
 import {
@@ -83,8 +85,17 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
   const reduced = useReducedMotion();
   const [save, setSave] = useState<SaveData>(DEFAULT_SAVE);
   const [ready, setReady] = useState(false);
-  const [screen, setScreen] = useState<"home" | "play" | "results">("home");
+  const [screen, setScreen] = useState<"home" | "play" | "results" | "envol">("home");
   const [sheet, setSheet] = useState<null | "setup" | "records" | "pause" | "profile">(null);
+  const [showChampions, setShowChampions] = useState(false);
+  const [playerSession, setPlayerSession] = useState<{ id: string; nickname: string; public_tag: string } | null>(null);
+  const [serverRankResult, setServerRankResult] = useState<{
+    rankAllTime: number;
+    rankWeek: number;
+    bestScore: number;
+    isNewRecord: boolean;
+    challengeUrl?: string;
+  } | null>(null);
   const [onboarding, setOnboarding] = useState(false);
   const [setupGame, setSetupGame] = useState<GameId>("foot");
   const [setupMode, setSetupMode] = useState<Mode>("carriere");
@@ -106,7 +117,7 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
   const sessionRef = useRef<Session | null>(null);
   sessionRef.current = session;
 
-  // chargement
+  // chargement & session serveur persistante (cookie)
   useEffect(() => {
     const data = loadSave();
     setSave(data);
@@ -117,8 +128,26 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
     const c = decodeChallenge(new URLSearchParams(window.location.search).get("defi"));
     if (c) setChallenge(c);
     setReady(true);
+
+    // Initialisation session serveur anonyme persistante
+    fetch(`/api/jeux/session${data.name ? `?name=${encodeURIComponent(data.name)}` : ""}`)
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.success && res.player) {
+          setPlayerSession(res.player);
+          // Préremplir le pseudo si le navigateur a une session reconnue
+          if (res.player.nickname && res.player.nickname !== "Léopard" && !data.name) {
+            setSolo((prev) => ({ ...prev, name: res.player.nickname }));
+            setNames((prev) => [res.player.nickname, ...prev.slice(1)]);
+            update((d) => ({ ...d, name: res.player.nickname }));
+          }
+        }
+      })
+      .catch((e) => console.error("Session error:", e));
+
     // premier passage : on crée son joueur (sexe, nom, numéro) avant tout
     if (!data.name) setOnboarding(true);
+    else if (initialGame === "envol") setScreen("envol");
     else if (initialGame && !c) openSetup(initialGame, "carriere");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -399,9 +428,35 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
       }
       update((d) => addDuel(d, entry));
     }
-    // classement local (appareil)
+    // classement local et validation serveur pour « Les champions du Bloc »
     if (s.mode !== "duel") {
       const me = players[0];
+      const streakScore = Math.max(0, me.best);
+      fetch("/api/jeux/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          game: s.game,
+          score: streakScore,
+          nickname: me.name,
+          details: { made: me.made, points: me.score, shots: me.shots.length, mode: s.mode },
+          nonce: `${s.game}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+        })
+      })
+        .then((r) => r.json())
+        .then((res) => {
+          if (res.success && res.result) {
+            setServerRankResult({
+              rankAllTime: res.result.rankAllTime,
+              rankWeek: res.result.rankWeek,
+              bestScore: res.result.bestScore,
+              isNewRecord: res.result.isNewRecord,
+              challengeUrl: res.challengeUrl
+            });
+          }
+        })
+        .catch((e) => console.error("Submit score error:", e));
+
       update((d) => {
         const r = addRecord(d, s.game, { name: me.name, score: me.score, mode: MODE_META[s.mode].label, diff: s.diff, date: Date.now() });
         rank = r.rank;
@@ -612,9 +667,17 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
       {screen === "home" && (
         <Home
           save={save}
+          playerTag={playerSession?.public_tag}
           reduced={reduced}
           challenge={challenge}
-          onPick={(g) => openSetup(g, "carriere")}
+          onPick={(g) => {
+            if (g === "envol") {
+              setScreen("envol");
+            } else {
+              openSetup(g, "carriere");
+            }
+          }}
+          onOpenChampions={() => setShowChampions(true)}
           onDuel={() => openSetup("foot", "duel")}
           onChallenge={() => challenge && startDefi(challenge.g, challenge)}
           onNewDefi={(g) => (save.name ? startDefi(g, null) : setOnboarding(true))}
@@ -625,7 +688,7 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
         />
       )}
 
-      {screen !== "home" && session && engineSetup && hud && (
+      {screen !== "home" && screen !== "envol" && session && engineSetup && hud && (
         <GameView
           game={session.game}
           setupKey={`${session.seed}-${session.current}-${session.shot}-${session.global}-${session.stageIdx}-${session.mode}`}
@@ -642,6 +705,22 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
           soundOn={save.sound}
           onToggleSound={toggleSound}
           needsFemale={session.players.some((p) => p.female)}
+        />
+      )}
+
+      {screen === "envol" && (
+        <EnvolGameView
+          playerName={save.name || "Léopard"}
+          playerTag={playerSession?.public_tag || "243"}
+          onExit={() => setScreen("home")}
+          onScoreSubmitted={() => {
+            fetch("/api/jeux/session")
+              .then((r) => r.json())
+              .then((res) => {
+                if (res.success && res.player) setPlayerSession(res.player);
+              })
+              .catch(() => {});
+          }}
         />
       )}
 
@@ -680,6 +759,8 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
           result={result}
           session={session}
           reduced={reduced}
+          serverRank={serverRankResult}
+          onOpenChampions={() => setShowChampions(true)}
           onReplay={() => replay(false)}
           onNext={() => replay(true)}
           onShare={share}
@@ -749,10 +830,27 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
             setSolo({ name: n, number: pr.number, female: pr.female });
             setNames((prev) => [n, ...prev.slice(1)]);
             setGenders((prev) => [pr.female, ...prev.slice(1)]);
+            // Synchronise le pseudo côté serveur pour la session persistante
+            fetch("/api/jeux/session", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ nickname: n })
+            })
+              .then((r) => r.json())
+              .then((res) => {
+                if (res.success && res.player) {
+                  setPlayerSession(res.player);
+                }
+              })
+              .catch((e) => console.error("Update pseudo error:", e));
             setSheet(null);
             if (onboarding) {
               setOnboarding(false);
-              if (initialGame) openSetup(initialGame, "carriere");
+              if (initialGame === "envol") {
+                setScreen("envol");
+              } else if (initialGame) {
+                openSetup(initialGame, "carriere");
+              }
             }
           }}
         />
@@ -808,6 +906,24 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
         />
       )}
       {toast && <Toast text={toast} onDone={() => setToast(null)} />}
+
+      {showChampions && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 sm:p-5 backdrop-blur-md">
+          <ChampionsLeaderboard
+            initialGame={setupGame || "foot"}
+            currentPlayerId={playerSession?.id}
+            onClose={() => setShowChampions(false)}
+            onPlayGame={(g) => {
+              setShowChampions(false);
+              if (g === "envol") {
+                setScreen("envol");
+              } else {
+                openSetup(g, "carriere");
+              }
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -818,9 +934,11 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
 
 function Home(props: {
   save: SaveData;
+  playerTag?: string;
   reduced: boolean;
   challenge: Challenge | null;
   onPick: (g: GameId) => void;
+  onOpenChampions: () => void;
   onDuel: () => void;
   onChallenge: () => void;
   onNewDefi: (g: GameId) => void;
@@ -839,17 +957,27 @@ function Home(props: {
         <a href="/" className="a-btn a-btn-ghost -ml-3 min-h-[44px] px-3 text-[14px]" aria-label="Retour au site Bloc Léopards">
           <ArrowLeft size={18} /> Site
         </a>
-        <button className="a-btn a-btn-secondary ml-auto mr-2 min-h-[44px] max-w-[60%] px-3 text-[13px]" onClick={props.onProfile} aria-label="Modifier ton joueur">
-          <span className="truncate">
-            {save.name
-              ? `${save.female ? "Joueuse" : "Joueur"} · ${save.name}${hasJersey(save.character) ? ` · N°${save.number}` : ""}`
-              : "Crée ton joueur"}
-          </span>
-          <Pencil size={14} />
-        </button>
-        <button className="a-icon-btn" onClick={props.onSound} aria-label={save.sound ? "Couper le son" : "Activer le son"} aria-pressed={save.sound}>
-          {save.sound ? <Volume2 size={20} /> : <VolumeX size={20} />}
-        </button>
+        <div className="ml-auto flex items-center gap-1.5">
+          <button
+            className="a-btn a-btn-secondary min-h-[44px] px-3 text-[13px] text-[var(--a-gold)]"
+            onClick={props.onOpenChampions}
+            aria-label="Classement Les champions du Bloc"
+          >
+            <Trophy size={16} />
+            <span className="text-[12px] font-bold">Champions</span>
+          </button>
+          <button className="a-btn a-btn-secondary min-h-[44px] max-w-[170px] sm:max-w-[220px] px-3 text-[13px]" onClick={props.onProfile} aria-label="Modifier ton joueur">
+            <span className="truncate">
+              {save.name
+                ? `${save.name}${props.playerTag ? ` · #${props.playerTag}` : ""}`
+                : "Crée ton joueur"}
+            </span>
+            <Pencil size={14} />
+          </button>
+          <button className="a-icon-btn" onClick={props.onSound} aria-label={save.sound ? "Couper le son" : "Activer le son"} aria-pressed={save.sound}>
+            {save.sound ? <Volume2 size={20} /> : <VolumeX size={20} />}
+          </button>
+        </div>
       </header>
 
       {/* Les deux marques mises en avant */}
@@ -906,31 +1034,46 @@ function Home(props: {
           </section>
         )}
 
-        {/* 1. Sélection immédiate du jeu en vedette */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-5">
-          {(["foot", "basket"] as GameId[]).map((g) => {
-            const totalStages = g === "foot" ? FOOT_STAGES.length : BASKET_STAGES.length;
+        {/* 1. Sélection immédiate des 3 jeux officiels */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          {(["foot", "basket", "envol"] as GameId[]).map((g) => {
+            const isEnvol = g === "envol";
+            const totalStages = isEnvol ? 3 : g === "foot" ? FOOT_STAGES.length : BASKET_STAGES.length;
             const p = prog(g);
             return (
               <button key={g} className="a-game-card group" onClick={() => props.onPick(g)} aria-label={`Jouer : ${GAME_META[g].title}`}>
-                <div className="aspect-[4/4.2] w-full sm:aspect-[4/3] overflow-hidden">
+                <div className="aspect-[16/10] sm:aspect-[4/3] w-full overflow-hidden">
                   <GamePreview game={g} reduced={props.reduced} />
                 </div>
                 <div className="flex flex-1 flex-col p-3 sm:p-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[var(--a-gold)]">{GAME_META[g].short}</span>
+                    <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[var(--a-gold)]">
+                      {GAME_META[g].short}
+                    </span>
                     <span className="rounded-full bg-[rgba(244,196,0,0.18)] px-2 py-0.5 text-[10px] font-black text-[var(--a-gold)]">
-                      {totalStages} Paliers
+                      {isEnvol ? "3 Vols · 3D" : `${totalStages} Paliers`}
                     </span>
                   </div>
-                  <span className="display mt-0.5 text-[24px] sm:text-[32px] transition-colors group-hover:text-[var(--a-gold)]">{GAME_META[g].title}</span>
-                  <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] text-[var(--a-muted)]">
-                    <span className="font-bold text-white/90">Palier {p.unlocked}/{totalStages}</span>
-                    <span aria-label="Étoiles gagnées" className="text-[var(--a-gold)]">★ {p.stars.reduce((a, b) => a + b, 0)}/{totalStages * 3}</span>
+                  <span className="display mt-0.5 text-[22px] sm:text-[26px] transition-colors group-hover:text-[var(--a-gold)]">
+                    {GAME_META[g].title}
                   </span>
-                  {best(g) > 0 && <span className="mt-0.5 text-[12px] font-medium text-white/70">Record : {best(g)} pts</span>}
+                  <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] text-[var(--a-muted)]">
+                    {isEnvol ? (
+                      <span className="font-bold text-white/90">Kinshasa vue du ciel</span>
+                    ) : (
+                      <>
+                        <span className="font-bold text-white/90">Palier {p.unlocked}/{totalStages}</span>
+                        <span aria-label="Étoiles gagnées" className="text-[var(--a-gold)]">★ {p.stars.reduce((a, b) => a + b, 0)}/{totalStages * 3}</span>
+                      </>
+                    )}
+                  </span>
+                  {best(g) > 0 && (
+                    <span className="mt-0.5 text-[12px] font-medium text-white/70">
+                      Record : {best(g)} {isEnvol ? "pts" : "série"}
+                    </span>
+                  )}
                   <span className="h-3" aria-hidden="true" />
-                  <span className="a-btn a-btn-primary mt-auto min-h-[44px] w-full text-[15px] shadow-[0_4px_16px_rgba(244,196,0,0.25)]">
+                  <span className="a-btn a-btn-primary mt-auto min-h-[44px] w-full text-[14px] shadow-[0_4px_16px_rgba(244,196,0,0.25)]">
                     <Play size={16} fill="currentColor" /> Jouer
                   </span>
                 </div>
@@ -1423,6 +1566,8 @@ function Results(props: {
   result: Result;
   session: Session;
   reduced: boolean;
+  serverRank?: { rankAllTime: number; rankWeek: number; bestScore: number; isNewRecord: boolean; challengeUrl?: string } | null;
+  onOpenChampions?: () => void;
   onReplay: () => void;
   onNext: () => void;
   onShare: () => void;
@@ -1486,6 +1631,49 @@ function Results(props: {
         )}
         {result.rank === 0 && !duel && <p className="mt-3 text-center text-[14px] font-bold text-[var(--a-gold)]">Nouveau record sur cet appareil !</p>}
 
+        {!duel && (
+          <div className="mt-3.5 rounded-2xl border border-white/10 bg-black/40 p-3.5 text-center shadow-lg">
+            <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-white/50">
+              <span>Série officielle validée</span>
+              <span className="text-[var(--a-gold)]">
+                {props.serverRank?.isNewRecord ? "🏆 Nouveau record !" : "Record personnel"}
+              </span>
+            </div>
+            <div className="mt-1 flex items-baseline justify-center gap-1.5">
+              <span className="text-3xl font-black text-white">{me.best}</span>
+              <span className="text-[12px] text-white/60">
+                {session.game === "foot" ? "tirs d'affilée" : "paniers d'affilée"}
+              </span>
+            </div>
+            {props.serverRank && (
+              <div className="mt-2.5 flex items-center justify-around border-t border-white/10 pt-2 text-[12px]">
+                <div>
+                  <span className="text-white/40">Rang semaine :</span>{" "}
+                  <strong className="text-[var(--a-gold)]">
+                    {props.serverRank.rankWeek > 0 ? `#${props.serverRank.rankWeek}` : "Classé"}
+                  </strong>
+                </div>
+                <div className="h-3.5 w-px bg-white/10" />
+                <div>
+                  <span className="text-white/40">Tous les temps :</span>{" "}
+                  <strong className="text-[var(--a-gold)]">
+                    {props.serverRank.rankAllTime > 0 ? `#${props.serverRank.rankAllTime}` : "Classé"}
+                  </strong>
+                </div>
+              </div>
+            )}
+            {props.onOpenChampions && (
+              <button
+                type="button"
+                onClick={props.onOpenChampions}
+                className="mt-2.5 inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-3 py-1.5 text-[11px] font-extrabold text-[var(--a-gold)] hover:bg-white/15 active:scale-95 transition-all"
+              >
+                <Trophy size={13} /> Voir « Les champions du Bloc »
+              </button>
+            )}
+          </div>
+        )}
+
         <div className="mt-auto grid gap-2.5 py-5 safe-bottom">
           {defi ? (
             <>
@@ -1527,6 +1715,9 @@ function Results(props: {
               Menu des jeux
             </button>
           </div>
+          <p className="mt-1 text-center text-[10px] text-white/35">
+            ℹ️ Ton profil est conservé sur cet appareil et peut être perdu si les données du navigateur sont effacées.
+          </p>
         </div>
       </div>
     </div>

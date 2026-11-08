@@ -1,0 +1,24 @@
+---
+import "../../styles/global.css";
+import SEO from "../../components/SEO.astro";
+import ArenaApp from "../../components/arena/ArenaApp.tsx";
+
+const pageTitle = "Envol 243 · Kinshasa vue du ciel | Bloc Léopards";
+const pageDescription = "Jeu 3D au-dessus de Kinshasa : décolle sur le Boulevard du 30 Juin, survole le Stade des Martyrs et le Fleuve Congo. Multiplicateur progressif et défis entre amis.";
+---
+
+<!doctype html>
+<html lang="fr" class="h-full bg-[#040a1a]">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#040a1a" />
+    <SEO title={pageTitle} description={pageDescription} url="https://blocleopards.com/jeux/envol" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="preload" as="image" href="/brand/logo-arena.webp" />
+  </head>
+  <body class="h-[100dvh] overflow-hidden bg-[#040a1a] text-white antialiased">
+    <noscript><p style="padding:24px;color:#fff">Envol 243 nécessite JavaScript pour le rendu 3D.</p></noscript>
+    <ArenaApp client:only="react" initialGame={"envol"} />
+  </body>
+</html>

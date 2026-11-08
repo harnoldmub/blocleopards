@@ -3,7 +3,7 @@
  * Tout ce qui règle l'équilibrage du jeu vit ici.
  */
 
-export type GameId = "foot" | "basket";
+export type GameId = "foot" | "basket" | "envol";
 export type Difficulty = "facile" | "pro" | "legende";
 export type Mode = "carriere" | "survie" | "chrono" | "duel" | "defi";
 
@@ -449,7 +449,8 @@ export function starsFor(made: number, shots: number, toPass: number): number {
 
 export const GAME_META: Record<GameId, { title: string; short: string; place: string; modes: Mode[] }> = {
   foot: { title: "Tirs au but", short: "Foot", place: "Stade des Martyrs", modes: ["carriere", "survie"] },
-  basket: { title: "Shoot à la sirène", short: "Basket", place: "Limete 7ᵉ Rue", modes: ["carriere", "chrono"] }
+  basket: { title: "Shoot à la sirène", short: "Basket", place: "Limete 7ᵉ Rue", modes: ["carriere", "chrono"] },
+  envol: { title: "Envol 243", short: "Envol", place: "Boulevard & Fleuve Congo", modes: ["carriere", "survie"] }
 };
 
 export const MODE_META: Record<Mode, { label: string; hint: string }> = {
