@@ -49,7 +49,7 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/data ./data
-COPY --from=builder /app/private ./private
+RUN mkdir -p /app/private
 
 EXPOSE 5000
 
