@@ -684,6 +684,7 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
     if (!session || !hintOn) return null;
     if (session.game === "foot") {
       const st = stageFor(session) as FootStage;
+      if (st.type === "pass_shoot") return "Score! Hero : glisse vers ton coéquipier démarqué, évite les défenseurs !";
       if (st.wall) return "Coup franc : tire moins fort pour lober le mur, ou courbe ton geste";
       return "Glisse le ballon vers la cage · courbe le geste pour enrouler";
     }

@@ -105,7 +105,9 @@ export default function GameView(props: {
           if (disposed || !canvas3dRef.current) return;
           try {
             c3 = new mod.Chars3D(canvas3dRef.current, props.game);
-          } catch {
+          } catch (e) {
+            console.warn("Chars3D init fallback to 2D:", e);
+            if (!disposed) setLoadState("error");
             return;
           }
           fit();

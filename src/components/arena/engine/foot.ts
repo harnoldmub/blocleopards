@@ -203,6 +203,22 @@ export class FootEngine {
   private postHitPending: { timer: number; inside: boolean; postHit: boolean; p: NonNullable<FootEngine["pending"]> } | null = null;
   private crowdReaction: "idle" | "tense" | "goal" | "save" | "post" = "idle";
 
+  // Score! Hero (passe décisive + frappe)
+  private currentDistance = 0;
+  private passStep: "pass" | "shoot" | null = null;
+  private passSuccessFlash = 0;
+  private passAnim: {
+    active: boolean;
+    t: number;
+    duration: number;
+    x0: number;
+    z0: number;
+    x1: number;
+    z1: number;
+    curve: number;
+    intercepted?: { x: number; z: number };
+  } | null = null;
+
   // personnages 3D (facultatifs : repli 2D si WebGL indisponible)
   private c3: Chars3D | null = null;
   private c3m: C3Mod | null = null;
@@ -229,7 +245,9 @@ export class FootEngine {
     const kFem = !!s.stage.keeper.female;
     const pc = m.charById(s.character)?.female === fem ? s.character! : fem ? "leoparde" : "leopard";
     const kc = m.pickChar(kFem, s.stage.id * 7 + 3, [pc]).id;
-    const wallIds = Array.from({ length: s.stage.wall }, (_, i) => m.pickChar(kFem, s.stage.id + i, [pc, kc]).id);
+    const isPass = this.passStep === "pass" && !!s.stage.pass;
+    const defCount = isPass ? s.stage.pass!.defenders.length : s.stage.wall;
+    const wallIds = Array.from({ length: defCount }, (_, i) => m.pickChar(kFem, s.stage.id + i, [pc, kc]).id);
     const need = [pc, kc, ...wallIds];
     if (!c3.isLoaded(need)) {
       await c3.ensureChars(need);
@@ -239,8 +257,8 @@ export class FootEngine {
     const hasJ = m.hasJersey(pc);
     this.A.shooter = c3.actor({ ...m.LEOPARDS_PAINT(s.name, hasJ ? s.number : undefined, this.shooterBody.skin), female: fem }, pc);
     this.A.keeper = c3.actor({ ...m.KEEPER_PAINT(s.stage.keeper.kit, this.keeperBody.skin), female: kFem }, kc);
-    for (let i = 0; i < s.stage.wall; i++) {
-      this.A.wall.push(c3.actor({ ...m.RIVAL_PAINT(4 + i * 3, this.wallBodies[i].skin), female: kFem }, wallIds[i]));
+    for (let i = 0; i < defCount; i++) {
+      this.A.wall.push(c3.actor({ ...m.RIVAL_PAINT(4 + i * 3, this.wallBodies[i]?.skin || 0), female: kFem }, wallIds[i]));
     }
     this.celeb = { x: 0, z: 0, captured: false };
     c3.buildGoal(this.D);
@@ -280,6 +298,10 @@ export class FootEngine {
     this.parts = [];
     this.zoom = 1;
     this.shake = 0;
+    this.currentDistance = s.stage.distance;
+    this.passSuccessFlash = 0;
+    this.passAnim = null;
+    this.passStep = s.stage.type === "pass_shoot" && s.stage.pass ? "pass" : null;
     this.bx = s.stage.ballX;
     this.by = BALL_R;
     this.bz = 0;
@@ -296,7 +318,8 @@ export class FootEngine {
       boots: "#111827", gloves: k.gloves, gloves2: k.gloves2, longSleeves: true, number: "1"
     };
     this.keeperX = s.stage.ballX * 0.12;
-    this.wallBodies = Array.from({ length: s.stage.wall }, (_, i) =>
+    const defCount = s.stage.type === "pass_shoot" && s.stage.pass ? s.stage.pass.defenders.length : s.stage.wall;
+    this.wallBodies = Array.from({ length: Math.max(s.stage.wall, defCount) }, (_, i) =>
       s.stage.keeper.female ? { ...FEMALE_BODY, height: 1.7 + (i % 3) * 0.03 } : BODIES[(i * 2 + 1) % BODIES.length]
     );
     this.bgDirty = true;
@@ -315,7 +338,7 @@ export class FootEngine {
   }
 
   private get D() {
-    return this.setupData.stage.distance;
+    return this.currentDistance || this.setupData.stage.distance;
   }
 
   private wallZ() {
@@ -323,6 +346,7 @@ export class FootEngine {
   }
 
   private wallXs(): number[] {
+    if (this.passStep === "pass") return [];
     const n = this.setupData.stage.wall;
     if (!n) return [];
     const bx = this.setupData.stage.ballX;
@@ -336,32 +360,37 @@ export class FootEngine {
   private layout() {
     const cam = this.cam;
     const D = this.D;
-    const bx = this.setupData.stage.ballX;
+    const bx = this.bx;
     const portrait = this.h > this.w;
-    const fk = D > 15;
-    // caméra TV : sur mobile pour les coups francs, recul net et hauteur pour embrasser le mur et la cage
-    cam.x = fk ? (portrait ? bx * 0.45 - 0.75 : bx - 0.9) : bx + 0.55;
-    cam.y = fk ? (portrait ? 5.2 : 4.5) : (portrait ? 4.1 : 3.9);
-    cam.z = fk ? (portrait ? -14.2 : -11.5) : (portrait ? -12 : -11);
+    const isPass = this.passStep === "pass" && !!this.setupData.stage.pass;
+    const fk = D > 15 || isPass;
+    // caméra TV : sur mobile pour les coups francs et actions Score! Hero, vue agrandie et immersive
+    cam.x = fk ? (portrait ? bx * 0.45 - 0.4 : bx - 0.7) : bx + 0.55;
+    cam.y = isPass ? (portrait ? 4.9 : 4.2) : fk ? (portrait ? 4.35 : 3.85) : (portrait ? 4.1 : 3.9);
+    cam.z = isPass ? (portrait ? -10.2 : -9.0) : fk ? (portrait ? -9.2 : -8.2) : (portrait ? -12 : -11);
     cam.setYaw(Math.atan2(-cam.x * 0.85, D - cam.z));
     cam.cx = this.w / 2;
-    // cadrage : cage le plus large possible, ballon en bas
+    // cadrage : cage nettement plus large et haute pour faciliter le tir et la courbe
     const pts = [
-      [-GOAL_W - 0.3, GOAL_H, D],
-      [GOAL_W + 0.3, GOAL_H, D],
+      [-GOAL_W - 0.25, GOAL_H, D],
+      [GOAL_W + 0.25, GOAL_H, D],
       [bx, 0, 0]
     ];
+    if (isPass) {
+      const tgt = this.setupData.stage.pass!.teammate;
+      pts.push([tgt.x, 0, tgt.z]);
+    }
     const uv = pts.map(([X, Y, Z]) => {
       const [rx, rz] = cam.rel(X, Z);
       return { u: rx / rz, v: -(Y - cam.y) / rz };
     });
     const uSpan = Math.abs(uv[1].u - uv[0].u);
     const vSpan = uv[2].v - Math.min(uv[0].v, uv[1].v);
-    // cadrage élargi sur mobile pour les coups francs : cage, mur et courbe entière visibles
-    const fW = (this.w * (portrait ? (fk ? 0.65 : 0.74) : 0.58)) / uSpan;
-    const fH = (this.h * (portrait ? (fk ? 0.44 : 0.50) : 0.52)) / vSpan;
+    // Cadrage agrandi (la cage occupe une place majeure à l'écran, facilitant grandement la visée)
+    const fW = (this.w * (portrait ? (fk ? 0.82 : 0.74) : (fk ? 0.72 : 0.58))) / uSpan;
+    const fH = (this.h * (portrait ? (fk ? 0.54 : 0.50) : (fk ? 0.54 : 0.52))) / vSpan;
     cam.f = Math.min(fW, fH);
-    const ballY = this.h * (portrait ? (fk ? 0.76 : 0.81) : fk ? 0.78 : 0.84);
+    const ballY = this.h * (portrait ? (fk ? 0.82 : 0.81) : fk ? 0.82 : 0.84);
     cam.hz = ballY - uv[2].v * cam.f;
     // centre la cage horizontalement
     const mid = (uv[0].u + uv[1].u) / 2;
@@ -555,6 +584,13 @@ export class FootEngine {
     if (!this.touch) return;
     const now = performance.now();
     this.touch.pts.push({ x, y, t: now });
+    if (this.passStep === "pass") {
+      const pts = this.touch.pts;
+      this.touch = null;
+      this.cb.onAim?.(false);
+      this.handlePassGesture(pts);
+      return;
+    }
     const shot = this.readGesture(this.touch.pts);
     this.touch = null;
     this.cb.onAim?.(false);
@@ -563,6 +599,77 @@ export class FootEngine {
     this.phase = "runup";
     this.phaseT = 0;
     this.cb.onKick();
+  }
+
+  private handlePassGesture(pts: { x: number; y: number; t: number }[]) {
+    if (pts.length < 2) return;
+    const S = pts[0];
+    const E = pts[pts.length - 1];
+    const dy = S.y - E.y;
+    if (dy < this.h * 0.04) return;
+    const pass = this.setupData.stage.pass;
+    if (!pass) return;
+    const target = pass.teammate;
+
+    // Mesure de la courbure du geste pour contourner les défenseurs (repère écran inversé en Y)
+    let bulge = 0;
+    const dyTotal = S.y - E.y;
+    const dxTotal = E.x - S.x;
+    for (const p of pts) {
+      const d = ((p.x - S.x) * dyTotal - (S.y - p.y) * dxTotal) / len;
+      if (Math.abs(d) > Math.abs(bulge)) bulge = d;
+    }
+    const curveAmount = clamp((bulge / this.h) * 9.5, -4.5, 4.5);
+
+    // Vérifie l'interception le long de l'arc de passe
+    const steps = 40;
+    let interceptedDef: { x: number; z: number } | null = null;
+    let interceptFrac = 1;
+
+    for (let i = 1; i <= steps; i++) {
+      const frac = i / steps;
+      const curZ = this.bz + (target.z - this.bz) * frac;
+      const curX = this.bx + (target.x - this.bx) * frac + curveAmount * Math.sin(frac * Math.PI);
+
+      for (const def of pass.defenders) {
+        const d = Math.hypot(curX - def.x, curZ - def.z);
+        if (d < def.radius) {
+          interceptedDef = { x: def.x, z: def.z };
+          interceptFrac = frac;
+          break;
+        }
+      }
+      if (interceptedDef) break;
+    }
+
+    this.phase = "flight";
+    this.phaseT = 0;
+    audio.kick();
+
+    if (interceptedDef) {
+      this.passAnim = {
+        active: true,
+        t: 0,
+        duration: 0.65 * interceptFrac,
+        x0: this.bx,
+        z0: this.bz,
+        x1: interceptedDef.x,
+        z1: interceptedDef.z,
+        curve: curveAmount * interceptFrac,
+        intercepted: interceptedDef
+      };
+    } else {
+      this.passAnim = {
+        active: true,
+        t: 0,
+        duration: 0.65,
+        x0: this.bx,
+        z0: this.bz,
+        x1: target.x,
+        z1: target.z,
+        curve: curveAmount
+      };
+    }
   }
 
   cancel() {
@@ -814,6 +921,52 @@ export class FootEngine {
     this.t += dt;
     this.phaseT += dt;
     const s = this.setupData;
+
+    if (this.passSuccessFlash > 0) {
+      this.passSuccessFlash = Math.max(0, this.passSuccessFlash - dt);
+    }
+
+    if (this.passAnim && this.passAnim.active) {
+      this.passAnim.t += dt;
+      const frac = clamp(this.passAnim.t / this.passAnim.duration, 0, 1);
+      this.bz = this.passAnim.z0 + (this.passAnim.z1 - this.passAnim.z0) * frac;
+      this.bx = this.passAnim.x0 + (this.passAnim.x1 - this.passAnim.x0) * frac + this.passAnim.curve * Math.sin(frac * Math.PI);
+      this.by = BALL_R + Math.sin(frac * Math.PI) * 0.4;
+      this.trail.push({ x: this.bx, y: this.by, r: BALL_R });
+      if (this.trail.length > 20) this.trail.shift();
+
+      if (frac >= 1) {
+        this.passAnim.active = false;
+        if (this.passAnim.intercepted) {
+          audio.whistle();
+          this.finish({
+            scored: false,
+            base: 0,
+            tags: ["intercepted"],
+            label: "Interception défensive !",
+            detail: "Le défenseur adverse a coupé la trajectoire",
+            zone: 0
+          });
+        } else {
+          audio.kick();
+          audio.crowd("cheer");
+          this.passSuccessFlash = 1.0;
+          const pass = this.setupData.stage.pass!;
+          this.passStep = "shoot";
+          this.currentDistance = pass.finishDistance;
+          this.bx = pass.finishBallX;
+          this.by = BALL_R;
+          this.bz = 0;
+          this.vx = this.vy = this.vz = this.ax = 0;
+          this.phase = "aim";
+          this.phaseT = 0;
+          this.layout();
+          if (this.c3?.ready) this.build3D();
+        }
+      }
+      if (this.use3d) this.drive3D();
+      return;
+    }
 
     if (this.phase === "runup" && this.phaseT >= RUN) {
       this.launch();
@@ -1131,7 +1284,14 @@ export class FootEngine {
     if (!detail) {
       detail = d && d.kind !== "stay" && Math.sign(this.bx - this.keeperX) !== d.side ? "Gardien pris à contre-pied" : "Imparable";
     }
-    if (this.D > 15) tags.push("coup-franc");
+    if (this.setupData.stage.type === "pass_shoot") {
+      tags.push("score_hero", "combo_pass");
+      base += 50;
+      label = "BUUUT ! Action Score! Hero !";
+      const tm = this.setupData.stage.pass?.teammate.name || "l'attaquant";
+      detail = detail ? `${detail} · Passe décisive à ${tm}` : `Passe décisive à ${tm} + finition imparable !`;
+    }
+    if (this.D > 15 && this.setupData.stage.type !== "pass_shoot") tags.push("coup-franc");
     audio.net();
     audio.crowd("goal");
     if (!this.setupData.reduced) {
@@ -1193,11 +1353,13 @@ export class FootEngine {
     }
 
     if (this.use3d) {
+      this.drawTacticalPassOverlay(ctx);
       this.drawCurveTrail(ctx);
       drawParticles(ctx, this.parts);
       ctx.restore();
       if (this.phase === "aim") this.drawAimAssist(ctx);
       this.drawFingerTrail(ctx);
+      this.drawScoreHeroHud(ctx);
       this.c3!.sync(this.cam, this.w, this.h, { zoom: this.zoom, gx: gc.x, gy: gc.y, ox: this.viewOff.x, oy: this.viewOff.y });
       const held = this.ballHeld && this.A.keeper;
       if (held) {
@@ -1214,12 +1376,22 @@ export class FootEngine {
       return;
     }
 
+    this.drawTacticalPassOverlay(ctx);
     // entités triées par profondeur
     const ents: { z: number; draw: () => void }[] = [];
     ents.push({ z: D - KEEPER_DZ, draw: () => this.drawKeeper(ctx) });
     if (!ballInside) ents.push({ z: this.bz + 0.01, draw: () => this.drawBall(ctx) });
-    const wz = this.wallZ();
-    this.wallXs().forEach((x, i) => ents.push({ z: wz, draw: () => this.drawWallPlayer(ctx, x, i) }));
+    if (this.passStep === "pass" && this.setupData.stage.pass) {
+      const pass = this.setupData.stage.pass;
+      for (let i = 0; i < pass.defenders.length; i++) {
+        const def = pass.defenders[i];
+        ents.push({ z: def.z, draw: () => this.drawWallPlayer(ctx, def.x, i) });
+      }
+      ents.push({ z: pass.teammate.z, draw: () => this.drawTeammate(ctx, pass.teammate) });
+    } else {
+      const wz = this.wallZ();
+      this.wallXs().forEach((x, i) => ents.push({ z: wz, draw: () => this.drawWallPlayer(ctx, x, i) }));
+    }
     ents.push({ z: this.shooterZ(), draw: () => this.drawShooter(ctx) });
     ents.sort((a, b) => b.z - a.z).forEach((e) => e.draw());
 
@@ -1228,6 +1400,7 @@ export class FootEngine {
 
     if (this.phase === "aim") this.drawAimAssist(ctx);
     this.drawFingerTrail(ctx);
+    this.drawScoreHeroHud(ctx);
   }
 
   private drawNet(ctx: CanvasRenderingContext2D, backLayer: boolean) {
@@ -1362,7 +1535,7 @@ export class FootEngine {
     const since = this.phase === "flight" || this.phase === "done" ? this.t - this.kickT : -1;
     const k = since < 0.1 ? 0 : Math.sin(clamp((since - 0.1) / 0.55, 0, 1) * Math.PI);
     const p = lerpPose(POSES.wall, POSES.wallJump, k);
-    const body = this.wallBodies[i];
+    const body = this.wallBodies[i] || (this.setupData?.stage?.keeper?.female ? FEMALE_BODY : BODIES[(i * 2 + 1) % BODIES.length]);
     const sk = skeleton({ ...p, air: 0.36 * k }, body);
     const g = this.cam.p(x, 0, this.wallZ());
     drawFigure(ctx, sk, body, { ...RIVAL_KIT, number: String(4 + i * 3) }, { sx: g.x, sy: g.y, s: g.s }, { facing: "front" });
@@ -1512,6 +1685,174 @@ export class FootEngine {
     drawFootball(ctx, p.x, p.y, Math.max(2, BALL_R * p.s), this.spin);
   }
 
+  private drawTeammate(ctx: CanvasRenderingContext2D, tm: { name: string; number: number; x: number; z: number }) {
+    const kit = LEOPARDS_KIT(tm.name, tm.number);
+    const sk = skeleton(POSES.keeperSet, this.shooterBody);
+    const g = this.cam.p(tm.x, 0, tm.z);
+    drawFigure(ctx, sk, this.shooterBody, kit, { sx: g.x, sy: g.y, s: g.s }, { facing: "back" });
+  }
+
+  private drawTacticalPassOverlay(ctx: CanvasRenderingContext2D) {
+    if (this.passStep !== "pass" || !this.setupData?.stage?.pass) return;
+    const cam = this.cam;
+    const pass = this.setupData.stage.pass;
+
+    // 1. Cercles de menace des défenseurs (radar au sol)
+    for (const def of pass.defenders) {
+      const dp = cam.p(def.x, 0, def.z);
+      const rX = def.radius * dp.s;
+      const rY = rX * 0.42;
+
+      ctx.save();
+      ctx.fillStyle = "rgba(239, 68, 68, 0.22)";
+      ctx.strokeStyle = "rgba(239, 68, 68, 0.85)";
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.ellipse(dp.x, dp.y, rX, rY, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.setLineDash([4, 4]);
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.ellipse(dp.x, dp.y, rX * 0.65, rY * 0.65, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // 2. Balise et anneau d'appel du coéquipier
+    const target = pass.teammate;
+    const tp = cam.p(target.x, 0, target.z);
+    const pulse = 1 + 0.15 * Math.sin(this.t * 5);
+    const rTargetX = 1.35 * tp.s * pulse;
+    const rTargetY = rTargetX * 0.42;
+
+    ctx.save();
+    const grad = ctx.createRadialGradient(tp.x, tp.y, 0, tp.x, tp.y, rTargetX);
+    grad.addColorStop(0, "rgba(244, 196, 0, 0.45)");
+    grad.addColorStop(0.7, "rgba(244, 196, 0, 0.15)");
+    grad.addColorStop(1, "rgba(244, 196, 0, 0)");
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.ellipse(tp.x, tp.y, rTargetX, rTargetY, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = "#F4C400";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.ellipse(tp.x, tp.y, rTargetX, rTargetY, 0, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Badge au-dessus du coéquipier démarqué
+    const badgeY = tp.y - 56;
+    const text = `${target.name.toUpperCase()} · #${target.number}`;
+    ctx.font = "900 12px Montserrat, sans-serif";
+    const tw = ctx.measureText(text).width;
+    const bw = tw + 24;
+    const bh = 24;
+
+    ctx.fillStyle = "rgba(4, 10, 26, 0.88)";
+    ctx.strokeStyle = "#F4C400";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.roundRect(tp.x - bw / 2, badgeY, bw, bh, 12);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = "#F4C400";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(text, tp.x, badgeY + bh / 2);
+
+    ctx.beginPath();
+    ctx.moveTo(tp.x - 5, badgeY + bh);
+    ctx.lineTo(tp.x + 5, badgeY + bh);
+    ctx.lineTo(tp.x, badgeY + bh + 6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    // 3. Trajectoire de passe suggérée
+    const bp = cam.p(this.bx, 0, this.bz);
+    ctx.save();
+    ctx.setLineDash([6, 6]);
+    ctx.strokeStyle = "rgba(244, 196, 0, 0.4)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(bp.x, bp.y);
+    ctx.quadraticCurveTo((bp.x + tp.x) / 2 + 10, (bp.y + tp.y) / 2 - 15, tp.x, tp.y);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  private drawScoreHeroHud(ctx: CanvasRenderingContext2D) {
+    if (this.setupData?.stage?.type !== "pass_shoot") return;
+    const W = this.w;
+
+    if (this.passSuccessFlash > 0) {
+      const alpha = clamp(this.passSuccessFlash, 0, 1);
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      const bw = Math.min(340, W - 32);
+      const bh = 56;
+      const bx = (W - bw) / 2;
+      const by = this.h * 0.38;
+
+      ctx.fillStyle = "rgba(4, 10, 26, 0.94)";
+      ctx.strokeStyle = "#F4C400";
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.roundRect(bx, by, bw, bh, 16);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#F4C400";
+      ctx.font = "900 15px Montserrat, sans-serif";
+      ctx.fillText("⚡ PASSE PARFAITE ! ⚡", W / 2, by + 22);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "700 13px Inter, sans-serif";
+      ctx.fillText("Enchaîne et frappe pour marquer !", W / 2, by + 42);
+      ctx.restore();
+      return;
+    }
+
+    if (this.phase !== "aim") return;
+
+    const bw = Math.min(360, W - 32);
+    const bh = 42;
+    const bx = (W - bw) / 2;
+    const by = 88;
+
+    ctx.save();
+    ctx.fillStyle = "rgba(4, 10, 26, 0.82)";
+    ctx.strokeStyle = this.passStep === "pass" ? "rgba(244, 196, 0, 0.7)" : "rgba(34, 197, 94, 0.7)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.roundRect(bx, by, bw, bh, 14);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.textAlign = "center";
+    if (this.passStep === "pass") {
+      ctx.fillStyle = "#F4C400";
+      ctx.font = "900 12px Montserrat, sans-serif";
+      ctx.fillText("🎯 ACTION SCORE! HERO · ÉTAPE 1/2 : PASSE", W / 2, by + 16);
+      ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+      ctx.font = "600 11px Inter, sans-serif";
+      ctx.fillText("Glisse vers ton joueur démarqué · contourne les défenseurs", W / 2, by + 32);
+    } else {
+      ctx.fillStyle = "#4ade80";
+      ctx.font = "900 12px Montserrat, sans-serif";
+      ctx.fillText("⚽ ACTION SCORE! HERO · ÉTAPE 2/2 : FINITION", W / 2, by + 16);
+      ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+      ctx.font = "600 11px Inter, sans-serif";
+      ctx.fillText("Frappe dans la cage pour battre le gardien !", W / 2, by + 32);
+    }
+    ctx.restore();
+  }
+
   private drawAimAssist(ctx: CanvasRenderingContext2D) {
     const cam = this.cam;
     const D = this.D;
@@ -1524,6 +1865,38 @@ export class FootEngine {
       ctx.beginPath();
       ctx.ellipse(b.x, b.y + BALL_R * b.s * 0.6, BALL_R * b.s * (2.2 + pulse * 0.5), BALL_R * b.s * (0.9 + pulse * 0.2), 0, 0, Math.PI * 2);
       ctx.stroke();
+      return;
+    }
+    if (this.passStep === "pass" && this.setupData.stage.pass) {
+      const pass = this.setupData.stage.pass;
+      const target = pass.teammate;
+      const S = this.touch.pts[0];
+      const E = this.touch.pts[this.touch.pts.length - 1];
+      let bulge = 0;
+      const dyTotal = S.y - E.y;
+      const dxTotal = E.x - S.x;
+      for (const p of this.touch.pts) {
+        const d = ((p.x - S.x) * dyTotal - (S.y - p.y) * dxTotal) / len;
+        if (Math.abs(d) > Math.abs(bulge)) bulge = d;
+      }
+      const curveAmount = clamp((bulge / this.h) * 9.5, -4.5, 4.5);
+
+      ctx.save();
+      ctx.setLineDash([6, 6]);
+      ctx.strokeStyle = "#F4C400";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      const bp = cam.p(this.bx, BALL_R, this.bz);
+      ctx.moveTo(bp.x, bp.y);
+      for (let i = 1; i <= 20; i++) {
+        const f = i / 20;
+        const curZ = this.bz + (target.z - this.bz) * f;
+        const curX = this.bx + (target.x - this.bx) * f + curveAmount * Math.sin(f * Math.PI);
+        const p = cam.p(curX, BALL_R + Math.sin(f * Math.PI) * 0.35, curZ);
+        ctx.lineTo(p.x, p.y);
+      }
+      ctx.stroke();
+      ctx.restore();
       return;
     }
     if (!this.setupData.diff.assist || this.touch.pts.length < 3) return;
@@ -1576,7 +1949,7 @@ export class FootEngine {
     const SM = c3.metaFor(sh);
     const tc = SM.kickContact;
     const foot = SM.kickFoot;
-    const rootX = s.stage.ballX - foot.x - 0.05;
+    const rootX = this.bx - foot.x - 0.05;
     const rootZ = -foot.z - 0.14;
     const END = Math.min(tc + 0.5, sh.duration("kick") - 0.15);
 
@@ -1732,6 +2105,18 @@ export class FootEngine {
     const sinceK = this.phase === "flight" || this.phase === "done" ? this.t - this.kickT : -1;
     const delay = Math.max(0.04, 0.12 - levelFactor * 0.08);
     const jumpK = sinceK < delay ? 0 : Math.sin(clamp((sinceK - delay) / 0.54, 0, 1) * Math.PI);
+
+    /* mur adverse */
+    if (this.passStep === "pass" && s.stage.pass) {
+      const defs = s.stage.pass.defenders;
+      for (let i = 0; i < defs.length && i < A.wall.length; i++) {
+        const w = A.wall[i];
+        w.inPlace = true;
+        w.place(defs[i].x, defs[i].z, Math.PI);
+        w.pose("catch", 0.02);
+      }
+      return;
+    }
 
     A.wall.forEach((w, i) => {
       w.inPlace = true;

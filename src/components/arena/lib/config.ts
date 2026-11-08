@@ -85,6 +85,27 @@ export interface KeeperCfg {
   female?: boolean;
 }
 
+export interface PassDefender {
+  x: number;
+  z: number;
+  radius: number;
+}
+
+export interface PassStageCfg {
+  teammate: {
+    name: string;
+    number: number;
+    x: number;
+    z: number;
+    female?: boolean;
+    character?: string;
+  };
+  defenders: PassDefender[];
+  /** Distance du ballon à la ligne de but pour la frappe finale (m) */
+  finishDistance: number;
+  finishBallX: number;
+}
+
 export interface FootStage {
   id: number;
   name: string;
@@ -98,6 +119,9 @@ export interface FootStage {
   wall: number;
   clock: number;
   keeper: KeeperCfg;
+  /** Mode passe décisive puis frappe (style Score! Hero) */
+  type?: "standard" | "pass_shoot";
+  pass?: PassStageCfg;
 }
 
 const K = {
@@ -170,15 +194,22 @@ export const FOOT_STAGES: FootStage[] = [
   },
   {
     id: 5,
-    name: "Phase de groupes",
-    place: "Coupe d'Afrique · Groupe B",
-    pitch: "Penalty à 11 m · le gardien apprend tes tirs",
+    name: "La Passe dans le Dos",
+    place: "Coupe d'Afrique · Phase de groupes",
+    pitch: "⭐ Action Score! Hero · Passe décisive à Wissa puis frappe croisée",
     shots: 5,
     toPass: 3,
-    distance: 11,
-    ballX: 0,
+    distance: 24,
+    ballX: -1.6,
     wall: 0,
-    clock: 8,
+    clock: 10,
+    type: "pass_shoot",
+    pass: {
+      teammate: { name: "Wissa", number: 11, x: 2.3, z: 12.0 },
+      defenders: [{ x: 0.3, z: 6.2, radius: 0.95 }],
+      finishDistance: 13.5,
+      finishBallX: 1.9
+    },
     keeper: { reaction: 0.17, read: 0.52, reach: 1.75, stay: 0.14, learn: 1.4, kit: K.violet, nickname: "La Pieuvre", female: true }
   },
   {
@@ -209,15 +240,25 @@ export const FOOT_STAGES: FootStage[] = [
   },
   {
     id: 8,
-    name: "Le Mur compact",
-    place: "Stade des Martyrs",
-    pitch: "Coup franc à 22 m plein axe · mur de 4",
+    name: "Combinaison & Volée",
+    place: "Stade des Martyrs · En fusion",
+    pitch: "⭐ Action Score! Hero · Passe enroulée à Bongonda entre 2 défenseurs",
     shots: 5,
     toPass: 3,
-    distance: 22,
-    ballX: -0.5,
-    wall: 4,
-    clock: 7.5,
+    distance: 26,
+    ballX: 2.6,
+    wall: 0,
+    clock: 9.5,
+    type: "pass_shoot",
+    pass: {
+      teammate: { name: "Bongonda", number: 10, x: -1.9, z: 12.8 },
+      defenders: [
+        { x: 0.7, z: 6.6, radius: 0.95 },
+        { x: 1.9, z: 7.0, radius: 0.90 }
+      ],
+      finishDistance: 13.8,
+      finishBallX: -1.6
+    },
     keeper: { reaction: 0.14, read: 0.54, reach: 1.88, stay: 0.1, learn: 1.2, kit: K.or, nickname: "Le Lion d'Or" }
   },
   {
@@ -248,15 +289,25 @@ export const FOOT_STAGES: FootStage[] = [
   },
   {
     id: 11,
-    name: "Lucarne opposée",
-    place: "Coupe d'Afrique",
-    pitch: "Coup franc à 25 m excentré · mur de 5",
+    name: "Le Triangle des Martyrs",
+    place: "Coupe d'Afrique · Quarts de finale",
+    pitch: "⭐ Action Score! Hero · Passe laser à Bakambu traversant le bloc adverse",
     shots: 5,
     toPass: 3,
-    distance: 25,
-    ballX: 4.2,
-    wall: 5,
-    clock: 6.5,
+    distance: 27,
+    ballX: -2.7,
+    wall: 0,
+    clock: 9,
+    type: "pass_shoot",
+    pass: {
+      teammate: { name: "Bakambu", number: 9, x: 2.4, z: 13.2 },
+      defenders: [
+        { x: -0.7, z: 6.8, radius: 1.05 },
+        { x: 1.1, z: 7.3, radius: 1.0 }
+      ],
+      finishDistance: 14.2,
+      finishBallX: 2.0
+    },
     keeper: { reaction: 0.12, read: 0.60, reach: 1.98, stay: 0.08, learn: 1.8, kit: K.blanc, nickname: "La Dame Blanche", female: true }
   },
   {
@@ -274,15 +325,26 @@ export const FOOT_STAGES: FootStage[] = [
   },
   {
     id: 13,
-    name: "Séance fatidique",
-    place: "Stade des Martyrs",
-    pitch: "Penalty à 11 m · arrêt obligatoire, 4 buts",
+    name: "L'Une-Deux d'Anthologie",
+    place: "Stade des Martyrs · Choc des Léopards",
+    pitch: "⭐ Action Score! Hero · Passe chirurgicale contournant 3 défenseurs à Elia",
     shots: 5,
     toPass: 4,
-    distance: 11,
+    distance: 29,
     ballX: 0,
     wall: 0,
-    clock: 5.5,
+    clock: 8.5,
+    type: "pass_shoot",
+    pass: {
+      teammate: { name: "Elia", number: 13, x: -2.7, z: 13.8 },
+      defenders: [
+        { x: -1.4, z: 7.0, radius: 0.95 },
+        { x: 0.1, z: 7.8, radius: 1.0 },
+        { x: 1.4, z: 7.2, radius: 0.95 }
+      ],
+      finishDistance: 14.5,
+      finishBallX: -2.1
+    },
     keeper: { reaction: 0.09, read: 0.68, reach: 2.06, stay: 0.15, learn: 2.3, kit: K.violet, nickname: "L'Impassible", female: true }
   },
   {
