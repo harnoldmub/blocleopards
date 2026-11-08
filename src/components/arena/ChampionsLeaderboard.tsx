@@ -4,6 +4,7 @@ import type { ArenaGame, ChampionEntry, LeaderboardPeriod } from "../../lib/aren
 
 interface Props {
   initialGame?: ArenaGame;
+  allowedGames?: ArenaGame[];
   currentPlayerId?: string | null;
   onClose?: () => void;
   onPlayGame?: (game: ArenaGame) => void;
@@ -11,11 +12,16 @@ interface Props {
 
 export default function ChampionsLeaderboard({
   initialGame = "foot",
+  allowedGames,
   currentPlayerId,
   onClose,
   onPlayGame
 }: Props) {
-  const [game, setGame] = useState<ArenaGame>(initialGame);
+  const availableGames = allowedGames && allowedGames.length > 0
+    ? allowedGames
+    : (["foot", "basket", "envol"] as ArenaGame[]);
+  const startG = availableGames.includes(initialGame) ? initialGame : availableGames[0];
+  const [game, setGame] = useState<ArenaGame>(startG);
   const [period, setPeriod] = useState<LeaderboardPeriod>("week");
   const [loading, setLoading] = useState(true);
   const [top, setTop] = useState<ChampionEntry[]>([]);
@@ -82,44 +88,52 @@ export default function ChampionsLeaderboard({
         </div>
 
         {/* Sélecteur de Jeu */}
-        <div className="mt-4 grid grid-cols-3 gap-1.5 rounded-2xl bg-black/30 p-1">
-          <button
-            type="button"
-            onClick={() => setGame("foot")}
-            className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-[12px] font-extrabold transition-all ${
-              game === "foot"
-                ? "bg-[var(--a-gold)] text-[#1a1300] shadow-[0_2px_8px_rgba(244,196,0,0.3)]"
-                : "text-white/70 hover:bg-white/5 hover:text-white"
-            }`}
-          >
-            <Flame className="h-3.5 w-3.5" />
-            <span>Tirs au but</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setGame("basket")}
-            className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-[12px] font-extrabold transition-all ${
-              game === "basket"
-                ? "bg-[var(--a-gold)] text-[#1a1300] shadow-[0_2px_8px_rgba(244,196,0,0.3)]"
-                : "text-white/70 hover:bg-white/5 hover:text-white"
-            }`}
-          >
-            <Disc className="h-3.5 w-3.5" />
-            <span>Basket</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setGame("envol")}
-            className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-[12px] font-extrabold transition-all ${
-              game === "envol"
-                ? "bg-[var(--a-gold)] text-[#1a1300] shadow-[0_2px_8px_rgba(244,196,0,0.3)]"
-                : "text-white/70 hover:bg-white/5 hover:text-white"
-            }`}
-          >
-            <Plane className="h-3.5 w-3.5" />
-            <span>Envol 243</span>
-          </button>
-        </div>
+        {availableGames.length > 1 && (
+          <div className={`mt-4 grid gap-1.5 rounded-2xl bg-black/30 p-1 ${availableGames.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
+            {availableGames.includes("foot") && (
+              <button
+                type="button"
+                onClick={() => setGame("foot")}
+                className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-[12px] font-extrabold transition-all ${
+                  game === "foot"
+                    ? "bg-[var(--a-gold)] text-[#1a1300] shadow-[0_2px_8px_rgba(244,196,0,0.3)]"
+                    : "text-white/70 hover:bg-white/5 hover:text-white"
+                }`}
+              >
+                <Flame className="h-3.5 w-3.5" />
+                <span>Tirs au but</span>
+              </button>
+            )}
+            {availableGames.includes("basket") && (
+              <button
+                type="button"
+                onClick={() => setGame("basket")}
+                className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-[12px] font-extrabold transition-all ${
+                  game === "basket"
+                    ? "bg-[var(--a-gold)] text-[#1a1300] shadow-[0_2px_8px_rgba(244,196,0,0.3)]"
+                    : "text-white/70 hover:bg-white/5 hover:text-white"
+                }`}
+              >
+                <Disc className="h-3.5 w-3.5" />
+                <span>Basket</span>
+              </button>
+            )}
+            {availableGames.includes("envol") && (
+              <button
+                type="button"
+                onClick={() => setGame("envol")}
+                className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-[12px] font-extrabold transition-all ${
+                  game === "envol"
+                    ? "bg-[var(--a-gold)] text-[#1a1300] shadow-[0_2px_8px_rgba(244,196,0,0.3)]"
+                    : "text-white/70 hover:bg-white/5 hover:text-white"
+                }`}
+              >
+                <Plane className="h-3.5 w-3.5" />
+                <span>Envol 243</span>
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Filtre Période */}
         <div className="mt-2.5 flex items-center justify-between text-[12px]">

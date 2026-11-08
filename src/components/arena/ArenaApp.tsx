@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, ChevronRight, Pencil, Lock, Minus, Music, Play, Plus, RotateCcw, Share2, Swords, Trophy, Volume2, VolumeX, Plane } from "lucide-react";
+import { ArrowLeft, ChevronRight, Pencil, Lock, Minus, Music, Play, Plus, RotateCcw, Share2, Swords, Trophy, Volume2, VolumeX } from "lucide-react";
 import "./arena.css";
 import GameView, { type Hud, type Splash } from "./GameView";
-import EnvolGameView from "./EnvolGameView";
 import ChampionsLeaderboard from "./ChampionsLeaderboard";
 import type { ShotOutcome, FootSetup } from "./engine/foot";
 import type { BasketSetup } from "./engine/basket";
@@ -85,12 +84,10 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
   const reduced = useReducedMotion();
   const [save, setSave] = useState<SaveData>(DEFAULT_SAVE);
   const [ready, setReady] = useState(false);
-  const [screen, setScreen] = useState<"home" | "play" | "results" | "envol">("home");
+  const [screen, setScreen] = useState<"home" | "play" | "results">("home");
   const [sheet, setSheet] = useState<null | "setup" | "records" | "pause" | "profile">(null);
   const [showChampions, setShowChampions] = useState(false);
   const [playerSession, setPlayerSession] = useState<{ id: string; nickname: string; public_tag: string } | null>(null);
-  /** Défi Envol 243 reçu par lien (?match=…) : score à battre. */
-  const [envolOpponent, setEnvolOpponent] = useState<{ name: string; tag?: string; scoreToBeat: number } | null>(null);
   const [serverRankResult, setServerRankResult] = useState<{
     rankAllTime: number;
     rankWeek: number;
@@ -147,24 +144,24 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
       })
       .catch((e) => console.error("Session error:", e));
 
-    // lien de défi Envol 243 : /jeux?match=<base64url>
-    let envolDefi = false;
+    // Si un lien de défi ou paramètre pointe vers Envol 243, rediriger vers sa page dédiée
     try {
       const raw = new URLSearchParams(window.location.search).get("match");
       if (raw && raw.length < 600) {
         const m = JSON.parse(atob(raw.replace(/-/g, "+").replace(/_/g, "/")));
-        if (m && m.g === "envol" && Number.isFinite(Number(m.s))) {
-          setEnvolOpponent({ name: cleanName(String(m.n || ""), "Un ami"), tag: m.t ? String(m.t).slice(0, 8) : undefined, scoreToBeat: Math.max(0, Math.round(Number(m.s))) });
-          envolDefi = true;
+        if (m && m.g === "envol") {
+          window.location.replace(`/jeux/envol243?match=${encodeURIComponent(raw)}`);
+          return;
         }
       }
-    } catch {
-      /* lien abîmé : on ignore */
+    } catch {}
+    if (initialGame === "envol") {
+      window.location.replace("/jeux/envol243");
+      return;
     }
 
     // premier passage : on crée son joueur (sexe, nom, numéro) avant tout
     if (!data.name) setOnboarding(true);
-    else if (initialGame === "envol" || envolDefi) setScreen("envol");
     else if (initialGame && !c) openSetup(initialGame, "carriere");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -705,7 +702,7 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
         />
       )}
 
-      {screen !== "home" && screen !== "envol" && session && engineSetup && hud && (
+      {screen !== "home" && session && engineSetup && hud && (
         <GameView
           game={session.game}
           setupKey={`${session.seed}-${session.current}-${session.shot}-${session.global}-${session.stageIdx}-${session.mode}`}
@@ -722,24 +719,6 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
           soundOn={save.sound}
           onToggleSound={toggleSound}
           needsFemale={session.players.some((p) => p.female)}
-        />
-      )}
-
-      {screen === "envol" && (
-        <EnvolGameView
-          playerName={save.name || "Léopard"}
-          playerTag={playerSession?.public_tag || "243"}
-          opponent={envolOpponent}
-          reduced={reduced}
-          onExit={() => setScreen("home")}
-          onScoreSubmitted={() => {
-            fetch("/api/jeux/session")
-              .then((r) => r.json())
-              .then((res) => {
-                if (res.success && res.player) setPlayerSession(res.player);
-              })
-              .catch(() => {});
-          }}
         />
       )}
 
@@ -865,9 +844,7 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
             setSheet(null);
             if (onboarding) {
               setOnboarding(false);
-              if (initialGame === "envol" || envolOpponent) {
-                setScreen("envol");
-              } else if (initialGame) {
+              if (initialGame) {
                 openSetup(initialGame, "carriere");
               }
             }
@@ -929,16 +906,13 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
       {showChampions && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 sm:p-5 backdrop-blur-md">
           <ChampionsLeaderboard
-            initialGame={setupGame || "foot"}
+            initialGame={setupGame === "basket" ? "basket" : "foot"}
+            allowedGames={["foot", "basket"]}
             currentPlayerId={playerSession?.id}
             onClose={() => setShowChampions(false)}
             onPlayGame={(g) => {
               setShowChampions(false);
-              if (g === "envol") {
-                window.location.href = "/jeux/envol243";
-              } else {
-                openSetup(g, "carriere");
-              }
+              openSetup(g, "carriere");
             }}
           />
         </div>
@@ -1053,11 +1027,10 @@ function Home(props: {
           </section>
         )}
 
-        {/* 1. Sélection immédiate des 3 jeux officiels */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-          {(["foot", "basket", "envol"] as GameId[]).map((g) => {
-            const isEnvol = g === "envol";
-            const totalStages = isEnvol ? 3 : g === "foot" ? FOOT_STAGES.length : BASKET_STAGES.length;
+        {/* 1. Sélection immédiate des jeux officiels */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 max-w-3xl mx-auto">
+          {(["foot", "basket"] as GameId[]).map((g) => {
+            const totalStages = g === "foot" ? FOOT_STAGES.length : BASKET_STAGES.length;
             const p = prog(g);
             return (
               <button key={g} className="a-game-card group" onClick={() => props.onPick(g)} aria-label={`Jouer : ${GAME_META[g].title}`}>
@@ -1070,25 +1043,19 @@ function Home(props: {
                       {GAME_META[g].short}
                     </span>
                     <span className="rounded-full bg-[rgba(244,196,0,0.18)] px-2 py-0.5 text-[10px] font-black text-[var(--a-gold)]">
-                      {isEnvol ? "Crash & Mises · 3D" : `${totalStages} Paliers`}
+                      {totalStages} Paliers
                     </span>
                   </div>
                   <span className="display mt-0.5 text-[22px] sm:text-[26px] transition-colors group-hover:text-[var(--a-gold)]">
                     {GAME_META[g].title}
                   </span>
                   <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] text-[var(--a-muted)]">
-                    {isEnvol ? (
-                      <span className="font-bold text-emerald-400">Argent fictif · 10 000 CDF</span>
-                    ) : (
-                      <>
-                        <span className="font-bold text-white/90">Palier {p.unlocked}/{totalStages}</span>
-                        <span aria-label="Étoiles gagnées" className="text-[var(--a-gold)]">★ {p.stars.reduce((a, b) => a + b, 0)}/{totalStages * 3}</span>
-                      </>
-                    )}
+                    <span className="font-bold text-white/90">Palier {p.unlocked}/{totalStages}</span>
+                    <span aria-label="Étoiles gagnées" className="text-[var(--a-gold)]">★ {p.stars.reduce((a, b) => a + b, 0)}/{totalStages * 3}</span>
                   </span>
                   {best(g) > 0 && (
                     <span className="mt-0.5 text-[12px] font-medium text-white/70">
-                      Record : {best(g).toLocaleString("fr-FR")} {isEnvol ? "CDF" : "série"}
+                      Record : {best(g).toLocaleString("fr-FR")} série
                     </span>
                   )}
                   <span className="h-3" aria-hidden="true" />

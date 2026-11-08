@@ -12,3 +12,9 @@ public/downloads/*.pdf
 
 .playwright-cli/
 public/references/
+
+# Fichiers 3D volumineux temporaires
+public/game3d/envol243/*.FBX
+public/game3d/envol243/City Transportation - Passenger Bus.fbx
+public/game3d/envol243/Modern_New_York_City_Taxi_02_v1_Unlabled.fbx
+public/game3d/envol243/Summer Holiday Icon 3D (5).fbx
