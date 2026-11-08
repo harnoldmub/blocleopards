@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 /**
  * Envol 243 : décollage sur le Boulevard du 30 Juin, survol de Kinshasa.
@@ -141,7 +142,16 @@ export class Envol3D {
   private plane = new THREE.Group();
   private planeMats: THREE.Material[] = [];
   private propeller: THREE.Object3D | null = null;
-  private vehicles: { obj: THREE.Object3D; speed: number; dir: number; wheels: THREE.Object3D[] }[] = [];
+  private taxiProto: THREE.Group | null = null;
+  private minibusProto: THREE.Group | null = null;
+  private busProto: THREE.Group | null = null;
+  private vehicles: {
+    obj: THREE.Object3D;
+    speed: number;
+    dir: number;
+    wheels: THREE.Object3D[];
+    kind: "minibus207" | "taxi" | "bus" | "yango" | "moto";
+  }[] = [];
   private crashCloud = new THREE.Group();
   private sun: THREE.DirectionalLight;
 
@@ -189,6 +199,7 @@ export class Envol3D {
     this.buildWorld();
     this.scene.add(this.crashCloud);
     this.loadPlane();
+    this.loadVehicleModels();
     this.resize(w, h);
     this.placeCamera(true);
   }
@@ -241,7 +252,7 @@ export class Envol3D {
     line(-0.2, 0.18, yellow);
     line(0.2, 0.18, yellow);
     const dashGeo = new THREE.PlaneGeometry(0.18, 3);
-    const dashes = new THREE.InstancedMesh(dashGeo, white, 2 * 380);
+    const dashes = new THREE.InstancedMesh(dashGeo, white, 850);
     const m4 = new THREE.Matrix4();
     let k = 0;
     for (const x of [-6.9, 6.9]) {
@@ -251,7 +262,81 @@ export class Envol3D {
       }
     }
     dashes.count = k;
+    dashes.instanceMatrix.needsUpdate = true;
     sc.add(dashes);
+
+    // Passages piétons (bandes blanches transversales aux carrefours)
+    const zebraGeo = new THREE.PlaneGeometry(0.65, 4.4);
+    const zebraMat = new THREE.MeshBasicMaterial({ color: 0xf5f5ef });
+    const zebraCrossings = [32, 170, 520, 980, 1520];
+    const zebraMesh = new THREE.InstancedMesh(zebraGeo, zebraMat, 150);
+    let zIdx = 0;
+    for (const cz of zebraCrossings) {
+      for (let sx = -ROAD_HALF + 1.2; sx <= ROAD_HALF - 1.2; sx += 1.45) {
+        if (Math.abs(sx) < 1.1) continue; // terre-plein central préservé
+        m4.makeRotationX(-Math.PI / 2).setPosition(sx, 0.018, cz);
+        zebraMesh.setMatrixAt(zIdx++, m4);
+      }
+    }
+    zebraMesh.count = zIdx;
+    zebraMesh.instanceMatrix.needsUpdate = true;
+    sc.add(zebraMesh);
+
+    // Bordures de trottoir bicolores kinois (alternance jaune et noir)
+    const curbGeo = new THREE.BoxGeometry(0.24, 0.22, 1.4);
+    const curbYel = new THREE.MeshStandardMaterial({ color: 0xf2c230, roughness: 0.8 });
+    const curbDark = new THREE.MeshStandardMaterial({ color: 0x1f2328, roughness: 0.85 });
+    const curbMeshYel = new THREE.InstancedMesh(curbGeo, curbYel, 2000);
+    const curbMeshDark = new THREE.InstancedMesh(curbGeo, curbDark, 2000);
+    let cYel = 0;
+    let cDark = 0;
+    for (const sx of [-1, 1]) {
+      const curbX = sx * (ROAD_HALF + 0.12);
+      let step = 0;
+      for (let z = -120; z < 2100; z += 1.4) {
+        m4.makeRotationX(0).setPosition(curbX, 0.11, z);
+        if ((step % 2) === 0) {
+          curbMeshYel.setMatrixAt(cYel++, m4);
+        } else {
+          curbMeshDark.setMatrixAt(cDark++, m4);
+        }
+        step++;
+      }
+    }
+    curbMeshYel.count = cYel;
+    curbMeshYel.instanceMatrix.needsUpdate = true;
+    curbMeshDark.count = cDark;
+    curbMeshDark.instanceMatrix.needsUpdate = true;
+    sc.add(curbMeshYel, curbMeshDark);
+
+    // Feux de signalisation aux carrefours (carcasse noire avec feux rouge/orange/vert)
+    const signalPoles = [34, 172, 522];
+    const poleSigMat = new THREE.MeshStandardMaterial({ color: 0x2b3036, metalness: 0.4, roughness: 0.6 });
+    const redLightMat = new THREE.MeshBasicMaterial({ color: 0xff3b30 });
+    const amberLightMat = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
+    const greenLightMat = new THREE.MeshBasicMaterial({ color: 0x34c759 });
+    for (const pz of signalPoles) {
+      for (const sx of [-1, 1]) {
+        const sigGroup = new THREE.Group();
+        const pMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 6.2, 8), poleSigMat);
+        pMesh.position.y = 3.1;
+        const armMesh = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.1, 0.1), poleSigMat);
+        armMesh.position.set(sx * -1.4, 6.0, 0);
+        // Boîtier de feu suspendu
+        const boxMesh = new THREE.Mesh(new THREE.BoxGeometry(0.42, 1.2, 0.35), poleSigMat);
+        boxMesh.position.set(sx * -2.8, 5.5, 0);
+        // Trois optiques
+        const rLight = new THREE.Mesh(new THREE.CircleGeometry(0.12, 12), redLightMat);
+        rLight.position.set(sx * -2.8, 5.85, 0.18);
+        const aLight = new THREE.Mesh(new THREE.CircleGeometry(0.12, 12), amberLightMat);
+        aLight.position.set(sx * -2.8, 5.5, 0.18);
+        const gLight = new THREE.Mesh(new THREE.CircleGeometry(0.12, 12), greenLightMat);
+        gLight.position.set(sx * -2.8, 5.15, 0.18);
+        sigGroup.add(pMesh, armMesh, boxMesh, rLight, aLight, gLight);
+        sigGroup.position.set(sx * (ROAD_HALF + 0.8), 0, pz);
+        sc.add(sigGroup);
+      }
+    }
 
     // palmiers et lampadaires sur les trottoirs
     for (let z = -120; z < 1700; z += 26) {
@@ -458,6 +543,10 @@ export class Envol3D {
   /** Mercedes 207 : bas jaune usé, haut bleu, toit surélevé bleu ciel. */
   private minibus207() {
     const g = new THREE.Group();
+    if (this.minibusProto) {
+      g.add(this.minibusProto.clone(true));
+      return { g, wheels: [] };
+    }
     const yellow = new THREE.MeshStandardMaterial({ color: 0xd2ac2c, roughness: 0.75 });
     const blue = new THREE.MeshStandardMaterial({ color: 0x2c6fd6, roughness: 0.6 });
     const sky = new THREE.MeshStandardMaterial({ color: 0x37a3e3, roughness: 0.55 });
@@ -477,6 +566,10 @@ export class Envol3D {
   /** Bus « Esprit de Vie » blanc, bande RDC. */
   private busEspritDeVie() {
     const g = new THREE.Group();
+    if (this.busProto) {
+      g.add(this.busProto.clone(true));
+      return { g, wheels: [] };
+    }
     const white = new THREE.MeshStandardMaterial({ color: 0xf1f1ec, roughness: 0.55 });
     const side = new THREE.MeshStandardMaterial({ map: espritDeVieTexture(), roughness: 0.55 });
     const body = new THREE.Mesh(new THREE.BoxGeometry(2.4, 2.6, 7.8), [side, side, white, white, white, white]);
@@ -490,6 +583,10 @@ export class Envol3D {
   /** Taxi jaune (Toyota IST) avec rétroviseurs bleus. */
   private taxi() {
     const g = new THREE.Group();
+    if (this.taxiProto) {
+      g.add(this.taxiProto.clone(true));
+      return { g, wheels: [] };
+    }
     const yel = new THREE.MeshStandardMaterial({ color: 0xf0c419, roughness: 0.45 });
     this.box(1.7, 0.75, 3.8, yel, 0, 0.75, 0, g);
     this.box(1.55, 0.6, 2.1, yel, 0, 1.42, -0.25, g);
@@ -533,13 +630,82 @@ export class Envol3D {
       const lane = LANES[i % LANES.length];
       const dir = lane > 0 ? 1 : -1;
       const kind = i % 9;
-      const v =
-        kind === 0 || kind === 4 || kind === 7 ? this.minibus207() : kind === 1 || kind === 5 ? this.taxi() : kind === 2 ? this.busEspritDeVie() : kind === 3 ? this.yango() : this.moto(i);
+      let vKind: "minibus207" | "taxi" | "bus" | "yango" | "moto" = "moto";
+      let v: { g: THREE.Group; wheels: THREE.Object3D[] };
+      if (kind === 0 || kind === 4 || kind === 7) {
+        vKind = "minibus207";
+        v = this.minibus207();
+      } else if (kind === 1 || kind === 5) {
+        vKind = "taxi";
+        v = this.taxi();
+      } else if (kind === 2) {
+        vKind = "bus";
+        v = this.busEspritDeVie();
+      } else if (kind === 3) {
+        vKind = "yango";
+        v = this.yango();
+      } else {
+        vKind = "moto";
+        v = this.moto(i);
+      }
       const isMoto = kind === 6 || kind === 8;
       v.g.position.set(lane + (isMoto ? (lane > 0 ? 1.6 : -1.6) : 0), 0, -140 + ((i * 47) % 1800));
       if (dir < 0) v.g.rotation.y = Math.PI;
       this.scene.add(v.g);
-      this.vehicles.push({ obj: v.g, speed: (isMoto ? 13 : 9) + ((i * 7) % 6), dir, wheels: v.wheels });
+      this.vehicles.push({ obj: v.g, speed: (isMoto ? 13 : 9) + ((i * 7) % 6), dir, wheels: v.wheels, kind: vKind });
+    }
+  }
+
+  private loadVehicleModels() {
+    const loader = new GLTFLoader();
+    const loadOne = (url: string) =>
+      new Promise<THREE.Group | null>((resolve) => {
+        loader.load(
+          url,
+          (gltf) => {
+            const root = gltf.scene;
+            root.traverse((o: any) => {
+              if (o.isMesh) {
+                o.castShadow = true;
+                o.receiveShadow = true;
+              }
+            });
+            resolve(root);
+          },
+          undefined,
+          (err) => {
+            console.warn(`[Envol3D] Failed to load vehicle ${url}:`, err);
+            resolve(null);
+          }
+        );
+      });
+
+    Promise.all([
+      loadOne("/game3d/envol243/taxi.glb"),
+      loadOne("/game3d/envol243/minibus207.glb"),
+      loadOne("/game3d/envol243/bus.glb"),
+    ]).then(([taxi, minibus, bus]) => {
+      if (taxi) this.taxiProto = taxi;
+      if (minibus) this.minibusProto = minibus;
+      if (bus) this.busProto = bus;
+      this.upgradeTraffic();
+    });
+  }
+
+  private upgradeTraffic() {
+    for (const v of this.vehicles) {
+      let proto: THREE.Group | null = null;
+      if (v.kind === "taxi") proto = this.taxiProto;
+      else if (v.kind === "minibus207") proto = this.minibusProto;
+      else if (v.kind === "bus") proto = this.busProto;
+
+      if (proto) {
+        while (v.obj.children.length > 0) {
+          v.obj.remove(v.obj.children[0]);
+        }
+        v.obj.add(proto.clone(true));
+        v.wheels = [];
+      }
     }
   }
 
