@@ -36,15 +36,15 @@ export function Sheet({ title, onClose, children, footer, labelledBy }: { title?
       <div ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-label={labelledBy ? undefined : title} aria-labelledby={labelledBy} className="a-sheet outline-none">
         <div className="a-sheet-grip" aria-hidden="true" />
         {title && (
-          <div className="flex items-center justify-between px-5 pb-2 pt-1">
-            <h2 className="display text-[28px] text-white">{title}</h2>
-            <button className="a-icon-btn" onClick={onClose} aria-label="Fermer">
+          <div className="flex items-center justify-between px-5 pb-2 pt-1 shrink-0">
+            <h2 className="display text-[26px] sm:text-[28px] text-white truncate">{title}</h2>
+            <button className="a-icon-btn shrink-0" onClick={onClose} aria-label="Fermer">
               <X size={20} />
             </button>
           </div>
         )}
         <div className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-5 pb-4">{children}</div>
-        {footer && <div className="safe-bottom border-t border-white/10 px-5 pt-3">{footer}</div>}
+        {footer && <div className="safe-bottom shrink-0 border-t border-white/10 px-5 pt-3 bg-[#081230]">{footer}</div>}
       </div>
     </>
   );

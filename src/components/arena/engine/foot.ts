@@ -59,8 +59,8 @@ type Phase = "aim" | "runup" | "flight" | "done";
 
 /* ---------- Physique du ballon : gravité, traînée de l'air, effet Magnus ---------- */
 interface V3 { x: number; y: number; z: number }
-/** Coefficient Magnus : accélération = CM · (ω × v). */
-const CM = 0.0068;
+/** Coefficient Magnus : accélération = CM · (ω × v). Effet brossé et banane réaliste. */
+const CM = 0.0084;
 /** Amortissement de la rotation (1/s). */
 const SPIN_DECAY = 0.28;
 
@@ -274,6 +274,7 @@ export class FootEngine {
     this.ballHeld = false;
     this.postHitPending = null;
     this.crowdReaction = "idle";
+    if (this.c3) this.c3.setTrophy(false);
     this.trail = [];
     this.curve = [];
     this.parts = [];
@@ -603,7 +604,7 @@ export class FootEngine {
     const dist = Math.hypot(E.x - A.x, E.y - A.y) / this.h;
     const speedN = dist / dt;
     const fk = D > 15;
-    let v = clamp(12.5 + speedN * (fk ? 4.2 : 5.4), 12.5, fk ? 31 : 35);
+    let v = clamp(13.2 + speedN * (fk ? 4.8 : 5.4), 13.2, fk ? 32 : 35);
     // effet : flèche de la courbe du doigt
     let bulge = 0;
     const lx = E.x - S.x;
@@ -614,22 +615,22 @@ export class FootEngine {
       if (Math.abs(d) > Math.abs(bulge)) bulge = d;
     }
     const T = Math.hypot(D, tx - this.bx) / v;
-    // effet franc et banane : un geste courbé fait tourner le ballon avec une courbure marquée
-    const maxAx = (fk ? 4.9 : 2.6) * 8 / (T * T);
-    const ax = clamp((bulge / this.h) * 1150, -maxAx, maxAx);
-    const over = v > (fk ? 27 : 31);
+    // Effet franc et banane réaliste : courbure prononcée contournant ou enroulant le mur
+    const maxAx = (fk ? 6.5 : 3.4) * 8 / (T * T);
+    const ax = clamp((bulge / this.h) * 1450, -maxAx, maxAx);
+    const over = v > (fk ? 30.5 : 32);
     if (!preview) {
-      const n = this.setupData.diff.aimNoise * (0.1 + Math.max(0, v - 27) * 0.045);
+      const n = this.setupData.diff.aimNoise * (0.08 + Math.max(0, v - 29) * 0.04);
       tx += gauss(this.rng) * n;
-      ty += gauss(this.rng) * n * 0.8;
-      if (over) ty += (v - (fk ? 27 : 31)) * 0.2;
+      ty += gauss(this.rng) * n * 0.75;
+      if (over) ty += (v - (fk ? 30.5 : 32)) * 0.22;
     }
     ty = Math.max(BALL_R, ty);
     const zone = tx < -1.2 ? -1 : tx > 1.2 ? 1 : 0;
-    // Topspin / "feuille morte" : plongeon prononcé au-dessus du mur pour retomber sous la barre
-    const topspin = fk ? clamp(12 + (v - 16) * 0.85, 8, 28) : (v > 25 ? 12 : v < 17 ? -16 : 4);
-    // Effet brossé latéral (Magnus réactif)
-    const sideSpin = clamp(ax / (CM * v), -190, 190);
+    // Topspin / "feuille morte" : trajectoire qui monte au-dessus du mur puis plonge vivement sous la barre
+    const topspin = fk ? clamp(18 + (v - 15) * 1.15, 12, 38) : (v > 25 ? 14 : v < 17 ? -16 : 6);
+    // Effet brossé latéral (Magnus réactif et courbure banane)
+    const sideSpin = clamp(ax / (CM * v), -240, 240);
     // Frappe flottante (knuckleball) si tir ultra droit et rapide
     const isKnuckle = Math.abs(bulge) < this.h * 0.007 && v > 24;
     const w: V3 = {
@@ -683,25 +684,32 @@ export class FootEngine {
     for (const z of hist) counts[String(z)]++;
     const total = counts["-1"] + counts["0"] + counts["1"];
     const habit = counts[String(p.zone)] / total;
+    const isFK = this.D > 15;
+    // Sur coup franc, le gardien a le temps de lire le ballon au-dessus/contournant le mur
     let read = K.read * s.diff.keeperRead;
-    if (p.v < 18) read += 0.25;
-    if (p.v > 28) read -= 0.12;
-    read += K.learn * 0.22 * (habit - 0.34);
-    read = clamp(read, 0.03, 0.9);
+    if (isFK) {
+      read = Math.max(read, 0.76 + (s.stage.id / 15) * 0.22);
+      if (p.v < 24) read += 0.14;
+    } else {
+      if (p.v < 18) read += 0.25;
+      if (p.v > 28) read -= 0.12;
+      read += K.learn * 0.22 * (habit - 0.34);
+    }
+    read = clamp(read, 0.08, 0.98);
 
     let reaction = K.reaction * s.diff.keeperReaction * (0.85 + rng() * 0.3);
     let tx: number;
     let ty: number;
     let kind: DiveSpec["kind"];
-    if (rng() < K.stay) {
+    if (rng() < (isFK ? K.stay * 0.4 : K.stay)) {
       kind = Math.abs(ax - this.keeperX) < 0.9 && ay > 1.4 ? "jump" : "stay";
       tx = this.keeperX;
       ty = 1;
       this.keeperRead = Math.abs(ax - this.keeperX) < 1;
     } else if (rng() < read) {
       this.keeperRead = true;
-      tx = ax + gauss(rng) * 0.18;
-      ty = ay + gauss(rng) * 0.14;
+      tx = ax + gauss(rng) * (isFK ? 0.08 : 0.18);
+      ty = ay + gauss(rng) * (isFK ? 0.08 : 0.14);
       kind = "mid";
       if (Math.abs(tx - this.keeperX) < 0.8) kind = ty > 1.5 ? "jump" : "stay";
     } else {
@@ -718,13 +726,14 @@ export class FootEngine {
     const side: 1 | -1 = tx >= this.keeperX ? 1 : -1;
     let px = 0;
     let air = 0;
+    const reachMult = isFK ? 1.2 : 1.0;
     if (kind === "low" || kind === "mid" || kind === "high") {
       const base = kind === "low" ? POSES.diveLowR : kind === "mid" ? POSES.diveMidR : POSES.diveHighR;
       const sk = skeleton({ ...base, px: 0, air: 0 }, this.keeperBody);
       const hand = sk.haR;
       const want = Math.abs(tx - this.keeperX);
-      px = clamp(want - hand.x - 0.08, 0.1, K.reach * s.diff.keeperReach);
-      air = clamp(ty - hand.y, 0, kind === "low" ? 0.15 : 0.95);
+      px = clamp(want - hand.x - 0.08, 0.1, K.reach * s.diff.keeperReach * reachMult);
+      air = clamp(ty - hand.y, 0, kind === "low" ? 0.2 : (isFK ? 1.3 : 0.95));
     } else if (kind === "stay") {
       px = clamp(tx - this.keeperX, -0.6, 0.6) * side;
     }
@@ -748,7 +757,10 @@ export class FootEngine {
     }
     const d = this.dive;
     if (!d) return base;
-    const since = this.phase === "runup" ? 0 : t - this.kickT - d.start;
+    const isFK = this.D > 15;
+    // Sur coup franc, la détente est calée sur l'arrivée réelle du ballon pour être en plein vol à l'impact
+    const effStart = (isFK || d.arrive > 0.65) ? Math.max(d.start, d.arrive - 0.42) : d.start;
+    const since = this.phase === "runup" ? 0 : t - this.kickT - effStart;
     if (since < 0) return POSES.keeperSet;
     const m = (p: Pose) => (d.side === 1 ? p : mirrorPose(p));
     const o = this.outcome;
@@ -1461,6 +1473,19 @@ export class FootEngine {
     const sk = skeleton(st.pose, this.shooterBody);
     const g = this.cam.p(st.x, 0, st.z);
     drawFigure(ctx, sk, this.shooterBody, this.shooterKit, { sx: g.x, sy: g.y, s: g.s }, { facing: st.facing });
+    // Célébration Palier 15 avec la coupe en 2D
+    if (this.setupData.stage.id === 15 && this.outcome?.scored) {
+      const c = this.t - this.resolvedAt - 0.3;
+      if (c > 0.25) {
+        const top = this.cam.p(st.x, 2.2, st.z);
+        ctx.save();
+        ctx.font = `${Math.max(26, Math.round(32 * top.s))}px sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("🏆", top.x, top.y);
+        ctx.restore();
+      }
+    }
   }
 
   private drawBall(ctx: CanvasRenderingContext2D) {
@@ -1745,6 +1770,7 @@ export class FootEngine {
     sh.inPlace = true;
     const into = clamp(c / 0.4, 0, 1);
     if (!scored && !this.setupData.reduced) {
+      if (this.c3) this.c3.setTrophy(false);
       // Réactions variées en cas de tir raté : miss (saut déçu), angry (colère/rage), defeated (abattu)
       const missPool: ("miss" | "angry" | "defeated")[] = ["miss", "angry", "defeated"];
       const missPick = missPool[(this.setupData.shot + (this.setupData.seed % 5)) % missPool.length];
@@ -1756,6 +1782,7 @@ export class FootEngine {
       }
     }
     if (!scored || this.setupData.reduced) {
+      if (this.c3) this.c3.setTrophy(false);
       // déception : mains sur la tête
       sh.place(P.x, P.z, 0);
       sh.blend("kick", END, "catch", 0.02, into);
@@ -1771,6 +1798,32 @@ export class FootEngine {
       }
       return;
     }
+
+    // Célébration spéciale du Palier 15 (Le Sacre Suprême) : le joueur brandit la Coupe d'Afrique en or !
+    if (this.setupData.stage.id === 15) {
+      const turn = Math.PI * easeInOut(clamp(c / 0.45, 0, 1));
+      const jump = c > 0.3 ? Math.max(0, Math.sin((c - 0.3) * 5.8)) * 0.36 : 0;
+      const sway = Math.sin(c * 3.5) * 0.08;
+      sh.place(P.x, P.z, turn + sway, false, jump);
+      sh.blend("kick", END, "catch", 0.02, into);
+      // Deux bras tendus vers le ciel pour brandir la coupe bien haut
+      sh.aim(B.rUpper, B.rFore, new V(-0.16, 1, 0.12), into);
+      sh.aim(B.rFore, B.rHand, new V(-0.06, 1, 0.06), into);
+      sh.aim(B.lUpper, B.lFore, new V(0.16, 1, 0.12), into);
+      sh.aim(B.lFore, B.lHand, new V(0.06, 1, 0.06), into);
+      // Positionne le trophée 3D doré entre les deux mains levées
+      const headY = sh.bone(B.head).y;
+      if (this.c3) {
+        this.c3.setTrophy(true, P.x, headY + 0.38 + jump, P.z - 0.05, (c * 1.6) % (Math.PI * 2));
+      }
+      // Pluie royale de confettis dorés
+      if (Math.random() < 0.4) {
+        confettiBurst(this.parts, this.w * (0.2 + 0.6 * Math.random()), this.h * 0.35, 20);
+      }
+      return;
+    }
+
+    if (this.c3) this.c3.setTrophy(false);
     const kind = this.celebrationKind();
     const turn = Math.PI * easeInOut(clamp(c / 0.45, 0, 1));
     if (kind === "clapping") {

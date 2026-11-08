@@ -402,9 +402,11 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
       passed = stars > 0;
       won = passed;
       const totalStages = s.game === "foot" ? FOOT_STAGES.length : BASKET_STAGES.length;
-      title = passed ? (s.stageIdx === totalStages - 1 ? "Grand Champion !" : "Palier réussi !") : "Pas cette fois";
+      title = passed ? (s.stageIdx === totalStages - 1 ? "🏆 Champion d'Afrique !" : "Palier réussi !") : "Pas cette fois";
       subtitle = passed
-        ? `${players[0].made}/${stage.shots} · ${stage.name}`
+        ? s.stageIdx === totalStages - 1
+          ? "Le sacre suprême des Léopards ! Tu soulèves la Coupe devant 80 000 supporters en fusion !"
+          : `${players[0].made}/${stage.shots} · ${stage.name}`
         : `Il fallait ${stage.toPass} ${s.game === "foot" ? "buts" : "paniers"} sur ${stage.shots}. Tu en as ${players[0].made}.`;
       canNext = passed && s.stageIdx < totalStages - 1;
       const key = `${s.game}:${s.diff}`;
@@ -952,29 +954,38 @@ function Home(props: {
   const evo = playerEvolution(save);
   return (
     <div className="flex h-full flex-col overflow-y-auto">
-      <header className="safe-top flex items-center justify-between px-4 pb-2">
-        <a href="/" className="a-btn a-btn-ghost -ml-3 min-h-[44px] px-3 text-[14px]" aria-label="Retour au site Bloc Léopards">
-          <ArrowLeft size={18} /> Site
+      <header className="safe-top flex items-center justify-between gap-1.5 px-3 sm:px-4 pb-2 w-full max-w-full overflow-hidden">
+        <a href="/" className="a-btn a-btn-ghost -ml-1 min-h-[40px] px-2.5 text-[13px] shrink-0" aria-label="Retour au site Bloc Léopards">
+          <ArrowLeft size={16} /> <span className="hidden xs:inline">Site</span>
         </a>
-        <div className="ml-auto flex items-center gap-1.5">
+        <div className="ml-auto flex items-center gap-1.5 min-w-0">
           <button
-            className="a-btn a-btn-secondary min-h-[44px] px-3 text-[13px] text-[var(--a-gold)]"
+            className="a-btn a-btn-secondary min-h-[40px] px-2.5 text-[12px] text-[var(--a-gold)] shrink-0"
             onClick={props.onOpenChampions}
             aria-label="Classement Les champions du Bloc"
           >
-            <Trophy size={16} />
-            <span className="text-[12px] font-bold">Champions</span>
+            <Trophy size={15} />
+            <span className="hidden sm:inline font-bold">Champions</span>
           </button>
-          <button className="a-btn a-btn-secondary min-h-[44px] max-w-[170px] sm:max-w-[220px] px-3 text-[13px]" onClick={props.onProfile} aria-label="Modifier ton joueur">
+          <button
+            className="a-btn a-btn-secondary min-h-[40px] max-w-[125px] xs:max-w-[160px] sm:max-w-[210px] px-2.5 text-[12px] min-w-0 shrink"
+            onClick={props.onProfile}
+            aria-label="Modifier ton joueur"
+          >
             <span className="truncate">
               {save.name
                 ? `${save.name}${props.playerTag ? ` · #${props.playerTag}` : ""}`
-                : "Crée ton joueur"}
+                : "Profil"}
             </span>
-            <Pencil size={14} />
+            <Pencil size={12} className="shrink-0" />
           </button>
-          <button className="a-icon-btn" onClick={props.onSound} aria-label={save.sound ? "Couper le son" : "Activer le son"} aria-pressed={save.sound}>
-            {save.sound ? <Volume2 size={20} /> : <VolumeX size={20} />}
+          <button
+            className="a-icon-btn !h-10 !w-10 shrink-0"
+            onClick={props.onSound}
+            aria-label={save.sound ? "Couper le son" : "Activer le son"}
+            aria-pressed={save.sound}
+          >
+            {save.sound ? <Volume2 size={18} /> : <VolumeX size={18} />}
           </button>
         </div>
       </header>
@@ -1469,6 +1480,11 @@ function Results(props: {
           {result.stars !== null && (
             <div className="mb-1 flex justify-center">
               <Stars n={result.stars} size={34} />
+            </div>
+          )}
+          {session.mode === "carriere" && session.stageIdx === 14 && result.won && (
+            <div className="my-2 flex items-center justify-center gap-2">
+              <span className="text-[48px] animate-bounce filter drop-shadow-[0_0_20px_rgba(244,196,0,0.6)]">🏆</span>
             </div>
           )}
           <h2 id="res-title" className="display text-[52px] text-[var(--a-gold)]">
