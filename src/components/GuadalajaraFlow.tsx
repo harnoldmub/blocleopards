@@ -176,7 +176,7 @@ export default function GuadalajaraFlow() {
       <div className="fixed top-0 left-0 right-0 z-50 flex items-center bg-[#080c1a]/90 backdrop-blur-md border-b border-white/5" style={{ padding: "10px 16px", minHeight: 60 }}>
         <div style={{ width: 80, flexShrink: 0 }} />
         <div className="flex-1 flex items-center justify-center gap-3">
-          <img src="/brand/logo.png" alt="Bloc Léopards" style={{ height: 44, width: "auto", objectFit: "contain", filter: "drop-shadow(0 0 8px rgba(247,214,24,0.3))" }} />
+          <img src="/brand/logo-2026.png" alt="Bloc Léopards" style={{ height: 44, width: "auto", objectFit: "contain", filter: "drop-shadow(0 0 8px rgba(247,214,24,0.3))" }} />
           <div style={{ width: 1, height: 28, background: "rgba(255,255,255,0.2)" }} />
           <img src="/brand/logo-min-sport-white.webp" alt="Ministère des Sports" style={{ height: 36, width: "auto", objectFit: "contain", opacity: 0.95 }} />
         </div>
@@ -340,7 +340,7 @@ export default function GuadalajaraFlow() {
                     <span className="text-[9px] uppercase tracking-wider text-slate-400 block font-bold">Demande officielle</span>
                     <span className="font-bebas text-xl text-white tracking-wide">BLOC DE GUADALAJARA</span>
                   </div>
-                  <img src="/brand/logo.png" alt="RDC" className="h-10 w-auto" />
+                  <img src="/brand/logo-2026.png" alt="RDC" className="h-10 w-auto" />
                 </div>
                 <div className="space-y-3 text-left border-y border-white/10 py-4 mb-4">
                   <div className="flex justify-between text-xs"><span className="text-slate-400">Demandeur</span><span className="font-bold text-white">{form.firstName} {form.lastName}</span></div>

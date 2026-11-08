@@ -74,7 +74,7 @@ export function onBrandLoad(fn: () => void) {
   return () => listeners.delete(fn);
 }
 
-export const LOGO_BL = "/brand/logo-arena.webp";
+export const LOGO_BL = "/brand/logo-arena-2026.webp";
 export const LOGO_RDC = "/brand/rdc-coeur-afrique-white.webp";
 
 /** Partenaires affichés en publicité (panneaux LED, bandeaux). */

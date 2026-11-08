@@ -407,7 +407,7 @@ export default function MondialTicketFlow() {
     ctx.stroke();
 
     try {
-      const logo = await loadImage("/brand/logo.png");
+      const logo = await loadImage("/brand/logo-2026.png");
       const ratio = logo.width / logo.height;
       const logoHeight = 110;
       ctx.drawImage(logo, width / 2 - (logoHeight * ratio) / 2, 110, logoHeight * ratio, logoHeight);
@@ -511,7 +511,7 @@ export default function MondialTicketFlow() {
 
         {/* Logos centered */}
         <div className="flex-1 flex items-center justify-center gap-3">
-          <img src="/brand/logo.png" alt="Bloc Léopards" style={{ height: 44, width: "auto", objectFit: "contain", filter: "drop-shadow(0 0 8px rgba(247,214,24,0.3))" }} />
+          <img src="/brand/logo-2026.png" alt="Bloc Léopards" style={{ height: 44, width: "auto", objectFit: "contain", filter: "drop-shadow(0 0 8px rgba(247,214,24,0.3))" }} />
           <div style={{ width: 1, height: 28, background: "rgba(255,255,255,0.2)" }} />
           <img src="/brand/logo-min-sport-white.webp" alt="Ministère des Sports" style={{ height: 36, width: "auto", objectFit: "contain", opacity: 0.95 }} />
         </div>
@@ -1037,7 +1037,7 @@ export default function MondialTicketFlow() {
                     <span className="text-[9px] uppercase tracking-wider text-slate-400 block font-bold">Ticket Officiel</span>
                     <span className="font-bebas text-xl text-white tracking-wide">BLOC DES LÉOPARDS</span>
                   </div>
-                  <img src="/brand/logo.png" alt="RDC" className="h-10 w-auto" />
+                  <img src="/brand/logo-2026.png" alt="RDC" className="h-10 w-auto" />
                 </div>
 
                 <div className="space-y-3 text-left border-y border-white/10 py-4 mb-4">

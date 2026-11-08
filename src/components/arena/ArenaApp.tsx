@@ -992,7 +992,7 @@ function Home(props: {
 
       {/* Les deux marques mises en avant */}
       <div className="flex items-center justify-center gap-4 px-4">
-        <img src={LOGO_BL} alt="Bloc Léopards" className="h-[92px] w-auto drop-shadow-[0_10px_24px_rgba(244,196,0,0.25)] sm:h-[120px]" width={97} height={92} />
+        <img src={LOGO_BL} alt="Bloc Léopards" className="h-[92px] w-auto drop-shadow-[0_10px_24px_rgba(244,196,0,0.25)] sm:h-[120px]" width={89} height={92} />
         <span className="h-14 w-px bg-white/20" aria-hidden="true" />
         <img src={LOGO_RDC} alt="R.D. Congo, Cœur de l'Afrique" className="h-[38px] w-auto sm:h-[48px]" width={136} height={38} />
       </div>
