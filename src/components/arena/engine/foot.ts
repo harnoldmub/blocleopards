@@ -59,19 +59,21 @@ type Phase = "aim" | "runup" | "flight" | "done";
 
 /* ---------- Physique du ballon : gravité, traînée de l'air, effet Magnus ---------- */
 interface V3 { x: number; y: number; z: number }
-/** Traînée quadratique : ½·ρ·Cd·A / m pour un ballon taille 5 (≈ 0,0125 /m). */
-const KD = 0.0125;
 /** Coefficient Magnus : accélération = CM · (ω × v). */
-const CM = 0.006;
+const CM = 0.0068;
 /** Amortissement de la rotation (1/s). */
-const SPIN_DECAY = 0.35;
+const SPIN_DECAY = 0.28;
 
 function ballAccel(v: V3, w: V3): V3 {
   const sp = Math.hypot(v.x, v.y, v.z);
+  // Crise de traînée du ballon de football (Drag crisis aérodynamique) :
+  // À haute vitesse (v > 22 m/s), la couche limite est turbulente et la traînée est minimale.
+  // Quand le ballon ralentit (< 19 m/s), la traînée augmente, provoquant la rupture de trajectoire et le plongeon.
+  const kd = sp > 22 ? 0.0102 : sp > 16 ? 0.0122 + (22 - sp) * 0.00065 : 0.0155;
   return {
-    x: -KD * sp * v.x + CM * (w.y * v.z - w.z * v.y),
-    y: -G - KD * sp * v.y + CM * (w.z * v.x - w.x * v.z),
-    z: -KD * sp * v.z + CM * (w.x * v.y - w.y * v.x)
+    x: -kd * sp * v.x + CM * (w.y * v.z - w.z * v.y),
+    y: -G - kd * sp * v.y + CM * (w.z * v.x - w.x * v.z),
+    z: -kd * sp * v.z + CM * (w.x * v.y - w.y * v.x)
   };
 }
 
@@ -84,10 +86,16 @@ function flyTo(p0: V3, v0: V3, w0: V3, zPlane: number, samples?: V3[]): { x: num
   let t = 0;
   let i = 0;
   while (p.z < zPlane && t < 4) {
-    const a = ballAccel(v, w);
-    v.x += a.x * dt;
-    v.y += a.y * dt;
-    v.z += a.z * dt;
+    const a1 = ballAccel(v, w);
+    const midV = {
+      x: v.x + a1.x * dt * 0.5,
+      y: v.y + a1.y * dt * 0.5,
+      z: v.z + a1.z * dt * 0.5
+    };
+    const a2 = ballAccel(midV, w);
+    v.x += a2.x * dt;
+    v.y += a2.y * dt;
+    v.z += a2.z * dt;
     p.x += v.x * dt;
     p.y += v.y * dt;
     p.z += v.z * dt;
@@ -101,7 +109,7 @@ function flyTo(p0: V3, v0: V3, w0: V3, zPlane: number, samples?: V3[]): { x: num
       v.z *= 0.82;
     }
     t += dt;
-    if (samples && i++ % 8 === 0) samples.push({ ...p });
+    if (samples && i++ % 6 === 0) samples.push({ ...p });
   }
   if (samples) samples.push({ ...p });
   return { x: p.x, y: p.y, t };
@@ -110,12 +118,12 @@ function flyTo(p0: V3, v0: V3, w0: V3, zPlane: number, samples?: V3[]): { x: num
 /** Cherche la vitesse initiale qui amène le ballon au point visé malgré traînée et effet. */
 function solveShot(p0: V3, tx: number, ty: number, D: number, speed: number, w: V3): V3 {
   const T = Math.hypot(D - p0.z, tx - p0.x) / speed;
-  const v = { x: (tx - p0.x) / T, y: (ty - p0.y + 0.5 * G * T * T) / T, z: ((D - p0.z) / T) * 1.06 };
-  for (let i = 0; i < 10; i++) {
+  const v = { x: (tx - p0.x) / T, y: (ty - p0.y + 0.5 * G * T * T) / T, z: ((D - p0.z) / T) * 1.05 };
+  for (let i = 0; i < 12; i++) {
     const r = flyTo(p0, v, w, D);
     const ex = tx - r.x;
     const ey = ty - r.y;
-    if (Math.abs(ex) < 0.01 && Math.abs(ey) < 0.01) break;
+    if (Math.abs(ex) < 0.008 && Math.abs(ey) < 0.008) break;
     v.x += ex / Math.max(0.2, r.t);
     v.y += ey / Math.max(0.2, r.t);
   }
@@ -202,24 +210,21 @@ export class FootEngine {
   private celeb = { x: 0, z: 0, captured: false };
   private viewOff = { x: 0, y: 0 };
 
-  attach3D(c3: Chars3D, mod: C3Mod) {
+  async attach3D(c3: Chars3D, mod: C3Mod): Promise<void> {
     this.c3 = c3;
     this.c3m = mod;
-    if (this.setupData) this.build3D();
+    if (this.setupData) await this.build3D();
   }
 
   get use3d() {
     return !!(this.c3 && this.c3.ready && this.A.shooter && this.A.keeper);
   }
 
-  private build3D() {
+  private async build3D(): Promise<void> {
     const c3 = this.c3;
     const m = this.c3m;
     if (!c3 || !m || !c3.ready) return;
-    c3.clearActors();
     const s = this.setupData;
-    this.A = { wall: [] };
-    // personnages : celui du joueur, gardien·ne et mur du même sexe (équipe adverse)
     const fem = !!s.female;
     const kFem = !!s.stage.keeper.female;
     const pc = m.charById(s.character)?.female === fem ? s.character! : fem ? "leoparde" : "leopard";
@@ -227,14 +232,16 @@ export class FootEngine {
     const wallIds = Array.from({ length: s.stage.wall }, (_, i) => m.pickChar(kFem, s.stage.id + i, [pc, kc]).id);
     const need = [pc, kc, ...wallIds];
     if (!c3.isLoaded(need)) {
-      const ref = s;
-      c3.ensureChars(need).then(() => {
-        if (this.setupData === ref && this.c3 === c3 && this.phase === "aim") this.build3D();
-      });
+      await c3.ensureChars(need);
     }
-    this.A.shooter = c3.actor({ ...m.LEOPARDS_PAINT(s.name, s.number, this.shooterBody.skin), female: fem }, pc);
+    c3.clearActors();
+    this.A = { wall: [] };
+    const hasJ = m.hasJersey(pc);
+    this.A.shooter = c3.actor({ ...m.LEOPARDS_PAINT(s.name, hasJ ? s.number : undefined, this.shooterBody.skin), female: fem }, pc);
     this.A.keeper = c3.actor({ ...m.KEEPER_PAINT(s.stage.keeper.kit, this.keeperBody.skin), female: kFem }, kc);
-    for (let i = 0; i < s.stage.wall; i++) this.A.wall.push(c3.actor({ ...m.RIVAL_PAINT(4 + i * 3, this.wallBodies[i].skin), female: kFem }, wallIds[i]));
+    for (let i = 0; i < s.stage.wall; i++) {
+      this.A.wall.push(c3.actor({ ...m.RIVAL_PAINT(4 + i * 3, this.wallBodies[i].skin), female: kFem }, wallIds[i]));
+    }
     this.celeb = { x: 0, z: 0, captured: false };
     c3.buildGoal(this.D);
     this.drive3D();
@@ -329,10 +336,12 @@ export class FootEngine {
     const cam = this.cam;
     const D = this.D;
     const bx = this.setupData.stage.ballX;
-    // caméra TV : un peu à droite et en retrait du ballon, le tireur reste à gauche de l'axe
-    cam.x = D > 15 ? bx - 0.9 : bx + 0.55;
-    cam.y = D > 15 ? 4.6 : 3.9;
-    cam.z = D > 15 ? -9 : -11;
+    const portrait = this.h > this.w;
+    const fk = D > 15;
+    // caméra TV : sur mobile pour les coups francs, recul net et hauteur pour embrasser le mur et la cage
+    cam.x = fk ? (portrait ? bx * 0.45 - 0.75 : bx - 0.9) : bx + 0.55;
+    cam.y = fk ? (portrait ? 5.2 : 4.5) : (portrait ? 4.1 : 3.9);
+    cam.z = fk ? (portrait ? -14.2 : -11.5) : (portrait ? -12 : -11);
     cam.setYaw(Math.atan2(-cam.x * 0.85, D - cam.z));
     cam.cx = this.w / 2;
     // cadrage : cage le plus large possible, ballon en bas
@@ -347,12 +356,11 @@ export class FootEngine {
     });
     const uSpan = Math.abs(uv[1].u - uv[0].u);
     const vSpan = uv[2].v - Math.min(uv[0].v, uv[1].v);
-    const portrait = this.h > this.w;
-    // cadrage large sur mobile : on voit la cage, le gardien et les panneaux partenaires de part et d'autre
-    const fW = (this.w * (portrait ? 0.76 : 0.58)) / uSpan;
-    const fH = (this.h * 0.52) / vSpan;
+    // cadrage élargi sur mobile pour les coups francs : cage, mur et courbe entière visibles
+    const fW = (this.w * (portrait ? (fk ? 0.65 : 0.74) : 0.58)) / uSpan;
+    const fH = (this.h * (portrait ? (fk ? 0.44 : 0.50) : 0.52)) / vSpan;
     cam.f = Math.min(fW, fH);
-    const ballY = this.h * (portrait ? (D > 15 ? 0.7 : 0.8) : D > 15 ? 0.78 : 0.84);
+    const ballY = this.h * (portrait ? (fk ? 0.76 : 0.81) : fk ? 0.78 : 0.84);
     cam.hz = ballY - uv[2].v * cam.f;
     // centre la cage horizontalement
     const mid = (uv[0].u + uv[1].u) / 2;
@@ -606,9 +614,9 @@ export class FootEngine {
       if (Math.abs(d) > Math.abs(bulge)) bulge = d;
     }
     const T = Math.hypot(D, tx - this.bx) / v;
-    // effet franc : un geste courbé fait vraiment tourner le ballon
-    const maxAx = (fk ? 4.2 : 2.1) * 8 / (T * T);
-    const ax = clamp((bulge / this.h) * 950, -maxAx, maxAx);
+    // effet franc et banane : un geste courbé fait tourner le ballon avec une courbure marquée
+    const maxAx = (fk ? 4.9 : 2.6) * 8 / (T * T);
+    const ax = clamp((bulge / this.h) * 1150, -maxAx, maxAx);
     const over = v > (fk ? 27 : 31);
     if (!preview) {
       const n = this.setupData.diff.aimNoise * (0.1 + Math.max(0, v - 27) * 0.045);
@@ -618,10 +626,15 @@ export class FootEngine {
     }
     ty = Math.max(BALL_R, ty);
     const zone = tx < -1.2 ? -1 : tx > 1.2 ? 1 : 0;
-    // rotation : latérale pour l'effet, coupée (backspin) pour les tirs piqués, liftée pour les frappes sèches
+    // Topspin / "feuille morte" : plongeon prononcé au-dessus du mur pour retomber sous la barre
+    const topspin = fk ? clamp(12 + (v - 16) * 0.85, 8, 28) : (v > 25 ? 12 : v < 17 ? -16 : 4);
+    // Effet brossé latéral (Magnus réactif)
+    const sideSpin = clamp(ax / (CM * v), -190, 190);
+    // Frappe flottante (knuckleball) si tir ultra droit et rapide
+    const isKnuckle = Math.abs(bulge) < this.h * 0.007 && v > 24;
     const w: V3 = {
-      x: v > (fk ? 24 : 28) ? 14 : v < 17 ? -20 : fk ? 6 : 0,
-      y: clamp(ax / (CM * v), -170, 170),
+      x: isKnuckle ? 2 : topspin,
+      y: isKnuckle ? 0 : sideSpin,
       z: 0
     };
     return { tx, ty, v, ax, w, zone, over };
@@ -872,54 +885,91 @@ export class FootEngine {
 
   private wallTop(): number {
     const since = this.t - this.kickT;
-    const jump = 0.36 * Math.max(0, Math.sin(clamp((since - 0.1) / 0.55, 0, 1) * Math.PI));
-    return 1.86 + jump;
+    const s = this.setupData;
+    const stageId = s.stage.id || 0;
+    const diff = s.diff;
+    const diffMult = diff === "legende" ? 1.25 : diff === "pro" ? 1.1 : 0.95;
+    const levelFactor = clamp(stageId / 15, 0.25, 1) * diffMult;
+    // Plus le niveau est difficile, plus le saut du mur est haut et coordonné (détente jusqu'à 0.62m, hauteur 2.48m)
+    const maxJump = 0.28 + levelFactor * 0.34;
+    const delay = Math.max(0.04, 0.12 - levelFactor * 0.08);
+    const duration = 0.54;
+    const jumpK = since < delay ? 0 : Math.sin(clamp((since - delay) / duration, 0, 1) * Math.PI);
+    return 1.86 + maxJump * jumpK;
   }
 
   private step(dt: number) {
     const D = this.D;
     if (this.ballHeld) return;
     const pz = this.bz;
-    const a = ballAccel({ x: this.vx, y: this.vy, z: this.vz }, this.omega);
-    this.vx += a.x * dt;
-    this.vy += a.y * dt;
-    this.vz += a.z * dt;
-    const decay = 1 - SPIN_DECAY * dt;
-    this.omega.x *= decay;
-    this.omega.y *= decay;
-    this.bx += this.vx * dt;
-    this.by += this.vy * dt;
-    this.bz += this.vz * dt;
 
-    // sol
-    if (this.by < BALL_R) {
-      this.by = BALL_R;
-      if (this.vy < -1.2) audio.bounce(Math.min(1, -this.vy / 8));
-      this.vy = -this.vy * 0.52;
-      this.vx *= 0.85;
-      this.vz *= 0.82;
-      if (Math.abs(this.vy) < 0.5) this.vy = 0;
-    }
-    // frottement de roulement sur la pelouse
-    if (this.by <= BALL_R + 0.002 && this.vy === 0) {
-      const f = Math.max(0, 1 - 1.6 * dt);
-      this.vx *= f;
-      this.vz *= f;
+    // Intégration RK2 par sous-pas pour une trajectoire fluide et réaliste
+    const substeps = 4;
+    const sdt = dt / substeps;
+    for (let st = 0; st < substeps; st++) {
+      if (this.ballHeld) break;
+      const a1 = ballAccel({ x: this.vx, y: this.vy, z: this.vz }, this.omega);
+      const midV = {
+        x: this.vx + a1.x * sdt * 0.5,
+        y: this.vy + a1.y * sdt * 0.5,
+        z: this.vz + a1.z * sdt * 0.5
+      };
+      const a2 = ballAccel(midV, this.omega);
+      this.vx += a2.x * sdt;
+      this.vy += a2.y * sdt;
+      this.vz += a2.z * sdt;
+      const decay = 1 - SPIN_DECAY * sdt;
+      this.omega.x *= decay;
+      this.omega.y *= decay;
+      this.bx += this.vx * sdt;
+      this.by += this.vy * sdt;
+      this.bz += this.vz * sdt;
+
+      // sol
+      if (this.by < BALL_R) {
+        this.by = BALL_R;
+        if (this.vy < -1.2) audio.bounce(Math.min(1, -this.vy / 8));
+        this.vy = -this.vy * 0.52;
+        this.vx *= 0.85;
+        this.vz *= 0.82;
+        if (Math.abs(this.vy) < 0.5) this.vy = 0;
+      }
+      // frottement de roulement sur la pelouse
+      if (this.by <= BALL_R + 0.002 && this.vy === 0) {
+        const f = Math.max(0, 1 - 1.6 * sdt);
+        this.vx *= f;
+        this.vz *= f;
+      }
     }
 
-    // mur
+    // mur : participation active des défenseurs, contrant de plus en plus avec la difficulté
     const wz = this.wallZ();
     if (this.setupData.stage.wall && !this.crossedWall && pz < wz && this.bz >= wz) {
       this.crossedWall = true;
       const top = this.wallTop();
-      for (const x of this.wallXs()) {
-        if (Math.abs(this.bx - x) < 0.25 + BALL_R && this.by - BALL_R < top) {
-          this.vz = -Math.abs(this.vz) * 0.25;
-          this.vx = (this.bx - x) * 8 + (this.rng() - 0.5) * 3;
-          this.vy = 2 + this.rng() * 2;
-          this.omega = { x: 0, y: 0, z: 0 };
+      const s = this.setupData;
+      const stageId = s.stage.id || 0;
+      const diffMult = s.diff === "legende" ? 1.2 : s.diff === "pro" ? 1.1 : 1.0;
+      const levelFactor = clamp(stageId / 15, 0.25, 1) * diffMult;
+      const blockRadius = 0.26 + levelFactor * 0.07 + BALL_R;
+      const xs = this.wallXs();
+      for (let i = 0; i < xs.length; i++) {
+        const x = xs[i];
+        if (Math.abs(this.bx - x) < blockRadius && this.by - BALL_R < top) {
+          this.vz = -Math.abs(this.vz) * 0.32;
+          this.vx = (this.bx - x) * 9 + (this.rng() - 0.5) * 3;
+          this.vy = 2.2 + this.rng() * 2;
+          this.omega = { x: -8, y: (this.bx - x) * 20, z: 0 };
+          this.shake = 0.6;
           audio.glove();
-          this.resolve({ scored: false, base: 0, tags: ["wall"], label: "Contré !", detail: "Le mur a fait son travail", zone: this.pending!.zone });
+          this.crowdReaction = "save";
+          const label = stageId >= 11 ? "Bloc Défensif Élite !" : stageId >= 6 ? "Mur Infranchissable !" : "Contré par le mur !";
+          const detail = stageId >= 11
+            ? "Les défenseurs ont sauté au sommet ! Enroule ta frappe ou contourne le mur."
+            : stageId >= 6
+            ? "Détente synchronisée du mur Léopard en plein vol !"
+            : "Le mur a dévié ta frappe.";
+          this.resolve({ scored: false, base: 0, tags: ["wall"], label, detail, zone: this.pending!.zone });
           break;
         }
       }
@@ -1634,19 +1684,29 @@ export class FootEngine {
       }
     }
 
-    /* --- mur --- */
+    /* --- mur dynamique --- */
     const wz = this.wallZ();
     const xs = this.wallXs();
+    const stageId = s.stage.id || 0;
+    const diffMult = s.diff === "legende" ? 1.25 : s.diff === "pro" ? 1.1 : 0.95;
+    const levelFactor = clamp(stageId / 15, 0.25, 1) * diffMult;
+    const maxJump = 0.28 + levelFactor * 0.34;
     const sinceK = this.phase === "flight" || this.phase === "done" ? this.t - this.kickT : -1;
-    const jumpK = sinceK < 0.1 ? 0 : Math.sin(clamp((sinceK - 0.1) / 0.55, 0, 1) * Math.PI);
+    const delay = Math.max(0.04, 0.12 - levelFactor * 0.08);
+    const jumpK = sinceK < delay ? 0 : Math.sin(clamp((sinceK - delay) / 0.54, 0, 1) * Math.PI);
+
     A.wall.forEach((w, i) => {
       w.inPlace = true;
       const V = this.c3m!.THREE.Vector3;
+      const lag = (i % 2 === 0 ? 0.015 : -0.015) * (1 - levelFactor * 0.4);
+      const personalJump = maxJump * Math.max(0, jumpK + lag);
+      const ballDiffX = this.bx - xs[i];
+      // Participation active : le mur se resserre et s'incline légèrement vers le ballon
+      const leanX = this.phase === "flight" && Math.abs(ballDiffX) < 1.3 ? clamp(ballDiffX * 0.12 * levelFactor, -0.15, 0.15) : 0;
+
       if (w.has("header")) {
-        // vrai saut de la tête (impulsion légèrement décalée d'un joueur à l'autre)
-        const lag = i * 0.035;
         const ht = sinceK < 0 ? 0.25 : Math.min(w.duration("header") - 0.02, 0.72 + Math.max(0, sinceK - lag) * 1.5);
-        w.place(xs[i], wz, Math.PI, i % 2 === 1);
+        w.place(xs[i] + leanX, wz, Math.PI, i % 2 === 1, personalJump * 0.5);
         w.pose("header", ht);
         if (sinceK < 0) {
           w.aim(B.lUpper, B.lFore, new V(0.25, -1, 0.35));
@@ -1656,7 +1716,7 @@ export class FootEngine {
         }
         return;
       }
-      w.place(xs[i], wz, Math.PI, false, 0.36 * jumpK);
+      w.place(xs[i] + leanX, wz, Math.PI, false, personalJump);
       w.pose("catch", 0.02);
       w.aim(B.lUpper, B.lFore, new V(0.25, -1, 0.35));
       w.aim(B.rUpper, B.rFore, new V(-0.25, -1, 0.35));

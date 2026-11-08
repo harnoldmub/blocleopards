@@ -14,7 +14,7 @@ import { audio } from "./lib/audio";
 import { randomSeed } from "./lib/rng";
 import { CharacterPreview, ConfirmModal, GamePreview, Sheet, Stars, Toast, useReducedMotion } from "./ui";
 import { LOGO_BL, LOGO_RDC } from "./engine/scene";
-import { ROSTER, charFor } from "./lib/roster";
+import { ROSTER, charFor, charById, hasJersey } from "./lib/roster";
 
 const PLAYER_COLORS = ["#F4C400", "#72c3ec", "#f87171", "#a3e635"];
 
@@ -700,6 +700,8 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
           stage={stagePick}
           names={names}
           solo={solo}
+          character={charFor(save.character, solo.female)}
+          reduced={reduced}
           challenge={challenge}
           prog={prog}
           onGame={(g) => {
@@ -707,6 +709,9 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
             if (setupMode === "survie" && g === "basket") setSetupMode("chrono");
             if (setupMode === "chrono" && g === "foot") setSetupMode("survie");
             setStagePick(Math.max(0, progressOf(save, g, save.diff).unlocked - 1));
+          }}
+          onCharacter={(cid) => {
+            update((d) => ({ ...d, character: cid }));
           }}
           onMode={setSetupMode}
           onStage={setStagePick}
@@ -719,7 +724,14 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
           onGenders={setGenders}
           onSolo={setSolo}
           onClose={() => setSheet(null)}
-          onStart={start}
+          onStart={() => {
+            if (setupMode === "defi" && !challenge) {
+              startDefi(setupGame, null);
+            } else {
+              start();
+            }
+          }}
+          onStartDefi={(g) => startDefi(g, null)}
         />
       )}
       {sheet === "records" && <RecordsSheet save={save} onClose={() => setSheet(null)} />}
@@ -828,7 +840,11 @@ function Home(props: {
           <ArrowLeft size={18} /> Site
         </a>
         <button className="a-btn a-btn-secondary ml-auto mr-2 min-h-[44px] max-w-[60%] px-3 text-[13px]" onClick={props.onProfile} aria-label="Modifier ton joueur">
-          <span className="truncate">{save.name ? `${save.female ? "Joueuse" : "Joueur"} · ${save.name} · ${save.number}` : "Crée ton joueur"}</span>
+          <span className="truncate">
+            {save.name
+              ? `${save.female ? "Joueuse" : "Joueur"} · ${save.name}${hasJersey(save.character) ? ` · N°${save.number}` : ""}`
+              : "Crée ton joueur"}
+          </span>
           <Pencil size={14} />
         </button>
         <button className="a-icon-btn" onClick={props.onSound} aria-label={save.sound ? "Couper le son" : "Activer le son"} aria-pressed={save.sound}>
@@ -890,76 +906,68 @@ function Home(props: {
           </section>
         )}
 
-        <section className="a-defi-card mb-4" aria-labelledby="defi-amis">
-          <div className="flex items-start gap-3">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--a-red)]">
-              <Swords size={22} />
-            </span>
-            <div className="min-w-0 flex-1">
-              <h2 id="defi-amis" className="display text-[28px] leading-none">Défie tes amis</h2>
-              <p className="mt-1 text-[13px] text-[var(--a-muted)]">5 tirs, ton score part sur WhatsApp : tes amis jouent exactement les mêmes tirs pour te battre.</p>
-            </div>
-          </div>
-          <div className="mt-3 grid grid-cols-2 gap-2.5">
-            <button className="a-btn a-btn-primary min-h-[48px] text-[15px]" onClick={() => props.onNewDefi("foot")}>
-              ⚽ Défi foot
-            </button>
-            <button className="a-btn a-btn-primary min-h-[48px] text-[15px]" onClick={() => props.onNewDefi("basket")}>
-              🏀 Défi basket
-            </button>
-          </div>
-          {(save.duels || []).length > 0 && (
-            <div className="mt-4">
-              <h3 className="mb-2 text-[12px] font-bold uppercase tracking-[0.16em] text-[var(--a-muted)]">Tes derniers défis</h3>
-              <ul className="grid grid-cols-1 gap-1.5">
-                {(save.duels || []).slice(0, 4).map((d) => (
-                  <li key={d.key + d.friend} className="min-w-0">
-                    <button className="a-duel-row" onClick={() => props.onDuelReplay(d)}>
-                      <span className={`a-duel-badge is-${d.outcome}`}>
-                        {d.outcome === "won" ? "Gagné" : d.outcome === "lost" ? "Perdu" : d.outcome === "tie" ? "Égalité" : "Envoyé"}
-                      </span>
-                      <span className="min-w-0 flex-1 truncate text-left text-[14px] font-bold">
-                        {d.friend ? `contre ${d.friend}` : "Ton défi"} · {GAME_META[d.game].short}
-                      </span>
-                      <span className="text-[13px] font-extrabold tabular-nums">
-                        {d.me}
-                        {d.them !== null ? ` – ${d.them}` : " pts"}
-                      </span>
-                      <span className="text-[12px] font-bold text-[var(--a-gold)]">{d.outcome === "lost" || d.outcome === "tie" ? "Revanche" : "Rejouer"}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </section>
-
+        {/* 1. Sélection immédiate du jeu en vedette */}
         <div className="grid grid-cols-2 gap-3 sm:gap-5">
-          {(["foot", "basket"] as GameId[]).map((g) => (
-            <button key={g} className="a-game-card" onClick={() => props.onPick(g)} aria-label={`Jouer : ${GAME_META[g].title}`}>
-              <div className="aspect-[4/4.2] w-full sm:aspect-[4/3]">
-                <GamePreview game={g} reduced={props.reduced} />
-              </div>
-              <div className="flex flex-1 flex-col p-3 sm:p-4">
-                <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[var(--a-gold)]">{GAME_META[g].short}</span>
-                <span className="display mt-0.5 text-[25px] sm:text-[34px]">{GAME_META[g].title}</span>
-                <span className="mt-1 flex items-center gap-2 text-[12px] text-[var(--a-muted)]">
-                  <span className="font-bold text-white/85">Palier {prog(g).unlocked}/{g === "foot" ? FOOT_STAGES.length : BASKET_STAGES.length}</span>
-                  <span aria-label="Étoiles gagnées">★ {prog(g).stars.reduce((a, b) => a + b, 0)}/{(g === "foot" ? FOOT_STAGES.length : BASKET_STAGES.length) * 3}</span>
-                </span>
-                {best(g) > 0 && <span className="mt-0.5 text-[12px] text-white/70">Record : {best(g)} pts</span>}
-                <span className="h-3" aria-hidden="true" />
-                <span className="a-btn a-btn-primary mt-auto min-h-[44px] w-full text-[15px]">
-                  <Play size={16} fill="currentColor" /> Jouer
-                </span>
-              </div>
-            </button>
-          ))}
+          {(["foot", "basket"] as GameId[]).map((g) => {
+            const totalStages = g === "foot" ? FOOT_STAGES.length : BASKET_STAGES.length;
+            const p = prog(g);
+            return (
+              <button key={g} className="a-game-card group" onClick={() => props.onPick(g)} aria-label={`Jouer : ${GAME_META[g].title}`}>
+                <div className="aspect-[4/4.2] w-full sm:aspect-[4/3] overflow-hidden">
+                  <GamePreview game={g} reduced={props.reduced} />
+                </div>
+                <div className="flex flex-1 flex-col p-3 sm:p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[var(--a-gold)]">{GAME_META[g].short}</span>
+                    <span className="rounded-full bg-[rgba(244,196,0,0.18)] px-2 py-0.5 text-[10px] font-black text-[var(--a-gold)]">
+                      {totalStages} Paliers
+                    </span>
+                  </div>
+                  <span className="display mt-0.5 text-[24px] sm:text-[32px] transition-colors group-hover:text-[var(--a-gold)]">{GAME_META[g].title}</span>
+                  <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] text-[var(--a-muted)]">
+                    <span className="font-bold text-white/90">Palier {p.unlocked}/{totalStages}</span>
+                    <span aria-label="Étoiles gagnées" className="text-[var(--a-gold)]">★ {p.stars.reduce((a, b) => a + b, 0)}/{totalStages * 3}</span>
+                  </span>
+                  {best(g) > 0 && <span className="mt-0.5 text-[12px] font-medium text-white/70">Record : {best(g)} pts</span>}
+                  <span className="h-3" aria-hidden="true" />
+                  <span className="a-btn a-btn-primary mt-auto min-h-[44px] w-full text-[15px] shadow-[0_4px_16px_rgba(244,196,0,0.25)]">
+                    <Play size={16} fill="currentColor" /> Jouer
+                  </span>
+                </div>
+              </button>
+            );
+          })}
         </div>
+
+        {/* Derniers défis disputés */}
+        {(save.duels || []).length > 0 && (
+          <section className="mt-5 rounded-2xl bg-[rgba(255,255,255,0.04)] p-3.5 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]">
+            <h3 className="mb-2.5 text-[12px] font-bold uppercase tracking-[0.16em] text-[var(--a-muted)]">Tes derniers défis entre amis</h3>
+            <ul className="grid grid-cols-1 gap-1.5">
+              {(save.duels || []).slice(0, 4).map((d) => (
+                <li key={d.key + d.friend} className="min-w-0">
+                  <button className="a-duel-row" onClick={() => props.onDuelReplay(d)}>
+                    <span className={`a-duel-badge is-${d.outcome}`}>
+                      {d.outcome === "won" ? "Gagné" : d.outcome === "lost" ? "Perdu" : d.outcome === "tie" ? "Égalité" : "Envoyé"}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-left text-[14px] font-bold">
+                      {d.friend ? `contre ${d.friend}` : "Ton défi"} · {GAME_META[d.game].short}
+                    </span>
+                    <span className="text-[13px] font-extrabold tabular-nums">
+                      {d.me}
+                      {d.them !== null ? ` – ${d.them}` : " pts"}
+                    </span>
+                    <span className="text-[12px] font-bold text-[var(--a-gold)]">{d.outcome === "lost" || d.outcome === "tie" ? "Revanche" : "Rejouer"}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <div className="mt-3 grid grid-cols-1 gap-3">
           <button className="a-btn a-btn-secondary w-full" onClick={props.onRecords}>
-            <Trophy size={18} /> Records
+            <Trophy size={18} /> Records & Évolution
           </button>
         </div>
 
@@ -981,9 +989,12 @@ function SetupSheet(props: {
   stage: number;
   names: string[];
   solo: { name: string; number: number; female: boolean };
+  character: string;
+  reduced: boolean;
   challenge: Challenge | null;
   prog: (g: GameId) => { unlocked: number; stars: number[] };
   onGame: (g: GameId) => void;
+  onCharacter: (cid: string) => void;
   onMode: (m: Mode) => void;
   onStage: (i: number) => void;
   onDiff: (d: Difficulty) => void;
@@ -993,23 +1004,34 @@ function SetupSheet(props: {
   onSolo: (s: { name: string; number: number; female: boolean }) => void;
   onClose: () => void;
   onStart: () => void;
+  onStartDefi: (g: GameId) => void;
 }) {
   const { game, mode, save } = props;
   const isDefi = mode === "defi" && props.challenge;
   const g = isDefi ? props.challenge!.g : game;
   const prog = props.prog(g);
   const stages = g === "foot" ? FOOT_STAGES : BASKET_STAGES;
-  const modes: Mode[] = [...GAME_META[g].modes, ...(props.challenge && props.challenge.g === g ? (["defi"] as Mode[]) : [])];
   const soloOk = props.solo.name.trim().length > 0;
   const duelOk = props.names.every((n) => n.trim().length > 0);
-  const canStart = mode === "duel" ? duelOk : soloOk;
+  const [charReady, setCharReady] = useState(true);
+  const canStart = (mode === "duel" ? duelOk : soloOk) && charReady;
+
   return (
     <Sheet
       title={isDefi ? "Relever le défi" : GAME_META[g].title}
       onClose={props.onClose}
       footer={
         <button type="submit" form="setup-form" className="a-btn a-btn-primary w-full text-[17px]" disabled={!canStart}>
-          <Play size={18} fill="currentColor" /> {mode === "duel" ? "Lancer le duel" : "C'est parti"}
+          {!charReady ? (
+            <span className="flex items-center justify-center gap-2">
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              Chargement du joueur 3D...
+            </span>
+          ) : (
+            <>
+              <Play size={18} fill="currentColor" /> {mode === "defi" ? "Lancer le Défi" : mode === "duel" ? "Lancer le Duel" : "Entrer sur le Terrain"}
+            </>
+          )}
         </button>
       }
     >
@@ -1021,86 +1043,276 @@ function SetupSheet(props: {
           if (canStart) props.onStart();
         }}
       >
-        {!isDefi && (
-          <div className="a-seg" role="radiogroup" aria-label="Jeu">
-            {(["foot", "basket"] as GameId[]).map((x) => (
-              <button type="button" key={x} role="radio" aria-checked={game === x} onClick={() => props.onGame(x)}>
-                {GAME_META[x].short}
+        {/* ÉTAPE 1 : Choix du jeu */}
+        <div className="rounded-2xl bg-[rgba(255,255,255,0.04)] p-3 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]">
+          <div className="flex items-center justify-between">
+            <span className="text-[12px] font-black uppercase tracking-wider text-[var(--a-gold)]">
+              1. Choix du Jeu
+            </span>
+            {!isDefi ? (
+              <div className="a-seg !mb-0 !w-auto" role="radiogroup" aria-label="Jeu">
+                {(["foot", "basket"] as GameId[]).map((x) => (
+                  <button type="button" key={x} role="radio" aria-checked={game === x} onClick={() => props.onGame(x)}>
+                    {GAME_META[x].short}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <span className="text-[12px] font-bold text-white/80">{GAME_META[g].short}</span>
+            )}
+          </div>
+        </div>
+
+        {/* ÉTAPE 2 : Ton personnage */}
+        <fieldset className="min-w-0 rounded-2xl bg-[rgba(255,255,255,0.04)] p-3.5 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]">
+          <legend className="px-1 text-[12px] font-black uppercase tracking-wider text-[var(--a-gold)]">
+            2. Ton Personnage Léopard
+          </legend>
+
+          <div className="mx-auto h-[180px] w-full max-w-[220px]">
+            <CharacterPreview
+              female={props.solo.female}
+              character={props.character}
+              name={props.solo.name}
+              number={props.solo.number}
+              reduced={props.reduced}
+              onLoadedChange={setCharReady}
+            />
+          </div>
+
+          <div className="a-seg mt-2" role="radiogroup" aria-label="Genre">
+            {[false, true].map((f) => (
+              <button
+                type="button"
+                key={String(f)}
+                role="radio"
+                aria-checked={props.solo.female === f}
+                onClick={() => {
+                  props.onSolo({ ...props.solo, female: f });
+                  props.onCharacter(charFor(null, f));
+                }}
+              >
+                {f ? "Joueuse" : "Joueur"}
               </button>
             ))}
           </div>
-        )}
 
+          <div className="mt-2.5">
+            <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-white/60">
+              {props.solo.female ? "Héroïnes Léopards" : "Figures du Onze des Léopards"}
+            </span>
+            <div className="a-chars flex flex-wrap gap-1.5" role="radiogroup">
+              {ROSTER.filter((c) => c.female === props.solo.female).map((c) => {
+                const active = props.character === c.id;
+                const isJersey = hasJersey(c);
+                return (
+                  <button
+                    type="button"
+                    key={c.id}
+                    role="radio"
+                    aria-checked={active}
+                    className={`group inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[12px] font-extrabold transition-all duration-150 active:scale-95 ${
+                      active
+                        ? "bg-[var(--a-gold)] text-[#1a1300] shadow-[0_0_12px_rgba(244,196,0,0.35)]"
+                        : "bg-white/5 text-white/85 hover:bg-white/10 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]"
+                    }`}
+                    onClick={() => {
+                      props.onCharacter(c.id);
+                      if (c.label && !c.label.startsWith("Léopard")) {
+                        props.onSolo({ ...props.solo, name: c.label.split(" ")[0].toUpperCase() });
+                      }
+                    }}
+                  >
+                    <span>{c.label}</span>
+                    {c.roleHint && (
+                      <span
+                        className={`rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider ${
+                          active
+                            ? "bg-black/20 text-[#1a1300]"
+                            : isJersey
+                            ? "bg-blue-500/20 text-blue-300"
+                            : "bg-amber-500/20 text-amber-300"
+                        }`}
+                      >
+                        {c.roleHint}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {hasJersey(props.character) ? (
+            <div className="mt-3 grid grid-cols-[1fr_88px] gap-2">
+              <label>
+                <span className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-white/60">Nom sur le maillot</span>
+                <input
+                  className="a-input !h-10 text-[14px]"
+                  value={props.solo.name}
+                  maxLength={14}
+                  autoComplete="nickname"
+                  placeholder="Ton nom"
+                  onChange={(e) => props.onSolo({ ...props.solo, name: e.target.value })}
+                  required
+                />
+              </label>
+              <label>
+                <span className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-white/60">Numéro</span>
+                <input
+                  className="a-input !h-10 text-center text-[14px]"
+                  inputMode="numeric"
+                  value={props.solo.number}
+                  onChange={(e) => props.onSolo({ ...props.solo, number: Math.max(1, Math.min(99, Number(e.target.value.replace(/\D/g, "")) || 1)) })}
+                  aria-label="Numéro de maillot"
+                />
+              </label>
+            </div>
+          ) : (
+            <div className="mt-3">
+              <div className="mb-1 flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-white/60">Nom du joueur</span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-0.5 text-[10px] font-bold text-amber-300">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-400" />
+                  Tenue civile · Pas de numéro
+                </span>
+              </div>
+              <input
+                className="a-input !h-10 text-[14px]"
+                value={props.solo.name}
+                maxLength={14}
+                autoComplete="nickname"
+                placeholder="Ton pseudo ou nom"
+                onChange={(e) => props.onSolo({ ...props.solo, name: e.target.value })}
+                required
+              />
+            </div>
+          )}
+        </fieldset>
+
+        {/* ÉTAPE 3 : Choix du mode (Défi ou Pas ?) */}
         {isDefi ? (
           <div className="a-choice" aria-live="polite">
-            <div className="text-[15px] font-extrabold">
+            <div className="text-[15px] font-extrabold text-[var(--a-gold)]">
               {props.challenge!.n} a marqué {props.challenge!.p} points
             </div>
-            <div className="text-[13px] text-[var(--a-muted)]">
+            <div className="mt-1 text-[13px] text-[var(--a-muted)]">
               Mêmes conditions que ton ami · difficulté {DIFFS[props.challenge!.d].label}
             </div>
           </div>
         ) : (
           <fieldset className="min-w-0">
-            <legend className="mb-2 text-[12px] font-bold uppercase tracking-[0.16em] text-[var(--a-muted)]">Mode</legend>
+            <legend className="mb-2 text-[12px] font-black uppercase tracking-wider text-[var(--a-gold)]">
+              3. Choisis ton mode : Défi ou Pas ?
+            </legend>
             <div className="grid gap-2" role="radiogroup">
-              {modes.map((m) => (
-                <button type="button" key={m} role="radio" aria-checked={mode === m} className="a-choice" onClick={() => props.onMode(m)}>
-                  <span className="block text-[15px] font-extrabold">{MODE_META[m].label}</span>
-                  <span className="block text-[13px] text-[var(--a-muted)]">{MODE_META[m].hint}</span>
-                </button>
-              ))}
+              {/* Option 1 : Carrière (Normal / Solo) */}
+              <button
+                type="button"
+                role="radio"
+                aria-checked={mode === "carriere"}
+                className="a-choice flex items-center justify-between text-left"
+                onClick={() => props.onMode("carriere")}
+              >
+                <div>
+                  <span className="block text-[15px] font-extrabold text-white">🏆 Carrière Solo (15 Niveaux)</span>
+                  <span className="block text-[12px] text-[var(--a-muted)]">Progression par paliers de difficulté croissante</span>
+                </div>
+                <span className="text-[12px] font-bold text-[var(--a-gold)]">
+                  Palier {prog.unlocked}/{stages.length}
+                </span>
+              </button>
+
+              {/* Option 2 : Défi Amis WhatsApp */}
+              <button
+                type="button"
+                role="radio"
+                aria-checked={mode === "defi"}
+                className="a-choice flex items-center justify-between text-left"
+                onClick={() => props.onMode("defi")}
+              >
+                <div>
+                  <span className="block text-[15px] font-extrabold text-[var(--a-gold)]">⚔️ Défi Amis (WhatsApp)</span>
+                  <span className="block text-[12px] text-[var(--a-muted)]">5 tirs identiques : ton score génère un lien WhatsApp à battre</span>
+                </div>
+                <span className="rounded-full bg-[rgba(244,196,0,0.2)] px-2.5 py-0.5 text-[11px] font-black text-[var(--a-gold)]">
+                  DÉFI
+                </span>
+              </button>
+
+              {/* Option 3 : Duel sur le même écran */}
+              <button
+                type="button"
+                role="radio"
+                aria-checked={mode === "duel"}
+                className="a-choice flex items-center justify-between text-left"
+                onClick={() => props.onMode("duel")}
+              >
+                <div>
+                  <span className="block text-[15px] font-extrabold text-white">👥 Duel 2 Joueurs (Même écran)</span>
+                  <span className="block text-[12px] text-[var(--a-muted)]">Passez-vous le téléphone chacun votre tour</span>
+                </div>
+              </button>
             </div>
           </fieldset>
         )}
 
+        {/* Détails du mode Carrière : Paliers & Difficulté */}
         {mode === "carriere" && (
-          <fieldset className="min-w-0">
-            <legend className="mb-2 text-[12px] font-bold uppercase tracking-[0.16em] text-[var(--a-muted)]">Palier</legend>
-            <div className="-mx-5 flex snap-x gap-2 overflow-x-auto px-5 pb-1" role="radiogroup">
-              {stages.map((st, i) => {
-                const locked = i + 1 > prog.unlocked;
-                return (
-                  <button
-                    type="button"
-                    key={st.id}
-                    role="radio"
-                    aria-checked={props.stage === i}
-                    aria-disabled={locked}
-                    disabled={locked}
-                    onClick={() => props.onStage(i)}
-                    className="a-choice !w-[148px] shrink-0 snap-start disabled:opacity-45"
-                  >
-                    <span className="flex items-center justify-between">
-                      <span className="display text-[26px] text-[var(--a-gold)]">{i + 1}</span>
-                      {locked ? <Lock size={16} className="text-white/50" /> : <Stars n={prog.stars[i] || 0} size={13} />}
-                    </span>
-                    <span className="block text-[14px] font-extrabold">{st.name}</span>
-                    <span className="block text-[12px] leading-snug text-[var(--a-muted)]">{st.pitch}</span>
+          <>
+            <fieldset className="min-w-0">
+              <legend className="mb-2 text-[12px] font-bold uppercase tracking-[0.16em] text-[var(--a-muted)]">Palier débloqué</legend>
+              <div className="-mx-5 flex snap-x gap-2 overflow-x-auto px-5 pb-1" role="radiogroup">
+                {stages.map((st, i) => {
+                  const locked = i + 1 > prog.unlocked;
+                  return (
+                    <button
+                      type="button"
+                      key={st.id}
+                      role="radio"
+                      aria-checked={props.stage === i}
+                      aria-disabled={locked}
+                      disabled={locked}
+                      onClick={() => props.onStage(i)}
+                      className="a-choice !w-[148px] shrink-0 snap-start disabled:opacity-45"
+                    >
+                      <span className="flex items-center justify-between">
+                        <span className="display text-[26px] text-[var(--a-gold)]">{i + 1}</span>
+                        {locked ? <Lock size={16} className="text-white/50" /> : <Stars n={prog.stars[i] || 0} size={13} />}
+                      </span>
+                      <span className="block text-[14px] font-extrabold">{st.name}</span>
+                      <span className="block text-[12px] leading-snug text-[var(--a-muted)]">{st.pitch}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
+
+            <fieldset className="min-w-0">
+              <legend className="mb-2 text-[12px] font-bold uppercase tracking-[0.16em] text-[var(--a-muted)]">Difficulté</legend>
+              <div className="a-seg" role="radiogroup" aria-label="Difficulté">
+                {(["facile", "pro", "legende"] as Difficulty[]).map((d) => (
+                  <button type="button" key={d} role="radio" aria-checked={save.diff === d} onClick={() => props.onDiff(d)}>
+                    {DIFFS[d].label}
                   </button>
-                );
-              })}
-            </div>
-          </fieldset>
+                ))}
+              </div>
+              <p className="mt-1.5 text-[13px] text-[var(--a-muted)]">
+                {DIFFS[save.diff].hint} · points ×{DIFFS[save.diff].scoreMult}
+              </p>
+            </fieldset>
+          </>
         )}
 
-        {!isDefi && (
-          <fieldset className="min-w-0">
-            <legend className="mb-2 text-[12px] font-bold uppercase tracking-[0.16em] text-[var(--a-muted)]">Difficulté</legend>
-            <div className="a-seg" role="radiogroup" aria-label="Difficulté">
-              {(["facile", "pro", "legende"] as Difficulty[]).map((d) => (
-                <button type="button" key={d} role="radio" aria-checked={save.diff === d} onClick={() => props.onDiff(d)}>
-                  {DIFFS[d].label}
-                </button>
-              ))}
-            </div>
-            <p className="mt-1.5 text-[13px] text-[var(--a-muted)]">
-              {DIFFS[save.diff].hint} · points ×{DIFFS[save.diff].scoreMult}
-            </p>
-          </fieldset>
+        {/* Détails du mode Défi */}
+        {mode === "defi" && !isDefi && (
+          <div className="rounded-2xl bg-[rgba(244,196,0,0.1)] p-3 text-[13px] text-white/90 shadow-[inset_0_0_0_1px_rgba(244,196,0,0.25)]">
+            Tu vas tirer <strong className="text-[var(--a-gold)]">5 fois</strong>. À la fin, tu pourras envoyer ton score sur WhatsApp avec le lien pour que tes amis relèvent exactement le même défi !
+          </div>
         )}
 
-        {mode === "duel" ? (
+        {/* Détails du mode Duel */}
+        {mode === "duel" && (
           <fieldset className="min-w-0">
             <legend className="mb-2 flex w-full items-center justify-between text-[12px] font-bold uppercase tracking-[0.16em] text-[var(--a-muted)]">
               <span>Joueurs</span>
@@ -1160,42 +1372,6 @@ function SetupSheet(props: {
               ))}
             </div>
             <p className="mt-1.5 text-[13px] text-[var(--a-muted)]">Chacun tire 5 fois avec les mêmes conditions, puis passe le téléphone.</p>
-          </fieldset>
-        ) : (
-          <fieldset className="min-w-0">
-            <legend className="mb-2 text-[12px] font-bold uppercase tracking-[0.16em] text-[var(--a-muted)]">Ton maillot</legend>
-            <div className="grid grid-cols-[1fr_88px] gap-2">
-              <label>
-                <span className="sr-only">Ton nom</span>
-                <input
-                  className="a-input"
-                  value={props.solo.name}
-                  maxLength={14}
-                  autoComplete="nickname"
-                  placeholder="Ton nom"
-                  onChange={(e) => props.onSolo({ ...props.solo, name: e.target.value })}
-                  required
-                />
-              </label>
-              <label>
-                <span className="sr-only">Numéro</span>
-                <input
-                  className="a-input text-center"
-                  inputMode="numeric"
-                  value={props.solo.number}
-                  onChange={(e) => props.onSolo({ ...props.solo, number: Math.max(1, Math.min(99, Number(e.target.value.replace(/\D/g, "")) || 1)) })}
-                  aria-label="Numéro de maillot"
-                />
-              </label>
-            </div>
-            <div className="a-seg mt-2" role="radiogroup" aria-label="Personnage">
-              {[false, true].map((f) => (
-                <button type="button" key={String(f)} role="radio" aria-checked={props.solo.female === f} onClick={() => props.onSolo({ ...props.solo, female: f })}>
-                  {f ? "Joueuse" : "Joueur"}
-                </button>
-              ))}
-            </div>
-            <p className="mt-1.5 text-[13px] text-[var(--a-muted)]">Ton nom s'affiche sur le maillot et au classement.</p>
           </fieldset>
         )}
       </form>
@@ -1383,14 +1559,24 @@ function ProfileSheet(props: {
   onSave: (p: { name: string; number: number; female: boolean; character: string }) => void;
 }) {
   const [p, setP] = useState(props.initial);
-  const ok = p.name.trim().length > 0;
+  const [charReady, setCharReady] = useState(true);
+  const ok = p.name.trim().length > 0 && charReady;
   return (
     <Sheet
       title={props.first ? "Crée ton joueur" : "Ton joueur"}
       onClose={props.onClose}
       footer={
         <button type="submit" form="profile-form" className="a-btn a-btn-primary w-full text-[17px]" disabled={!ok}>
-          {props.first ? "Entrer dans l'arène" : "Enregistrer"}
+          {!charReady ? (
+            <span className="flex items-center justify-center gap-2">
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              Chargement du modèle 3D...
+            </span>
+          ) : props.first ? (
+            "Entrer dans l'arène"
+          ) : (
+            "Enregistrer"
+          )}
         </button>
       }
     >
@@ -1404,7 +1590,14 @@ function ProfileSheet(props: {
       >
         {props.first && <p className="text-[14px] text-[var(--a-muted)]">Ton nom et ton numéro s'afficheront sur ton maillot des Léopards.</p>}
         <div className="mx-auto h-[230px] w-full max-w-[260px]">
-          <CharacterPreview female={p.female} character={p.character} name={p.name} number={p.number} reduced={props.reduced} />
+          <CharacterPreview
+            female={p.female}
+            character={p.character}
+            name={p.name}
+            number={p.number}
+            reduced={props.reduced}
+            onLoadedChange={setCharReady}
+          />
         </div>
         <fieldset className="min-w-0">
           <legend className="mb-2 text-[12px] font-bold uppercase tracking-[0.16em] text-[var(--a-muted)]">Tu joues avec</legend>
@@ -1418,29 +1611,70 @@ function ProfileSheet(props: {
         </fieldset>
         <fieldset className="min-w-0">
           <legend className="mb-2 text-[12px] font-bold uppercase tracking-[0.16em] text-[var(--a-muted)]">Personnage</legend>
-          <div className="a-chars" role="radiogroup" aria-label="Personnage">
-            {ROSTER.filter((c) => c.female === p.female).map((c) => (
-              <button type="button" key={c.id} role="radio" aria-checked={p.character === c.id} onClick={() => setP({ ...p, character: c.id })}>
-                {c.label}
-              </button>
-            ))}
+          <div className="a-chars flex flex-wrap gap-1.5" role="radiogroup" aria-label="Personnage">
+            {ROSTER.filter((c) => c.female === p.female).map((c) => {
+              const active = p.character === c.id;
+              const isJersey = hasJersey(c);
+              return (
+                <button
+                  type="button"
+                  key={c.id}
+                  role="radio"
+                  aria-checked={active}
+                  className={`group inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[12px] font-extrabold transition-all duration-150 active:scale-95 ${
+                    active
+                      ? "bg-[var(--a-gold)] text-[#1a1300] shadow-[0_0_12px_rgba(244,196,0,0.35)]"
+                      : "bg-white/5 text-white/85 hover:bg-white/10 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]"
+                  }`}
+                  onClick={() => setP({ ...p, character: c.id })}
+                >
+                  <span>{c.label}</span>
+                  {c.roleHint && (
+                    <span
+                      className={`rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider ${
+                        active
+                          ? "bg-black/20 text-[#1a1300]"
+                          : isJersey
+                          ? "bg-blue-500/20 text-blue-300"
+                          : "bg-amber-500/20 text-amber-300"
+                      }`}
+                    >
+                      {c.roleHint}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </fieldset>
-        <div className="grid grid-cols-[1fr_96px] gap-2">
-          <label className="min-w-0">
-            <span className="mb-1.5 block text-[12px] font-bold uppercase tracking-[0.16em] text-[var(--a-muted)]">Nom sur le maillot</span>
+        {hasJersey(p.character) ? (
+          <div className="grid grid-cols-[1fr_96px] gap-2">
+            <label className="min-w-0">
+              <span className="mb-1.5 block text-[12px] font-bold uppercase tracking-[0.16em] text-[var(--a-muted)]">Nom sur le maillot</span>
+              <input className="a-input" value={p.name} maxLength={14} autoComplete="nickname" placeholder="Ton nom" onChange={(e) => setP({ ...p, name: e.target.value })} required autoFocus={props.first} />
+            </label>
+            <label>
+              <span className="mb-1.5 block text-[12px] font-bold uppercase tracking-[0.16em] text-[var(--a-muted)]">Numéro</span>
+              <input
+                className="a-input text-center"
+                inputMode="numeric"
+                value={p.number}
+                onChange={(e) => setP({ ...p, number: Math.max(1, Math.min(99, Number(e.target.value.replace(/\D/g, "")) || 1)) })}
+              />
+            </label>
+          </div>
+        ) : (
+          <div>
+            <div className="mb-1.5 flex items-center justify-between">
+              <span className="text-[12px] font-bold uppercase tracking-[0.16em] text-[var(--a-muted)]">Nom du joueur</span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-0.5 text-[10px] font-bold text-amber-300">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-400" />
+                Tenue civile · Pas de numéro
+              </span>
+            </div>
             <input className="a-input" value={p.name} maxLength={14} autoComplete="nickname" placeholder="Ton nom" onChange={(e) => setP({ ...p, name: e.target.value })} required autoFocus={props.first} />
-          </label>
-          <label>
-            <span className="mb-1.5 block text-[12px] font-bold uppercase tracking-[0.16em] text-[var(--a-muted)]">Numéro</span>
-            <input
-              className="a-input text-center"
-              inputMode="numeric"
-              value={p.number}
-              onChange={(e) => setP({ ...p, number: Math.max(1, Math.min(99, Number(e.target.value.replace(/\D/g, "")) || 1)) })}
-            />
-          </label>
-        </div>
+          </div>
+        )}
       </form>
     </Sheet>
   );

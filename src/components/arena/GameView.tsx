@@ -114,10 +114,10 @@ export default function GameView(props: {
             setLoadState("error");
             return;
           }
-          const attach = () => {
+          const attach = async () => {
             if (disposed || !c3) return;
-            if (props.game === "foot") (engine as FootEngine).attach3D(c3, mod);
-            else (engine as BasketEngine).attach3D(c3, mod);
+            if (props.game === "foot") await (engine as FootEngine).attach3D(c3, mod);
+            else await (engine as BasketEngine).attach3D(c3, mod);
           };
           if (props.needsFemale) {
             await c3.loadFemale();
@@ -127,7 +127,8 @@ export default function GameView(props: {
               return;
             }
           }
-          attach();
+          await attach();
+          if (disposed) return;
           setLoadState("ready");
         })
         .catch(() => {

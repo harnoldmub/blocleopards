@@ -118,37 +118,35 @@ export class BasketEngine {
   private lastDt = 0;
   private holdStart = 0;
 
-  attach3D(c3: Chars3D, mod: C3Mod) {
+  async attach3D(c3: Chars3D, mod: C3Mod): Promise<void> {
     this.c3 = c3;
     this.c3m = mod;
-    if (this.s) this.build3D();
+    if (this.s) await this.build3D();
   }
 
   get use3d() {
     return !!(this.c3 && this.c3.ready && this.A.shooter);
   }
 
-  private build3D() {
+  private async build3D(): Promise<void> {
     const c3 = this.c3;
     const m = this.c3m;
     if (!c3 || !m || !c3.ready) return;
-    c3.clearActors();
     const s = this.s;
-    this.A = {};
     const fem = !!s.female;
     const pc = m.charById(s.character)?.female === fem ? s.character! : fem ? "leoparde" : "leopard";
     const dFem = !!s.stage.defenderFemale;
     const dc = s.stage.defender ? m.pickChar(dFem, s.stage.id * 5 + 2, [pc]).id : null;
     const need = [pc, dc];
     if (!c3.isLoaded(need)) {
-      const ref = s;
-      c3.ensureChars(need).then(() => {
-        if (this.s === ref && this.c3 === c3 && (this.phase === "idle" || this.phase === "aim")) this.build3D();
-      });
+      await c3.ensureChars(need);
     }
+    c3.clearActors();
+    this.A = {};
+    const withJersey = m.hasJersey(pc);
     this.A.shooter = c3.actor({
       base: "#1d4fd8", collar: "#d81e27", cuff: "#d81e27", shorts: "#1d4fd8", socks: "#f8fafc", boots: "#f8fafc",
-      name: s.name, number: String(s.number), numberColor: "#f7d618", numberStroke: "#d81e27", skin: this.body.skin, sleeveless: true, flag: false, female: fem
+      name: s.name, number: withJersey ? String(s.number) : undefined, numberColor: "#f7d618", numberStroke: "#d81e27", skin: this.body.skin, sleeveless: true, flag: false, female: fem
     }, pc);
     if (s.stage.defender) {
       const isMutombo = s.stage.id === 14;

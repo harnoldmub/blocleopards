@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Star, X } from "lucide-react";
 import { BODIES, FEMALE_BODY, LEOPARDS_BASKET_KIT, LEOPARDS_KIT, POSES, drawFigure, skeleton, lerpPose } from "./engine/people";
 import { drawBasketball, drawFootball } from "./engine/scene";
+import { hasJersey } from "./lib/roster";
 
 export function useReducedMotion() {
   const [reduced, setReduced] = useState(false);
@@ -241,14 +242,32 @@ export function GamePreview({ game, reduced }: { game: "foot" | "basket"; reduce
  * Aperçu 3D du personnage choisi (joueur ou joueuse), qui tourne lentement :
  * maillot des Léopards avec le nom et le numéro saisis. Silhouette 2D pendant le chargement.
  */
-export function CharacterPreview({ female, character, name, number, reduced }: { female: boolean; character?: string; name: string; number: number; reduced: boolean }) {
+export function CharacterPreview({
+  female,
+  character,
+  name,
+  number,
+  reduced,
+  onLoadedChange
+}: {
+  female: boolean;
+  character?: string;
+  name: string;
+  number: number;
+  reduced: boolean;
+  onLoadedChange?: (loaded: boolean) => void;
+}) {
   const wrap = useRef<HTMLDivElement>(null);
   const cv2d = useRef<HTMLCanvasElement>(null);
   const cv3d = useRef<HTMLCanvasElement>(null);
   const state = useRef<{ c3: any; mod: any; actor: any; cam: any; key: string } | null>(null);
   const props = useRef({ female, character, name, number, reduced });
   props.current = { female, character, name, number, reduced };
-  const [ready, setReady] = useState(false);
+  const onLoadedRef = useRef(onLoadedChange);
+  onLoadedRef.current = onLoadedChange;
+
+  const [engineReady, setEngineReady] = useState(false);
+  const [charLoaded, setCharLoaded] = useState(false);
 
   // silhouette 2D de secours
   useEffect(() => {
@@ -264,8 +283,9 @@ export function CharacterPreview({ female, character, name, number, reduced }: {
     ctx.clearRect(0, 0, w, h);
     const body = female ? FEMALE_BODY : BODIES[0];
     const sk = skeleton(POSES.shooterIdle, body);
-    drawFigure(ctx, sk, body, LEOPARDS_KIT(name || "LÉOPARD", number), { sx: w / 2, sy: h * 0.96, s: h * 0.47 }, { facing: "back" });
-  }, [female, name, number]);
+    const withJ = hasJersey(character);
+    drawFigure(ctx, sk, body, LEOPARDS_KIT(name || "LÉOPARD", withJ ? number : 0), { sx: w / 2, sy: h * 0.96, s: h * 0.47 }, { facing: "back" });
+  }, [female, character, name, number]);
 
   // scène 3D
   useEffect(() => {
@@ -292,42 +312,63 @@ export function CharacterPreview({ female, character, name, number, reduced }: {
       const { Camera } = await import("./engine/scene");
       const cam = new Camera();
       state.current = { c3, mod, actor: null, cam, key: "" };
-      setReady(true);
+      setEngineReady(true);
       const start = performance.now();
+      let loadingCid: string | null = null;
+
       const loop = () => {
         const st = state.current;
         if (!st || disposed) return;
         const p = props.current;
-        // personnage chargé à la demande ; l'ancien reste affiché en attendant
+        // personnage chargé à la demande : on attend impérativement le chargement 3D avant d'afficher
         const cid = mod.charFor(p.character, p.female);
         const loaded = c3.isLoaded([cid]);
-        if (!loaded) c3.ensureChars([cid]);
-        const key = `${loaded ? cid : "wait"}|${p.name}|${p.number}`;
-        if (key !== st.key && (loaded || !st.actor)) {
-          if (st.actor) c3.remove(st.actor);
-          st.actor = c3.actor({ ...mod.LEOPARDS_PAINT(p.name || "LÉOPARD", p.number, p.female ? "#6b4128" : "#5a3520"), female: p.female }, loaded ? cid : null);
-          st.actor.inPlace = true;
-          st.key = key;
+        if (!loaded) {
+          if (loadingCid !== cid) {
+            loadingCid = cid;
+            setCharLoaded(false);
+            onLoadedRef.current?.(false);
+            c3.ensureChars([cid]).then(() => {
+              if (!disposed && loadingCid === cid) {
+                setCharLoaded(true);
+                onLoadedRef.current?.(true);
+              }
+            });
+          }
+        } else {
+          const withJersey = mod.hasJersey(cid);
+          const key = `${cid}|${p.name}|${withJersey ? p.number : "no"}`;
+          if (key !== st.key) {
+            if (st.actor) c3.remove(st.actor);
+            st.actor = c3.actor({ ...mod.LEOPARDS_PAINT(p.name || "LÉOPARD", withJersey ? p.number : undefined, p.female ? "#6b4128" : "#5a3520"), female: p.female }, cid);
+            st.actor.inPlace = true;
+            st.key = key;
+            setCharLoaded(true);
+            onLoadedRef.current?.(true);
+          }
         }
-        const w = el.clientWidth;
-        const h = el.clientHeight;
-        cam.x = 0;
-        cam.y = 1.0;
-        cam.z = -3.4;
-        cam.setYaw(0);
-        cam.f = h * 1.55;
-        cam.cx = w / 2;
-        cam.hz = h * 0.5;
-        c3.sync(cam, w, h, { zoom: 1, gx: 0, gy: 0, ox: 0, oy: 0 });
-        c3.setShadowCenter(0, 0);
-        const t = (performance.now() - start) / 1000;
-        // commence de dos (nom + numéro), puis tourne lentement
-        const yaw = p.reduced ? 0.35 : Math.sin(t * 0.55) * 2.6;
-        st.actor.place(0, 0, yaw);
-        // Mixamo : posture debout naturelle (début de l'animation de tête)
-        if (st.actor.rig === "mx") st.actor.pose("header", 0.05);
-        else st.actor.pose("catch", 0.02);
-        c3.render();
+
+        if (st.actor && c3.isLoaded([cid])) {
+          const w = el.clientWidth;
+          const h = el.clientHeight;
+          cam.x = 0;
+          cam.y = 1.0;
+          cam.z = -3.4;
+          cam.setYaw(0);
+          cam.f = h * 1.55;
+          cam.cx = w / 2;
+          cam.hz = h * 0.5;
+          c3.sync(cam, w, h, { zoom: 1, gx: 0, gy: 0, ox: 0, oy: 0 });
+          c3.setShadowCenter(0, 0);
+          const t = (performance.now() - start) / 1000;
+          // commence de dos (nom + numéro), puis tourne lentement
+          const yaw = p.reduced ? 0.35 : Math.sin(t * 0.55) * 2.6;
+          st.actor.place(0, 0, yaw);
+          // Mixamo : posture debout naturelle (début de l'animation de tête)
+          if (st.actor.rig === "mx") st.actor.pose("header", 0.05);
+          else st.actor.pose("catch", 0.02);
+          c3.render();
+        }
         raf = requestAnimationFrame(loop);
       };
       loop();
@@ -340,10 +381,29 @@ export function CharacterPreview({ female, character, name, number, reduced }: {
     };
   }, []);
 
+  const isFullyVisible = engineReady && charLoaded;
+
   return (
-    <div ref={wrap} className="relative h-full w-full">
-      <canvas ref={cv2d} className={`absolute inset-0 h-full w-full transition-opacity duration-300 ${ready ? "opacity-0" : "opacity-100"}`} aria-hidden="true" />
-      <canvas ref={cv3d} className="absolute inset-0 h-full w-full" role="img" aria-label={`Aperçu : ${female ? "ta joueuse" : "ton joueur"} avec le maillot ${name || ""} ${number}`} />
+    <div ref={wrap} className="relative h-full w-full overflow-hidden rounded-2xl bg-black/20">
+      <canvas
+        ref={cv2d}
+        className={`absolute inset-0 h-full w-full transition-opacity duration-300 ${isFullyVisible ? "opacity-0" : "opacity-100"}`}
+        aria-hidden="true"
+      />
+      <canvas
+        ref={cv3d}
+        className={`absolute inset-0 h-full w-full transition-opacity duration-300 ${isFullyVisible ? "opacity-100" : "opacity-0"}`}
+        role="img"
+        aria-label={`Aperçu : ${female ? "ta joueuse" : "ton joueur"} avec le maillot ${name || ""} ${number}`}
+      />
+      {!isFullyVisible && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px] transition-opacity duration-200">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--a-gold)] border-t-transparent" />
+          <span className="mt-2 text-[11px] font-black uppercase tracking-wider text-[var(--a-gold)]">
+            Chargement 3D...
+          </span>
+        </div>
+      )}
     </div>
   );
 }

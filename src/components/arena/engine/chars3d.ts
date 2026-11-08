@@ -6,7 +6,7 @@
 import * as THREE from "three";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { charById, charFor, type CharDef } from "../lib/roster";
+import { charById, charFor, hasJersey, type CharDef } from "../lib/roster";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 import type { Camera } from "./scene";
 import { computeSkin, type SkinInput } from "./skinTransfer";
@@ -606,7 +606,7 @@ export class Actor {
       if (!o.isMesh) return;
       o.frustumCulled = false;
       o.castShadow = true;
-      if (def?.ownOutfit) return;
+      if (def?.ownOutfit || def?.noJersey) return;
       const nm = String(o.name || "");
       const cat = /shirt|hood|sweater|cloth|suit|collar|upperbody|scarf|jacket|top/i.test(nm)
         ? "top"
@@ -634,8 +634,8 @@ export class Actor {
       });
       o.material = Array.isArray(o.material) ? mats : mats[0];
     });
-    // dossard dans le dos
-    if (kit.number) {
+    // dossard dans le dos (uniquement pour les joueurs en maillot officiel)
+    if (kit.number && !def?.ownOutfit && !def?.noJersey) {
       this.model.updateMatrixWorld(true);
       const sp = this.bones[RIG_BONES.mx.spine2] || this.bones[RIG_BONES.mx.spine];
       if (sp) {
@@ -1722,7 +1722,7 @@ export class Chars3D {
 
 /* ------------------------------------------------------------------ */
 
-export const LEOPARDS_PAINT = (name: string, number: number, skin: string, boots = "#1e3a8a"): KitPaint => ({
+export const LEOPARDS_PAINT = (name: string, number: number | string | undefined | null, skin: string, boots = "#1e3a8a"): KitPaint => ({
   base: "#2fa2e3",
   flames: true,
   collar: "#e0263a",
@@ -1731,7 +1731,7 @@ export const LEOPARDS_PAINT = (name: string, number: number, skin: string, boots
   socks: "#2fa2e3",
   boots,
   name,
-  number: String(number),
+  number: number !== undefined && number !== null && String(number).trim() !== "" ? String(number) : undefined,
   numberColor: "#e0263a",
   numberStroke: "#ffffff",
   flag: true,
