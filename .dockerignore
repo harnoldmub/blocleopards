@@ -1,0 +1,13 @@
+node_modules
+.astro
+dist
+.git
+.github
+.claude
+.playwright-cli
+.env
+.env.*
+.DS_Store
+*.fbx
+*.FBX
+*.mp4
