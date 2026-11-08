@@ -217,17 +217,33 @@ export class BasketEngine {
       if (after > 0 && o) {
         const w = clamp(after / 0.4, 0, 1);
         if (o.scored) {
-          // poing levé, puis petits sauts
-          sh.place(this.S.x, this.S.z, yaw, false, Math.max(0, Math.sin(after * 6.5)) * 0.18 * w);
-          sh.aim(B.rUpper, B.rFore, new V(-0.2, 1, 0.1), w);
-          sh.aim(B.rFore, B.rHand, new V(0, 1, 0.05), w);
-          sh.aim(B.lUpper, B.lFore, new V(0.45, -0.6, 0.5), w);
-          sh.aim(B.lFore, B.lHand, new V(-0.2, 0.5, 1), w);
+          // Célébrations variées : clapping, praying, twist, ou poing levé
+          const celePool: ("clapping" | "praying" | "twist")[] = ["clapping", "praying", "twist"];
+          const celePick = celePool[(this.s.shot + this.s.seed) % celePool.length];
+          if (sh.has(celePick)) {
+            sh.place(this.S.x, this.S.z, yaw, false, 0);
+            sh.pose(celePick, (after * 1.1) % sh.duration(celePick));
+          } else {
+            // poing levé, puis petits sauts
+            sh.place(this.S.x, this.S.z, yaw, false, Math.max(0, Math.sin(after * 6.5)) * 0.18 * w);
+            sh.aim(B.rUpper, B.rFore, new V(-0.2, 1, 0.1), w);
+            sh.aim(B.rFore, B.rHand, new V(0, 1, 0.05), w);
+            sh.aim(B.lUpper, B.lFore, new V(0.45, -0.6, 0.5), w);
+            sh.aim(B.lFore, B.lHand, new V(-0.2, 0.5, 1), w);
+          }
         } else {
-          sh.aim(B.lUpper, B.lFore, new V(0.55, 0.8, 0.15), w);
-          sh.aim(B.rUpper, B.rFore, new V(-0.55, 0.8, 0.15), w);
-          sh.aim(B.lFore, B.lHand, new V(-0.85, 0.35, 0), w);
-          sh.aim(B.rFore, B.rHand, new V(0.85, 0.35, 0), w);
+          // Déception variée : angry, defeated, ou miss
+          const missPool: ("angry" | "defeated" | "miss")[] = ["angry", "defeated", "miss"];
+          const missPick = missPool[(this.s.shot + this.s.seed) % missPool.length];
+          if (sh.has(missPick)) {
+            sh.place(this.S.x, this.S.z, yaw, false, 0);
+            sh.pose(missPick, Math.min(sh.duration(missPick) - 0.05, after * 0.9));
+          } else {
+            sh.aim(B.lUpper, B.lFore, new V(0.55, 0.8, 0.15), w);
+            sh.aim(B.rUpper, B.rFore, new V(-0.55, 0.8, 0.15), w);
+            sh.aim(B.lFore, B.lHand, new V(-0.85, 0.35, 0), w);
+            sh.aim(B.rFore, B.rHand, new V(0.85, 0.35, 0), w);
+          }
         }
       } else {
         // armé (ballon au-dessus du front) → extension → poignet cassé vers le cercle

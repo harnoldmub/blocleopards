@@ -1442,8 +1442,8 @@ export class FootEngine {
   }
 
   /** Célébration variée à chaque but. */
-  private celebrationKind(): "glissade" | "poing" | "avion" | "siuu" | "salut" | "coeur" {
-    const list = ["siuu", "salut", "avion", "coeur", "glissade", "poing"] as const;
+  private celebrationKind(): "glissade" | "poing" | "avion" | "siuu" | "salut" | "coeur" | "clapping" | "praying" {
+    const list = ["siuu", "salut", "avion", "coeur", "glissade", "poing", "clapping", "praying"] as const;
     return list[(this.setupData.shot + (this.setupData.seed % 7)) % list.length];
   }
 
@@ -1731,11 +1731,16 @@ export class FootEngine {
     const P = this.celeb;
     sh.inPlace = true;
     const into = clamp(c / 0.4, 0, 1);
-    if (!scored && !this.setupData.reduced && sh.has("miss")) {
-      // déception jouée (saut de rage, mains sur la tête)
-      sh.place(P.x, P.z, 0);
-      sh.blend("kick", END, "miss", Math.min(sh.duration("miss") - 0.05, c * 0.9), into);
-      return;
+    if (!scored && !this.setupData.reduced) {
+      // Réactions variées en cas de tir raté : miss (saut déçu), angry (colère/rage), defeated (abattu)
+      const missPool: ("miss" | "angry" | "defeated")[] = ["miss", "angry", "defeated"];
+      const missPick = missPool[(this.setupData.shot + (this.setupData.seed % 5)) % missPool.length];
+      const clip = sh.has(missPick) ? missPick : sh.has("miss") ? "miss" : null;
+      if (clip) {
+        sh.place(P.x, P.z, 0);
+        sh.blend("kick", END, clip, Math.min(sh.duration(clip) - 0.05, c * 0.9), into);
+        return;
+      }
     }
     if (!scored || this.setupData.reduced) {
       // déception : mains sur la tête
@@ -1755,6 +1760,20 @@ export class FootEngine {
     }
     const kind = this.celebrationKind();
     const turn = Math.PI * easeInOut(clamp(c / 0.45, 0, 1));
+    if (kind === "clapping") {
+      const clip = sh.has("clapping") ? "clapping" : "twist";
+      const dur = sh.duration(clip);
+      sh.place(P.x, P.z, turn);
+      sh.blend("kick", END, clip, (0.2 + c) % dur, into);
+      return;
+    }
+    if (kind === "praying") {
+      const clip = sh.has("praying") ? "praying" : "twist";
+      const dur = sh.duration(clip);
+      sh.place(P.x, P.z, turn);
+      sh.blend("kick", END, clip, Math.min(dur - 0.05, c * 0.9), into);
+      return;
+    }
     if (kind === "siuu") {
       const jump = c < 0.65 ? Math.sin((c / 0.65) * Math.PI) * 0.42 : 0;
       const rot = easeInOut(clamp(c / 0.55, 0, 1)) * Math.PI;

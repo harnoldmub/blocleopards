@@ -31,7 +31,7 @@ function runSkin(input: SkinInput): Promise<{ skI: Uint16Array; skW: Float32Arra
   }
 }
 
-export type ClipName = "kick" | "dive" | "catch" | "scoop" | "twist" | "bboy" | "dribble" | "header" | "jump" | "side" | "miss";
+export type ClipName = "kick" | "dive" | "catch" | "scoop" | "twist" | "bboy" | "dribble" | "header" | "jump" | "side" | "miss" | "angry" | "defeated" | "clapping" | "praying";
 const FILES: Record<"kick" | "dive" | "catch" | "scoop" | "twist" | "bboy" | "dribble", string> = {
   kick: "kick.fbx",
   dive: "dive.fbx",
@@ -122,7 +122,16 @@ export { ROSTER, charById, charFor, pickChar, defaultChar } from "../lib/roster"
 export type { CharDef } from "../lib/roster";
 
 /** Squelette classique : rôles sans fichier dédié → animation la plus proche. */
-const BIP_FALLBACK: Partial<Record<ClipName, ClipName>> = { jump: "catch", header: "catch", side: "catch", miss: "catch" };
+const BIP_FALLBACK: Partial<Record<ClipName, ClipName>> = {
+  jump: "catch",
+  header: "catch",
+  side: "catch",
+  miss: "catch",
+  angry: "catch",
+  defeated: "catch",
+  clapping: "catch",
+  praying: "catch"
+};
 
 /** Rôles d'animation → fichiers Mixamo (danses selon le sexe). */
 const MX_ROLE: Record<string, { m: string; f: string }> = {
@@ -135,9 +144,30 @@ const MX_ROLE: Record<string, { m: string; f: string }> = {
   bboy: { m: "dance-wave", f: "dance-macarena" },
   header: { m: "header", f: "header" },
   side: { m: "side-a", f: "side-a" },
-  miss: { m: "miss", f: "miss" }
+  miss: { m: "miss", f: "miss" },
+  angry: { m: "angry", f: "angry" },
+  defeated: { m: "defeated", f: "defeated" },
+  clapping: { m: "clapping", f: "clapping" },
+  praying: { m: "praying", f: "praying" }
 };
-const MX_FILES = ["kick", "dive-a", "catch-c", "catch-a", "block-b", "dance-arms", "dance-booty", "dance-wave", "dance-macarena", "header", "side-a", "miss"];
+const MX_FILES = [
+  "kick",
+  "dive-a",
+  "catch-c",
+  "catch-a",
+  "block-b",
+  "dance-arms",
+  "dance-booty",
+  "dance-wave",
+  "dance-macarena",
+  "header",
+  "side-a",
+  "miss",
+  "angry",
+  "defeated",
+  "clapping",
+  "praying"
+];
 
 /** Recolore un vêtement en gardant ses plis (luminance × couleur d'équipe). */
 const tintCache = new Map<string, THREE.Texture>();
