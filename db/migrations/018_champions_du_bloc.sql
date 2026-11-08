@@ -36,3 +36,4 @@ CREATE TABLE IF NOT EXISTS champions_records (
 );
 
 CREATE INDEX IF NOT EXISTS idx_champions_records_game_score ON champions_records(game, best_score DESC, updated_at ASC);
+

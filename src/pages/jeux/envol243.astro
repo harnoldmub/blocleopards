@@ -1,0 +1,25 @@
+---
+import "../../styles/global.css";
+import "../../components/arena/arena.css";
+import SEO from "../../components/SEO.astro";
+import EnvolStandaloneApp from "../../components/arena/EnvolStandaloneApp.tsx";
+
+const pageTitle = "Envol 243 · Jeu 3D à Kinshasa (Mises & Cashout Fictif) | Bloc Léopards";
+const pageDescription = "Mise ton argent fictif, observe l'avion décoller sur le Boulevard du 30 Juin et encaisse avant qu'il ne disparaisse dans les nuages. Jeu 100% gratuit entre supporters des Léopards.";
+---
+
+<!doctype html>
+<html lang="fr" class="h-full bg-[#070e24]">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#070e24" />
+    <SEO title={pageTitle} description={pageDescription} url="https://blocleopards.com/jeux/envol243" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="preload" as="image" href="/brand/logo-arena.webp" />
+  </head>
+  <body class="h-[100dvh] overflow-hidden bg-[#070e24] text-white antialiased select-none">
+    <noscript><p style="padding:24px;color:#fff">Envol 243 nécessite JavaScript pour le rendu 3D WebGL.</p></noscript>
+    <EnvolStandaloneApp client:only="react" />
+  </body>
+</html>

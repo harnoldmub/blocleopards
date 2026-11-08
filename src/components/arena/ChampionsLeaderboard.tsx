@@ -48,7 +48,7 @@ export default function ChampionsLeaderboard({
   const scoreLabel = (g: ArenaGame, s: number) => {
     if (g === "foot") return `${s} ${s > 1 ? "tirs d'affilée" : "tir réussi"}`;
     if (g === "basket") return `${s} ${s > 1 ? "paniers d'affilée" : "panier réussi"}`;
-    return `${s.toLocaleString("fr-FR")} pts`;
+    return `${s.toLocaleString("fr-FR")} CDF (fictif)`;
   };
 
   const p1 = top[0];
@@ -124,7 +124,7 @@ export default function ChampionsLeaderboard({
         {/* Filtre Période */}
         <div className="mt-2.5 flex items-center justify-between text-[12px]">
           <span className="font-semibold text-white/50">
-            {game === "envol" ? "Total sur 3 vols" : "Plus longue série d'affilée"}
+            {game === "envol" ? "Meilleur gain en vol (CDF virtuels)" : "Plus longue série d'affilée"}
           </span>
           <div className="inline-flex rounded-xl bg-black/20 p-0.5">
             <button
@@ -325,3 +325,4 @@ export default function ChampionsLeaderboard({
     </div>
   );
 }
+
