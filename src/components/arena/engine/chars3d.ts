@@ -31,7 +31,27 @@ function runSkin(input: SkinInput): Promise<{ skI: Uint16Array; skW: Float32Arra
   }
 }
 
-export type ClipName = "kick" | "dive" | "catch" | "scoop" | "twist" | "bboy" | "dribble" | "header" | "jump" | "side" | "miss" | "angry" | "defeated" | "clapping" | "praying";
+export type ClipName =
+  | "kick"
+  | "dive"
+  | "catch"
+  | "scoop"
+  | "twist"
+  | "bboy"
+  | "dribble"
+  | "header"
+  | "jump"
+  | "side"
+  | "miss"
+  | "angry"
+  | "defeated"
+  | "clapping"
+  | "praying"
+  | "direct-wall"
+  | "keeper-idle"
+  | "fallen"
+  | "kick-up"
+  | "scissor-kick";
 const FILES: Record<"kick" | "dive" | "catch" | "scoop" | "twist" | "bboy" | "dribble", string> = {
   kick: "kick.fbx",
   dive: "dive.fbx",
@@ -130,7 +150,12 @@ const BIP_FALLBACK: Partial<Record<ClipName, ClipName>> = {
   angry: "catch",
   defeated: "catch",
   clapping: "catch",
-  praying: "catch"
+  praying: "catch",
+  "direct-wall": "catch",
+  "keeper-idle": "catch",
+  fallen: "catch",
+  "kick-up": "twist",
+  "scissor-kick": "kick"
 };
 
 /** Rôles d'animation → fichiers Mixamo (danses selon le sexe). */
@@ -148,7 +173,12 @@ const MX_ROLE: Record<string, { m: string; f: string }> = {
   angry: { m: "angry", f: "angry" },
   defeated: { m: "defeated", f: "defeated" },
   clapping: { m: "clapping", f: "clapping" },
-  praying: { m: "praying", f: "praying" }
+  praying: { m: "praying", f: "praying" },
+  "direct-wall": { m: "direct-wall", f: "direct-wall" },
+  "keeper-idle": { m: "keeper-idle", f: "keeper-idle" },
+  fallen: { m: "fallen", f: "fallen" },
+  "kick-up": { m: "kick-up", f: "kick-up" },
+  "scissor-kick": { m: "scissor-kick", f: "scissor-kick" }
 };
 const MX_FILES = [
   "kick",
@@ -166,7 +196,12 @@ const MX_FILES = [
   "angry",
   "defeated",
   "clapping",
-  "praying"
+  "praying",
+  "direct-wall",
+  "keeper-idle",
+  "fallen",
+  "kick-up",
+  "scissor-kick"
 ];
 
 /** Recolore un vêtement en gardant ses plis (luminance × couleur d'équipe). */

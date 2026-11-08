@@ -1442,9 +1442,9 @@ export class FootEngine {
   }
 
   /** Célébration variée à chaque but. */
-  private celebrationKind(): "glissade" | "poing" | "avion" | "siuu" | "salut" | "coeur" | "clapping" | "praying" {
-    const list = ["siuu", "salut", "avion", "coeur", "glissade", "poing", "clapping", "praying"] as const;
-    return list[(this.setupData.shot + (this.setupData.seed % 7)) % list.length];
+  private celebrationKind(): "glissade" | "poing" | "avion" | "siuu" | "salut" | "coeur" | "clapping" | "praying" | "kick-up" | "scissor-kick" {
+    const list = ["siuu", "salut", "avion", "coeur", "glissade", "poing", "clapping", "praying", "kick-up", "scissor-kick"] as const;
+    return list[(this.setupData.shot + (this.setupData.seed % 9)) % list.length];
   }
 
   private celebrationSpot() {
@@ -1593,15 +1593,28 @@ export class FootEngine {
     const kz = D - KEEPER_DZ;
     const d = this.dive;
     kp.motionScale = { x: 1, y: 0, z: 1, lift: 0 };
-    if (this.phase === "aim" || this.phase === "runup" || !d) {
+    const goalScored = this.outcome && this.outcome.scored;
+    const sinceOutcome = this.outcome ? this.t - this.resolvedAt : -1;
+    if (goalScored && sinceOutcome > 0.4 && kp.has("fallen")) {
+      kp.inPlace = true;
+      kp.place(kx, kz, Math.PI);
+      kp.pose("fallen", Math.min(kp.duration("fallen") - 0.05, (sinceOutcome - 0.4) * 0.9));
+    } else if (this.phase === "aim" || this.phase === "runup" || !d) {
       const sway = Math.sin(this.t * 1.6) * 0.22 * (this.phase === "runup" ? 1 - clamp(this.phaseT / 0.35, 0, 1) : 1);
       const shuffle = this.phase === "aim" ? Math.sin(this.t * 5.2) * 0.035 : 0;
       const hop = this.phase === "runup" ? 0.1 * Math.sin(clamp((this.phaseT - (RUN - 0.24)) / 0.24, 0, 1) * Math.PI) : (this.phase === "aim" ? Math.abs(Math.sin(this.t * 4.4)) * 0.025 : 0);
       kp.inPlace = true;
       kp.place(kx + sway + shuffle, kz, Math.PI, false, hop);
-      kp.pose("catch", 0.02);
-      // posture de gardien : fléchi, sur les appuis, bras ouverts paumes vers le tireur
-      {
+
+      if (this.phase === "aim" && s.stage.wall > 0 && kp.has("direct-wall")) {
+        const dDur = kp.duration("direct-wall");
+        kp.pose("direct-wall", (this.t * 0.85) % Math.max(1, dDur));
+      } else if (kp.has("keeper-idle")) {
+        const kDur = kp.duration("keeper-idle");
+        kp.pose("keeper-idle", (this.t * 0.8) % Math.max(1, kDur));
+      } else {
+        kp.pose("catch", 0.02);
+        // posture de gardien : fléchi, sur les appuis, bras ouverts paumes vers le tireur
         const V = this.c3m!.THREE.Vector3;
         const bounce = Math.abs(Math.sin(this.t * 4.2)) * (this.setupData.reduced ? 0 : 1);
         kp.dropHips(0.14 + bounce * 0.035);
@@ -1772,6 +1785,20 @@ export class FootEngine {
       const dur = sh.duration(clip);
       sh.place(P.x, P.z, turn);
       sh.blend("kick", END, clip, Math.min(dur - 0.05, c * 0.9), into);
+      return;
+    }
+    if (kind === "kick-up") {
+      const clip = sh.has("kick-up") ? "kick-up" : "twist";
+      const dur = sh.duration(clip);
+      sh.place(P.x, P.z, turn);
+      sh.blend("kick", END, clip, (0.1 + c) % dur, into);
+      return;
+    }
+    if (kind === "scissor-kick") {
+      const clip = sh.has("scissor-kick") ? "scissor-kick" : "kick";
+      const dur = sh.duration(clip);
+      sh.place(P.x, P.z, turn);
+      sh.blend("kick", END, clip, Math.min(dur - 0.05, c * 0.85), into);
       return;
     }
     if (kind === "siuu") {
