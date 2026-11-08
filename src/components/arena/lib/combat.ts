@@ -81,3 +81,4 @@ export const COMBAT_MOVES: Record<string, CombatMove> = {
     description: "Réaction d'encaissement suite à un coup direct au visage."
   }
 };
+

@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { Flame, Hand, LoaderCircle, Pause, RotateCcw, Volume2, VolumeX } from "lucide-react";
+import { Flame, Hand, LoaderCircle, Pause, RotateCcw, User, Volume2, VolumeX } from "lucide-react";
 import type { GameId } from "./lib/config";
 import { FootEngine, type FootSetup, type ShotOutcome } from "./engine/foot";
 import { BasketEngine, type BasketSetup } from "./engine/basket";
+import { hasJersey, charById } from "./lib/roster";
 
 type AnyEngine = FootEngine | BasketEngine;
 
@@ -408,6 +409,27 @@ export default function GameView(props: {
           </div>
         </div>
       )}
+
+      {/* Badge nom du joueur en bas à droite */}
+      <aside
+        className="pointer-events-none absolute bottom-4 right-3 z-30 select-none safe-bottom"
+        aria-label="Joueur actif"
+      >
+        <div className="flex items-center gap-2 rounded-2xl bg-[rgba(4,10,26,0.82)] px-3 py-1.5 shadow-[0_4px_16px_rgba(0,0,0,0.55),inset_0_0_0_1px_rgba(255,255,255,0.14)] backdrop-blur-md">
+          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-xl bg-[var(--a-gold)] text-[#1a1300] shadow-[0_0_10px_rgba(244,196,0,0.35)]">
+            <User size={13} strokeWidth={2.8} />
+          </div>
+          <div className="flex flex-col text-left leading-tight">
+            <span className="text-[9px] font-black uppercase tracking-widest text-[var(--a-gold)]">
+              {charById(props.setup.character)?.label || (props.setup.female ? "Joueuse" : "Joueur")}
+            </span>
+            <span className="text-[13px] font-black tracking-wide text-white">
+              {hud.player?.name || props.setup.name || "Léopard"}
+              {hasJersey(props.setup.character) && props.setup.number ? ` · N°${props.setup.number}` : ""}
+            </span>
+          </div>
+        </div>
+      </aside>
     </div>
   );
 }

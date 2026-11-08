@@ -118,7 +118,7 @@ export const RIG_BONES: Record<Rig, Record<keyof typeof BONE, string>> = {
 /** Noms Mixamo normalisés : « mixamorig10:Hips » → « mx_Hips » (même nom quel que soit le préfixe). */
 export const mxName = (n: string) => n.replace(/mixamorig\d*:?/g, "mx_");
 
-export { ROSTER, charById, charFor, pickChar, defaultChar } from "../lib/roster";
+export { ROSTER, charById, charFor, pickChar, defaultChar, hasJersey } from "../lib/roster";
 export type { CharDef } from "../lib/roster";
 
 /** Squelette classique : rôles sans fichier dédié → animation la plus proche. */
@@ -1396,7 +1396,10 @@ export class Chars3D {
   private loadMxClips() {
     if (this.mxClipsLoading) return this.mxClipsLoading;
     this.mxClipsLoading = (async () => {
-      const loader = new FBXLoader();
+      const manager = new THREE.LoadingManager();
+      const EMPTY = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+      manager.setURLModifier((url) => (/\.(png|jpe?g|tga|psd|bmp|tiff?)$/i.test(url) ? EMPTY : url));
+      const loader = new FBXLoader(manager);
       await Promise.all(
         MX_FILES.map(async (f) => {
           try {
