@@ -671,7 +671,7 @@ export class Actor {
       if (!o.isMesh) return;
       o.frustumCulled = false;
       o.castShadow = true;
-      if (def?.ownOutfit || def?.noJersey) return;
+      if (def?.ownOutfit) return;
       const nm = String(o.name || "");
       const cat = /shirt|hood|sweater|cloth|suit|collar|upperbody|scarf|jacket|top/i.test(nm)
         ? "top"

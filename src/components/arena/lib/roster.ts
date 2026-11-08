@@ -23,12 +23,12 @@ export const ROSTER: CharDef[] = [
   { id: "leopard", label: "Le Léopard", female: false, rig: "bip", skin: "#5a3520", roleHint: "Capitaine" },
   { id: "ilunga", label: "Ilunga", female: false, rig: "mx", file: "chars/ilunga.glb", skin: "#4a2c1a", roleHint: "Défenseur" },
   { id: "kabasele", label: "Kabasele", female: false, rig: "mx", file: "chars/kabasele.glb", ownOutfit: true, noJersey: true, skin: "#3d2416", roleHint: "Tenue civile" },
-  { id: "mbala", label: "Mbala", female: false, rig: "mx", file: "chars/mbala.glb", skin: "#7a4b2e", roleHint: "Attaquant" },
+  { id: "mbala", label: "Mbala", female: false, rig: "mx", file: "chars/mbala.glb", noJersey: true, skin: "#7a4b2e", roleHint: "Attaquant" },
   { id: "ty", label: "Mundels", female: false, rig: "mx", file: "chars/ty.glb", cartoon: true, ownOutfit: true, noJersey: true, skin: "#7a4b2e", roleHint: "Streetwear" },
   { id: "leoparde", label: "La Léoparde", female: true, rig: "bip", skin: "#6b4128", roleHint: "Capitaine" },
   { id: "grace", label: "Dee", female: true, rig: "mx", file: "chars/grace.glb", skin: "#c69a7a", roleHint: "Meneuse" },
-  { id: "nadege", label: "Nadège", female: true, rig: "mx", file: "chars/nadege.glb", skin: "#c69a7a", roleHint: "Ailière" },
-  { id: "megan", label: "Megan", female: true, rig: "mx", file: "chars/megan.glb", skin: "#c69a7a", roleHint: "Pivot" },
+  { id: "nadege", label: "Nadège", female: true, rig: "mx", file: "chars/nadege.glb", ownOutfit: true, noJersey: true, skin: "#c69a7a", roleHint: "Tenue civile" },
+  { id: "megan", label: "Megan", female: true, rig: "mx", file: "chars/megan.glb", noJersey: true, skin: "#c69a7a", roleHint: "Pivot" },
   { id: "amy", label: "Métiola", female: true, rig: "mx", file: "chars/amy.glb", cartoon: true, ownOutfit: true, noJersey: true, skin: "#e5b49a", roleHint: "Tenue civile" }
 ];
 
