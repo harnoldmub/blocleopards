@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, ChevronRight, Pencil, Lock, Minus, Music, Play, Plus, RotateCcw, Share2, Swords, Trophy, Volume2, VolumeX } from "lucide-react";
+import { ArrowLeft, ChevronRight, Pencil, Lock, Minus, Music, Play, Plus, RotateCcw, Share2, SlidersHorizontal, Swords, Trophy, Volume2, VolumeX } from "lucide-react";
 import "./arena.css";
 import GameView, { type Hud, type Splash } from "./GameView";
 import ChampionsLeaderboard from "./ChampionsLeaderboard";
@@ -185,10 +185,10 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
 
   /* ---------------- Démarrage d'une partie ---------------- */
 
-  function start() {
+  function start(overrideGame?: GameId, overrideMode?: Mode, overrideStage?: number) {
     audio.unlock();
-    const mode = setupMode;
-    const game = mode === "defi" && challenge ? challenge.g : setupGame;
+    const mode = overrideMode || setupMode;
+    const game = mode === "defi" && challenge ? challenge.g : (overrideGame || setupGame);
     const diff = mode === "defi" && challenge ? challenge.d : save.diff;
     let players: Player[];
     const shotsFor = mode === "survie" || mode === "chrono" ? 10 : 5;
@@ -200,11 +200,12 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
       players = [newPlayer(n, solo.number, PLAYER_COLORS[0], shotsFor, solo.female)];
       update((d) => ({ ...d, name: n, number: solo.number, female: solo.female }));
     }
+    const stageIdx = overrideStage !== undefined ? overrideStage : stagePick;
     const s: Session = {
       game,
       mode,
       diff,
-      stageIdx: stagePick,
+      stageIdx,
       seed: mode === "defi" && challenge ? challenge.seed : randomSeed(),
       players,
       current: 0,
@@ -222,6 +223,24 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
     setScreen("play");
     if (!save.tutorial[game]) setTutorial(game);
     else if (mode === "duel") setHandoff(0);
+  }
+
+  function handlePlayDirect(g: GameId) {
+    if (g === "envol") {
+      window.location.href = "/jeux/envol243";
+      return;
+    }
+    if (!save.name) {
+      setOnboarding(true);
+      return;
+    }
+    const prog = progressOf(save, g, save.diff);
+    const maxStage = (g === "foot" ? FOOT_STAGES.length : BASKET_STAGES.length) - 1;
+    const stage = Math.max(0, Math.min(maxStage, prog.unlocked - 1));
+    setSetupGame(g);
+    setSetupMode("carriere");
+    setStagePick(stage);
+    start(g, "carriere", stage);
   }
 
   /** Lance directement un défi : reçu (mêmes tirs que l'ami) ou nouveau (à envoyer ensuite). */
@@ -684,13 +703,8 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
           playerTag={playerSession?.public_tag}
           reduced={reduced}
           challenge={challenge}
-          onPick={(g) => {
-            if (g === "envol") {
-              window.location.href = "/jeux/envol243";
-            } else {
-              openSetup(g, "carriere");
-            }
-          }}
+          onPlayDirect={handlePlayDirect}
+          onOpenSetup={(g) => openSetup(g, "carriere")}
           onOpenChampions={() => setShowChampions(true)}
           onDuel={() => openSetup("foot", "duel")}
           onChallenge={() => challenge && startDefi(challenge.g, challenge)}
@@ -783,15 +797,6 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
           reduced={reduced}
           challenge={challenge}
           prog={prog}
-          onGame={(g) => {
-            setSetupGame(g);
-            if (setupMode === "survie" && g === "basket") setSetupMode("chrono");
-            if (setupMode === "chrono" && g === "foot") setSetupMode("survie");
-            setStagePick(Math.max(0, progressOf(save, g, save.diff).unlocked - 1));
-          }}
-          onCharacter={(cid) => {
-            update((d) => ({ ...d, character: cid }));
-          }}
           onMode={setSetupMode}
           onStage={setStagePick}
           onDiff={(d) => {
@@ -801,8 +806,8 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
           onNames={setNames}
           genders={genders}
           onGenders={setGenders}
-          onSolo={setSolo}
           onClose={() => setSheet(null)}
+          onEditProfile={() => setSheet("profile")}
           onStart={() => {
             if (setupMode === "defi" && !challenge) {
               startDefi(setupGame, null);
@@ -845,7 +850,7 @@ export default function ArenaApp({ initialGame = null }: { initialGame?: GameId 
             if (onboarding) {
               setOnboarding(false);
               if (initialGame) {
-                openSetup(initialGame, "carriere");
+                handlePlayDirect(initialGame);
               }
             }
           }}
@@ -930,7 +935,8 @@ function Home(props: {
   playerTag?: string;
   reduced: boolean;
   challenge: Challenge | null;
-  onPick: (g: GameId) => void;
+  onPlayDirect: (g: GameId) => void;
+  onOpenSetup: (g: GameId) => void;
   onOpenChampions: () => void;
   onDuel: () => void;
   onChallenge: () => void;
@@ -1033,10 +1039,15 @@ function Home(props: {
             const totalStages = g === "foot" ? FOOT_STAGES.length : BASKET_STAGES.length;
             const p = prog(g);
             return (
-              <button key={g} className="a-game-card group" onClick={() => props.onPick(g)} aria-label={`Jouer : ${GAME_META[g].title}`}>
-                <div className="aspect-[16/10] sm:aspect-[4/3] w-full overflow-hidden">
+              <div key={g} className="a-game-card group flex flex-col text-left">
+                <button
+                  type="button"
+                  className="aspect-[16/10] sm:aspect-[4/3] w-full overflow-hidden text-left cursor-pointer focus:outline-none"
+                  onClick={() => props.onPlayDirect(g)}
+                  aria-label={`Lancer directement : ${GAME_META[g].title}`}
+                >
                   <GamePreview game={g} reduced={props.reduced} />
-                </div>
+                </button>
                 <div className="flex flex-1 flex-col p-3 sm:p-4">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[var(--a-gold)]">
@@ -1046,9 +1057,13 @@ function Home(props: {
                       {totalStages} Paliers
                     </span>
                   </div>
-                  <span className="display mt-0.5 text-[22px] sm:text-[26px] transition-colors group-hover:text-[var(--a-gold)]">
+                  <button
+                    type="button"
+                    onClick={() => props.onPlayDirect(g)}
+                    className="display mt-0.5 text-left text-[22px] sm:text-[26px] transition-colors hover:text-[var(--a-gold)] cursor-pointer"
+                  >
                     {GAME_META[g].title}
-                  </span>
+                  </button>
                   <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] text-[var(--a-muted)]">
                     <span className="font-bold text-white/90">Palier {p.unlocked}/{totalStages}</span>
                     <span aria-label="Étoiles gagnées" className="text-[var(--a-gold)]">★ {p.stars.reduce((a, b) => a + b, 0)}/{totalStages * 3}</span>
@@ -1059,11 +1074,27 @@ function Home(props: {
                     </span>
                   )}
                   <span className="h-3" aria-hidden="true" />
-                  <span className="a-btn a-btn-primary mt-auto min-h-[44px] w-full text-[14px] shadow-[0_4px_16px_rgba(244,196,0,0.25)]">
-                    <Play size={16} fill="currentColor" /> Jouer
-                  </span>
+                  <div className="mt-auto flex items-center gap-2 pt-2">
+                    <button
+                      type="button"
+                      className="a-btn a-btn-primary min-h-[44px] flex-1 text-[15px] font-black shadow-[0_4px_16px_rgba(244,196,0,0.25)]"
+                      onClick={() => props.onPlayDirect(g)}
+                    >
+                      <Play size={16} fill="currentColor" /> Jouer · Palier {p.unlocked}
+                    </button>
+                    <button
+                      type="button"
+                      className="a-btn a-btn-secondary min-h-[44px] px-3.5 text-[12px] font-bold text-white/90"
+                      onClick={() => props.onOpenSetup(g)}
+                      title="Choisir un palier ou un mode"
+                      aria-label={`Paliers et modes pour ${GAME_META[g].title}`}
+                    >
+                      <SlidersHorizontal size={15} />
+                      <span className="hidden sm:inline">Paliers</span>
+                    </button>
+                  </div>
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>
@@ -1122,28 +1153,24 @@ function SetupSheet(props: {
   reduced: boolean;
   challenge: Challenge | null;
   prog: (g: GameId) => { unlocked: number; stars: number[] };
-  onGame: (g: GameId) => void;
-  onCharacter: (cid: string) => void;
   onMode: (m: Mode) => void;
   onStage: (i: number) => void;
   onDiff: (d: Difficulty) => void;
   onNames: (n: string[]) => void;
   genders: boolean[];
   onGenders: (g: boolean[]) => void;
-  onSolo: (s: { name: string; number: number; female: boolean }) => void;
   onClose: () => void;
   onStart: () => void;
   onStartDefi: (g: GameId) => void;
+  onEditProfile?: () => void;
 }) {
   const { game, mode, save } = props;
   const isDefi = mode === "defi" && props.challenge;
   const g = isDefi ? props.challenge!.g : game;
   const prog = props.prog(g);
   const stages = g === "foot" ? FOOT_STAGES : BASKET_STAGES;
-  const soloOk = props.solo.name.trim().length > 0;
   const duelOk = props.names.every((n) => n.trim().length > 0);
-  const [charReady, setCharReady] = useState(true);
-  const canStart = (mode === "duel" ? duelOk : soloOk) && charReady;
+  const canStart = mode === "duel" ? duelOk : true;
 
   return (
     <Sheet
@@ -1151,16 +1178,7 @@ function SetupSheet(props: {
       onClose={props.onClose}
       footer={
         <button type="submit" form="setup-form" className="a-btn a-btn-primary w-full text-[17px]" disabled={!canStart}>
-          {!charReady ? (
-            <span className="flex items-center justify-center gap-2">
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              Chargement du joueur 3D...
-            </span>
-          ) : (
-            <>
-              <Play size={18} fill="currentColor" /> {mode === "defi" ? "Lancer le Défi" : mode === "duel" ? "Lancer le Duel" : "Entrer sur le Terrain"}
-            </>
-          )}
+          <Play size={18} fill="currentColor" /> {mode === "defi" ? "Lancer le Défi" : mode === "duel" ? "Lancer le Duel" : "Entrer sur le Terrain"}
         </button>
       }
     >
@@ -1172,154 +1190,33 @@ function SetupSheet(props: {
           if (canStart) props.onStart();
         }}
       >
-        {/* ÉTAPE 1 : Choix du jeu */}
-        <div className="rounded-2xl bg-[rgba(255,255,255,0.04)] p-3 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]">
-          <div className="flex items-center justify-between">
-            <span className="text-[12px] font-black uppercase tracking-wider text-[var(--a-gold)]">
-              1. Choix du Jeu
-            </span>
-            {!isDefi ? (
-              <div className="a-seg !mb-0 !w-auto" role="radiogroup" aria-label="Jeu">
-                {(["foot", "basket"] as GameId[]).map((x) => (
-                  <button type="button" key={x} role="radio" aria-checked={game === x} onClick={() => props.onGame(x)}>
-                    {GAME_META[x].short}
-                  </button>
-                ))}
+        {/* Résumé du joueur & jeu actif */}
+        <div className="flex items-center justify-between rounded-2xl bg-[rgba(255,255,255,0.04)] p-3.5 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[rgba(244,196,0,0.15)] text-[22px] shadow-[inset_0_0_0_1px_rgba(244,196,0,0.3)]">
+              {g === "foot" ? "⚽" : "🏀"}
+            </div>
+            <div>
+              <div className="text-[15px] font-extrabold text-white">
+                {props.solo.name || "Léopard"}
               </div>
-            ) : (
-              <span className="text-[12px] font-bold text-white/80">{GAME_META[g].short}</span>
-            )}
+              <div className="text-[12px] font-medium text-white/60">
+                N°{props.solo.number || 10} · {props.solo.female ? "Joueuse" : "Joueur"} · {GAME_META[g].title}
+              </div>
+            </div>
           </div>
+          {props.onEditProfile && (
+            <button
+              type="button"
+              className="a-btn a-btn-secondary min-h-[36px] px-3 text-[12px] font-bold"
+              onClick={props.onEditProfile}
+            >
+              <Pencil size={13} /> Modifier
+            </button>
+          )}
         </div>
 
-        {/* ÉTAPE 2 : Ton personnage */}
-        <fieldset className="min-w-0 rounded-2xl bg-[rgba(255,255,255,0.04)] p-3.5 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]">
-          <legend className="px-1 text-[12px] font-black uppercase tracking-wider text-[var(--a-gold)]">
-            2. Ton Personnage Léopard
-          </legend>
-
-          <div className="mx-auto h-[180px] w-full max-w-[220px]">
-            <CharacterPreview
-              female={props.solo.female}
-              character={props.character}
-              name={props.solo.name}
-              number={props.solo.number}
-              reduced={props.reduced}
-              onLoadedChange={setCharReady}
-            />
-          </div>
-
-          <div className="a-seg mt-2" role="radiogroup" aria-label="Genre">
-            {[false, true].map((f) => (
-              <button
-                type="button"
-                key={String(f)}
-                role="radio"
-                aria-checked={props.solo.female === f}
-                onClick={() => {
-                  props.onSolo({ ...props.solo, female: f });
-                  props.onCharacter(charFor(null, f));
-                }}
-              >
-                {f ? "Joueuse" : "Joueur"}
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-2.5">
-            <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-white/60">
-              {props.solo.female ? "Héroïnes Léopards" : "Figures du Onze des Léopards"}
-            </span>
-            <div className="a-chars flex flex-wrap gap-1.5" role="radiogroup">
-              {ROSTER.filter((c) => c.female === props.solo.female).map((c) => {
-                const active = props.character === c.id;
-                const isJersey = hasJersey(c);
-                return (
-                  <button
-                    type="button"
-                    key={c.id}
-                    role="radio"
-                    aria-checked={active}
-                    className={`group inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[12px] font-extrabold transition-all duration-150 active:scale-95 ${
-                      active
-                        ? "bg-[var(--a-gold)] text-[#1a1300] shadow-[0_0_12px_rgba(244,196,0,0.35)]"
-                        : "bg-white/5 text-white/85 hover:bg-white/10 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]"
-                    }`}
-                    onClick={() => {
-                      props.onCharacter(c.id);
-                      if (c.label && !c.label.startsWith("Léopard")) {
-                        props.onSolo({ ...props.solo, name: c.label.split(" ")[0].toUpperCase() });
-                      }
-                    }}
-                  >
-                    <span>{c.label}</span>
-                    {c.roleHint && (
-                      <span
-                        className={`rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider ${
-                          active
-                            ? "bg-black/20 text-[#1a1300]"
-                            : isJersey
-                            ? "bg-blue-500/20 text-blue-300"
-                            : "bg-amber-500/20 text-amber-300"
-                        }`}
-                      >
-                        {c.roleHint}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {hasJersey(props.character) ? (
-            <div className="mt-3 grid grid-cols-[1fr_88px] gap-2">
-              <label>
-                <span className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-white/60">Nom sur le maillot</span>
-                <input
-                  className="a-input !h-10 text-[14px]"
-                  value={props.solo.name}
-                  maxLength={14}
-                  autoComplete="nickname"
-                  placeholder="Ton nom"
-                  onChange={(e) => props.onSolo({ ...props.solo, name: e.target.value })}
-                  required
-                />
-              </label>
-              <label>
-                <span className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-white/60">Numéro</span>
-                <input
-                  className="a-input !h-10 text-center text-[14px]"
-                  inputMode="numeric"
-                  value={props.solo.number}
-                  onChange={(e) => props.onSolo({ ...props.solo, number: Math.max(1, Math.min(99, Number(e.target.value.replace(/\D/g, "")) || 1)) })}
-                  aria-label="Numéro de maillot"
-                />
-              </label>
-            </div>
-          ) : (
-            <div className="mt-3">
-              <div className="mb-1 flex items-center justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-white/60">Nom du joueur</span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-0.5 text-[10px] font-bold text-amber-300">
-                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-400" />
-                  Tenue civile · Pas de numéro
-                </span>
-              </div>
-              <input
-                className="a-input !h-10 text-[14px]"
-                value={props.solo.name}
-                maxLength={14}
-                autoComplete="nickname"
-                placeholder="Ton pseudo ou nom"
-                onChange={(e) => props.onSolo({ ...props.solo, name: e.target.value })}
-                required
-              />
-            </div>
-          )}
-        </fieldset>
-
-        {/* ÉTAPE 3 : Choix du mode (Défi ou Pas ?) */}
+        {/* Choix du mode : Défi ou Pas ? */}
         {isDefi ? (
           <div className="a-choice" aria-live="polite">
             <div className="text-[15px] font-extrabold text-[var(--a-gold)]">
@@ -1332,7 +1229,7 @@ function SetupSheet(props: {
         ) : (
           <fieldset className="min-w-0">
             <legend className="mb-2 text-[12px] font-black uppercase tracking-wider text-[var(--a-gold)]">
-              3. Choisis ton mode : Défi ou Pas ?
+              Mode de jeu
             </legend>
             <div className="grid gap-2" role="radiogroup">
               {/* Option 1 : Carrière (Normal / Solo) */}
@@ -1736,8 +1633,15 @@ function ProfileSheet(props: {
   onSave: (p: { name: string; number: number; female: boolean; character: string }) => void;
 }) {
   const [p, setP] = useState(props.initial);
+  const [numStr, setNumStr] = useState(String(props.initial.number || 10));
   const [charReady, setCharReady] = useState(true);
   const ok = p.name.trim().length > 0 && charReady;
+
+  useEffect(() => {
+    setP(props.initial);
+    setNumStr(String(props.initial.number || 10));
+  }, [props.initial]);
+
   return (
     <Sheet
       title={props.first ? "Crée ton joueur" : "Ton joueur"}
@@ -1762,7 +1666,8 @@ function ProfileSheet(props: {
         className="grid min-w-0 grid-cols-1 gap-4 pb-2"
         onSubmit={(e) => {
           e.preventDefault();
-          if (ok) props.onSave(p);
+          const cleanNum = Math.max(1, Math.min(99, parseInt(numStr, 10) || p.number || 10));
+          if (ok) props.onSave({ ...p, number: cleanNum });
         }}
       >
         {props.first && <p className="text-[14px] text-[var(--a-muted)]">Ton nom et ton numéro s'afficheront sur ton maillot des Léopards.</p>}
@@ -1833,10 +1738,25 @@ function ProfileSheet(props: {
             <label>
               <span className="mb-1.5 block text-[12px] font-bold uppercase tracking-[0.16em] text-[var(--a-muted)]">Numéro</span>
               <input
-                className="a-input text-center"
+                className="a-input text-center font-bold"
                 inputMode="numeric"
-                value={p.number}
-                onChange={(e) => setP({ ...p, number: Math.max(1, Math.min(99, Number(e.target.value.replace(/\D/g, "")) || 1)) })}
+                maxLength={2}
+                value={numStr}
+                placeholder="10"
+                aria-label="Numéro de maillot"
+                onChange={(e) => {
+                  const raw = e.target.value.replace(/\D/g, "").slice(0, 2);
+                  setNumStr(raw);
+                  if (raw !== "") {
+                    const val = Math.max(1, Math.min(99, parseInt(raw, 10)));
+                    setP((prev) => ({ ...prev, number: val }));
+                  }
+                }}
+                onBlur={() => {
+                  const val = Math.max(1, Math.min(99, parseInt(numStr, 10) || 10));
+                  setNumStr(String(val));
+                  setP((prev) => ({ ...prev, number: val }));
+                }}
               />
             </label>
           </div>
