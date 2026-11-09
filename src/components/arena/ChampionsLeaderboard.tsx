@@ -1,3 +1,4 @@
+import { t } from "./lib/i18n";
 import { useEffect, useState, useId } from "react";
 import { Trophy, Medal, Flame, Plane, Disc, Calendar, Award, RefreshCw, Smartphone, User, X } from "lucide-react";
 import type { ArenaGame, ChampionEntry, LeaderboardPeriod } from "../../lib/arena/champions";
@@ -52,9 +53,9 @@ export default function ChampionsLeaderboard({
   }, [game, period]);
 
   const scoreLabel = (g: ArenaGame, s: number) => {
-    if (g === "foot") return `${s} ${s > 1 ? "tirs d'affilée" : "tir réussi"}`;
-    if (g === "basket") return `${s} ${s > 1 ? "paniers d'affilée" : "panier réussi"}`;
-    return `${s.toLocaleString("fr-FR")} CDF (fictif)`;
+    if (g === "foot") return t(s > 1 ? "{n} tirs d'affilée" : "{n} tir réussi", { n: s });
+    if (g === "basket") return t(s > 1 ? "{n} paniers d'affilée" : "{n} panier réussi", { n: s });
+    return t("{n} CDF (fictif)", { n: s.toLocaleString("fr-FR") });
   };
 
   const p1 = top[0];
@@ -72,15 +73,15 @@ export default function ChampionsLeaderboard({
               <Trophy className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-[19px] font-black tracking-tight text-white">Les champions du Bloc</h2>
-              <p className="text-[12px] font-medium text-white/60">Classement officiel vérifié côté serveur</p>
+              <h2 className="text-[19px] font-black tracking-tight text-white">{t("Les champions du Bloc")}</h2>
+              <p className="text-[12px] font-medium text-white/60">{t("Classement officiel vérifié côté serveur")}</p>
             </div>
           </div>
           {onClose && (
             <button
               onClick={onClose}
               className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/5 text-white/70 hover:bg-white/10 active:scale-95"
-              aria-label="Fermer le classement"
+              aria-label={t("Fermer le classement")}
             >
               <X className="h-5 w-5" />
             </button>
@@ -101,7 +102,7 @@ export default function ChampionsLeaderboard({
                 }`}
               >
                 <Flame className="h-3.5 w-3.5" />
-                <span>Tirs au but</span>
+                <span>{t("Tirs au but")}</span>
               </button>
             )}
             {availableGames.includes("basket") && (
@@ -138,7 +139,7 @@ export default function ChampionsLeaderboard({
         {/* Filtre Période */}
         <div className="mt-2.5 flex items-center justify-between text-[12px]">
           <span className="font-semibold text-white/50">
-            {game === "envol" ? "Meilleur gain en vol (CDF virtuels)" : "Plus longue série d'affilée"}
+            {game === "envol" ? t("Meilleur gain en vol (CDF virtuels)") : t("Plus longue série d'affilée")}
           </span>
           <div className="inline-flex rounded-xl bg-black/20 p-0.5">
             <button
@@ -148,7 +149,7 @@ export default function ChampionsLeaderboard({
                 period === "week" ? "bg-white/15 text-white" : "text-white/50 hover:text-white/80"
               }`}
             >
-              Cette semaine
+              {t("Cette semaine")}
             </button>
             <button
               type="button"
@@ -157,7 +158,7 @@ export default function ChampionsLeaderboard({
                 period === "all" ? "bg-white/15 text-white" : "text-white/50 hover:text-white/80"
               }`}
             >
-              Tous les temps
+              {t("Tous les temps")}
             </button>
           </div>
         </div>
@@ -168,20 +169,20 @@ export default function ChampionsLeaderboard({
         {loading ? (
           <div className="flex h-64 flex-col items-center justify-center gap-2 text-white/40">
             <RefreshCw className="h-6 w-6 animate-spin text-[var(--a-gold)]" />
-            <span className="text-[13px] font-bold">Chargement des scores...</span>
+            <span className="text-[13px] font-bold">{t("Chargement des scores...")}</span>
           </div>
         ) : top.length === 0 ? (
           <div className="flex h-64 flex-col items-center justify-center gap-3 text-center text-white/50">
             <Trophy className="h-10 w-10 text-white/20" />
-            <p className="text-[14px] font-semibold text-white/70">Aucune partie enregistrée pour cette période.</p>
-            <p className="text-[12px] text-white/40">Sois le tout premier à inscrire ton nom au tableau d'honneur !</p>
+            <p className="text-[14px] font-semibold text-white/70">{t("Aucune partie enregistrée pour cette période.")}</p>
+            <p className="text-[12px] text-white/40">{t("Sois le tout premier à inscrire ton nom au tableau d'honneur !")}</p>
             {onPlayGame && (
               <button
                 type="button"
                 onClick={() => onPlayGame(game)}
                 className="mt-2 rounded-xl bg-[var(--a-gold)] px-4 py-2 text-[13px] font-black text-[#1a1300] shadow-md hover:brightness-110 active:scale-95"
               >
-                Jouer maintenant
+                {t("Jouer maintenant")}
               </button>
             )}
           </div>
@@ -257,7 +258,7 @@ export default function ChampionsLeaderboard({
             {rest.length > 0 && (
               <div className="space-y-1.5">
                 <span className="mb-2 block text-[11px] font-bold uppercase tracking-wider text-white/40">
-                  Meilleurs supporters
+                  {t("Meilleurs supporters")}
                 </span>
                 {rest.map((r, i) => {
                   const isCurrent = r.is_current_player;
@@ -279,7 +280,7 @@ export default function ChampionsLeaderboard({
                           <span className="text-[10px] font-mono text-white/40">#{r.public_tag}</span>
                           {isCurrent && (
                             <span className="ml-1 rounded-md bg-[var(--a-gold)]/20 px-1.5 py-0.5 text-[9px] font-black text-[var(--a-gold)] uppercase">
-                              Toi
+                              {t("Toi")}
                             </span>
                           )}
                         </div>
@@ -305,7 +306,7 @@ export default function ChampionsLeaderboard({
             </div>
             <div>
               <div className="flex items-center gap-1.5 text-[12px] font-bold text-white/60">
-                <span>Ton rang</span>
+                <span>{t("Ton rang")}</span>
                 {personal && <span className="font-mono text-white/40">#{personal.public_tag}</span>}
               </div>
               <div className="text-[14px] font-black text-white">
@@ -314,7 +315,7 @@ export default function ChampionsLeaderboard({
                     <span className="text-[var(--a-gold)]">{personal.rank}e</span> sur {totalPlayers} · {scoreLabel(game, personal.score)}
                   </>
                 ) : (
-                  <span className="text-white/50 text-[12px]">Aucune partie enregistrée</span>
+                  <span className="text-white/50 text-[12px]">{t("Aucune partie enregistrée")}</span>
                 )}
               </div>
             </div>
@@ -326,14 +327,14 @@ export default function ChampionsLeaderboard({
               onClick={() => onPlayGame(game)}
               className="rounded-xl bg-[var(--a-gold)] px-3.5 py-2 text-[12px] font-black text-[#1a1300] shadow-md hover:brightness-110 active:scale-95"
             >
-              Jouer
+              {t("Jouer")}
             </button>
           )}
         </div>
 
         {/* Note profil discrète */}
         <p className="mt-2.5 text-center text-[10px] text-white/35">
-          ℹ️ Ton profil est conservé sur cet appareil et peut être perdu si les données du navigateur sont effacées.
+          {t("ℹ️ Ton profil est conservé sur cet appareil et peut être perdu si les données du navigateur sont effacées.")}
         </p>
       </div>
     </div>

@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import type { Difficulty, GameId } from "./config";
 
 /** Sauvegarde locale (appareil). Toujours tolérante : rien ne casse si le stockage est bloqué. */
@@ -153,22 +154,22 @@ export function playerEvolution(data: SaveData) {
   const maxFoot = Math.max(1, ...(Object.keys(data.progress).filter((k) => k.startsWith("foot:")).map((k) => data.progress[k]?.unlocked || 1)));
   const maxBasket = Math.max(1, ...(Object.keys(data.progress).filter((k) => k.startsWith("basket:")).map((k) => data.progress[k]?.unlocked || 1)));
 
-  let rankTitle = "Nouvelle Recrue";
+  let rankTitle = t("Nouvelle Recrue");
   let level = 1;
   if (totalStars >= 45 || (maxFoot >= 15 && maxBasket >= 15)) {
-    rankTitle = "Légende des Léopards 🐆";
+    rankTitle = t("Légende des Léopards 🐆");
     level = 6;
   } else if (totalStars >= 30 || maxFoot >= 12 || maxBasket >= 12) {
-    rankTitle = "Maître des Martyrs 🏟️";
+    rankTitle = t("Maître des Martyrs 🏟️");
     level = 5;
   } else if (totalStars >= 18 || maxFoot >= 8 || maxBasket >= 8) {
-    rankTitle = "Fimbu d'Or ✨";
+    rankTitle = t("Fimbu d'Or ✨");
     level = 4;
   } else if (totalStars >= 10 || maxFoot >= 5 || maxBasket >= 5) {
-    rankTitle = "Titulaire du Onze ⚽";
+    rankTitle = t("Titulaire du Onze ⚽");
     level = 3;
   } else if (totalStars >= 3 || maxFoot >= 2 || maxBasket >= 2) {
-    rankTitle = "Espoir de Kinshasa 🇨🇩";
+    rankTitle = t("Espoir de Kinshasa 🇨🇩");
     level = 2;
   }
 

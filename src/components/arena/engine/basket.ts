@@ -1,3 +1,4 @@
+import { t } from "../lib/i18n";
 /**
  * Shoot à la sirène — moteur basket (canvas 2D, caméra par-dessus l'épaule du tireur).
  * Geste : appuie, tire vers le haut pour doser (jauge), relâche dans la zone verte.
@@ -851,7 +852,7 @@ export class BasketEngine {
     this.touch = null;
     this.phase = "done";
     audio.buzzer();
-    this.outcome = { scored: false, base: 0, tags: ["timeout"], label: "24 secondes !", detail: "La possession est perdue", zone: 0 };
+    this.outcome = { scored: false, base: 0, tags: ["timeout"], label: t("24 secondes !"), detail: t("La possession est perdue"), zone: 0 };
     this.resolvedAt = this.t - 0.4;
     return true;
   }
@@ -1093,8 +1094,8 @@ export class BasketEngine {
       this.vy = 4.3;
       this.spin = (this.rng() - 0.5) * 14;
       audio.glove();
-      const defName = this.s.stage.id === 14 ? "Dikembe Mutombo" : this.s.stage.id >= 12 ? "Le Pivot d'Élite" : "Le Défenseur";
-      this.resolve(false, "REJETÉ ! (BLOC)", `${defName} claque ton tir en plein vol ! Feinte ou shoote plus vite.`, ["block"]);
+      const defName = this.s.stage.id === 14 ? "Dikembe Mutombo" : this.s.stage.id >= 12 ? t("Le Pivot d'Élite") : t("Le Défenseur");
+      this.resolve(false, t("REJETÉ ! (BLOC)"), t("{name} claque ton tir en plein vol ! Feinte ou shoote plus vite.", { name: defName }), ["block"]);
     } else {
       const v = this.launchVel(this.mUsed, this.latAng);
       this.vx = v.x;
@@ -1205,9 +1206,9 @@ export class BasketEngine {
     if (!this.outcome && this.kind !== "block" && prevY >= RIM_Y && this.by < RIM_Y && this.vy < 0) {
       const hl = Math.hypot(this.bx, this.bz);
       if (hl < RIM_R - R * 0.3) {
-        if (!this.rimTouched && !this.boardTouched) this.made("Swish !", "Ficelle, rien que le filet", ["swish"]);
-        else if (this.boardTouched && !this.rimTouched) this.made("Avec la planche !", "Tir de vieux briscard", ["bank"]);
-        else this.made("Panier !", "Ça a tremblé sur le cercle", ["rim-in"]);
+        if (!this.rimTouched && !this.boardTouched) this.made(t("Swish !"), t("Ficelle, rien que le filet"), ["swish"]);
+        else if (this.boardTouched && !this.rimTouched) this.made(t("Avec la planche !"), t("Tir de vieux briscard"), ["bank"]);
+        else this.made(t("Panier !"), t("Ça a tremblé sur le cercle"), ["rim-in"]);
       }
     }
     // filet : freine et recentre le ballon qui tombe
@@ -1221,10 +1222,10 @@ export class BasketEngine {
     // raté : le ballon redescend sous le cercle sans être passé dedans
     if (!this.outcome && this.kind !== "block" && (this.by < RIM_Y - 0.9 || since > 3.2)) {
       const tooStrong = this.powerErr > 0;
-      if (this.rimTouched) this.resolve(false, "Sur le cercle", tooStrong ? "Un poil trop fort" : "Un poil trop court", ["rim"]);
-      else if (this.boardTouched) this.resolve(false, "Planche", "Trop fort : relâche plus tôt", ["board"]);
-      else if (Math.abs(this.latAng) > 0.03 && Math.abs(this.powerErr) < 1.5) this.resolve(false, "À côté", "Garde ton geste bien droit", ["wide"]);
-      else this.resolve(false, tooStrong ? "Trop long" : "Air ball", tooStrong ? "Relâche un peu plus tôt" : "Trop court : tire plus haut", [tooStrong ? "long" : "short"]);
+      if (this.rimTouched) this.resolve(false, t("Sur le cercle"), tooStrong ? t("Un poil trop fort") : t("Un poil trop court"), ["rim"]);
+      else if (this.boardTouched) this.resolve(false, t("Planche"), t("Trop fort : relâche plus tôt"), ["board"]);
+      else if (Math.abs(this.latAng) > 0.03 && Math.abs(this.powerErr) < 1.5) this.resolve(false, t("À côté"), t("Garde ton geste bien droit"), ["wide"]);
+      else this.resolve(false, tooStrong ? t("Trop long") : t("Air ball"), tooStrong ? t("Relâche un peu plus tôt") : t("Trop court : tire plus haut"), [tooStrong ? "long" : "short"]);
     }
     // sol
     if (this.by < R) {

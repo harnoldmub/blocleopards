@@ -1,3 +1,4 @@
+import { t } from "./lib/i18n";
 import { useEffect, useRef, useState } from "react";
 import { Flame, Hand, LoaderCircle, Pause, RotateCcw, User, Volume2, VolumeX } from "lucide-react";
 import type { GameId } from "./lib/config";
@@ -247,7 +248,7 @@ export default function GameView(props: {
         ref={canvasRef}
         className="absolute inset-0 h-full w-full touch-none select-none"
         role="img"
-        aria-label={props.game === "foot" ? "Terrain : glisse le ballon vers la cage pour tirer" : "Terrain : maintiens appuyé et relâche au bon moment pour shooter"}
+        aria-label={props.game === "foot" ? t("Terrain : glisse le ballon vers la cage pour tirer") : t("Terrain : maintiens appuyé et relâche au bon moment pour shooter")}
         onPointerDown={(ev) => {
           if (ev.pointerType === "touch") return;
           ev.preventDefault();
@@ -289,15 +290,15 @@ export default function GameView(props: {
             {loadState === "loading" ? (
               <>
                 <LoaderCircle className="mx-auto animate-spin text-[var(--a-gold)]" size={42} aria-hidden="true" />
-                <h2 className="display mt-4 text-[34px]">Entrée sur le terrain…</h2>
-                <p className="mt-2 text-[14px] text-[var(--a-muted)]">Chargement du joueur 3D et de ses animations.</p>
+                <h2 className="display mt-4 text-[34px]">{t("Entrée sur le terrain…")}</h2>
+                <p className="mt-2 text-[14px] text-[var(--a-muted)]">{t("Chargement du joueur 3D et de ses animations.")}</p>
               </>
             ) : (
               <>
-                <h2 className="display text-[34px]">Le joueur n’a pas chargé</h2>
-                <p className="mt-2 text-[14px] text-[var(--a-muted)]">Vérifie ta connexion puis réessaie.</p>
+                <h2 className="display text-[34px]">{t("Le joueur n’a pas chargé")}</h2>
+                <p className="mt-2 text-[14px] text-[var(--a-muted)]">{t("Vérifie ta connexion puis réessaie.")}</p>
                 <button className="a-btn a-btn-primary mt-5" onClick={() => setLoadAttempt((n) => n + 1)}>
-                  <RotateCcw size={18} /> Réessayer
+                  <RotateCcw size={18} />{" "}{t("Réessayer")}
                 </button>
               </>
             )}
@@ -308,7 +309,7 @@ export default function GameView(props: {
       {/* HUD haut */}
       <div className="pointer-events-none absolute inset-x-0 top-0 safe-top px-3">
         <div className="flex items-start gap-2">
-          <button className="a-icon-btn pointer-events-auto shrink-0" onClick={props.onPause} aria-label="Pause et menu">
+          <button className="a-icon-btn pointer-events-auto shrink-0" onClick={props.onPause} aria-label={t("Pause et menu")}>
             <Pause size={20} fill="currentColor" />
           </button>
           <div className="min-w-0 flex-1 rounded-2xl bg-[rgba(4,10,26,0.66)] px-3 py-2 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)] backdrop-blur">
@@ -329,7 +330,7 @@ export default function GameView(props: {
               </div>
             </div>
             <div className="mt-1 flex items-center justify-between gap-2">
-              <div className="flex gap-1" aria-label="Tirs de la série">
+              <div className="flex gap-1" aria-label={t("Tirs de la série")}>
                 {hud.shots.map((s, i) => (
                   <span
                     key={i}
@@ -343,7 +344,7 @@ export default function GameView(props: {
           {hud.chrono !== undefined ? (
             <div
               className={`flex h-[52px] min-w-[52px] flex-col items-center justify-center rounded-2xl px-2 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)] ${hud.chrono <= 10 ? "bg-red-600/90" : "bg-[rgba(4,10,26,0.66)]"}`}
-              aria-label={`Temps restant ${Math.ceil(hud.chrono)} secondes`}
+              aria-label={t("Temps restant {n} secondes", { n: Math.ceil(hud.chrono) })}
             >
               <span className="display text-[26px] tabular-nums">{Math.ceil(hud.chrono)}</span>
             </div>
@@ -355,8 +356,8 @@ export default function GameView(props: {
             <button
               className="a-icon-btn pointer-events-auto h-[52px] w-[52px] shrink-0 rounded-2xl flex items-center justify-center bg-[rgba(4,10,26,0.66)] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)] backdrop-blur transition-transform active:scale-95"
               onClick={props.onToggleSound}
-              aria-label={props.soundOn ? "Couper le son" : "Activer le son"}
-              title={props.soundOn ? "Couper le son" : "Activer le son"}
+              aria-label={props.soundOn ? t("Couper le son") : t("Activer le son")}
+              title={props.soundOn ? t("Couper le son") : t("Activer le son")}
             >
               {props.soundOn ? <Volume2 size={22} className="text-[var(--a-gold)]" /> : <VolumeX size={22} className="text-red-400" />}
             </button>
@@ -365,12 +366,12 @@ export default function GameView(props: {
         <div className="mt-2 flex flex-wrap items-center gap-2">
           {hud.mult > 1 && (
             <span className="inline-flex items-center gap-1 rounded-full bg-[var(--a-gold)] px-2.5 py-1 text-[12px] font-black text-[#1a1300]">
-              <Flame size={14} /> ×{hud.mult} · série de {hud.streak}
+              <Flame size={14} /> ×{hud.mult}{" "}{t("· série de")}{" "}{hud.streak}
             </span>
           )}
           {hud.target && (
             <span className="rounded-full bg-[rgba(4,10,26,0.66)] px-2.5 py-1 text-[12px] font-bold text-white/85 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)]">
-              À battre : {hud.target.name} · {hud.target.score}
+              {t("À battre :")}{" "}{hud.target.name} · {hud.target.score}
             </span>
           )}
         </div>
@@ -399,10 +400,10 @@ export default function GameView(props: {
             {props.splash.tags.filter((t) => TAG_LABEL[t]).length > 0 && (
               <div className="mt-1 flex flex-wrap justify-center gap-1.5">
                 {props.splash.tags
-                  .filter((t) => TAG_LABEL[t])
-                  .map((t) => (
-                    <span key={t} className="rounded-full bg-white px-2.5 py-0.5 text-[12px] font-black uppercase text-slate-900">
-                      {TAG_LABEL[t]}
+                  .filter((tag) => TAG_LABEL[tag])
+                  .map((tag) => (
+                    <span key={tag} className="rounded-full bg-white px-2.5 py-0.5 text-[12px] font-black uppercase text-slate-900">
+                      {t(TAG_LABEL[tag])}
                     </span>
                   ))}
               </div>
@@ -414,8 +415,8 @@ export default function GameView(props: {
 
       {/* Badge nom du joueur en bas à droite */}
       <aside
-        className="pointer-events-none absolute bottom-4 right-3 z-30 select-none safe-bottom"
-        aria-label="Joueur actif"
+        className={`pointer-events-none absolute right-3 z-30 select-none safe-bottom transition-[bottom] duration-200 ${props.hint && !aiming ? "bottom-[118px]" : "bottom-4"}`}
+        aria-label={t("Joueur actif")}
       >
         <div className="flex items-center gap-2 rounded-2xl bg-[rgba(4,10,26,0.82)] px-3 py-1.5 shadow-[0_4px_16px_rgba(0,0,0,0.55),inset_0_0_0_1px_rgba(255,255,255,0.14)] backdrop-blur-md">
           <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-xl bg-[var(--a-gold)] text-[#1a1300] shadow-[0_0_10px_rgba(244,196,0,0.35)]">
@@ -423,7 +424,7 @@ export default function GameView(props: {
           </div>
           <div className="flex flex-col text-left leading-tight">
             <span className="text-[9px] font-black uppercase tracking-widest text-[var(--a-gold)]">
-              {charById(props.setup.character)?.label || (props.setup.female ? "Joueuse" : "Joueur")}
+              {t(charById(props.setup.character)?.label ?? "") || (props.setup.female ? t("Joueuse") : t("Joueur"))}
             </span>
             <span className="text-[13px] font-black tracking-wide text-white">
               {hud.player?.name || props.setup.name || "Léopard"}
@@ -441,7 +442,7 @@ function ClockRing({ value, max, low }: { value: number; max: number; low: boole
   const c = 2 * Math.PI * r;
   const k = Math.max(0, Math.min(1, value / max));
   return (
-    <div className="relative h-[52px] w-[52px] shrink-0" aria-label={`Chrono du tir : ${Math.ceil(value)} secondes`}>
+    <div className="relative h-[52px] w-[52px] shrink-0" aria-label={t("Chrono du tir : {n} secondes", { n: Math.ceil(value) })}>
       <svg viewBox="0 0 52 52" className="h-full w-full -rotate-90">
         <circle cx="26" cy="26" r={r + 3} fill="rgba(4,10,26,0.66)" />
         <circle cx="26" cy="26" r={r} fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="4" />

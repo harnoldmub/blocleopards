@@ -1,3 +1,4 @@
+import { t } from "./lib/i18n";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Star, X } from "lucide-react";
 import { BODIES, FEMALE_BODY, LEOPARDS_BASKET_KIT, LEOPARDS_KIT, POSES, drawFigure, skeleton, lerpPose } from "./engine/people";
@@ -38,7 +39,7 @@ export function Sheet({ title, onClose, children, footer, labelledBy }: { title?
         {title && (
           <div className="flex items-center justify-between px-5 pb-2 pt-1 shrink-0">
             <h2 className="display text-[26px] sm:text-[28px] text-white truncate">{title}</h2>
-            <button className="a-icon-btn shrink-0" onClick={onClose} aria-label="Fermer">
+            <button className="a-icon-btn shrink-0" onClick={onClose} aria-label={t("Fermer")}>
               <X size={20} />
             </button>
           </div>
@@ -67,7 +68,7 @@ export function ConfirmModal({ title, text, confirm, danger, onCancel, onConfirm
         <p id="confirm-text" className="mt-2 text-[15px] leading-relaxed text-[var(--a-muted)]">{text}</p>
         <div className="mt-5 grid grid-cols-2 gap-3">
           <button className="a-btn a-btn-secondary" onClick={onCancel} autoFocus>
-            Annuler
+            {t("Annuler")}
           </button>
           <button className={`a-btn ${danger ? "a-btn-danger" : "a-btn-primary"}`} onClick={onConfirm}>
             {confirm}
@@ -94,7 +95,7 @@ export function Toast({ text, onDone }: { text: string; onDone: () => void }) {
 
 export function Stars({ n, size = 18, total = 3 }: { n: number; size?: number; total?: number }) {
   return (
-    <span className="inline-flex gap-0.5" aria-label={`${n} étoile${n > 1 ? "s" : ""} sur ${total}`}>
+    <span className="inline-flex gap-0.5" aria-label={t(n > 1 ? "{n} étoiles sur {total}" : "{n} étoile sur {total}", { n, total })}>
       {Array.from({ length: total }, (_, i) => (
         <Star key={i} size={size} strokeWidth={2} className={i < n ? "fill-[var(--a-gold)] text-[var(--a-gold)]" : "text-white/25"} />
       ))}
@@ -448,13 +449,13 @@ export function CharacterPreview({
         ref={cv3d}
         className={`absolute inset-0 h-full w-full transition-opacity duration-300 ${isFullyVisible ? "opacity-100" : "opacity-0"}`}
         role="img"
-        aria-label={`Aperçu : ${female ? "ta joueuse" : "ton joueur"} avec le maillot ${name || ""} ${number}`}
+        aria-label={t(female ? "Aperçu : ta joueuse avec le maillot {name} {number}" : "Aperçu : ton joueur avec le maillot {name} {number}", { name: name || "", number })}
       />
       {!isFullyVisible && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px] transition-opacity duration-200">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--a-gold)] border-t-transparent" />
           <span className="mt-2 text-[11px] font-black uppercase tracking-wider text-[var(--a-gold)]">
-            Chargement 3D...
+            {t("Chargement 3D...")}
           </span>
         </div>
       )}

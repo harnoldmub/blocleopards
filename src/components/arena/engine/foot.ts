@@ -1,3 +1,4 @@
+import { t } from "../lib/i18n";
 /**
  * Tirs au but — moteur de jeu (canvas 2D, perspective « caméra derrière le tireur »).
  * Un tir à la fois : le shell React gère la série, le score et les combos.
@@ -30,6 +31,8 @@ export interface FootSetup {
   female?: boolean;
   /** Personnage choisi par le joueur (voir ROSTER). */
   character?: string;
+  /** Dernier tir du palier 15 et la série est gagnée si ce tir rentre : la coupe est remise. */
+  trophy?: boolean;
 }
 
 export interface ShotOutcome {
@@ -217,12 +220,16 @@ export class FootEngine {
     z1: number;
     curve: number;
     intercepted?: { x: number; z: number };
+    /** Temps passé ballon arrivé (contrôle du receveur) avant l'enchaînement. */
+    hold?: number;
   } | null = null;
+  /** Passe préparée pendant l'élan du passeur. */
+  private passPending: NonNullable<FootEngine["passAnim"]> | null = null;
 
   // personnages 3D (facultatifs : repli 2D si WebGL indisponible)
   private c3: Chars3D | null = null;
   private c3m: C3Mod | null = null;
-  private A: { shooter?: Actor; keeper?: Actor; wall: Actor[] } = { wall: [] };
+  private A: { shooter?: Actor; keeper?: Actor; mate?: Actor; wall: Actor[] } = { wall: [] };
   private celeb = { x: 0, z: 0, captured: false };
   private viewOff = { x: 0, y: 0 };
 
@@ -248,17 +255,27 @@ export class FootEngine {
     const isPass = this.passStep === "pass" && !!s.stage.pass;
     const defCount = isPass ? s.stage.pass!.defenders.length : s.stage.wall;
     const wallIds = Array.from({ length: defCount }, (_, i) => m.pickChar(kFem, s.stage.id + i, [pc, kc]).id);
-    const need = [pc, kc, ...wallIds];
+    // receveur de la passe (puis buteur) : un coéquipier Léopard, différent du passeur
+    const tm = s.stage.pass?.teammate;
+    const tmFem = tm?.female ?? fem;
+    const mc = tm ? (tm.character && m.charById(tm.character) ? tm.character : m.pickChar(tmFem, s.stage.id * 5 + 1, [pc]).id) : null;
+    const need = [pc, kc, ...wallIds, mc];
     if (!c3.isLoaded(need)) {
       await c3.ensureChars(need);
     }
     c3.clearActors();
     this.A = { wall: [] };
     const hasJ = m.hasJersey(pc);
-    this.A.shooter = c3.actor({ ...m.LEOPARDS_PAINT(s.name, hasJ ? s.number : undefined, this.shooterBody.skin), female: fem }, pc);
+    if (this.passStep === "shoot" && tm && mc) {
+      // une-deux : c'est le receveur qui enchaîne la frappe
+      this.A.shooter = c3.actor({ ...m.LEOPARDS_PAINT(tm.name, m.hasJersey(mc) ? tm.number : undefined, this.shooterBody.skin), female: tmFem }, mc);
+    } else {
+      this.A.shooter = c3.actor({ ...m.LEOPARDS_PAINT(s.name, hasJ ? s.number : undefined, this.shooterBody.skin), female: fem }, pc);
+      if (isPass && tm && mc) this.A.mate = c3.actor({ ...m.LEOPARDS_PAINT(tm.name, m.hasJersey(mc) ? tm.number : undefined, this.shooterBody.skin), female: tmFem }, mc);
+    }
     this.A.keeper = c3.actor({ ...m.KEEPER_PAINT(s.stage.keeper.kit, this.keeperBody.skin), female: kFem }, kc);
     for (let i = 0; i < defCount; i++) {
-      this.A.wall.push(c3.actor({ ...m.RIVAL_PAINT(4 + i * 3, this.wallBodies[i]?.skin || 0), female: kFem }, wallIds[i]));
+      this.A.wall.push(c3.actor({ ...m.RIVAL_PAINT(4 + i * 3, this.wallBodies[i]?.skin || "#5a3520"), female: kFem }, wallIds[i]));
     }
     this.celeb = { x: 0, z: 0, captured: false };
     c3.buildGoal(this.D);
@@ -301,6 +318,7 @@ export class FootEngine {
     this.currentDistance = s.stage.distance;
     this.passSuccessFlash = 0;
     this.passAnim = null;
+    this.passPending = null;
     this.passStep = s.stage.type === "pass_shoot" && s.stage.pass ? "pass" : null;
     this.bx = s.stage.ballX;
     this.by = BALL_R;
@@ -370,6 +388,36 @@ export class FootEngine {
     cam.z = isPass ? (portrait ? -10.2 : -9.0) : fk ? (portrait ? -9.2 : -8.2) : (portrait ? -12 : -11);
     cam.setYaw(Math.atan2(-cam.x * 0.85, D - cam.z));
     cam.cx = this.w / 2;
+    if (isPass) {
+      // vue « Score! Hero » : passeur, receveur, défenseurs et cage tous visibles
+      const tgt = this.setupData.stage.pass!.teammate;
+      cam.x = (bx + tgt.x) * 0.35;
+      cam.y = portrait ? 7.2 : 6.2;
+      cam.z = portrait ? -12.5 : -11;
+      cam.setYaw(Math.atan2(((bx + tgt.x) / 2 - cam.x) * 0.6, D - cam.z));
+      const fit = [
+        [-GOAL_W - 0.4, GOAL_H, D],
+        [GOAL_W + 0.4, GOAL_H, D],
+        [bx - 1.1, 0, -1.4], // pieds du passeur (derrière le ballon)
+        [bx - 1.1, 1.9, -1.4],
+        [bx + 0.6, 0, 0.3],
+        [tgt.x - 0.8, 0, tgt.z],
+        [tgt.x + 0.8, 2.0, tgt.z]
+      ];
+      const q = fit.map(([X, Y, Z]) => {
+        const [rx, rz] = cam.rel(X, Z);
+        return { u: rx / rz, v: -(Y - cam.y) / rz };
+      });
+      const uMin = Math.min(...q.map((a) => a.u));
+      const uMax = Math.max(...q.map((a) => a.u));
+      const vMin = Math.min(...q.map((a) => a.v));
+      const vMax = Math.max(...q.map((a) => a.v));
+      // haut d'écran réservé au score, bas au conseil : la scène tient entre 24 % et 84 %
+      cam.f = Math.min((this.w * 0.9) / (uMax - uMin), (this.h * 0.6) / (vMax - vMin));
+      cam.hz = this.h * 0.84 - vMax * cam.f;
+      cam.cx = this.w / 2 - ((uMin + uMax) / 2) * cam.f;
+      return;
+    }
     // cadrage : cage nettement plus large et haute pour faciliter le tir et la courbe
     const pts = [
       [-GOAL_W - 0.25, GOAL_H, D],
@@ -615,6 +663,7 @@ export class FootEngine {
     let bulge = 0;
     const dyTotal = S.y - E.y;
     const dxTotal = E.x - S.x;
+    const len = Math.hypot(dxTotal, dyTotal) || 1;
     for (const p of pts) {
       const d = ((p.x - S.x) * dyTotal - (S.y - p.y) * dxTotal) / len;
       if (Math.abs(d) > Math.abs(bulge)) bulge = d;
@@ -642,34 +691,36 @@ export class FootEngine {
       if (interceptedDef) break;
     }
 
-    this.phase = "flight";
+    // le passeur prend son élan, la passe part au contact du pied
+    const base = { active: true, t: 0, x0: this.bx, z0: this.bz };
+    this.passPending = interceptedDef
+      ? { ...base, duration: 0.7 * interceptFrac, x1: interceptedDef.x, z1: interceptedDef.z, curve: curveAmount * interceptFrac, intercepted: interceptedDef }
+      : { ...base, duration: 0.75, x1: target.x, z1: target.z, curve: curveAmount };
+    this.phase = "runup";
     this.phaseT = 0;
-    audio.kick();
+    this.cb.onKick();
+  }
 
-    if (interceptedDef) {
-      this.passAnim = {
-        active: true,
-        t: 0,
-        duration: 0.65 * interceptFrac,
-        x0: this.bx,
-        z0: this.bz,
-        x1: interceptedDef.x,
-        z1: interceptedDef.z,
-        curve: curveAmount * interceptFrac,
-        intercepted: interceptedDef
-      };
-    } else {
-      this.passAnim = {
-        active: true,
-        t: 0,
-        duration: 0.65,
-        x0: this.bx,
-        z0: this.bz,
-        x1: target.x,
-        z1: target.z,
-        curve: curveAmount
-      };
-    }
+  /** Après la passe réussie : le receveur enchaîne la frappe face au gardien. */
+  private startFinish() {
+    const pass = this.setupData.stage.pass;
+    if (!pass) return;
+    this.passAnim = null;
+    this.passStep = "shoot";
+    this.currentDistance = pass.finishDistance;
+    this.bx = pass.finishBallX;
+    this.by = BALL_R;
+    this.bz = 0;
+    this.vx = this.vy = this.vz = this.ax = 0;
+    this.trail = [];
+    this.phase = "aim";
+    this.phaseT = 0;
+    const tm = pass.teammate;
+    this.shooterKit = LEOPARDS_KIT(tm.name, tm.number);
+    this.keeperX = pass.finishBallX * 0.12;
+    this.bgDirty = true;
+    this.layout();
+    if (this.c3?.ready) this.build3D();
   }
 
   cancel() {
@@ -766,7 +817,7 @@ export class FootEngine {
     this.touch = null;
     this.phase = "done";
     audio.whistle();
-    this.finish({ scored: false, base: 0, tags: ["timeout"], label: "Temps écoulé", detail: "Le chrono a sifflé avant ta frappe", zone: 0 });
+    this.finish({ scored: false, base: 0, tags: ["timeout"], label: t("Temps écoulé"), detail: t("Le chrono a sifflé avant ta frappe"), zone: 0 });
     return true;
   }
 
@@ -926,6 +977,21 @@ export class FootEngine {
       this.passSuccessFlash = Math.max(0, this.passSuccessFlash - dt);
     }
 
+    if (this.passPending && this.phase === "runup" && this.phaseT >= RUN) {
+      this.passAnim = this.passPending;
+      this.passPending = null;
+      this.phase = "flight";
+      this.phaseT = 0;
+      this.kickT = this.t;
+      audio.kick(0.55);
+    }
+    if (this.passAnim && this.passAnim.active && this.passAnim.hold !== undefined) {
+      // contrôle du receveur, puis la caméra passe sur la frappe
+      this.passAnim.hold += dt;
+      if (this.passAnim.hold >= 0.55) this.startFinish();
+      if (this.use3d) this.drive3D();
+      return;
+    }
     if (this.passAnim && this.passAnim.active) {
       this.passAnim.t += dt;
       const frac = clamp(this.passAnim.t / this.passAnim.duration, 0, 1);
@@ -936,34 +1002,33 @@ export class FootEngine {
       if (this.trail.length > 20) this.trail.shift();
 
       if (frac >= 1) {
-        this.passAnim.active = false;
         if (this.passAnim.intercepted) {
+          this.passAnim.active = false;
           audio.whistle();
-          this.finish({
+          this.crowdReaction = "save";
+          audio.crowd("groan");
+          this.resolve({
             scored: false,
             base: 0,
             tags: ["intercepted"],
-            label: "Interception défensive !",
-            detail: "Le défenseur adverse a coupé la trajectoire",
+            label: t("Interception !"),
+            detail: t("Le défenseur a coupé la trajectoire : contourne-le avec un geste courbé"),
             zone: 0
           });
         } else {
-          audio.kick();
+          // ballon dans les pieds du receveur
+          this.passAnim.hold = 0;
+          this.by = BALL_R;
+          audio.bounce(0.4);
           audio.crowd("cheer");
           this.passSuccessFlash = 1.0;
-          const pass = this.setupData.stage.pass!;
-          this.passStep = "shoot";
-          this.currentDistance = pass.finishDistance;
-          this.bx = pass.finishBallX;
-          this.by = BALL_R;
-          this.bz = 0;
-          this.vx = this.vy = this.vz = this.ax = 0;
-          this.phase = "aim";
-          this.phaseT = 0;
-          this.layout();
-          if (this.c3?.ready) this.build3D();
         }
       }
+      if (this.use3d) this.drive3D();
+      return;
+    }
+
+    if (this.passPending) {
       if (this.use3d) this.drive3D();
       return;
     }
@@ -981,15 +1046,15 @@ export class FootEngine {
         this.postHitPending = null;
         if (ph.inside) {
           this.crowdReaction = "goal";
-          this.goal(ph.p, ["post-in"], "Poteau rentrant !");
+          this.goal(ph.p, ["post-in"], t("Poteau rentrant !"));
         } else {
           this.crowdReaction = "save";
           this.resolve({
             scored: false,
             base: 0,
             tags: ["post"],
-            label: ph.postHit ? "Poteau !" : "Transversale !",
-            detail: "À quelques centimètres…",
+            label: ph.postHit ? t("Poteau !") : t("Transversale !"),
+            detail: t("À quelques centimètres…"),
             zone: ph.p.zone
           });
           audio.crowd("groan");
@@ -1128,12 +1193,12 @@ export class FootEngine {
           this.shake = 0.6;
           audio.glove();
           this.crowdReaction = "save";
-          const label = stageId >= 11 ? "Bloc Défensif Élite !" : stageId >= 6 ? "Mur Infranchissable !" : "Contré par le mur !";
+          const label = stageId >= 11 ? t("Bloc Défensif Élite !") : stageId >= 6 ? t("Mur Infranchissable !") : t("Contré par le mur !");
           const detail = stageId >= 11
-            ? "Les défenseurs ont sauté au sommet ! Enroule ta frappe ou contourne le mur."
+            ? t("Les défenseurs ont sauté au sommet ! Enroule ta frappe ou contourne le mur.")
             : stageId >= 6
-            ? "Détente synchronisée du mur Léopard en plein vol !"
-            : "Le mur a dévié ta frappe.";
+            ? t("Détente synchronisée du mur Léopard en plein vol !")
+            : t("Le mur a dévié ta frappe.");
           this.resolve({ scored: false, base: 0, tags: ["wall"], label, detail, zone: this.pending!.zone });
           break;
         }
@@ -1170,8 +1235,8 @@ export class FootEngine {
           scored: false,
           base: 0,
           tags: ["save", catchIt ? "catch" : "parry"],
-          label: catchIt ? "Capté !" : "Arrêt !",
-          detail: learnt ? "Il connaît ton côté préféré : varie !" : read ? "Le gardien a lu ta frappe" : "Bien placé, il a tout vu",
+          label: catchIt ? t("Capté !") : t("Arrêt !"),
+          detail: learnt ? t("Il connaît ton côté préféré : varie !") : read ? t("Le gardien a lu ta frappe") : t("Bien placé, il a tout vu"),
           zone: this.pending!.zone
         });
         if (!this.setupData.reduced) this.shake = 0.4;
@@ -1207,15 +1272,15 @@ export class FootEngine {
         return;
       }
       if (ax < GOAL_W - BALL_R && y < GOAL_H - BALL_R) {
-        this.goal(p, [], "But !");
+        this.goal(p, [], t("But !"));
       } else {
         const high = y >= GOAL_H;
         this.resolve({
           scored: false,
           base: 0,
           tags: ["miss"],
-          label: high ? "Au-dessus" : "À côté",
-          detail: p.over ? "Frappe trop appuyée : glisse moins vite" : high ? "Vise un peu plus bas" : "Garde le ballon dans le cadre",
+          label: high ? t("Au-dessus") : t("À côté"),
+          detail: p.over ? t("Frappe trop appuyée : glisse moins vite") : high ? t("Vise un peu plus bas") : t("Garde le ballon dans le cadre"),
           zone: p.zone
         });
         audio.crowd("groan");
@@ -1263,33 +1328,33 @@ export class FootEngine {
     if (y > 1.7 && x > 2.4) {
       tags.push("lucarne");
       base += 50;
-      detail = "Lucarne !";
+      detail = t("Lucarne !");
     } else if (y < 0.5 && x > 2.6) {
       tags.push("petit-filet");
       base += 25;
-      detail = "Petit filet";
+      detail = t("Petit filet");
     }
     if (Math.abs(p.ax) > 6) {
       tags.push("effet");
       base += 25;
-      detail = detail ? `${detail} · enroulée` : "Frappe enroulée";
+      detail = detail ? t("{detail} · enroulée", { detail }) : t("Frappe enroulée");
     }
     const d = this.dive;
     if (d && d.kind !== "stay" && d.kind !== "jump" && x < 1 && p.v < 17.5) {
       tags.push("panenka");
       base += 75;
-      detail = "Panenka !";
+      detail = t("Panenka !");
     }
     if (extra.includes("post-in")) base += 25;
     if (!detail) {
-      detail = d && d.kind !== "stay" && Math.sign(this.bx - this.keeperX) !== d.side ? "Gardien pris à contre-pied" : "Imparable";
+      detail = d && d.kind !== "stay" && Math.sign(this.bx - this.keeperX) !== d.side ? t("Gardien pris à contre-pied") : t("Imparable");
     }
     if (this.setupData.stage.type === "pass_shoot") {
       tags.push("score_hero", "combo_pass");
       base += 50;
-      label = "BUUUT ! Action Score! Hero !";
+      label = t("BUUUT !");
       const tm = this.setupData.stage.pass?.teammate.name || "l'attaquant";
-      detail = detail ? `${detail} · Passe décisive à ${tm}` : `Passe décisive à ${tm} + finition imparable !`;
+      detail = detail ? t("{detail} · Passe décisive à {tm}", { detail, tm }) : t("Passe décisive à {tm} + finition imparable !", { tm });
     }
     if (this.D > 15 && this.setupData.stage.type !== "pass_shoot") tags.push("coup-franc");
     audio.net();
@@ -1647,7 +1712,7 @@ export class FootEngine {
     const g = this.cam.p(st.x, 0, st.z);
     drawFigure(ctx, sk, this.shooterBody, this.shooterKit, { sx: g.x, sy: g.y, s: g.s }, { facing: st.facing });
     // Célébration Palier 15 avec la coupe en 2D
-    if (this.setupData.stage.id === 15 && this.outcome?.scored) {
+    if (this.setupData.trophy && this.outcome?.scored) {
       const c = this.t - this.resolvedAt - 0.3;
       if (c > 0.25) {
         const top = this.cam.p(st.x, 2.2, st.z);
@@ -1810,47 +1875,14 @@ export class FootEngine {
       ctx.textAlign = "center";
       ctx.fillStyle = "#F4C400";
       ctx.font = "900 15px Montserrat, sans-serif";
-      ctx.fillText("⚡ PASSE PARFAITE ! ⚡", W / 2, by + 22);
+      ctx.fillText(t("⚡ PASSE PARFAITE ! ⚡"), W / 2, by + 22);
       ctx.fillStyle = "#ffffff";
       ctx.font = "700 13px Inter, sans-serif";
-      ctx.fillText("Enchaîne et frappe pour marquer !", W / 2, by + 42);
+      ctx.fillText(t("Enchaîne et frappe pour marquer !"), W / 2, by + 42);
       ctx.restore();
       return;
     }
 
-    if (this.phase !== "aim") return;
-
-    const bw = Math.min(360, W - 32);
-    const bh = 42;
-    const bx = (W - bw) / 2;
-    const by = 88;
-
-    ctx.save();
-    ctx.fillStyle = "rgba(4, 10, 26, 0.82)";
-    ctx.strokeStyle = this.passStep === "pass" ? "rgba(244, 196, 0, 0.7)" : "rgba(34, 197, 94, 0.7)";
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.roundRect(bx, by, bw, bh, 14);
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.textAlign = "center";
-    if (this.passStep === "pass") {
-      ctx.fillStyle = "#F4C400";
-      ctx.font = "900 12px Montserrat, sans-serif";
-      ctx.fillText("🎯 ACTION SCORE! HERO · ÉTAPE 1/2 : PASSE", W / 2, by + 16);
-      ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
-      ctx.font = "600 11px Inter, sans-serif";
-      ctx.fillText("Glisse vers ton joueur démarqué · contourne les défenseurs", W / 2, by + 32);
-    } else {
-      ctx.fillStyle = "#4ade80";
-      ctx.font = "900 12px Montserrat, sans-serif";
-      ctx.fillText("⚽ ACTION SCORE! HERO · ÉTAPE 2/2 : FINITION", W / 2, by + 16);
-      ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
-      ctx.font = "600 11px Inter, sans-serif";
-      ctx.fillText("Frappe dans la cage pour battre le gardien !", W / 2, by + 32);
-    }
-    ctx.restore();
   }
 
   private drawAimAssist(ctx: CanvasRenderingContext2D) {
@@ -1875,6 +1907,7 @@ export class FootEngine {
       let bulge = 0;
       const dyTotal = S.y - E.y;
       const dxTotal = E.x - S.x;
+      const len = Math.hypot(dxTotal, dyTotal) || 1;
       for (const p of this.touch.pts) {
         const d = ((p.x - S.x) * dyTotal - (S.y - p.y) * dxTotal) / len;
         if (Math.abs(d) > Math.abs(bulge)) bulge = d;
@@ -1949,7 +1982,9 @@ export class FootEngine {
     const SM = c3.metaFor(sh);
     const tc = SM.kickContact;
     const foot = SM.kickFoot;
-    const rootX = this.bx - foot.x - 0.05;
+    // le passeur reste à l'endroit de la passe pendant que le ballon voyage
+    const anchorX = this.passAnim ? this.passAnim.x0 : this.bx;
+    const rootX = anchorX - foot.x - 0.05;
     const rootZ = -foot.z - 0.14;
     const END = Math.min(tc + 0.5, sh.duration("kick") - 0.15);
 
@@ -2106,14 +2141,47 @@ export class FootEngine {
     const delay = Math.max(0.04, 0.12 - levelFactor * 0.08);
     const jumpK = sinceK < delay ? 0 : Math.sin(clamp((sinceK - delay) / 0.54, 0, 1) * Math.PI);
 
-    /* mur adverse */
+    /* action passe : défenseurs qui suivent le ballon, receveur qui appelle puis contrôle */
     if (this.passStep === "pass" && s.stage.pass) {
-      const defs = s.stage.pass.defenders;
+      const V = m.THREE.Vector3;
+      const pass = s.stage.pass;
+      const pa = this.passAnim;
+      const moving = !!pa && pa.active && pa.hold === undefined;
+      const defs = pass.defenders;
       for (let i = 0; i < defs.length && i < A.wall.length; i++) {
         const w = A.wall[i];
+        const d = defs[i];
+        // le défenseur glisse vers la ligne de passe (et se jette s'il intercepte)
+        const lean = moving ? clamp(this.bx - d.x, -1.1, 1.1) * clamp((pa!.t / pa!.duration) * 1.6, 0, 1) : Math.sin(this.t * 1.8 + i) * 0.12;
         w.inPlace = true;
-        w.place(defs[i].x, defs[i].z, Math.PI);
+        const yaw = Math.PI + clamp(Math.atan2(this.bx - d.x, Math.max(0.5, d.z - this.bz)) * 0.6, -0.6, 0.6);
+        w.place(d.x + lean, d.z, yaw);
         w.pose("catch", 0.02);
+        w.dropHips(0.12);
+        w.aim(B.lThigh, B.lCalf, new V(0.3, -0.88, 0.3));
+        w.aim(B.rThigh, B.rCalf, new V(-0.3, -0.88, 0.3));
+        w.aim(B.lUpper, B.lFore, new V(0.7, -0.6, 0.2));
+        w.aim(B.rUpper, B.rFore, new V(-0.7, -0.6, 0.2));
+      }
+      const mt = A.mate;
+      if (mt) {
+        const tm = pass.teammate;
+        const ox = pa ? pa.x0 : this.bx;
+        mt.inPlace = true;
+        // face au passeur
+        mt.place(tm.x, tm.z, Math.atan2(-(ox - tm.x), 0 - tm.z));
+        mt.pose("catch", 0.02);
+        if (pa && pa.hold !== undefined) {
+          // contrôle : genoux fléchis, regard sur le ballon
+          mt.dropHips(0.1);
+          mt.aim(B.lUpper, B.lFore, new V(0.6, -0.7, 0.2));
+          mt.aim(B.rUpper, B.rFore, new V(-0.6, -0.7, 0.2));
+        } else if (!moving) {
+          // appel de balle : bras levé
+          const wave = Math.sin(this.t * 6) * 0.15;
+          mt.aim(B.rUpper, B.rFore, new V(-0.25 + wave, 1, 0.1));
+          mt.aim(B.rFore, B.rHand, new V(-0.1, 1, 0.05));
+        }
       }
       return;
     }
@@ -2185,7 +2253,7 @@ export class FootEngine {
     }
 
     // Célébration spéciale du Palier 15 (Le Sacre Suprême) : le joueur brandit la Coupe d'Afrique en or !
-    if (this.setupData.stage.id === 15) {
+    if (this.setupData.trophy) {
       const turn = Math.PI * easeInOut(clamp(c / 0.45, 0, 1));
       const jump = c > 0.3 ? Math.max(0, Math.sin((c - 0.3) * 5.8)) * 0.36 : 0;
       const sway = Math.sin(c * 3.5) * 0.08;
@@ -2203,7 +2271,7 @@ export class FootEngine {
       }
       // Pluie royale de confettis dorés
       if (Math.random() < 0.4) {
-        confettiBurst(this.parts, this.w * (0.2 + 0.6 * Math.random()), this.h * 0.35, 20);
+        confettiBurst(this.parts, this.w * (0.2 + 0.6 * Math.random()), this.h * 0.35, 20, this.w * 0.3);
       }
       return;
     }
@@ -2352,7 +2420,7 @@ export class FootEngine {
 
   private drawShadows3D(ctx: CanvasRenderingContext2D) {
     const B = this.c3m!.BONE;
-    const all = [this.A.shooter, this.A.keeper, ...this.A.wall].filter(Boolean) as Actor[];
+    const all = [this.A.shooter, this.A.keeper, this.A.mate, ...this.A.wall].filter(Boolean) as Actor[];
     for (const a of all) {
       a.root.updateMatrixWorld(true);
       const h = a.bone(B.pelvis);

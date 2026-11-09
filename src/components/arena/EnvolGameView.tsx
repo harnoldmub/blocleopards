@@ -1,3 +1,4 @@
+import { t } from "./lib/i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
@@ -398,8 +399,8 @@ export default function EnvolGameView({
   const shareWhatsApp = () => {
     const totalWon = lastRoundSummary?.totalWon || bestWinSession;
     const text = opponent
-      ? `✈️ ${opponent.name}, j'ai encaissé ${fmt(totalWon)} CDF fictifs sur Envol 243 à Kinshasa (Bloc Léopards) ! À toi de tester ton timing 🐆`
-      : `✈️ J'ai encaissé ${fmt(totalWon)} CDF virtuels à une cote de ${fmtMult(lastRoundSummary?.crashMult || mult)} sur Envol 243 ! Relève le défi 🐆`;
+      ? t("✈️ {name}, j'ai encaissé {n} CDF fictifs sur Envol 243 à Kinshasa (Bloc Léopards) ! À toi de tester ton timing 🐆", { name: opponent.name, n: fmt(totalWon) })
+      : t("✈️ J'ai encaissé {n} CDF virtuels à une cote de {m} sur Envol 243 ! Relève le défi 🐆", { n: fmt(totalWon), m: fmtMult(lastRoundSummary?.crashMult || mult) });
     const url = `${window.location.origin}/jeux/envol`;
     window.open(`https://wa.me/?text=${encodeURIComponent(`${text}\n${url}`)}`, "_blank", "noopener");
   };
@@ -409,7 +410,7 @@ export default function EnvolGameView({
   return (
     <div className="arena envol relative h-full w-full select-none overflow-hidden bg-[#070e24] text-white">
       {/* Canevas 3D */}
-      <canvas ref={canvasRef} className="absolute inset-0 h-full w-full touch-none" aria-label="Vol 3D au-dessus de Kinshasa" />
+      <canvas ref={canvasRef} className="absolute inset-0 h-full w-full touch-none" aria-label={t("Vol 3D au-dessus de Kinshasa")} />
 
       {/* Dégradés d'ambiance haut & bas */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-44 bg-gradient-to-b from-[rgba(5,10,28,0.85)] via-[rgba(5,10,28,0.4)] to-transparent" aria-hidden="true" />
@@ -419,7 +420,7 @@ export default function EnvolGameView({
       <header className="safe-top absolute inset-x-0 top-0 z-20 flex flex-col gap-2 px-3 pt-3">
         <div className="flex items-center justify-between gap-1.5 sm:gap-2">
           {/* Sortie */}
-          <button type="button" className="envol-icon shrink-0" onClick={onExit} aria-label="Quitter Envol 243">
+          <button type="button" className="envol-icon shrink-0" onClick={onExit} aria-label={t("Quitter Envol 243")}>
             <ArrowLeft size={19} />
           </button>
 
@@ -430,14 +431,14 @@ export default function EnvolGameView({
             </div>
             <div className="flex items-center gap-1 text-[9px] font-semibold text-emerald-400 sm:text-[10px]">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-              <span className="truncate">Démo · Fictif</span>
+              <span className="truncate">{t("Démo · Fictif")}</span>
             </div>
           </div>
 
           {/* Portefeuille Fictif */}
           <div className="envol-glass flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 shrink-0">
             <div className="text-right">
-              <div className="text-[8px] font-extrabold uppercase tracking-[0.14em] text-[var(--a-gold)] sm:text-[9px]">Portefeuille</div>
+              <div className="text-[8px] font-extrabold uppercase tracking-[0.14em] text-[var(--a-gold)] sm:text-[9px]">{t("Portefeuille")}</div>
               <div className="text-[13px] font-black leading-tight tabular-nums sm:text-[16px] text-amber-300">
                 {fmt(wallet)} <span className="text-[9px] font-bold text-white/70 sm:text-[10px]">CDF</span>
               </div>
@@ -446,8 +447,8 @@ export default function EnvolGameView({
               type="button"
               onClick={() => setShowRechargeModal(true)}
               className="flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-lg bg-amber-400/20 text-amber-300 hover:bg-amber-400/30 transition-colors"
-              title="Recharger le portefeuille gratuitement"
-              aria-label="Recharger le portefeuille"
+              title={t("Recharger le portefeuille gratuitement")}
+              aria-label={t("Recharger le portefeuille")}
             >
               <Plus size={15} />
             </button>
@@ -455,10 +456,10 @@ export default function EnvolGameView({
 
           {/* Trophée Classement & Son */}
           <div className="flex items-center gap-1 shrink-0">
-            <button type="button" className="envol-icon text-[var(--a-gold)]" onClick={() => setShowBoard(true)} aria-label="Voir le classement des champions">
+            <button type="button" className="envol-icon text-[var(--a-gold)]" onClick={() => setShowBoard(true)} aria-label={t("Voir le classement des champions")}>
               <Trophy size={18} />
             </button>
-            <button type="button" className="envol-icon" onClick={() => setMuted((m) => !m)} aria-label={muted ? "Activer le son" : "Couper le son"}>
+            <button type="button" className="envol-icon" onClick={() => setMuted((m) => !m)} aria-label={muted ? t("Activer le son") : t("Couper le son")}>
               {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
             </button>
           </div>
@@ -484,7 +485,7 @@ export default function EnvolGameView({
         <div className="pointer-events-none absolute inset-x-0 top-[28%] z-10 flex flex-col items-center" aria-live="off">
           <div className={`envol-mult tabular-nums ${mult >= 3 ? "is-hot" : ""}`}>{fmtMult(mult)}</div>
           <div className="mt-1 rounded-full bg-black/40 px-3.5 py-1 text-[12px] font-bold text-white/90 backdrop-blur-md">
-            {phase === "rolling" ? "Roulage sur le Boulevard du 30 Juin…" : `Altitude ${Math.round(alt * 4)} m · Fleuve Congo en vue`}
+            {phase === "rolling" ? t("Roulage sur le Boulevard du 30 Juin…") : t("Altitude {n} m · Fleuve Congo en vue", { n: Math.round(alt * 4) })}
           </div>
         </div>
       )}
@@ -494,17 +495,17 @@ export default function EnvolGameView({
         <div className="absolute inset-x-0 top-[26%] z-10 flex justify-center px-4" role="status">
           <div className="envol-result is-lost flex flex-col items-center text-center p-4">
             <span className="display text-[32px] sm:text-[38px] text-red-400 leading-none">
-              L'AVION S'EST ENVOLÉ !
+              {t("L'AVION S'EST ENVOLÉ !")}
             </span>
             <div className="mt-1 text-[18px] font-black text-white tabular-nums">
-              Échappé à <span className="text-red-400">{fmtMult(mult)}</span>
+              {t("Échappé à")}{" "}<span className="text-red-400">{fmtMult(mult)}</span>
             </div>
             {lastRoundSummary && (
               <div className="mt-2 text-[12px] font-semibold text-white/80">
                 {lastRoundSummary.totalWon > 0 ? (
-                  <span className="text-emerald-400">Gains sécurisés : +{fmt(lastRoundSummary.totalWon)} CDF</span>
+                  <span className="text-emerald-400">{t("Gains sécurisés : +{n} CDF", { n: fmt(lastRoundSummary.totalWon) })}</span>
                 ) : (
-                  <span className="text-red-300">Mise non encaissée perdue (-{fmt(lastRoundSummary.totalBet)} CDF)</span>
+                  <span className="text-red-300">{t("Mise non encaissée perdue (-{n} CDF)", { n: fmt(lastRoundSummary.totalBet) })}</span>
                 )}
               </div>
             )}
@@ -514,7 +515,7 @@ export default function EnvolGameView({
               onClick={handleNextFlight}
               autoFocus
             >
-              <RotateCcw size={15} /> Vol Suivant
+              <RotateCcw size={15} />{" "}{t("Vol Suivant")}
             </button>
           </div>
         </div>
@@ -527,14 +528,14 @@ export default function EnvolGameView({
           {phase === "ready" && (
             <div className="flex items-center justify-between px-1">
               <span className="text-[11px] font-bold uppercase tracking-wider text-white/50">
-                Mises en CDF virtuels (Min. {MIN_BET} CDF)
+                {t("Mises en CDF virtuels (Min. {n} CDF)", { n: MIN_BET })}
               </span>
               <button
                 type="button"
                 onClick={() => setHasSecondBet((v) => !v)}
                 className="text-[11px] font-extrabold text-[var(--a-gold)] hover:underline flex items-center gap-1"
               >
-                {hasSecondBet ? "− Retirer la 2e mise" : "+ Activer la double mise"}
+                {hasSecondBet ? t("− Retirer la 2e mise") : t("+ Activer la double mise")}
               </button>
             </div>
           )}
@@ -544,15 +545,15 @@ export default function EnvolGameView({
             {/* PANNEAU MISE 1 */}
             <div className={`envol-bet-card ${bet1.active && !bet1.cashed ? "is-active-bet" : bet1.cashed ? "is-cashed" : ""}`}>
               <div className="flex items-center justify-between text-[11px] font-extrabold text-white/70 mb-1.5">
-                <span>Mise 1</span>
+                <span>{t("Mise 1")}</span>
                 {phase === "flying" && bet1.active && !bet1.cashed && (
                   <span className="text-emerald-400 font-black animate-pulse">
-                    Gain : {fmt(bet1.amount * mult)} CDF
+                    {t("Gain : {n} CDF", { n: fmt(bet1.amount * mult) })}
                   </span>
                 )}
                 {bet1.cashed && (
                   <span className="text-amber-300 font-black">
-                    Encaissé : +{fmt(bet1.winAmount)} CDF ({fmtMult(bet1.cashMult)})
+                    {t("Encaissé : +{n} CDF ({m})", { n: fmt(bet1.winAmount), m: fmtMult(bet1.cashMult) })}
                   </span>
                 )}
               </div>
@@ -565,7 +566,7 @@ export default function EnvolGameView({
                       type="button"
                       onClick={() => setBet1((b) => ({ ...b, amount: Math.max(MIN_BET, b.amount - 100) }))}
                       className="h-8 w-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 active:scale-95 text-white"
-                      aria-label="Diminuer la mise 1"
+                      aria-label={t("Diminuer la mise 1")}
                     >
                       <Minus size={14} />
                     </button>
@@ -576,7 +577,7 @@ export default function EnvolGameView({
                       type="button"
                       onClick={() => setBet1((b) => ({ ...b, amount: Math.min(wallet, b.amount + 100) }))}
                       className="h-8 w-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 active:scale-95 text-white"
-                      aria-label="Augmenter la mise 1"
+                      aria-label={t("Augmenter la mise 1")}
                     >
                       <Plus size={14} />
                     </button>
@@ -607,7 +608,7 @@ export default function EnvolGameView({
                   disabled={!planeReady || wallet < bet1.amount}
                 >
                   <Plane size={18} />
-                  <span>{planeReady ? `Décoller (${fmt(bet1.amount)} CDF)` : "Préparation…"}</span>
+                  <span>{planeReady ? t("Décoller ({n} CDF)", { n: fmt(bet1.amount) }) : t("Préparation…")}</span>
                 </button>
               )}
 
@@ -618,7 +619,7 @@ export default function EnvolGameView({
                   onClick={handleCashout1}
                   autoFocus
                 >
-                  <span className="text-[16px] uppercase tracking-wide">Encaisser</span>
+                  <span className="text-[16px] uppercase tracking-wide">{t("Encaisser")}</span>
                   <span className="text-[13px] font-bold text-amber-200">
                     {fmt(bet1.amount * mult)} CDF ({fmtMult(mult)})
                   </span>
@@ -627,13 +628,13 @@ export default function EnvolGameView({
 
               {bet1.cashed && (
                 <div className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-emerald-500/20 text-emerald-300 font-black text-[13px] border border-emerald-500/40">
-                  <CheckCircle2 size={16} /> Encaissé : +{fmt(bet1.winAmount)} CDF
+                  <CheckCircle2 size={16} /> {t("Encaissé : +{n} CDF", { n: fmt(bet1.winAmount) })}
                 </div>
               )}
 
               {phase === "crashed" && bet1.active && !bet1.cashed && (
                 <div className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-red-500/20 text-red-300 font-bold text-[13px] border border-red-500/40">
-                  <XCircle size={16} /> Non encaissé (-{fmt(bet1.amount)} CDF)
+                  <XCircle size={16} /> {t("Non encaissé (-{n} CDF)", { n: fmt(bet1.amount) })}
                 </div>
               )}
             </div>
@@ -642,15 +643,15 @@ export default function EnvolGameView({
             {hasSecondBet && (
               <div className={`envol-bet-card ${bet2.active && !bet2.cashed ? "is-active-bet" : bet2.cashed ? "is-cashed" : ""}`}>
                 <div className="flex items-center justify-between text-[11px] font-extrabold text-white/70 mb-1.5">
-                  <span>Mise 2</span>
+                  <span>{t("Mise 2")}</span>
                   {phase === "flying" && bet2.active && !bet2.cashed && (
                     <span className="text-emerald-400 font-black animate-pulse">
-                      Gain : {fmt(bet2.amount * mult)} CDF
+                      {t("Gain : {n} CDF", { n: fmt(bet2.amount * mult) })}
                     </span>
                   )}
                   {bet2.cashed && (
                     <span className="text-amber-300 font-black">
-                      Encaissé : +{fmt(bet2.winAmount)} CDF ({fmtMult(bet2.cashMult)})
+                      {t("Encaissé : +{n} CDF ({m})", { n: fmt(bet2.winAmount), m: fmtMult(bet2.cashMult) })}
                     </span>
                   )}
                 </div>
@@ -663,7 +664,7 @@ export default function EnvolGameView({
                         type="button"
                         onClick={() => setBet2((b) => ({ ...b, amount: Math.max(MIN_BET, b.amount - 100) }))}
                         className="h-8 w-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 active:scale-95 text-white"
-                        aria-label="Diminuer la mise 2"
+                        aria-label={t("Diminuer la mise 2")}
                       >
                         <Minus size={14} />
                       </button>
@@ -674,7 +675,7 @@ export default function EnvolGameView({
                         type="button"
                         onClick={() => setBet2((b) => ({ ...b, amount: Math.min(wallet, b.amount + 100) }))}
                         className="h-8 w-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 active:scale-95 text-white"
-                        aria-label="Augmenter la mise 2"
+                        aria-label={t("Augmenter la mise 2")}
                       >
                         <Plus size={14} />
                       </button>
@@ -703,7 +704,7 @@ export default function EnvolGameView({
                     className="envol-btn-cashout"
                     onClick={handleCashout2}
                   >
-                    <span className="text-[16px] uppercase tracking-wide">Encaisser</span>
+                    <span className="text-[16px] uppercase tracking-wide">{t("Encaisser")}</span>
                     <span className="text-[13px] font-bold text-amber-200">
                       {fmt(bet2.amount * mult)} CDF ({fmtMult(mult)})
                     </span>
@@ -712,13 +713,13 @@ export default function EnvolGameView({
 
                 {bet2.cashed && (
                   <div className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-emerald-500/20 text-emerald-300 font-black text-[13px] border border-emerald-500/40">
-                    <CheckCircle2 size={16} /> Encaissé : +{fmt(bet2.winAmount)} CDF
+                    <CheckCircle2 size={16} /> {t("Encaissé : +{n} CDF", { n: fmt(bet2.winAmount) })}
                   </div>
                 )}
 
                 {phase === "crashed" && bet2.active && !bet2.cashed && (
                   <div className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-red-500/20 text-red-300 font-bold text-[13px] border border-red-500/40">
-                    <XCircle size={16} /> Non encaissé (-{fmt(bet2.amount)} CDF)
+                    <XCircle size={16} /> {t("Non encaissé (-{n} CDF)", { n: fmt(bet2.amount) })}
                   </div>
                 )}
               </div>
@@ -736,8 +737,8 @@ export default function EnvolGameView({
               <Plane size={19} />
               <span>
                 {planeReady
-                  ? `Décoller · Mises cumulées : ${fmt(bet1.amount + bet2.amount)} CDF`
-                  : "Préparation de l'avion…"}
+                  ? t("Décoller · Mises cumulées : {n} CDF", { n: fmt(bet1.amount + bet2.amount) })
+                  : t("Préparation de l'avion…")}
               </span>
             </button>
           )}
@@ -745,7 +746,7 @@ export default function EnvolGameView({
           {/* Roulage en cours */}
           {phase === "rolling" && (
             <div className="envol-glass py-2.5 text-center text-[13px] font-bold text-amber-300">
-              Décollage en cours… L'avion prend de la vitesse sur le Boulevard !
+              {t("Décollage en cours… L'avion prend de la vitesse sur le Boulevard !")}
             </div>
           )}
 
@@ -757,14 +758,14 @@ export default function EnvolGameView({
                 className="a-btn a-btn-whatsapp flex-1 text-[13px] py-2"
                 onClick={shareWhatsApp}
               >
-                <WhatsAppIcon /> Partager mon vol
+                <WhatsAppIcon />{" "}{t("Partager mon vol")}
               </button>
               <button
                 type="button"
                 className="a-btn a-btn-secondary px-3 py-2 text-[13px]"
                 onClick={() => setShowBoard(true)}
               >
-                <Trophy size={15} /> Champions
+                <Trophy size={15} />{" "}{t("Champions")}
               </button>
             </div>
           )}
@@ -783,13 +784,13 @@ export default function EnvolGameView({
               <Coins size={30} />
             </div>
             <h3 className="display text-[26px] mt-3 text-[var(--a-gold)] leading-tight">
-              Portefeuille Léopard
+              {t("Portefeuille Léopard")}
             </h3>
             <p className="mt-2 text-[13px] text-white/75 leading-relaxed">
-              Ce jeu fonctionne exclusivement avec de <strong>l'argent fictif</strong> pour le plaisir et les défis entre supporters.
+              {t("Ce jeu fonctionne exclusivement avec de l'argent fictif pour le plaisir et les défis entre supporters.")}
             </p>
             <div className="mt-4 rounded-xl bg-white/5 p-3 text-[14px] font-bold text-amber-200">
-              Solde actuel : {fmt(wallet)} CDF
+              {t("Solde actuel : {n} CDF", { n: fmt(wallet) })}
             </div>
             <div className="mt-5 grid gap-2">
               <button
@@ -797,14 +798,14 @@ export default function EnvolGameView({
                 className="a-btn a-btn-primary w-full text-[15px]"
                 onClick={handleRecharge}
               >
-                <Sparkles size={16} /> Recharger +{fmt(RECHARGE_AMOUNT)} CDF (Gratuit)
+                <Sparkles size={16} /> {t("Recharger +{n} CDF (Gratuit)", { n: fmt(RECHARGE_AMOUNT) })}
               </button>
               <button
                 type="button"
                 className="a-btn a-btn-ghost w-full text-[13px]"
                 onClick={() => setShowRechargeModal(false)}
               >
-                Fermer
+                {t("Fermer")}
               </button>
             </div>
           </div>

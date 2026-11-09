@@ -1,7 +1,10 @@
+import { initLang, t, useLang } from "./lib/i18n";
 import { useEffect, useState } from "react";
 import EnvolGameView from "./EnvolGameView";
 
 export default function EnvolStandaloneApp() {
+  useState(() => initLang());
+  useLang();
   const [player, setPlayer] = useState<{ id: string; nickname: string; public_tag: string } | null>(null);
   const [opponent, setOpponent] = useState<{ name: string; tag?: string; scoreToBeat: number } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -15,7 +18,7 @@ export default function EnvolStandaloneApp() {
         const decoded = JSON.parse(atob(matchRaw.replace(/-/g, "+").replace(/_/g, "/")));
         if (decoded && (decoded.g === "envol" || Number.isFinite(Number(decoded.s)))) {
           setOpponent({
-            name: decoded.n || "Un ami",
+            name: decoded.n || t("Un ami"),
             tag: decoded.t ? String(decoded.t).slice(0, 8) : undefined,
             scoreToBeat: Math.max(0, Math.round(Number(decoded.s || decoded.p || 0)))
           });
@@ -31,7 +34,7 @@ export default function EnvolStandaloneApp() {
           setPlayer(res.player);
         } else {
           // Secours local si le serveur ne répond pas
-          let localName = "Supporter";
+          let localName = t("Supporter");
           let localTag = "243";
           try {
             const savedName = localStorage.getItem("bloc_player_name");
@@ -43,7 +46,7 @@ export default function EnvolStandaloneApp() {
         }
       })
       .catch(() => {
-        setPlayer({ id: "offline", nickname: "Supporter", public_tag: "243" });
+        setPlayer({ id: "offline", nickname: t("Supporter"), public_tag: "243" });
       })
       .finally(() => setLoading(false));
   }, []);
@@ -53,7 +56,7 @@ export default function EnvolStandaloneApp() {
       <div className="fixed inset-0 flex flex-col items-center justify-center bg-[#070e24] text-white">
         <div className="h-10 w-10 animate-spin rounded-full border-3 border-[var(--a-gold)] border-t-transparent" />
         <span className="mt-4 text-[13px] font-extrabold uppercase tracking-widest text-white/70">
-          Chargement d'Envol 243…
+          {t("Chargement d'Envol 243…")}
         </span>
       </div>
     );
