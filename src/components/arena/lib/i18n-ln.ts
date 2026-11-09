@@ -109,7 +109,9 @@ export const LN: Record<string, string> = {
   "Le gardien a fini par t'arrêter.": "Gardien asukaki kokanga yo.",
   "{n} paniers": "Bitunga {n}",
   "{n} panier": "Kitunga {n}",
-  "La sirène a retenti !": "Sirène ebeti !",
+  "La sirène a retenti !": "Sifflet ebeti !",
+  "Sirène": "Sifflet",
+  "Buzzer": "Sifflet ya suka",
   "Égalité !": "Ndenge moko !",
   "{name} gagne !": "{name} alongi !",
   "Personne ne lâche rien : une revanche ?": "Moto moko te atiki : revanche ?",
@@ -275,7 +277,7 @@ export const LN: Record<string, string> = {
 
   /* ---------------- Jeux, modes, difficultés ---------------- */
   "Tirs au but": "Mabeta ya penalty",
-  "Shoot à la sirène": "Beta liboso ya sirène",
+  "Shoot à la sirène": "Shoot ya suka",
   "Stade des Martyrs": "Stade des Martyrs",
   "Limete 7ᵉ Rue": "Limete 7ème rue",
   "Boulevard & Fleuve Congo": "Boulevard mpe Ebale ya Congo",
@@ -286,7 +288,7 @@ export const LN: Record<string, string> = {
   Défi: "Défi",
   "15 paliers à débloquer, de l'initiation au sommet": "Biteni 15 ya kofungola, banda ebandeli tii likolo",
   "Marque jusqu'au premier raté. Le gardien progresse.": "Beta tii libeta ya liboso ekoboya. Gardien azali kokola.",
-  "Un max de paniers avant la sirène": "Bitunga mingi liboso sirène ebeta",
+  "Un max de paniers avant la sirène": "Bitunga ebele liboso sifflet ebeta",
   "2 à 4 joueurs, on se passe le téléphone": "Basakani 2 tii 4, bopesanaka téléphone",
   "Bats le score de ton ami": "Leka score ya moninga na yo",
   Facile: "Pete",
