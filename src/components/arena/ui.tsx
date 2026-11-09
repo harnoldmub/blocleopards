@@ -462,3 +462,24 @@ export function CharacterPreview({
     </div>
   );
 }
+
+export function FlagFrance({ className = "h-3.5 w-auto" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 16" width="24" height="16" aria-hidden="true">
+      <rect width="8" height="16" fill="#002654" />
+      <rect x="8" width="8" height="16" fill="#FFFFFF" />
+      <rect x="16" width="8" height="16" fill="#ED2939" />
+    </svg>
+  );
+}
+
+export function FlagDRC({ className = "h-3.5 w-auto" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 16" width="24" height="16" aria-hidden="true">
+      <rect width="24" height="16" fill="#007FFF" />
+      <polygon points="0,16 0,11.5 17.5,0 24,0 24,4.5 6.5,16" fill="#F7D618" />
+      <polygon points="0,14.8 0,12.7 19,0 22.5,0 24,1 4.5,16 1.5,16" fill="#CE1021" />
+      <polygon points="4.5,2.1 5.2,3.8 7.1,3.8 5.6,4.9 6.2,6.7 4.5,5.6 2.8,6.7 3.4,4.9 1.9,3.8 3.8,3.8" fill="#F7D618" />
+    </svg>
+  );
+}

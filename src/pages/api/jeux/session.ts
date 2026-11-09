@@ -57,9 +57,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const body = await request.json().catch(() => ({}));
     const newNickname = String(body.nickname || "").trim();
 
-    if (!newNickname) {
+    const { validatePlayerNickname } = await import("../../../lib/arena/moderation");
+    const check = validatePlayerNickname(newNickname);
+    if (!check.ok) {
       return new Response(
-        JSON.stringify({ success: false, error: "Pseudo requis" }),
+        JSON.stringify({ success: false, error: check.error || "Pseudo non autorisé" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }

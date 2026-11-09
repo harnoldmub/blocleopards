@@ -130,13 +130,11 @@ export function addRecord(data: SaveData, game: GameId, entry: RecordEntry): { d
   return { data: { ...data, records: { ...data.records, [game]: list } }, rank };
 }
 
+import { sanitizePlayerNickname, isNameBlocked } from "../../../lib/arena/moderation";
+export { isNameBlocked };
+
 export function cleanName(raw: string, fallback = "Léopard"): string {
-  const s = (raw || "")
-    .replace(/[<>"'`\\]/g, "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 14);
-  return s || fallback;
+  return sanitizePlayerNickname(raw, fallback);
 }
 
 export function playerEvolution(data: SaveData) {

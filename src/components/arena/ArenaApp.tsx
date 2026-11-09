@@ -10,11 +10,11 @@ import {
   BASKET_CHRONO, BASKET_DUEL, BASKET_STAGES, CHRONO_SECONDS, DIFFS, FOOT_DUEL, FOOT_STAGES, GAME_META, MODE_META,
   comboMult, starsFor, survivalStage, type BasketStage, type Difficulty, type FootStage, type GameId, type Mode
 } from "./lib/config";
-import { addDuel, addRecord, cleanName, loadSave, persist, progressOf, playerEvolution, DEFAULT_STATS, type DuelEntry, type SaveData, DEFAULT_SAVE } from "./lib/storage";
+import { addDuel, addRecord, cleanName, isNameBlocked, loadSave, persist, progressOf, playerEvolution, DEFAULT_STATS, type DuelEntry, type SaveData, DEFAULT_SAVE } from "./lib/storage";
 import { challengeKey, challengeUrl, decodeChallenge, type Challenge } from "./lib/challenge";
 import { audio } from "./lib/audio";
 import { randomSeed } from "./lib/rng";
-import { CharacterPreview, ConfirmModal, GamePreview, Sheet, Stars, Toast, useReducedMotion } from "./ui";
+import { CharacterPreview, ConfirmModal, FlagDRC, FlagFrance, GamePreview, Sheet, Stars, Toast, useReducedMotion } from "./ui";
 import { LOGO_BL, LOGO_RDC } from "./engine/scene";
 import { ROSTER, charFor, charById, hasJersey } from "./lib/roster";
 
@@ -81,20 +81,48 @@ function stageFor(s: Session, p?: Player): FootStage | BasketStage {
   return BASKET_DUEL;
 }
 
-/** Bascule Français / Lingala (mémorisée sur l'appareil). */
+/** Bascule Français / Lingala avec les drapeaux de la France et de la RDC. */
 function LangToggle({ className = "" }: { className?: string }) {
   const lang = useLang();
-  const next = lang === "fr" ? "ln" : "fr";
   return (
-    <button
-      type="button"
-      className={`a-icon-btn !h-10 !w-10 shrink-0 text-[12px] font-black tracking-wide ${className}`}
-      onClick={() => setLang(next)}
-      aria-label={lang === "fr" ? "Langue : français. Passer en lingala" : "Monoko : lingala. Kozonga na français"}
-      title={lang === "fr" ? "Lingala" : "Français"}
+    <div
+      className={`inline-flex items-center rounded-xl bg-white/10 p-0.5 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)] shrink-0 ${className}`}
+      role="radiogroup"
+      aria-label={t("Langue")}
     >
-      {lang === "fr" ? "FR" : "LN"}
-    </button>
+      <button
+        type="button"
+        role="radio"
+        aria-checked={lang === "fr"}
+        onClick={() => setLang("fr")}
+        className={`flex h-8 sm:h-9 items-center gap-1 rounded-lg px-1.5 sm:px-2 text-[11px] font-black transition-all ${
+          lang === "fr"
+            ? "bg-[var(--a-gold)] text-[#1a1300] shadow-[0_2px_8px_rgba(244,196,0,0.3)]"
+            : "text-white/60 hover:text-white"
+        }`}
+        title="Français"
+        aria-label="Français"
+      >
+        <FlagFrance className="h-3 w-auto sm:h-3.5 rounded-[2px]" />
+        <span className="hidden xs:inline">FR</span>
+      </button>
+      <button
+        type="button"
+        role="radio"
+        aria-checked={lang === "ln"}
+        onClick={() => setLang("ln")}
+        className={`flex h-8 sm:h-9 items-center gap-1 rounded-lg px-1.5 sm:px-2 text-[11px] font-black transition-all ${
+          lang === "ln"
+            ? "bg-[var(--a-gold)] text-[#1a1300] shadow-[0_2px_8px_rgba(244,196,0,0.3)]"
+            : "text-white/60 hover:text-white"
+        }`}
+        title="Lingala (RDC)"
+        aria-label="Lingala"
+      >
+        <FlagDRC className="h-3 w-auto sm:h-3.5 rounded-[2px]" />
+        <span className="hidden xs:inline">LN</span>
+      </button>
+    </div>
   );
 }
 
@@ -988,22 +1016,22 @@ function Home(props: {
   const prog = (g: GameId) => progressOf(save, g, save.diff);
   const evo = playerEvolution(save);
   return (
-    <div className="flex h-full flex-col overflow-y-auto">
-      <header className="safe-top flex items-center justify-between gap-1.5 px-3 sm:px-4 pb-2 w-full max-w-full overflow-hidden">
-        <a href="/" className="a-btn a-btn-ghost -ml-1 min-h-[40px] px-2.5 text-[13px] shrink-0" aria-label={t("Retour au site Bloc Léopards")}>
-          <ArrowLeft size={16} /> <span className="hidden xs:inline">{t("Site")}</span>
+    <div className="flex h-full flex-col overflow-y-auto overflow-x-hidden w-full max-w-full">
+      <header className="safe-top flex items-center justify-between gap-1 sm:gap-2 px-2.5 sm:px-4 pb-2 w-full max-w-full overflow-hidden">
+        <a href="/" className="a-btn a-btn-ghost -ml-0.5 sm:-ml-1 min-h-[36px] sm:min-h-[40px] px-2 sm:px-2.5 text-[12px] sm:text-[13px] shrink-0" aria-label={t("Retour au site Bloc Léopards")}>
+          <ArrowLeft size={15} /> <span className="hidden xs:inline">{t("Site")}</span>
         </a>
-        <div className="ml-auto flex items-center gap-1.5 min-w-0">
+        <div className="ml-auto flex items-center gap-1 sm:gap-1.5 min-w-0 shrink">
           <button
-            className="a-btn a-btn-secondary min-h-[40px] px-2.5 text-[12px] text-[var(--a-gold)] shrink-0"
+            className="a-btn a-btn-secondary min-h-[36px] sm:min-h-[40px] px-2 sm:px-2.5 text-[12px] text-[var(--a-gold)] shrink-0"
             onClick={props.onOpenChampions}
             aria-label={t("Classement Les champions du Bloc")}
           >
-            <Trophy size={15} />
+            <Trophy size={14} />
             <span className="hidden sm:inline font-bold">{t("Champions")}</span>
           </button>
           <button
-            className="a-btn a-btn-secondary min-h-[40px] max-w-[125px] xs:max-w-[160px] sm:max-w-[210px] px-2.5 text-[12px] min-w-0 shrink"
+            className="a-btn a-btn-secondary min-h-[36px] sm:min-h-[40px] max-w-[95px] xs:max-w-[125px] sm:max-w-[190px] px-2 sm:px-2.5 text-[11px] sm:text-[12px] min-w-0 shrink"
             onClick={props.onProfile}
             aria-label={t("Modifier ton joueur")}
           >
@@ -1012,27 +1040,27 @@ function Home(props: {
                 ? `${save.name}${props.playerTag ? ` · #${props.playerTag}` : ""}`
                 : t("Profil")}
             </span>
-            <Pencil size={12} className="shrink-0" />
+            <Pencil size={11} className="shrink-0 opacity-70" />
           </button>
           <LangToggle />
           <button
-            className="a-icon-btn !h-10 !w-10 shrink-0"
+            className="a-icon-btn !h-8 !w-8 sm:!h-9 sm:!w-9 shrink-0"
             onClick={props.onSound}
             aria-label={save.sound ? t("Couper le son") : t("Activer le son")}
             aria-pressed={save.sound}
           >
-            {save.sound ? <Volume2 size={18} /> : <VolumeX size={18} />}
+            {save.sound ? <Volume2 size={16} /> : <VolumeX size={16} />}
           </button>
         </div>
       </header>
 
       {/* Les deux marques mises en avant */}
-      <div className="flex items-center justify-center gap-4 px-4">
-        <img src={LOGO_BL} alt={t("Bloc Léopards")} className="h-[92px] w-auto drop-shadow-[0_10px_24px_rgba(244,196,0,0.25)] sm:h-[120px]" width={89} height={92} />
-        <span className="h-14 w-px bg-white/20" aria-hidden="true" />
-        <img src={LOGO_RDC} alt={t("R.D. Congo, Cœur de l'Afrique")} className="h-[38px] w-auto sm:h-[48px]" width={136} height={38} />
+      <div className="flex items-center justify-center gap-3 sm:gap-4 px-4">
+        <img src={LOGO_BL} alt={t("Bloc Léopards")} className="h-[80px] xs:h-[92px] w-auto drop-shadow-[0_10px_24px_rgba(244,196,0,0.25)] sm:h-[120px]" width={89} height={92} />
+        <span className="h-12 sm:h-14 w-px bg-white/20" aria-hidden="true" />
+        <img src={LOGO_RDC} alt={t("R.D. Congo, Cœur de l'Afrique")} className="h-[32px] xs:h-[38px] w-auto sm:h-[48px]" width={136} height={38} />
       </div>
-      <h1 className="display mt-3 text-center text-[42px] sm:text-[56px]">
+      <h1 className="display mt-2 sm:mt-3 text-center text-[34px] xs:text-[42px] sm:text-[56px]">
         {t("L'Arène des")}{" "}<span className="text-[var(--a-gold)]">{t("Léopards")}</span>
       </h1>
       <p className="mx-auto mt-1 max-w-sm px-6 text-center text-[14px] text-[var(--a-muted)]">{t("Choisis ton terrain. Un geste du pouce suffit.")}</p>
@@ -1695,7 +1723,8 @@ function ProfileSheet(props: {
   const [p, setP] = useState(props.initial);
   const [numStr, setNumStr] = useState(String(props.initial.number || 10));
   const [charReady, setCharReady] = useState(true);
-  const ok = p.name.trim().length > 0 && charReady;
+  const isBlocked = isNameBlocked(p.name);
+  const ok = p.name.trim().length > 0 && !isBlocked && charReady;
 
   useEffect(() => {
     setP(props.initial);
@@ -1743,12 +1772,35 @@ function ProfileSheet(props: {
         </div>
         <fieldset className="min-w-0">
           <legend className="mb-2 text-[12px] font-bold uppercase tracking-[0.16em] text-[var(--a-muted)]">{t("Langue")}</legend>
-          <div className="a-seg" role="radiogroup" aria-label={t("Langue")}>
-            {(["fr", "ln"] as const).map((l) => (
-              <button type="button" key={l} role="radio" aria-checked={getLang() === l} onClick={() => setLang(l)} lang={l}>
-                {l === "fr" ? "Français" : "Lingala"}
-              </button>
-            ))}
+          <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label={t("Langue")}>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={getLang() === "fr"}
+              onClick={() => setLang("fr")}
+              className={`flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 text-[13px] font-black transition-all ${
+                getLang() === "fr"
+                  ? "bg-[var(--a-gold)] text-[#1a1300] shadow-[0_2px_8px_rgba(244,196,0,0.3)]"
+                  : "bg-white/5 text-white/80 hover:bg-white/10 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
+              }`}
+            >
+              <FlagFrance className="h-4 w-auto rounded-[2px]" />
+              <span>Français</span>
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={getLang() === "ln"}
+              onClick={() => setLang("ln")}
+              className={`flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 text-[13px] font-black transition-all ${
+                getLang() === "ln"
+                  ? "bg-[var(--a-gold)] text-[#1a1300] shadow-[0_2px_8px_rgba(244,196,0,0.3)]"
+                  : "bg-white/5 text-white/80 hover:bg-white/10 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
+              }`}
+            >
+              <FlagDRC className="h-4 w-auto rounded-[2px]" />
+              <span>Lingala (RDC)</span>
+            </button>
           </div>
         </fieldset>
         <fieldset className="min-w-0">
@@ -1803,7 +1855,7 @@ function ProfileSheet(props: {
           <div className="grid grid-cols-[1fr_96px] gap-2">
             <label className="min-w-0">
               <span className="mb-1.5 block text-[12px] font-bold uppercase tracking-[0.16em] text-[var(--a-muted)]">{t("Nom sur le maillot")}</span>
-              <input className="a-input" value={p.name} maxLength={14} autoComplete="nickname" placeholder={t("Ton nom")} onChange={(e) => setP({ ...p, name: e.target.value })} required autoFocus={props.first} />
+              <input className={`a-input ${isBlocked ? "border-red-500 ring-2 ring-red-500/40" : ""}`} value={p.name} maxLength={14} autoComplete="nickname" placeholder={t("Ton nom")} onChange={(e) => setP({ ...p, name: e.target.value })} required autoFocus={props.first} />
             </label>
             <label>
               <span className="mb-1.5 block text-[12px] font-bold uppercase tracking-[0.16em] text-[var(--a-muted)]">{t("Numéro")}</span>
@@ -1839,7 +1891,13 @@ function ProfileSheet(props: {
                 {t("Tenue civile · Pas de numéro")}
               </span>
             </div>
-            <input className="a-input" value={p.name} maxLength={14} autoComplete="nickname" placeholder={t("Ton nom")} onChange={(e) => setP({ ...p, name: e.target.value })} required autoFocus={props.first} />
+            <input className={`a-input ${isBlocked ? "border-red-500 ring-2 ring-red-500/40" : ""}`} value={p.name} maxLength={14} autoComplete="nickname" placeholder={t("Ton nom")} onChange={(e) => setP({ ...p, name: e.target.value })} required autoFocus={props.first} />
+          </div>
+        )}
+        {isBlocked && (
+          <div className="mt-1 flex items-center gap-1.5 rounded-xl bg-red-500/15 px-3 py-2 text-[12px] font-bold text-red-400 border border-red-500/30" role="alert">
+            <span>⚠️</span>
+            <span>{t("Ce pseudo n'est pas autorisé")}</span>
           </div>
         )}
       </form>

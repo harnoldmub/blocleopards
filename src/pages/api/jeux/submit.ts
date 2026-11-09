@@ -30,8 +30,10 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
     // Si un pseudo a été passé et est différent du pseudo en base, on le synchronise
     if (body.nickname && String(body.nickname).trim() && String(body.nickname).trim() !== player.nickname) {
       const { updatePlayerNickname } = await import("../../../lib/arena/champions");
-      await updatePlayerNickname(player.id, String(body.nickname));
-      player.nickname = String(body.nickname).trim();
+      const updated = await updatePlayerNickname(player.id, String(body.nickname));
+      if (updated) {
+        player.nickname = updated.nickname;
+      }
     }
 
     const nonce = body.nonce ? String(body.nonce) : undefined;

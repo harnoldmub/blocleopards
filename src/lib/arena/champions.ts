@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { sql, requireDatabase } from "../neon";
+import { sanitizePlayerNickname } from "./moderation";
 
 export type ArenaGame = "foot" | "basket" | "envol";
 export type LeaderboardPeriod = "week" | "all";
@@ -42,11 +43,9 @@ export function generatePublicTag(): string {
   return tag;
 }
 
-/** Nettoie et normalise le pseudo (1 à 24 caractères, pas de tags HTML) */
+/** Nettoie et normalise le pseudo (1 à 20 caractères, pas de tags HTML ni de mots bannis) */
 export function sanitizeNickname(raw?: string | null): string {
-  if (!raw) return "Léopard";
-  const cleaned = raw.replace(/[<>{}[\]\\]/g, "").trim().slice(0, 24);
-  return cleaned || "Léopard";
+  return sanitizePlayerNickname(raw, "Léopard");
 }
 
 /** Calcule le lundi 00:00:00 dans le fuseau horaire Africa/Kinshasa (UTC+1 constant) */

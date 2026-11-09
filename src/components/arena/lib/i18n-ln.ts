@@ -112,6 +112,7 @@ export const LN: Record<string, string> = {
   "La sirène a retenti !": "Sifflet ebeti !",
   "Sirène": "Sifflet",
   "Buzzer": "Sifflet ya suka",
+  "Ce pseudo n'est pas autorisé": "Kombo oyo epekisami",
   "Égalité !": "Ndenge moko !",
   "{name} gagne !": "{name} alongi !",
   "Personne ne lâche rien : une revanche ?": "Moto moko te atiki : revanche ?",
