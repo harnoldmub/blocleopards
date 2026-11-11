@@ -115,16 +115,26 @@ function initHeroVideo() {
   const videos = Array.from(document.querySelectorAll<HTMLVideoElement>("[data-hero-media]"));
   if (!videos.length) return;
 
+  // iOS n'autorise la lecture automatique que si la vidéo est muette et « inline »
+  // au moment de l'appel : on force les propriétés ET les attributs.
   const play = (v: HTMLVideoElement) => {
     v.muted = true;
+    v.defaultMuted = true;
+    v.playsInline = true;
+    v.setAttribute("muted", "");
+    v.setAttribute("playsinline", "");
     v.play().catch(() => {});
   };
 
-  // Repli : première interaction utilisateur (politiques d'autoplay strictes).
+  // Repli : premier geste (toucher, défilement) si le téléphone bloque l'autoplay
+  // (mode économie d'énergie), puis au retour sur l'onglet.
   const onInteract = () => {
-    videos.forEach((v) => { if (isInView(v)) play(v); });
+    videos.forEach((v) => { if (v.paused && isInView(v)) play(v); });
   };
-  window.addEventListener("pointerdown", onInteract, { once: true });
+  (["pointerdown", "touchstart", "scroll"] as const).forEach((type) =>
+    window.addEventListener(type, onInteract, { once: true, passive: true })
+  );
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) onInteract(); });
 
   if (!("IntersectionObserver" in window)) {
     videos.forEach(play);
