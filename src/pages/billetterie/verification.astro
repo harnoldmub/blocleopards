@@ -1,5 +1,6 @@
 ---
 import { requireDatabase } from "../../lib/neon";
+import { billetterie as cfg, matchDateTime } from "../../data/billetterie";
 
 const reservation = Astro.url.searchParams.get("reservation")?.trim() || "";
 let dossier: any = null;
@@ -8,7 +9,7 @@ if (/^BL-2026-\d{6}$/.test(reservation)) {
   try {
     const sql = requireDatabase();
     const rows = await sql`
-      select reservation_code, first_name, last_name, status
+      select reservation_code, first_name, last_name, status, created_at
       from billetterie_reservations
       where reservation_code = ${reservation}
       limit 1
@@ -19,7 +20,9 @@ if (/^BL-2026-\d{6}$/.test(reservation)) {
   }
 }
 
-const valid = Boolean(dossier && dossier.status !== "cancelled");
+// Un dossier du match précédent reste en base mais ne vaut pas pour ce match.
+const previousMatch = Boolean(dossier && new Date(dossier.created_at) < new Date(cfg.reservationsSince));
+const valid = Boolean(dossier && dossier.status !== "cancelled" && !previousMatch);
 const fullName = dossier ? `${dossier.first_name} ${dossier.last_name}` : "";
 ---
 
@@ -36,8 +39,8 @@ const fullName = dossier ? `${dossier.first_name} ${dossier.last_name}` : "";
         <div class="verification-mark" aria-hidden="true">{valid ? "✓" : "!"}</div>
         <p class="verification-kicker">VÉRIFICATION DE RÉSERVATION</p>
         <h1>{valid ? "Réservation valide" : "Réservation invalide"}</h1>
-        <p class="verification-status">{valid ? "Cette pré-réservation est reconnue par la billetterie." : "Ce numéro de dossier n’est pas reconnu."}</p>
-        {valid && <div class="verification-details"><span>N° DE DOSSIER</span><strong>{reservation}</strong><span>NOM DU SUPPORTER</span><strong>{fullName}</strong><span>RETRAIT DU BILLET</span><strong>Stade Tata Raphaël</strong></div>}
+        <p class="verification-status">{valid ? "Cette pré-réservation est reconnue par la billetterie." : previousMatch ? "Ce dossier correspond à un match précédent. Il n’est pas valable pour ce match." : "Ce numéro de dossier n’est pas reconnu."}</p>
+        {valid && <div class="verification-details"><span>N° DE DOSSIER</span><strong>{reservation}</strong><span>NOM DU SUPPORTER</span><strong>{fullName}</strong><span>MATCH</span><strong>{cfg.home.name} – {cfg.away.name}</strong><span>DATE</span><strong>{matchDateTime}</strong><span>RETRAIT DU BILLET</span><strong>{cfg.pickup.place}</strong></div>}
         {!valid && <p class="verification-help">Scannez un QR code officiel ou vérifiez le numéro de dossier.</p>}
         <a href="/billetterie">Retour à la billetterie</a>
       </div>

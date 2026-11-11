@@ -1,16 +1,18 @@
 ---
 import { requireDatabase } from "../../lib/neon";
+import { billetterie as cfg } from "../../data/billetterie";
 
 let reservations: any[] = [];
-// 15 réservations historiques ont été réalisées avant la mise en place de
-// l'enregistrement en base. Le total public reste donc base actuelle + historique.
-const historicalReservations = 15;
+// Liste du match en cours uniquement : les réservations du match précédent
+// restent en base (et dans l'admin) mais ne sont plus émargées ici.
+const historicalReservations = 0;
 try {
   const sql = requireDatabase();
   reservations = await sql`
     select reservation_code, first_name, last_name, whatsapp, status, quantity
     from billetterie_reservations
     where status <> 'cancelled'
+      and created_at >= ${cfg.reservationsSince}
     order by created_at desc
     limit 10000
   `;
@@ -18,14 +20,9 @@ try {
   console.error("[billetterie] Liste publique indisponible:", error);
 }
 
-// Liste officielle des 5 gagnants du jeu-concours CAN 2027 (places offertes au Stade Tata Raphaël)
-const contestWinners = [
-  { rank: 1, name: "Eric Bangula" },
-  { rank: 2, name: "Don de Dieu Mbengo" },
-  { rank: 3, name: "Autsai Safi Carine" },
-  { rank: 4, name: "Raphaël Mukala" },
-  { rank: 5, name: "Grace Kwengani" },
-];
+// Gagnants d'un jeu-concours lié au match en cours. Les 5 gagnants du match
+// RDC – Guinée équatoriale (septembre 2026) restent affichés sur /gagnants.
+const contestWinners: { rank: number; name: string }[] = [];
 
 const passedCount = reservations.filter((r) => r.status === "paid").length;
 const totalTickets = reservations.reduce((acc, r) => acc + (Number(r.quantity) || 1), 0);
@@ -46,7 +43,7 @@ const totalTickets = reservations.reduce((acc, r) => acc + (Number(r.quantity) |
       </header>
 
       <section class="hero">
-        <p class="eyebrow">SUIVI DES RÉSERVATIONS</p>
+        <p class="eyebrow">SUIVI DES RÉSERVATIONS · {cfg.home.name} – {cfg.away.name}, {cfg.dateShort}</p>
         <h1>Retrouvez une réservation</h1>
         <p>Recherchez par nom, prénom, numéro WhatsApp ou code de réservation.</p>
         <p class="activity">
@@ -60,10 +57,11 @@ const totalTickets = reservations.reduce((acc, r) => acc + (Number(r.quantity) |
         </p>
 
         <!-- CARTE OFFICIELLE : LES 5 GAGNANTS DU JEU-CONCOURS -->
+        {contestWinners.length > 0 && (
         <section class="winners-block" aria-label="Gagnants du jeu-concours CAN 2027">
           <div class="winners-header">
             <span class="winners-pill">🏆 JEU-CONCOURS · 5 PLACES OFFERTES</span>
-            <span class="winners-match">RDC vs Guinée Équatoriale</span>
+            <span class="winners-match">{cfg.home.name} – {cfg.away.name}</span>
           </div>
           <h2 class="winners-title">Liste des 5 Gagnants</h2>
           <p class="winners-subtitle">
@@ -78,6 +76,7 @@ const totalTickets = reservations.reduce((acc, r) => acc + (Number(r.quantity) |
             ))}
           </div>
         </section>
+        )}
 
         <label class="search">
           <span aria-hidden="true">⌕</span>

@@ -3,6 +3,7 @@ import { randomInt } from "node:crypto";
 import { requireDatabase } from "../../../lib/neon";
 import { verifyTurnstile } from "../../../lib/turnstile";
 import { getSetting } from "../../../lib/settings";
+import { billetterie } from "../../../data/billetterie";
 
 export const prerender = false;
 
@@ -17,6 +18,7 @@ export const GET: APIRoute = async () => {
       select count(*)::int as total
       from billetterie_reservations
       where status <> 'cancelled'
+        and created_at >= ${billetterie.reservationsSince}
     `;
     const count = Number(rows[0]?.total || 0);
     const capacitySetting = await getSetting("billetterie_capacity", "5000");
@@ -70,13 +72,13 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       !country ||
       !Number.isInteger(quantity) ||
       quantity < 1 ||
-      quantity > 4
+      quantity > billetterie.ticket.maxPerOrder
     ) {
       return new Response(JSON.stringify({ error: "Informations de réservation invalides." }), { status: 400, headers });
     }
 
     const sql = requireDatabase();
-    const unitPrice = 69000;
+    const unitPrice = billetterie.ticket.unitPriceFc;
 
     for (let attempt = 0; attempt < 5; attempt += 1) {
       const reservationCode = `BL-2026-${randomInt(0, 1_000_000).toString().padStart(6, "0")}`;

@@ -1,6 +1,10 @@
 ---
 import TicketingExperience from "../components/billetterie/TicketingExperience.astro";
+import SEO from "../components/SEO.astro";
+import { billetterie as cfg } from "../data/billetterie";
 const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
+const title = `Billets ${cfg.home.name} – ${cfg.away.name} · Tikeo, billetterie officielle`;
+const description = `Réservez vos places pour ${cfg.home.name} – ${cfg.away.name}, ${cfg.dateLong.toLowerCase()} à ${cfg.time.replace(":", "h")} au ${cfg.venue} de ${cfg.city}. Aucun paiement en ligne : retrait et paiement sur place.`;
 ---
 
 <!doctype html>
@@ -8,8 +12,9 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Tikeo — Billetterie Officielle</title>
-    <meta name="description" content="Billetterie officielle du match RDC vs Guinée Équatoriale au Stade des Martyrs de Kinshasa." />
+    <meta name="theme-color" content="#0b1730" />
+    <link rel="icon" href="/favicon.ico" />
+    <SEO title={title} description={description} url="https://blocleopards.com/billetterie" />
     <meta name="robots" content="index, follow" />
     {turnstileSiteKey && (
       <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>

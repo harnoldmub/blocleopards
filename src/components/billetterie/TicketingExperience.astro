@@ -1,13 +1,14 @@
 ---
 import { requireDatabase, hasDatabase } from "../../lib/neon";
 import { getSetting } from "../../lib/settings";
+import { billetterie as cfg, matchDateTime, matchPlace } from "../../data/billetterie";
 import Turnstile from "../Turnstile.astro";
 
 interface Props {
-  lang?: 'fr' | 'en';
+  lang?: "fr" | "en";
 }
 
-const { lang = 'fr' } = Astro.props;
+const { lang = "fr" } = Astro.props;
 
 let reservationsCount = 0;
 const capacitySetting = await getSetting("billetterie_capacity", "5000");
@@ -20,6 +21,7 @@ if (hasDatabase) {
       select count(*)::int as total
       from billetterie_reservations
       where status <> 'cancelled'
+        and created_at >= ${cfg.reservationsSince}
     `;
     reservationsCount = Number(rows[0]?.total || 0);
   } catch (error) {
@@ -28,215 +30,213 @@ if (hasDatabase) {
 }
 
 const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
+const formatFc = (amount: number) => `${amount.toLocaleString("fr-FR")} FC`;
+const unitPrice = formatFc(cfg.ticket.unitPriceFc);
+
+const clientConfig = JSON.stringify({
+  unitPrice: cfg.ticket.unitPriceFc,
+  maxQty: cfg.ticket.maxPerOrder,
+  kickoff: cfg.kickoff,
+  match: `${cfg.home.name} – ${cfg.away.name}`,
+  dateTime: matchDateTime,
+  place: matchPlace,
+  competition: `${cfg.competition} · ${cfg.round}`,
+  ticketName: cfg.ticket.name,
+  pickupPlace: cfg.pickup.place,
+  pickupTime: cfg.pickup.time,
+  pickupPayment: cfg.pickup.payment,
+});
 ---
 
 <div
-  class="tk-mono-page"
+  class="tk"
   id="ticketing-root"
   data-lang={lang}
+  data-config={clientConfig}
   data-total-capacity={totalCapacity}
   data-reservations-count={reservationsCount}
   data-remaining-places={remainingPlaces}
 >
-  <!-- ======================================================================= -->
-  <!-- HEADER BLANC ÉPURÉ                                                      -->
-  <!-- ======================================================================= -->
+  <a class="tk-skip" href="#tk-reservation">Aller à la réservation</a>
+
+  <!-- ===================================================================== -->
+  <!-- EN-TÊTE                                                               -->
+  <!-- ===================================================================== -->
   <header class="tk-header">
     <div class="tk-header-inner">
-      <div class="tk-brand">
-        <a href="/sport" class="tk-brand-link">
-          <span class="tk-brand-title">TIKEO</span>
-          <span class="tk-brand-caption">BILLETTERIE OFFICIELLE</span>
-        </a>
-      </div>
-
+      <a href="/" class="tk-brand" aria-label="Tikeo, billetterie officielle — retour au site Bloc Léopards">
+        <span class="tk-brand-title">TIKEO</span>
+        <span class="tk-brand-caption">Billetterie officielle</span>
+      </a>
       <div class="tk-header-right">
-        <div class="tk-campaign-logos" aria-label="Campagne de qualification CAN 2027">
-          <img src="/billetterie/Liste Bloc Léopards 2.png" alt="CAN 2027 Qualifiers" class="tk-campaign-logo tk-campaign-logo--qualifiers" />
-        </div>
-        <div class="tk-lang-box">
-          <span class="tk-lang tk-lang--active">FR</span>
-          <span class="tk-header-sep" aria-hidden="true">/</span>
-          <a href="/en/billetterie" class="tk-lang">EN</a>
-        </div>
+        <img
+          src="/billetterie/Liste Bloc Léopards 2.png"
+          alt="Éliminatoires de la CAN 2027"
+          class="tk-campaign-logo"
+          width="88"
+          height="24"
+        />
+        <button type="button" class="tk-help-btn" id="btn-help-modal" aria-haspopup="dialog">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2.5-3 4.5" />
+            <line x1="12" y1="17.5" x2="12.01" y2="17.5" />
+          </svg>
+          <span>Aide</span>
+        </button>
       </div>
     </div>
   </header>
 
-  <!-- ======================================================================= -->
-  <!-- GRILLE PRINCIPALE (65% CONTENU / 35% RÉSUMÉ STICKY)                     -->
-  <!-- ======================================================================= -->
-  <main class="tk-layout-container">
-    <div class="tk-mobile-intro">
-      <div class="tk-mobile-kicker">RÉSERVER EN QUELQUES CLICS</div>
-      <h1>Tikeo, votre place pour le match.</h1>
-      <p>Choisissez vos billets. <strong>Les consignes de retrait et de paiement s’affichent directement à l'écran dès la validation.</strong></p>
-    </div>
-    <div class="tk-grid">
+  <!-- ===================================================================== -->
+  <!-- AFFICHE DU MATCH                                                      -->
+  <!-- ===================================================================== -->
+  <section class="tk-hero" aria-labelledby="match-heading">
+    <div class="tk-hero-inner">
+      <p class="tk-hero-tags">
+        <span class="tk-tag tk-tag--solid">{cfg.competition}</span>
+        <span class="tk-tag">{cfg.round}</span>
+        <span class="tk-tag">{cfg.group}</span>
+      </p>
 
-      <!-- =================================================================== -->
-      <!-- COLONNE GAUCHE (65%) : MATCH + BILLETS + INFORMATIONS               -->
-      <!-- =================================================================== -->
-      <div class="tk-content-col">
+      <h1 id="match-heading" class="tk-sr-only">
+        Billets {cfg.home.name} – {cfg.away.name}, {cfg.dateLong} à {cfg.time}, {cfg.venue}, {cfg.city}
+      </h1>
 
-        <!-- BANDEAU D'INFORMATION RETRAIT & PAIEMENT SUR LE SITE -->
-        <div class="tk-trust-callout">
-          <div class="tk-trust-icon" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="16" x2="12" y2="12"/>
-              <line x1="12" y1="8" x2="12.01" y2="8"/>
-            </svg>
-          </div>
-          <div class="tk-trust-text">
-            <strong>Réservation sans paiement en ligne :</strong> Réservez vos places sans rien payer maintenant. Dès la validation de vos informations, le lieu de retrait et les détails de paiement s’afficheront directement sur votre écran.
+      <div class="tk-fixture" aria-hidden="true">
+        <div class="tk-team">
+          <img src={cfg.home.flag} alt="" class="tk-flag" width="96" height="72" />
+          <span class="tk-team-name">{cfg.home.name}</span>
+          <span class="tk-team-nick">{cfg.home.nickname}</span>
+        </div>
+        <div class="tk-kickoff">
+          <span class="tk-kickoff-day">{cfg.dateShort}</span>
+          <span class="tk-kickoff-time">{cfg.time}</span>
+          <span class="tk-kickoff-label">Coup d'envoi</span>
+        </div>
+        <div class="tk-team">
+          <img src={cfg.away.flag} alt="" class="tk-flag" width="96" height="72" />
+          <span class="tk-team-name">{cfg.away.name}</span>
+          <span class="tk-team-nick">{cfg.away.nickname}</span>
+        </div>
+      </div>
+
+      <div class="tk-hero-foot">
+        <p class="tk-venue">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+            <circle cx="12" cy="10" r="3" />
+          </svg>
+          <span>{cfg.venue} · {cfg.city}</span>
+        </p>
+
+        <div class="tk-countdown" id="tk-countdown" hidden>
+          <span class="tk-countdown-label" id="tk-countdown-label">Coup d'envoi dans</span>
+          <div class="tk-countdown-units" aria-hidden="true">
+            <span class="tk-unit"><b id="cd-days">00</b><i>j</i></span>
+            <span class="tk-unit"><b id="cd-hours">00</b><i>h</i></span>
+            <span class="tk-unit"><b id="cd-minutes">00</b><i>min</i></span>
+            <span class="tk-unit"><b id="cd-seconds">00</b><i>s</i></span>
           </div>
         </div>
+      </div>
+    </div>
+  </section>
 
-        <!-- ----------------------------------------------------------------- -->
-        <!-- 1 — MATCH COMPACT                                                 -->
-        <!-- ----------------------------------------------------------------- -->
-        <section class="tk-card tk-card--match" aria-labelledby="match-heading">
-          <div class="tk-match-eyebrow">
-            <span class="tk-pill-tag">ÉLIMINATOIRES CAN 2027</span>
-            <span class="tk-round-tag">JOURNÉE 1</span>
+  <!-- ===================================================================== -->
+  <!-- PARCOURS EN 3 TEMPS                                                   -->
+  <!-- ===================================================================== -->
+  <main class="tk-main" id="tk-reservation">
+    <ol class="tk-how" aria-label="Comment ça marche">
+      <li class="tk-how-step">
+        <span class="tk-how-num" aria-hidden="true">1</span>
+        <span class="tk-how-text"><strong>Réservez en ligne</strong>Rien à payer sur le site.</span>
+      </li>
+      <li class="tk-how-step">
+        <span class="tk-how-num" aria-hidden="true">2</span>
+        <span class="tk-how-text"><strong>Recevez votre QR code</strong>Avec votre numéro de dossier.</span>
+      </li>
+      <li class="tk-how-step">
+        <span class="tk-how-num" aria-hidden="true">3</span>
+        <span class="tk-how-text"><strong>Payez et retirez</strong>{cfg.pickup.place}, {cfg.pickup.time}.</span>
+      </li>
+    </ol>
+
+    <div class="tk-soldout" id="tk-soldout" role="status" hidden>
+      <strong>Complet.</strong> Toutes les places ont été réservées pour ce match.
+    </div>
+
+    <div class="tk-grid">
+      <div class="tk-content-col">
+
+        <!-- ================================================================= -->
+        <!-- 1 — BILLETS                                                       -->
+        <!-- ================================================================= -->
+        <section class="tk-card" aria-labelledby="tickets-title">
+          <div class="tk-card-head">
+            <h2 id="tickets-title" class="tk-card-title"><span class="tk-card-num" aria-hidden="true">1</span>Vos billets</h2>
+            <span class="tk-card-aside">{cfg.ticket.maxPerOrder} billets maximum par commande</span>
           </div>
 
-          <div class="tk-fixture-row">
-            <!-- RDC -->
-            <div class="tk-fixture-team">
-              <img src="/flags/cd.svg" alt="Drapeau RDC" class="tk-flag-img" />
-              <div class="tk-team-meta">
-                <span class="tk-team-code">RDC</span>
-                <span class="tk-team-name">Rép. démocratique du Congo</span>
-              </div>
-            </div>
-
-            <!-- VS -->
-            <span class="tk-fixture-vs" aria-hidden="true">VS</span>
-
-            <!-- GUINÉE ÉQUATORIALE -->
-            <div class="tk-fixture-team tk-fixture-team--away">
-              <img src="/flags/gq.svg" alt="Drapeau Guinée équatoriale" class="tk-flag-img" />
-              <div class="tk-team-meta">
-                <span class="tk-team-code">GUINÉE ÉQUATORIALE</span>
-                <span class="tk-team-name">Nzalang Nacional</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="tk-fixture-footer">
-            <div class="tk-fixture-info-item">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                <line x1="16" y1="2" x2="16" y2="6"/>
-                <line x1="8" y1="2" x2="8" y2="6"/>
-                <line x1="3" y1="10" x2="21" y2="10"/>
-              </svg>
-              <span>Jeudi 24 septembre 2026 · 17:00</span>
-            </div>
-            <span class="tk-dot-sep" aria-hidden="true">•</span>
-            <div class="tk-fixture-info-item">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
-                <circle cx="12" cy="10" r="3"/>
-              </svg>
-              <span>Stade des Martyrs · Kinshasa</span>
-            </div>
-          </div>
-        </section>
-
-        <!-- ----------------------------------------------------------------- -->
-        <!-- 2 — VOS BILLETS                                                   -->
-        <!-- ----------------------------------------------------------------- -->
-        <section class="tk-card tk-card--tickets" aria-labelledby="tickets-title">
-          <div class="tk-section-header">
-            <h2 id="tickets-title" class="tk-section-title">VOS BILLETS</h2>
-          <span class="tk-max-tag">Maximum 4 billets par commande</span>
-          </div>
-          <p class="tk-section-helper">Un billet = une entrée au Stade des Martyrs.</p>
-
-          <div class="tk-ticket-row">
+          <div class="tk-ticket">
             <div class="tk-ticket-info">
-              <div class="tk-ticket-name-wrap">
-                <span class="tk-ticket-name">STANDARD</span>
-              </div>
-              <div class="tk-ticket-sub">Tribune latérale · Placement libre</div>
+              <span class="tk-ticket-name">{cfg.ticket.name}</span>
+              <span class="tk-ticket-sub">{cfg.ticket.detail}</span>
             </div>
-
-            <div class="tk-ticket-pricing">
-              <div class="tk-price-val">69 000 FC</div>
-              <div class="tk-counter" role="group" aria-label="Quantité de billets">
-                <button type="button" class="tk-counter-btn" id="btn-minus" aria-label="Diminuer" disabled>−</button>
-                <span class="tk-counter-num" id="display-qty" aria-live="polite">1</span>
-                <button type="button" class="tk-counter-btn" id="btn-plus" aria-label="Augmenter">+</button>
-              </div>
+            <span class="tk-ticket-price">{unitPrice} <small>par billet</small></span>
+            <div class="tk-counter" role="group" aria-label="Nombre de billets">
+              <button type="button" class="tk-counter-btn" id="btn-minus" aria-label="Retirer un billet" disabled>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12" /></svg>
+              </button>
+              <output class="tk-counter-num" id="display-qty" aria-live="polite" aria-atomic="true">1</output>
+              <button type="button" class="tk-counter-btn" id="btn-plus" aria-label="Ajouter un billet">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+              </button>
             </div>
           </div>
+
+          <p class="tk-stock" id="tk-stock">
+            <span class="tk-stock-dot" aria-hidden="true"></span>
+            <span id="tk-stock-text">{remainingPlaces.toLocaleString("fr-FR")} places restantes</span>
+          </p>
         </section>
 
-        <!-- ----------------------------------------------------------------- -->
-        <!-- 3 — VOS INFORMATIONS (DIRECTEMENT SOUS LES BILLETS)               -->
-        <!-- ----------------------------------------------------------------- -->
-        <section class="tk-card tk-card--info" aria-labelledby="info-title">
-          <div class="tk-section-header">
-            <h2 id="info-title" class="tk-section-title">VOS INFORMATIONS</h2>
-            <span class="tk-required-legend">* Champs obligatoires</span>
+        <!-- ================================================================= -->
+        <!-- 2 — COORDONNÉES                                                   -->
+        <!-- ================================================================= -->
+        <section class="tk-card" aria-labelledby="info-title">
+          <div class="tk-card-head">
+            <h2 id="info-title" class="tk-card-title"><span class="tk-card-num" aria-hidden="true">2</span>Vos coordonnées</h2>
+            <span class="tk-card-aside">Tous les champs sont obligatoires</span>
           </div>
-          <p class="tk-section-helper">Ces informations servent uniquement à confirmer votre réservation.</p>
+          <p class="tk-card-helper">Elles servent uniquement à retrouver votre réservation au moment du retrait.</p>
 
           <form id="mono-checkout-form" novalidate class="tk-form">
             <div class="tk-form-grid">
-              <!-- PRÉNOM -->
-              <div class="tk-form-group" data-field="prenom">
-                <label for="inp-prenom" class="tk-label">PRÉNOM *</label>
-                <input
-                  type="text"
-                  id="inp-prenom"
-                  name="prenom"
-                  autocomplete="given-name"
-                  required
-                  class="tk-input"
-                />
-                <span class="tk-error-text" id="err-prenom" aria-live="polite"></span>
+              <div class="tk-field" data-field="prenom">
+                <label for="inp-prenom" class="tk-label">Prénom</label>
+                <input type="text" id="inp-prenom" name="prenom" autocomplete="given-name" autocapitalize="words" required class="tk-input" aria-describedby="err-prenom" />
+                <span class="tk-error" id="err-prenom" aria-live="polite"></span>
               </div>
 
-              <!-- NOM -->
-              <div class="tk-form-group" data-field="nom">
-                <label for="inp-nom" class="tk-label">NOM *</label>
-                <input
-                  type="text"
-                  id="inp-nom"
-                  name="nom"
-                  autocomplete="family-name"
-                  required
-                  class="tk-input"
-                />
-                <span class="tk-error-text" id="err-nom" aria-live="polite"></span>
+              <div class="tk-field" data-field="nom">
+                <label for="inp-nom" class="tk-label">Nom</label>
+                <input type="text" id="inp-nom" name="nom" autocomplete="family-name" autocapitalize="words" required class="tk-input" aria-describedby="err-nom" />
+                <span class="tk-error" id="err-nom" aria-live="polite"></span>
               </div>
 
-              <!-- NUMÉRO DE TÉLÉPHONE (WHATSAPP) -->
-              <div class="tk-form-group" data-field="phone">
-                <label for="inp-phone" class="tk-label">NUMÉRO DE TÉLÉPHONE (WHATSAPP) *</label>
-                <input
-                  type="tel"
-                  id="inp-phone"
-                  name="phone"
-                  autocomplete="tel"
-                  required
-                  class="tk-input"
-                  placeholder="+243 ..."
-                />
-                <span class="tk-error-text" id="err-phone" aria-live="polite"></span>
+              <div class="tk-field" data-field="phone">
+                <label for="inp-phone" class="tk-label">Téléphone (WhatsApp)</label>
+                <input type="tel" id="inp-phone" name="phone" autocomplete="tel" inputmode="tel" required class="tk-input" placeholder="+243 ..." aria-describedby="err-phone" />
+                <span class="tk-error" id="err-phone" aria-live="polite"></span>
               </div>
 
-              <!-- PAYS DE RÉSIDENCE -->
-              <div class="tk-form-group" data-field="country">
-                <label for="inp-country" class="tk-label">PAYS DE RÉSIDENCE *</label>
-                <select id="inp-country" name="country" required class="tk-input tk-select">
+              <div class="tk-field" data-field="country">
+                <label for="inp-country" class="tk-label">Pays de résidence</label>
+                <select id="inp-country" name="country" autocomplete="country-name" required class="tk-input tk-select" aria-describedby="err-country">
                   <option value="" disabled selected>Sélectionnez votre pays</option>
                   <option value="République Démocratique du Congo">République Démocratique du Congo (RDC)</option>
-                  <option value="Guinée Équatoriale">Guinée Équatoriale</option>
+                  <option value="Sierra Leone">Sierra Leone</option>
                   <option value="France">France</option>
                   <option value="Belgique">Belgique</option>
                   <option value="Suisse">Suisse</option>
@@ -248,558 +248,494 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
                   <option value="Angola">Angola</option>
                   <option value="Autre pays">Autre pays</option>
                 </select>
-                <span class="tk-error-text" id="err-country" aria-live="polite"></span>
+                <span class="tk-error" id="err-country" aria-live="polite"></span>
               </div>
+            </div>
 
-              <!-- PROTECTION CLOUDFLARE TURNSTILE & ANTI-BOT -->
-              <input type="text" name="_hp" tabindex="-1" autocomplete="off" style="position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0;" aria-hidden="true" />
-              <div class="tk-turnstile-wrap">
-                <Turnstile />
-              </div>
+            <!-- Protection anti-robot : champ piège + Cloudflare Turnstile -->
+            <input type="text" name="_hp" tabindex="-1" autocomplete="off" class="tk-hp" aria-hidden="true" />
+            <div class="tk-turnstile-wrap">
+              <Turnstile />
+            </div>
+
+            <div class="tk-alert" id="tk-alert" role="alert" hidden>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12.5" /><line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <span id="tk-alert-text"></span>
             </div>
           </form>
         </section>
-
       </div>
 
       <!-- =================================================================== -->
-      <!-- COLONNE DROITE (35%) : RÉSUMÉ STICKY "VOTRE COMMANDE"               -->
+      <!-- 3 — RÉCAPITULATIF                                                   -->
       <!-- =================================================================== -->
-      <aside class="tk-summary-col">
-        <div class="tk-summary-card">
-          <h2 class="tk-summary-title">VOTRE COMMANDE</h2>
-
-          <!-- RAPPEL DU MATCH -->
-          <div class="tk-sum-match">
-            <div class="tk-sum-teams">RDC <span class="tk-sum-vs">vs</span> GUINÉE ÉQUATORIALE</div>
-            <div class="tk-sum-date">24 SEPTEMBRE 2026 · 17:00</div>
-            <div class="tk-sum-stadium">Stade des Martyrs · Kinshasa</div>
+      <aside class="tk-summary-col" aria-labelledby="summary-title">
+        <div class="tk-summary">
+          <div class="tk-summary-top">
+            <h2 id="summary-title" class="tk-summary-title">Votre commande</h2>
+            <p class="tk-summary-match">{cfg.home.name} – {cfg.away.name}</p>
+            <p class="tk-summary-meta">{matchDateTime}<br />{matchPlace}</p>
           </div>
 
-          <hr class="tk-divider" />
+          <div class="tk-summary-notch" aria-hidden="true"></div>
 
-          <!-- DÉTAIL DES BILLETS -->
-          <div class="tk-sum-item">
-            <div class="tk-sum-item-header">
-              <span class="tk-sum-item-name">STANDARD</span>
-              <span class="tk-sum-item-subtotal" id="sum-item-subtotal">69 000 FC</span>
+          <div class="tk-summary-body">
+            <div class="tk-sum-line">
+              <span>
+                <b>{cfg.ticket.name}</b>
+                <small id="sum-item-calc">1 × {unitPrice}</small>
+              </span>
+              <span class="tk-sum-amount" id="sum-item-subtotal">{unitPrice}</span>
             </div>
-            <div class="tk-sum-item-calc" id="sum-item-calc">1 × 69 000 FC</div>
+
+            <div class="tk-sum-total">
+              <span>Total à payer au retrait</span>
+              <strong id="sum-total-amount">{unitPrice}</strong>
+            </div>
+
+            <div class="tk-sum-pickup">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="m9 12 2 2 4-4" />
+              </svg>
+              <span><b>Aucun paiement en ligne.</b> Retrait et paiement : {cfg.pickup.place}, {cfg.pickup.time}.</span>
+            </div>
+
+            <button type="submit" form="mono-checkout-form" class="tk-submit tk-submit--desktop" id="btn-validate-order">
+              <span class="tk-spinner" aria-hidden="true"></span>
+              <span id="btn-text">Réserver ma place</span>
+            </button>
           </div>
-
-
-          <hr class="tk-divider" />
-
-          <!-- TOTAL -->
-          <div class="tk-sum-total-row">
-            <span class="tk-sum-total-lbl">TOTAL</span>
-            <span class="tk-sum-total-amount" id="sum-total-amount">69 000 FC</span>
-          </div>
-
-          <!-- RAPPEL PAIEMENT & RETRAIT -->
-          <div class="tk-sum-reassurance">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-            </svg>
-            <span>Lieu de retrait et paiement affichés à l’écran dès la validation.</span>
-          </div>
-
-          <!-- BOUTON D'ACTION PRINCIPAL -->
-          <button
-            type="button"
-            class="tk-btn-submit"
-            id="btn-validate-order"
-            disabled
-          >
-            <span class="tk-inline-spinner" id="btn-spinner" aria-hidden="true"></span>
-            <span id="btn-text">RÉSERVER MA PLACE →</span>
-          </button>
-
         </div>
       </aside>
-
     </div>
   </main>
 
-  <!-- ======================================================================= -->
-  <!-- BOTTOM ACTION BAR POUR MOBILE (STICKY)                                  -->
-  <!-- ======================================================================= -->
-  <div class="tk-mobile-sticky-bar" id="mobile-bar">
-    <div class="tk-mobile-bar-content">
-      <div class="tk-mobile-total-box">
-        <span class="tk-mobile-total-caption">TOTAL</span>
-        <span class="tk-mobile-total-val" id="mobile-total-val">69 000 FC</span>
-      </div>
-      <button type="button" class="tk-btn-submit tk-btn-submit--mobile" id="btn-mobile-validate" disabled>
-        <span id="btn-mobile-text">RÉSERVER</span>
+  <footer class="tk-footer">
+    <p>Billetterie Tikeo pour le Bloc Léopards.</p>
+    <a href="/can-2027">Programme des éliminatoires CAN 2027</a>
+  </footer>
+
+  <!-- ===================================================================== -->
+  <!-- BARRE D'ACTION MOBILE                                                 -->
+  <!-- ===================================================================== -->
+  <div class="tk-mobile-bar" id="mobile-bar">
+    <div class="tk-mobile-total">
+      <span class="tk-mobile-total-caption">Total · <span id="mobile-qty">1 billet</span></span>
+      <span class="tk-mobile-total-val" id="mobile-total-val">{unitPrice}</span>
+    </div>
+    <button type="submit" form="mono-checkout-form" class="tk-submit tk-submit--mobile" id="btn-mobile-validate">
+      <span class="tk-spinner" aria-hidden="true"></span>
+      <span id="btn-mobile-text">Réserver</span>
+    </button>
+  </div>
+
+  <div class="tk-toast" id="tension-toast" role="status" aria-live="polite"><span id="tension-toast-text"></span></div>
+
+  <!-- ===================================================================== -->
+  <!-- CONFIRMATION : BILLET DE PRÉ-RÉSERVATION                              -->
+  <!-- ===================================================================== -->
+  <dialog class="tk-dialog tk-dialog--ticket" id="ticket-confirmation" aria-labelledby="confirmation-title">
+    <div class="tk-pass">
+      <button type="button" class="tk-dialog-close tk-dialog-close--light" id="close-confirmation" aria-label="Fermer le récapitulatif">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" /></svg>
       </button>
+
+      <div class="tk-pass-top">
+        <span class="tk-pass-check" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
+        </span>
+        <p class="tk-pass-kicker">Réservation enregistrée</p>
+        <h2 id="confirmation-title">Votre pré-réservation est enregistrée</h2>
+        <p class="tk-pass-match">{cfg.home.name} – {cfg.away.name}</p>
+        <p class="tk-pass-meta">{matchDateTime}<br />{matchPlace}</p>
+      </div>
+
+      <div class="tk-summary-notch tk-summary-notch--pass" aria-hidden="true"></div>
+
+      <div class="tk-pass-body">
+        <div class="tk-pass-code">
+          <span class="tk-pass-label">N° de dossier</span>
+          <strong class="tk-booking-number" id="booking-number"></strong>
+          <button type="button" class="tk-copy" id="copy-booking">Copier</button>
+        </div>
+
+        <div class="tk-pass-qr" id="booking-qr-wrap">
+          <img class="tk-booking-qr" id="booking-qr" alt="QR code de réservation" width="200" height="200" />
+        </div>
+        <p class="tk-pass-qr-error" id="booking-qr-error" hidden>
+          Le QR code n'a pas pu s'afficher. Votre réservation est bien enregistrée : notez votre numéro de dossier.
+        </p>
+
+        <div class="tk-pass-pickup">
+          <span class="tk-pass-label">Retrait du billet</span>
+          <strong>{cfg.pickup.place} à {cfg.pickup.time}</strong>
+          <small id="confirmation-order">{cfg.pickup.payment}</small>
+        </div>
+
+        <p class="tk-pass-note">
+          Présentez votre numéro de dossier et votre QR code au {cfg.pickup.place} pour payer sur place et retirer votre billet.
+        </p>
+
+        <div class="tk-pass-actions">
+          <button type="button" class="tk-submit" id="download-card">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11" /><path d="m7 11 5 5 5-5" /><path d="M5 20h14" /></svg>
+            <span>Télécharger ma carte (PNG)</span>
+          </button>
+          <button type="button" class="tk-ghost" id="done-confirmation">Terminer</button>
+        </div>
+      </div>
     </div>
-  </div>
-  <div class="tk-tension-toast" id="tension-toast" role="status" aria-live="polite"><span id="tension-toast-text"></span></div>
+  </dialog>
 
-  <!-- ======================================================================= -->
-  <!-- TRAITEMENT EN COURS / CHARGEMENT INFINI ("SITE QUI RAME")               -->
-  <!-- ======================================================================= -->
-  <div class="tk-loading-backdrop" id="loading-backdrop" aria-live="assertive" aria-hidden="true">
-    <div class="tk-loading-modal">
-      <div class="tk-loading-kicker">RDC — GUINÉE ÉQUATORIALE</div>
-      <h2 class="tk-loading-title" id="loading-title">BILLETTERIE TRÈS SOLLICITÉE</h2>
+  <!-- ===================================================================== -->
+  <!-- AIDE : RETRAIT ET PAIEMENT (#aide)                                    -->
+  <!-- ===================================================================== -->
+  <dialog class="tk-dialog" id="help-modal" aria-labelledby="help-modal-title">
+    <div class="tk-help">
+      <button type="button" class="tk-dialog-close" id="btn-close-help" aria-label="Fermer l'aide">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" /></svg>
+      </button>
 
-      <div class="tk-spinner-ring" aria-hidden="true"></div>
+      <p class="tk-help-kicker">Informations et retrait</p>
+      <h2 id="help-modal-title">Où récupérer et payer vos billets ?</h2>
 
-      <p class="tk-loading-message" id="loading-msg">
-        Il y a actuellement beaucoup de monde dans la billetterie.
+      <p class="tk-help-notice">
+        <strong>Aucun paiement en ligne.</strong> Vous réservez sans rien payer sur le site. Le lieu de retrait, l'horaire et les modalités de paiement s'affichent à l'écran dès la validation.
       </p>
 
-      <p class="tk-patience-note" id="patience-note">
-        Votre demande est bien prise en compte. Merci de patienter quelques instants sans fermer cette page.
-      </p>
-    </div>
-  </div>
-  <section class="tk-confirmation" id="ticket-confirmation" aria-live="polite" aria-hidden="true">
-    <div class="tk-confirmation-card">
-      <button type="button" class="tk-confirmation-close" id="close-confirmation" aria-label="Fermer le récapitulatif">×</button>
-      <p class="tk-confirmation-kicker">RÉSERVATION ENREGISTRÉE</p>
-      <h2>Votre pré-réservation est enregistrée</h2>
-      <p class="tk-confirmation-match">RDC <span>vs</span> GUINÉE ÉQUATORIALE</p>
-      <p class="tk-confirmation-meta">Jeudi 24 septembre 2026 · 17:00<br />Stade des Martyrs · Kinshasa</p>
-      <div class="tk-confirmation-pickup"><span>RETRAIT DU BILLET</span><strong>Stade Tata Raphaël à 10 h</strong><small>Paiement sur place lors du retrait</small></div>
-      <p class="tk-booking-label">N° DE DOSSIER</p>
-      <strong class="tk-booking-number" id="booking-number"></strong>
-      <img class="tk-booking-qr" id="booking-qr" alt="QR code de réservation" width="220" height="220" />
-      <p class="tk-confirmation-note">Votre pré-réservation est bien enregistrée. Rendez-vous demain à 10 h au Stade Tata Raphaël pour effectuer le paiement sur place et retirer votre billet. Présentez votre numéro de dossier et votre QR code.</p>
-      <div class="tk-confirmation-actions"><button type="button" id="download-card">Télécharger ma carte PNG</button></div>
-    </div>
-  </section>
-
-  <!-- ======================================================================= -->
-  <!-- MODALE D'AIDE : RETRAIT ET PAIEMENT DES BILLETS (#aide)                 -->
-  <!-- ======================================================================= -->
-  <aside
-    class="tk-help-modal-backdrop"
-    id="help-modal"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="help-modal-title"
-    aria-hidden="true"
-  >
-    <div class="tk-help-modal-card">
-      <button
-        type="button"
-        class="tk-help-modal-close"
-        id="btn-close-help"
-        aria-label="Fermer la fenêtre d'aide"
-      >×</button>
-
-      <div class="tk-help-modal-header">
-        <span class="tk-help-kicker">INFORMATIONS & RETRAIT</span>
-        <h2 id="help-modal-title">Où récupérer et payer vos billets ?</h2>
-      </div>
-
-      <div class="tk-help-notice-box">
-        <div class="tk-help-notice-icon" aria-hidden="true">💡</div>
-        <p><strong>Aucun paiement en ligne requis aujourd’hui.</strong> Vous effectuez votre réservation sans rien payer sur le site. Dès que vous validez votre formulaire, toutes les informations pratiques (lieu de retrait physique, horaires et modalités de paiement sur place) s'affichent instantanément à l'écran.</p>
-      </div>
-
-      <div class="tk-help-steps">
-        <div class="tk-help-step">
-          <div class="tk-help-step-num">1</div>
-          <div class="tk-help-step-body">
-            <strong>1. Réservez vos places en ligne (0 FC)</strong>
-            <p>Sélectionnez votre nombre de billets et renseignez vos informations (prénom, nom, numéro de téléphone). Aucun compte bancaire ni carte n'est requis.</p>
+      <ol class="tk-help-steps">
+        <li>
+          <span class="tk-how-num" aria-hidden="true">1</span>
+          <div>
+            <strong>Réservez vos places en ligne (0 FC)</strong>
+            <p>Choisissez votre nombre de billets et renseignez prénom, nom et numéro de téléphone. Ni compte bancaire ni carte.</p>
           </div>
-        </div>
-
-        <div class="tk-help-step">
-          <div class="tk-help-step-num">2</div>
-          <div class="tk-help-step-body">
-            <strong>2. Affichage instantané des consignes</strong>
-            <p>Dès la validation de vos coordonnées, votre écran affiche immédiatement votre récapitulatif complet : le lieu officiel de retrait (Stade Tata Raphaël), l'horaire précis, votre numéro de dossier unique et votre QR code officiel.</p>
+        </li>
+        <li>
+          <span class="tk-how-num" aria-hidden="true">2</span>
+          <div>
+            <strong>Vos consignes s'affichent tout de suite</strong>
+            <p>Lieu de retrait ({cfg.pickup.place}), horaire, numéro de dossier unique et QR code.</p>
           </div>
-        </div>
-
-        <div class="tk-help-step">
-          <div class="tk-help-step-num">3</div>
-          <div class="tk-help-step-body">
-            <strong>3. Retrait du billet physique et paiement sur place</strong>
-            <p>Présentez votre numéro de dossier ou votre QR code (vous pouvez télécharger votre carte d'un clic) au point de retrait indiqué pour payer et récupérer vos billets en main propre.</p>
+        </li>
+        <li>
+          <span class="tk-how-num" aria-hidden="true">3</span>
+          <div>
+            <strong>Retrait et paiement sur place</strong>
+            <p>Présentez votre numéro de dossier ou votre QR code (carte téléchargeable d'un clic) au point de retrait pour payer et récupérer vos billets en main propre.</p>
           </div>
-        </div>
-      </div>
+        </li>
+      </ol>
 
-      <div class="tk-help-modal-footer">
-        <button type="button" class="tk-btn-help-ok" id="btn-ok-help">J'ai compris →</button>
-      </div>
+      <button type="button" class="tk-submit" id="btn-ok-help">J'ai compris</button>
     </div>
-  </aside>
+  </dialog>
 </div>
 
-<!-- ========================================================================= -->
-<!-- SCRIPTS CLIENTS : REACTIVITÉ, VALIDATION EN DIRECT & CHARGEMENT INFINI    -->
-<!-- ========================================================================= -->
 <script is:inline>
   function initMonoPageCheckout() {
     const root = document.getElementById('ticketing-root');
-    if (!root) return;
+    if (!root || root.dataset.ready === '1') return;
+    root.dataset.ready = '1';
 
-    // --- State ---
+    let cfg = {};
+    try { cfg = JSON.parse(root.dataset.config || '{}'); } catch (_) {}
+
+    // --- État ---
     let quantity = 1;
-    const unitPrice = 69000;
+    const unitPrice = Number(cfg.unitPrice) || 0;
+    const minQty = 1;
+    const maxQty = Number(cfg.maxQty) || 4;
     const formatPrice = (amount) => `${amount.toLocaleString('fr-FR')} FC`;
     const totalCapacity = Number(root.dataset.totalCapacity || 5000);
-    let reservationsCount = Number(root.dataset.reservationsCount || 0);
+    const reservationsCount = Number(root.dataset.reservationsCount || 0);
     let remainingPlaces = Math.max(0, Number(root.dataset.remainingPlaces ?? (totalCapacity - reservationsCount)));
-    const getStock = () => remainingPlaces;
-    const minQty = 1;
-    const maxQty = 4;
-
-    // --- Elements ---
-    const btnMinus = document.getElementById('btn-minus');
-    const btnPlus = document.getElementById('btn-plus');
-    const displayQty = document.getElementById('display-qty');
-    const sumItemCalc = document.getElementById('sum-item-calc');
-    const sumItemSubtotal = document.getElementById('sum-item-subtotal');
-    const sumTotalAmount = document.getElementById('sum-total-amount');
-    const mobileTotalVal = document.getElementById('mobile-total-val');
-    const tensionToast = document.getElementById('tension-toast');
-    const tensionToastText = document.getElementById('tension-toast-text');
-
-    const checkoutForm = document.getElementById('mono-checkout-form');
-    const btnValidateOrder = document.getElementById('btn-validate-order');
-    const btnMobileValidate = document.getElementById('btn-mobile-validate');
-    const btnText = document.getElementById('btn-text');
-    const btnMobileText = document.getElementById('btn-mobile-text');
-    const btnSpinner = document.getElementById('btn-spinner');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     let isSubmitting = false;
     let currentBookingId = '';
     let currentQrData = '';
+    let lastOrder = { quantity: 1, total: unitPrice };
 
-    const inpPrenom = document.getElementById('inp-prenom');
-    const inpNom = document.getElementById('inp-nom');
-    const inpPhone = document.getElementById('inp-phone');
-    const inpCountry = document.getElementById('inp-country');
+    // --- Éléments ---
+    const $ = (id) => document.getElementById(id);
+    const btnMinus = $('btn-minus');
+    const btnPlus = $('btn-plus');
+    const displayQty = $('display-qty');
+    const sumItemCalc = $('sum-item-calc');
+    const sumItemSubtotal = $('sum-item-subtotal');
+    const sumTotalAmount = $('sum-total-amount');
+    const mobileTotalVal = $('mobile-total-val');
+    const mobileQty = $('mobile-qty');
+    const stockLine = $('tk-stock');
+    const stockText = $('tk-stock-text');
+    const soldOutBanner = $('tk-soldout');
+    const toast = $('tension-toast');
+    const toastText = $('tension-toast-text');
+    const alertBox = $('tk-alert');
+    const alertText = $('tk-alert-text');
 
-    const loadingBackdrop = document.getElementById('loading-backdrop');
-    const loadingMsg = document.getElementById('loading-msg');
-    const loadingTitle = document.getElementById('loading-title');
-    const patienceNote = document.getElementById('patience-note');
-    const confirmation = document.getElementById('ticket-confirmation');
-    const bookingNumber = document.getElementById('booking-number');
-    const bookingQr = document.getElementById('booking-qr');
-    const downloadCard = document.getElementById('download-card');
-    const closeConfirmation = document.getElementById('close-confirmation');
+    const checkoutForm = $('mono-checkout-form');
+    const btnValidateOrder = $('btn-validate-order');
+    const btnMobileValidate = $('btn-mobile-validate');
+    const btnText = $('btn-text');
+    const btnMobileText = $('btn-mobile-text');
 
-    const helpModal = document.getElementById('help-modal');
-    const btnHelpModal = document.getElementById('btn-help-modal');
-    const linkTrustHelp = document.getElementById('link-trust-help');
-    const btnCloseHelp = document.getElementById('btn-close-help');
-    const btnOkHelp = document.getElementById('btn-ok-help');
+    const inpPrenom = $('inp-prenom');
+    const inpNom = $('inp-nom');
+    const inpPhone = $('inp-phone');
+    const inpCountry = $('inp-country');
 
-    function openHelpModal(e) {
-      if (e && e.preventDefault) e.preventDefault();
-      helpModal?.classList.add('tk-help-modal--visible');
-      helpModal?.setAttribute('aria-hidden', 'false');
-      document.body.style.overflow = 'hidden';
+    const confirmation = $('ticket-confirmation');
+    const bookingNumber = $('booking-number');
+    const bookingQr = $('booking-qr');
+    const bookingQrWrap = $('booking-qr-wrap');
+    const bookingQrError = $('booking-qr-error');
+    const confirmationOrder = $('confirmation-order');
+    const downloadCard = $('download-card');
+    const copyBooking = $('copy-booking');
+    const closeConfirmation = $('close-confirmation');
+    const doneConfirmation = $('done-confirmation');
+
+    const helpModal = $('help-modal');
+    const btnHelpModal = $('btn-help-modal');
+    const btnCloseHelp = $('btn-close-help');
+    const btnOkHelp = $('btn-ok-help');
+
+    // --- Fenêtres modales (élément <dialog> natif : focus piégé + Échap) ---
+    function openDialog(dialog) {
+      if (!dialog || dialog.open) return;
+      if (typeof dialog.showModal === 'function') dialog.showModal();
+      else dialog.setAttribute('open', '');
+      document.documentElement.classList.add('tk-no-scroll');
+    }
+    function closeDialog(dialog) {
+      if (!dialog || !dialog.open) return;
+      if (typeof dialog.close === 'function') dialog.close();
+      else {
+        dialog.removeAttribute('open');
+        dialog.dispatchEvent(new Event('close'));
+      }
+    }
+    [helpModal, confirmation].forEach((dialog) => {
+      dialog?.addEventListener('close', () => {
+        if (!helpModal?.open && !confirmation?.open) document.documentElement.classList.remove('tk-no-scroll');
+      });
+      // Clic sur le fond : fermeture
+      dialog?.addEventListener('click', (e) => {
+        if (e.target === dialog) closeDialog(dialog);
+      });
+    });
+
+    // Aide
+    function openHelpModal() {
+      openDialog(helpModal);
       if (window.location.hash !== '#aide') {
         history.replaceState(null, '', window.location.pathname + window.location.search + '#aide');
       }
     }
-
-    function closeHelpModal() {
-      helpModal?.classList.remove('tk-help-modal--visible');
-      helpModal?.setAttribute('aria-hidden', 'true');
-      document.body.style.overflow = '';
+    helpModal?.addEventListener('close', () => {
       if (window.location.hash === '#aide') {
         history.replaceState(null, '', window.location.pathname + window.location.search);
       }
-    }
-
+      btnHelpModal?.focus();
+    });
     btnHelpModal?.addEventListener('click', openHelpModal);
-    linkTrustHelp?.addEventListener('click', openHelpModal);
-    btnCloseHelp?.addEventListener('click', closeHelpModal);
-    btnOkHelp?.addEventListener('click', closeHelpModal);
-
-    helpModal?.addEventListener('click', (e) => {
-      if (e.target === helpModal) closeHelpModal();
-    });
-
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && helpModal?.classList.contains('tk-help-modal--visible')) {
-        closeHelpModal();
-      }
-    });
-
-    // Ouvrir automatiquement si l'URL contient #aide
-    if (window.location.hash === '#aide') {
-      openHelpModal();
-    }
+    btnCloseHelp?.addEventListener('click', () => closeDialog(helpModal));
+    btnOkHelp?.addEventListener('click', () => closeDialog(helpModal));
+    if (window.location.hash === '#aide') openHelpModal();
     window.addEventListener('hashchange', () => {
-      if (window.location.hash === '#aide') {
-        openHelpModal();
-      } else if (helpModal?.classList.contains('tk-help-modal--visible')) {
-        closeHelpModal();
-      }
+      if (window.location.hash === '#aide') openHelpModal();
+      else closeDialog(helpModal);
     });
 
-    closeConfirmation?.addEventListener('click', () => {
-      confirmation?.classList.remove('tk-confirmation--visible');
-      confirmation?.setAttribute('aria-hidden', 'true');
-      isSubmitting = false;
-      if (btnText) btnText.textContent = 'RÉSERVER MA PLACE →';
-      if (btnMobileText) btnMobileText.textContent = 'RÉSERVER';
-      checkValidity();
-    });
-
-    function resetForm() {
-      if (checkoutForm && typeof checkoutForm.reset === 'function') {
-        checkoutForm.reset();
-      }
-      if (inpPrenom) inpPrenom.value = '';
-      if (inpNom) inpNom.value = '';
-      if (inpPhone) inpPhone.value = '';
-      if (inpCountry) inpCountry.selectedIndex = 0;
-
-      document.querySelectorAll('.tk-form-group--error').forEach((grp) => {
-        grp.classList.remove('tk-form-group--error');
-      });
-      document.querySelectorAll('.tk-error-text').forEach((span) => {
-        span.textContent = '';
-      });
-
-      quantity = 1;
-      updatePrices();
-
-      if (btnSpinner) btnSpinner.style.display = 'none';
-      if (btnValidateOrder) {
-        btnValidateOrder.disabled = true;
-        btnValidateOrder.classList.remove('tk-btn-submit--loading');
-      }
-      if (btnMobileValidate) {
-        btnMobileValidate.disabled = true;
-        btnMobileValidate.classList.remove('tk-btn-submit--loading');
-      }
-
-      if (window.turnstile && typeof window.turnstile.reset === 'function') {
-        try {
-          window.turnstile.reset();
-        } catch (_) {}
-      }
+    // --- Messages ---
+    let toastTimer = 0;
+    function showToast(message, kind) {
+      if (!toast || !toastText) return;
+      window.clearTimeout(toastTimer);
+      toastText.textContent = message;
+      toast.classList.toggle('tk-toast--error', kind === 'error');
+      toast.classList.add('tk-toast--visible');
+      toastTimer = window.setTimeout(() => toast.classList.remove('tk-toast--visible'), 5000);
+    }
+    function showAlert(message) {
+      if (!alertBox || !alertText) return;
+      alertText.textContent = message;
+      alertBox.hidden = false;
+    }
+    function hideAlert() {
+      if (alertBox) alertBox.hidden = true;
     }
 
-    // --- Update Quantities & Prices ---
+    // --- Quantités et prix ---
     function updatePrices() {
       const total = quantity * unitPrice;
-      if (displayQty) displayQty.textContent = String(quantity);
+      if (displayQty) {
+        displayQty.textContent = String(quantity);
+        if (!reduceMotion) {
+          displayQty.classList.remove('tk-bump');
+          void displayQty.offsetWidth;
+          displayQty.classList.add('tk-bump');
+        }
+      }
       if (sumItemCalc) sumItemCalc.textContent = `${quantity} × ${formatPrice(unitPrice)}`;
       if (sumItemSubtotal) sumItemSubtotal.textContent = formatPrice(total);
       if (sumTotalAmount) sumTotalAmount.textContent = formatPrice(total);
       if (mobileTotalVal) mobileTotalVal.textContent = formatPrice(total);
+      if (mobileQty) mobileQty.textContent = quantity > 1 ? `${quantity} billets` : '1 billet';
 
-      if (btnMinus) btnMinus.disabled = quantity <= minQty;
-      if (btnPlus) btnPlus.disabled = quantity >= maxQty;
+      const cap = Math.min(maxQty, remainingPlaces);
+      if (btnMinus) btnMinus.disabled = quantity <= minQty || remainingPlaces === 0;
+      if (btnPlus) btnPlus.disabled = quantity >= cap;
     }
 
+    function setButtons(label, mobileLabel, opts) {
+      const disabled = Boolean(opts && opts.disabled);
+      const loading = Boolean(opts && opts.loading);
+      if (btnText) btnText.textContent = label;
+      if (btnMobileText) btnMobileText.textContent = mobileLabel;
+      [btnValidateOrder, btnMobileValidate].forEach((btn) => {
+        if (!btn) return;
+        btn.disabled = disabled;
+        btn.classList.toggle('tk-submit--loading', loading);
+        if (loading) btn.setAttribute('aria-busy', 'true');
+        else btn.removeAttribute('aria-busy');
+      });
+    }
+
+    // Places restantes : chiffre réel, issu de la base.
     function updateStock() {
-      const stock = Math.max(0, getStock());
+      const stock = Math.max(0, remainingPlaces);
       const soldOut = stock === 0;
-      const label = stock === 1 ? '1 place restante' : `${stock.toLocaleString('fr-FR')} places restantes`;
-      let urgency = 'PLACES DISPONIBLES';
-      if (stock === 0) urgency = 'SOLD OUT';
-      else if (stock <= 10) urgency = `PLUS QUE ${stock} PLACES DISPONIBLES`;
-      else if (stock <= 20) urgency = `PRESQUE COMPLET — ${stock} PLACES RESTANTES`;
-      else if (stock <= 50) urgency = `DERNIÈRES PLACES — ${stock} RESTANTES`;
-      else if (stock <= 100) urgency = 'MOINS DE 100 PLACES DISPONIBLES';
-      else urgency = `FORTE DEMANDE — PLUS QUE ${stock.toLocaleString('fr-FR')} PLACES`;
-      if (mobileTotalVal) mobileTotalVal.textContent = formatPrice(quantity * unitPrice);
-      if (soldOut) {
-        if (btnPlus) btnPlus.disabled = true;
-        if (btnMinus) btnMinus.disabled = true;
-        if (btnValidateOrder) { btnValidateOrder.disabled = true; btnValidateOrder.textContent = 'SOLD OUT'; }
-        if (btnMobileValidate) { btnMobileValidate.disabled = true; btnMobileValidate.textContent = 'SOLD OUT'; }
+      if (stockText) {
+        stockText.textContent = soldOut
+          ? 'Complet'
+          : stock === 1 ? '1 place restante' : `${stock.toLocaleString('fr-FR')} places restantes`;
       }
-    }
-
-    function showTensionToast(message, kind) {
-      if (!tensionToast || !tensionToastText) return;
-      tensionToast.classList.remove('tk-tension-toast--visible');
-      window.setTimeout(() => {
-        tensionToastText.textContent = message;
-        tensionToast.classList.remove('tk-tension-toast--demand');
-        tensionToast.classList.add('tk-tension-toast--visible');
-        window.setTimeout(() => tensionToast.classList.remove('tk-tension-toast--visible'), 5000);
-      }, 260);
-    }
-
-    function updateOnlineDemo() {
-      const connected = Math.floor(Math.random() * 151) + 300;
-      const stock = Math.max(0, getStock());
-      showTensionToast(`👥 ${connected} personnes consultent la billetterie`, 'online');
-      const placesText = stock <= 0
-        ? 'SOLD OUT'
-        : `🔥 Forte demande — plus que ${stock === 1 ? '1 place' : `${stock.toLocaleString('fr-FR')} places`}`;
-      window.setTimeout(() => showTensionToast(placesText, 'demand'), 5600);
+      stockLine?.classList.toggle('tk-stock--low', !soldOut && stock <= 100);
+      stockLine?.classList.toggle('tk-stock--out', soldOut);
+      if (soldOutBanner) soldOutBanner.hidden = !soldOut;
+      if (soldOut) {
+        setButtons('Complet', 'Complet', { disabled: true });
+      } else if (quantity > stock) {
+        quantity = Math.max(minQty, Math.min(quantity, stock));
+      }
+      updatePrices();
     }
 
     async function syncDynamicStock() {
+      if (isSubmitting || document.hidden) return;
       try {
         const res = await fetch('/api/billetterie/reservations');
-        if (res.ok) {
-          const data = await res.json();
-          if (typeof data.remainingPlaces === 'number') {
-            remainingPlaces = Math.max(0, data.remainingPlaces);
-            updateStock();
-          }
+        if (!res.ok) return;
+        const data = await res.json();
+        if (typeof data.remainingPlaces === 'number') {
+          remainingPlaces = Math.max(0, data.remainingPlaces);
+          updateStock();
         }
-      } catch (err) {
-        // Silencieux
+      } catch (_) {
+        // Hors ligne : on garde le dernier chiffre connu.
       }
     }
 
     btnMinus?.addEventListener('click', () => {
-      if (quantity > minQty) {
-        quantity--;
-        updatePrices();
-      }
+      if (quantity > minQty) { quantity--; updatePrices(); }
     });
-
     btnPlus?.addEventListener('click', () => {
-      if (quantity < maxQty) {
-        quantity++;
-        updatePrices();
-      }
+      if (quantity < Math.min(maxQty, remainingPlaces)) { quantity++; updatePrices(); }
     });
 
-    // --- Real-time Front-end Validation ---
-    function checkValidity() {
-      const phoneRegex = /^[\d\s\+\(\)\-\.]{7,20}$/;
+    // --- Validation du formulaire ---
+    const phoneRegex = /^[\d\s\+\(\)\-\.]{7,20}$/;
+    const fields = [
+      { input: inpPrenom, err: 'err-prenom', test: (v) => v.length >= 2, msg: 'Indiquez votre prénom (2 caractères minimum).' },
+      { input: inpNom, err: 'err-nom', test: (v) => v.length >= 2, msg: 'Indiquez votre nom (2 caractères minimum).' },
+      { input: inpPhone, err: 'err-phone', test: (v) => phoneRegex.test(v), msg: 'Indiquez un numéro valide, par exemple +243 81 234 56 78.' },
+      { input: inpCountry, err: 'err-country', test: (v) => v.length > 0, msg: 'Sélectionnez votre pays de résidence.' },
+    ];
 
-      const p = (inpPrenom?.value || '').trim();
-      const n = (inpNom?.value || '').trim();
-      const ph = (inpPhone?.value || '').trim();
-      const c = (inpCountry?.value || '').trim();
-
-      const validP = p.length >= 2;
-      const validN = n.length >= 2;
-      const validPh = phoneRegex.test(ph);
-      const validC = c.length > 0;
-
-      if (isSubmitting) return false;
-      const isAllValid = validP && validN && validPh && validC;
-
-      // Enable / Disable buttons
-      if (btnValidateOrder) btnValidateOrder.disabled = !isAllValid;
-      if (btnMobileValidate) btnMobileValidate.disabled = !isAllValid;
-
-      return isAllValid;
+    function validateField(field, show) {
+      if (!field.input) return true;
+      const valid = field.test((field.input.value || '').trim());
+      if (show || valid) {
+        const group = field.input.closest('.tk-field');
+        const errSpan = $(field.err);
+        group?.classList.toggle('tk-field--error', !valid);
+        if (errSpan) errSpan.textContent = valid ? '' : field.msg;
+        if (valid) field.input.removeAttribute('aria-invalid');
+        else field.input.setAttribute('aria-invalid', 'true');
+      }
+      return valid;
     }
 
-    // Input error feedback on blur / typing
-    function setupFieldFeedback(
-      input,
-      errId,
-      validator
-    ) {
-      if (!input) return;
-      const errSpan = document.getElementById(errId);
-      const group = input.closest('.tk-form-group');
-
-      const handleValidate = () => {
-        if (!input.value && !input.matches(':focus')) {
-          // don't show error immediately on empty field before interaction
-          return;
-        }
-        const res = validator();
-        if (!res.valid && input.value.trim().length > 0) {
-          if (errSpan) errSpan.textContent = res.msg;
-          group?.classList.add('tk-form-group--error');
-        } else {
-          if (errSpan) errSpan.textContent = '';
-          group?.classList.remove('tk-form-group--error');
-        }
-        checkValidity();
+    fields.forEach((field) => {
+      if (!field.input) return;
+      field.input.addEventListener('blur', () => {
+        if ((field.input.value || '').trim()) validateField(field, true);
+      });
+      const onEdit = () => {
+        hideAlert();
+        // On ne corrige en direct qu'un champ déjà signalé en erreur.
+        validateField(field, field.input.closest('.tk-field')?.classList.contains('tk-field--error'));
       };
+      field.input.addEventListener('input', onEdit);
+      field.input.addEventListener('change', onEdit);
+    });
 
-      input.addEventListener('input', () => {
-        checkValidity();
-        if (group && group.classList.contains('tk-form-group--error')) {
-          handleValidate();
-        }
-      });
-      input.addEventListener('change', () => {
-        checkValidity();
-        if (group && group.classList.contains('tk-form-group--error')) {
-          handleValidate();
-        }
-      });
-      input.addEventListener('blur', handleValidate);
+    function resetForm() {
+      checkoutForm?.reset();
+      if (inpCountry) inpCountry.selectedIndex = 0;
+      document.querySelectorAll('.tk-field--error').forEach((grp) => grp.classList.remove('tk-field--error'));
+      document.querySelectorAll('.tk-error').forEach((span) => { span.textContent = ''; });
+      fields.forEach((field) => field.input?.removeAttribute('aria-invalid'));
+      hideAlert();
+      quantity = 1;
+      updatePrices();
+      if (window.turnstile && typeof window.turnstile.reset === 'function') {
+        try { window.turnstile.reset(); } catch (_) {}
+      }
     }
 
-    setupFieldFeedback(inpPrenom, 'err-prenom', () => ({
-      valid: (inpPrenom?.value.trim().length || 0) >= 2,
-      msg: 'Prénom requis (min. 2 caractères)'
-    }));
+    function showConfirmation() {
+      if (bookingNumber) bookingNumber.textContent = currentBookingId;
+      if (confirmationOrder) {
+        const label = lastOrder.quantity > 1 ? `${lastOrder.quantity} billets` : '1 billet';
+        confirmationOrder.textContent = `${label} · ${formatPrice(lastOrder.total)} · ${cfg.pickupPayment || ''}`;
+      }
+      const hasQr = Boolean(currentQrData);
+      if (bookingQr && hasQr) bookingQr.src = currentQrData;
+      if (bookingQrWrap) bookingQrWrap.hidden = !hasQr;
+      if (bookingQrError) bookingQrError.hidden = hasQr;
+      if (downloadCard) downloadCard.hidden = !hasQr;
+      openDialog(confirmation);
+    }
 
-    setupFieldFeedback(inpNom, 'err-nom', () => ({
-      valid: (inpNom?.value.trim().length || 0) >= 2,
-      msg: 'Nom requis (min. 2 caractères)'
-    }));
-
-
-
-    setupFieldFeedback(inpPhone, 'err-phone', () => ({
-      valid: /^[\d\s\+\(\)\-\.]{7,20}$/.test(inpPhone?.value.trim() || ''),
-      msg: 'Numéro de téléphone requis'
-    }));
-
-    setupFieldFeedback(inpCountry, 'err-country', () => ({
-      valid: (inpCountry?.value.trim().length || 0) > 0,
-      msg: 'Veuillez sélectionner un pays'
-    }));
-
-    // --- Action : Clic sur Valider (Chargement Infini) ---
+    // --- Envoi de la réservation ---
     async function triggerOrderValidation() {
-      // Bloquer immédiatement tout clic concurrent ou multiple
       if (isSubmitting) return;
+      hideAlert();
 
-      if (!checkValidity()) {
-        const p = (inpPrenom && inpPrenom.value ? inpPrenom.value : '').trim();
-        const n = (inpNom && inpNom.value ? inpNom.value : '').trim();
-        const ph = (inpPhone && inpPhone.value ? inpPhone.value : '').trim();
-        const c = (inpCountry && inpCountry.value ? inpCountry.value : '').trim();
-
-        if (p.length < 2 && inpPrenom) inpPrenom.closest('.tk-form-group')?.classList.add('tk-form-group--error');
-        if (n.length < 2 && inpNom) inpNom.closest('.tk-form-group')?.classList.add('tk-form-group--error');
-        if (!ph && inpPhone) inpPhone.closest('.tk-form-group')?.classList.add('tk-form-group--error');
-        if (!c && inpCountry) inpCountry.closest('.tk-form-group')?.classList.add('tk-form-group--error');
-
-        const firstErr = document.querySelector('.tk-form-group--error');
-        if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const invalid = fields.filter((field) => !validateField(field, true));
+      if (invalid.length) {
+        const first = invalid[0].input;
+        first?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+        first?.focus({ preventScroll: true });
+        showToast(invalid.length > 1 ? `${invalid.length} champs sont à compléter.` : 'Un champ est à compléter.', 'error');
         return;
       }
-      const stock = getStock();
-      if (stock < quantity) {
+      if (remainingPlaces < quantity) {
         updateStock();
+        showAlert(remainingPlaces === 0
+          ? 'Toutes les places ont été réservées.'
+          : `Il ne reste que ${remainingPlaces} place${remainingPlaces > 1 ? 's' : ''}. Ajustez votre nombre de billets.`);
         return;
       }
 
-      // Verrouiller la soumission dès le premier clic
       isSubmitting = true;
-
-      // 1. Désactiver immédiatement les boutons et appliquer l'état de chargement
-      if (btnValidateOrder) {
-        btnValidateOrder.disabled = true;
-        btnValidateOrder.classList.add('tk-btn-submit--loading');
-      }
-      if (btnMobileValidate) {
-        btnMobileValidate.disabled = true;
-        btnMobileValidate.classList.add('tk-btn-submit--loading');
-      }
-
-      // 2. Remplacer contenu par spinner + "Validation en cours…"
-      if (btnSpinner) btnSpinner.style.display = 'inline-block';
-      if (btnText) btnText.textContent = 'Validation en cours…';
-      if (btnMobileText) btnMobileText.textContent = 'Validation…';
+      setButtons('Validation en cours…', 'Validation…', { disabled: true, loading: true });
 
       let bookingId = '';
       try {
@@ -818,114 +754,145 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
             _hp: (hpEl && hpEl.value ? hpEl.value : '').trim()
           })
         });
-        const reservationData = await reservationResponse.json();
+        const reservationData = await reservationResponse.json().catch(() => null);
         if (!reservationResponse.ok || !reservationData?.reservation?.reservation_code) {
-          throw new Error(reservationData?.error || 'Réservation impossible');
+          throw new Error(reservationData?.error || 'La réservation n’a pas pu être enregistrée. Réessayez.');
         }
         bookingId = reservationData.reservation.reservation_code;
-        remainingPlaces = Math.max(0, remainingPlaces - quantity);
-        updateStock();
       } catch (error) {
         console.error('[billetterie] Réservation non enregistrée:', error);
         isSubmitting = false;
         if (window.turnstile && typeof window.turnstile.reset === 'function') {
-          try {
-            window.turnstile.reset();
-          } catch (_) {}
+          try { window.turnstile.reset(); } catch (_) {}
         }
-        if (btnSpinner) btnSpinner.style.display = 'none';
-        if (btnText) btnText.textContent = 'RÉESSAYER';
-        if (btnMobileText) btnMobileText.textContent = 'RÉESSAYER';
-        if (btnValidateOrder) {
-          btnValidateOrder.disabled = false;
-          btnValidateOrder.classList.remove('tk-btn-submit--loading');
-        }
-        if (btnMobileValidate) {
-          btnMobileValidate.disabled = false;
-          btnMobileValidate.classList.remove('tk-btn-submit--loading');
-        }
-        if (loadingMsg) loadingMsg.textContent = error?.message || 'La réservation n’a pas pu être enregistrée. Vérifiez votre connexion et réessayez.';
+        setButtons('Réessayer', 'Réessayer', { disabled: false });
+        const offline = error instanceof TypeError;
+        const message = offline
+          ? 'Connexion interrompue. Vérifiez votre réseau, puis réessayez : rien n’a été enregistré.'
+          : (error && error.message) || 'La réservation n’a pas pu être enregistrée. Réessayez.';
+        showAlert(message);
+        showToast(message, 'error');
         return;
       }
 
-      // Voile de chargement
-      if (loadingBackdrop) {
-        loadingBackdrop.classList.add('tk-loading-backdrop--active');
-        loadingBackdrop.setAttribute('aria-hidden', 'false');
-      }
-      if (loadingTitle) loadingTitle.textContent = 'RÉSERVATION ENREGISTRÉE';
-      if (loadingMsg) loadingMsg.textContent = 'Votre réservation est prête. Vous pouvez poursuivre le retrait de votre billet.';
-      if (patienceNote) patienceNote.textContent = 'Présentez votre QR code et votre numéro de réservation lors du retrait.';
+      lastOrder = { quantity, total: quantity * unitPrice };
+      currentBookingId = bookingId;
+      currentQrData = '';
+      remainingPlaces = Math.max(0, remainingPlaces - quantity);
 
-      window.setTimeout(() => {
-        if (loadingBackdrop) {
-          loadingBackdrop.classList.remove('tk-loading-backdrop--active');
-          loadingBackdrop.setAttribute('aria-hidden', 'true');
-        }
+      // Le QR code est un confort : si sa génération échoue, la réservation reste valable.
+      try {
+        const qrResponse = await fetch(`/api/can2027/qr?reservation=${encodeURIComponent(bookingId)}`);
+        const qrData = await qrResponse.json();
+        if (qrResponse.ok && qrData && qrData.qr) currentQrData = qrData.qr;
+      } catch (_) {}
 
-        // Réinitialiser les champs du formulaire après validation
-        resetForm();
-
-        if (btnSpinner) btnSpinner.style.display = 'none';
-        if (btnText) btnText.textContent = 'RÉSERVATION ENREGISTRÉE';
-        if (btnMobileText) btnMobileText.textContent = 'ENREGISTRÉE';
-        if (btnValidateOrder) btnValidateOrder.disabled = true;
-        if (btnMobileValidate) btnMobileValidate.disabled = true;
-
-        fetch(`/api/can2027/qr?reservation=${encodeURIComponent(bookingId)}`)
-          .then((response) => response.json())
-          .then((data) => {
-            currentBookingId = bookingId;
-            currentQrData = data.qr;
-            if (bookingNumber) bookingNumber.textContent = bookingId;
-            if (bookingQr) bookingQr.src = data.qr;
-            confirmation?.classList.add('tk-confirmation--visible');
-            confirmation?.setAttribute('aria-hidden', 'false');
-          });
-      }, 650);
+      resetForm();
+      isSubmitting = false;
+      setButtons('Réserver ma place', 'Réserver', { disabled: false });
+      updateStock();
+      showConfirmation();
     }
 
-    // Gestion du téléchargement de la carte (enregistré une seule fois)
+    confirmation?.addEventListener('close', () => {
+      window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+    });
+    closeConfirmation?.addEventListener('click', () => closeDialog(confirmation));
+    doneConfirmation?.addEventListener('click', () => closeDialog(confirmation));
+
+    copyBooking?.addEventListener('click', async () => {
+      if (!currentBookingId) return;
+      try {
+        await navigator.clipboard.writeText(currentBookingId);
+        copyBooking.textContent = 'Copié';
+        window.setTimeout(() => { copyBooking.textContent = 'Copier'; }, 2000);
+      } catch (_) {
+        // Presse-papiers indisponible : on sélectionne le numéro pour une copie manuelle.
+        const range = document.createRange();
+        if (bookingNumber) {
+          range.selectNodeContents(bookingNumber);
+          const selection = window.getSelection();
+          selection?.removeAllRanges();
+          selection?.addRange(range);
+        }
+      }
+    });
+
+    // --- Carte PNG à télécharger ---
     downloadCard?.addEventListener('click', () => {
       if (!currentQrData || !currentBookingId) return;
       const qrImage = new Image();
       qrImage.onload = () => {
+        const W = 900;
+        const H = 1180;
         const canvas = document.createElement('canvas');
-        canvas.width = 900;
-        canvas.height = 1000;
+        canvas.width = W;
+        canvas.height = H;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
+        const cx = W / 2;
+
         ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#10213d';
-        ctx.font = '800 42px Arial';
+        ctx.fillRect(0, 0, W, H);
+
+        // Bandeau du match
+        ctx.fillStyle = '#0b1730';
+        ctx.fillRect(0, 0, W, 330);
+        ctx.fillStyle = '#007fff';
+        ctx.fillRect(0, 330, W / 3, 8);
+        ctx.fillStyle = '#f7d618';
+        ctx.fillRect(W / 3, 330, W / 3, 8);
+        ctx.fillStyle = '#ce1126';
+        ctx.fillRect((W / 3) * 2, 330, W / 3, 8);
+
         ctx.textAlign = 'center';
-        ctx.fillText('PRÉ-RÉSERVATION ENREGISTRÉE', 450, 85);
-        ctx.font = '800 30px Arial';
-        ctx.fillText('RDC vs GUINÉE ÉQUATORIALE', 450, 145);
-        ctx.font = '24px Arial';
-        ctx.fillText('Jeudi 24 septembre 2026 · 17:00', 450, 195);
-        ctx.fillText('Stade des Martyrs · Kinshasa', 450, 235);
+        ctx.fillStyle = '#f7d618';
         ctx.font = '800 22px Arial';
-        ctx.fillText('N° DE DOSSIER', 450, 300);
-        ctx.font = '800 34px monospace';
-        ctx.fillText(currentBookingId, 450, 345);
-        ctx.drawImage(qrImage, 340, 385, 220, 220);
-        ctx.fillStyle = '#fff5f5';
-        ctx.fillRect(120, 650, 660, 115);
-        ctx.fillStyle = '#d32f2f';
-        ctx.fillRect(120, 650, 8, 115);
-        ctx.fillStyle = '#d32f2f';
-        ctx.font = '800 18px Arial';
-        ctx.fillText('RETRAIT DU BILLET', 450, 685);
-        ctx.fillStyle = '#10213d';
-        ctx.font = '700 24px Arial';
-        ctx.fillText('Stade Tata Raphaël', 450, 720);
+        ctx.fillText('TIKEO · PRÉ-RÉSERVATION ENREGISTRÉE', cx, 70);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '800 52px Arial';
+        ctx.fillText(String(cfg.match || '').toUpperCase(), cx, 150);
+        ctx.fillStyle = '#c9d6ea';
+        ctx.font = '700 22px Arial';
+        ctx.fillText(String(cfg.competition || '').toUpperCase(), cx, 198);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '26px Arial';
+        ctx.fillText(cfg.dateTime || '', cx, 250);
+        ctx.fillText(cfg.place || '', cx, 290);
+
+        // Dossier
+        ctx.fillStyle = '#52627b';
+        ctx.font = '800 20px Arial';
+        ctx.fillText('N° DE DOSSIER', cx, 400);
+        ctx.fillStyle = '#0b1730';
+        ctx.font = '800 46px monospace';
+        ctx.fillText(currentBookingId, cx, 455);
+
+        ctx.drawImage(qrImage, cx - 150, 490, 300, 300);
+
+        const orderLabel = lastOrder.quantity > 1 ? `${lastOrder.quantity} billets` : '1 billet';
+        ctx.fillStyle = '#0b1730';
+        ctx.font = '700 26px Arial';
+        ctx.fillText(`${cfg.ticketName || 'Billet'} · ${orderLabel} · ${formatPrice(lastOrder.total)}`, cx, 845);
+
+        // Retrait
+        ctx.fillStyle = '#eef5ff';
+        ctx.fillRect(90, 890, W - 180, 150);
+        ctx.fillStyle = '#007fff';
+        ctx.fillRect(90, 890, 8, 150);
+        ctx.fillStyle = '#0b63c4';
+        ctx.font = '800 20px Arial';
+        ctx.fillText('RETRAIT DU BILLET', cx, 935);
+        ctx.fillStyle = '#0b1730';
+        ctx.font = '700 30px Arial';
+        ctx.fillText(`${cfg.pickupPlace || ''} à ${cfg.pickupTime || ''}`, cx, 978);
+        ctx.font = '20px Arial';
+        ctx.fillText(cfg.pickupPayment || '', cx, 1014);
+
+        ctx.fillStyle = '#74839a';
         ctx.font = '18px Arial';
-        ctx.fillText('Paiement sur place lors du retrait', 450, 750);
-        ctx.fillStyle = '#10213d';
-        ctx.font = '18px Arial';
-        ctx.fillText('Cette carte confirme votre pré-réservation.', 450, 825);
+        ctx.fillText('Cette carte confirme votre pré-réservation. Présentez-la au point de retrait.', cx, 1105);
+
         canvas.toBlob((blob) => {
           if (!blob) return;
           const link = document.createElement('a');
@@ -933,25 +900,53 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
           link.download = `${currentBookingId}-carte.png`;
           link.click();
           URL.revokeObjectURL(link.href);
+          showToast('Carte enregistrée dans vos téléchargements.');
         }, 'image/png');
       };
       qrImage.src = currentQrData;
     });
 
-    btnValidateOrder?.addEventListener('click', triggerOrderValidation);
-    btnMobileValidate?.addEventListener('click', triggerOrderValidation);
     checkoutForm?.addEventListener('submit', (e) => {
       e.preventDefault();
       triggerOrderValidation();
     });
 
-    // Initial calculation
-    updatePrices();
+    // --- Compte à rebours jusqu'au coup d'envoi ---
+    const countdown = $('tk-countdown');
+    const kickoff = Date.parse(cfg.kickoff || '');
+    if (countdown && Number.isFinite(kickoff)) {
+      const pad = (n) => String(n).padStart(2, '0');
+      const label = $('tk-countdown-label');
+      const units = { days: $('cd-days'), hours: $('cd-hours'), minutes: $('cd-minutes'), seconds: $('cd-seconds') };
+      let timer = 0;
+      const tick = () => {
+        const diff = kickoff - Date.now();
+        if (diff <= 0) {
+          window.clearInterval(timer);
+          countdown.classList.add('tk-countdown--live');
+          // Deux heures de match, puis le compte à rebours disparaît.
+          if (diff > -2 * 3600 * 1000) {
+            if (label) label.textContent = 'Match en cours';
+            countdown.hidden = false;
+          } else {
+            countdown.hidden = true;
+          }
+          return;
+        }
+        const s = Math.floor(diff / 1000);
+        if (units.days) units.days.textContent = pad(Math.floor(s / 86400));
+        if (units.hours) units.hours.textContent = pad(Math.floor((s % 86400) / 3600));
+        if (units.minutes) units.minutes.textContent = pad(Math.floor((s % 3600) / 60));
+        if (units.seconds) units.seconds.textContent = pad(s % 60);
+        countdown.hidden = false;
+      };
+      tick();
+      timer = window.setInterval(tick, 1000);
+    }
+
+    // Initialisation
     updateStock();
-    updateOnlineDemo();
-    window.setInterval(updateOnlineDemo, 10000);
     window.setInterval(syncDynamicStock, 30000);
-    checkValidity();
   }
 
   if (document.readyState === 'loading') {
@@ -964,1006 +959,769 @@ const remainingPlaces = Math.max(0, totalCapacity - reservationsCount);
 
 <style>
   /* =========================================================================
-     DIRECTION VISUELLE : BILLETTERIE LIGHT, LUMINEUSE ET MONO-PAGE
-     Fond #F7F7F4 · Surfaces #FFFFFF · Texte #111111 · Bleu RDC #007FFF
+     TIKEO — billetterie mono-page
+     Papier clair, affiche bleu nuit, accents du drapeau (bleu, jaune, rouge).
      ========================================================================= */
+  :global(*),
+  :global(*::before),
+  :global(*::after) { box-sizing: border-box; }
+  :global(html) { -webkit-text-size-adjust: 100%; scroll-padding-top: 5rem; }
+  :global(html.tk-no-scroll) { overflow: hidden; }
+  :global(body) { margin: 0; background: #f3f6fb; }
 
-  :root {
-    --tk-bg: #f5f8fc;
-    --tk-card-bg: #ffffff;
-    --tk-ink-main: #10213d;
-    --tk-ink-secondary: #52627b;
-    --tk-ink-muted: #74839a;
-    --tk-border: #dce5f0;
-    --tk-input-border: #cbd7e7;
-
-    --tk-blue-rdc: #007fff;
-    --tk-blue-hover: #006ce0;
-    --tk-yellow: #f5cf19;
+  .tk {
+    --tk-bg: #f3f6fb;
+    --tk-card: #ffffff;
+    --tk-night: #0b1730;
+    --tk-night-2: #12244a;
+    --tk-ink: #0f1f3b;
+    --tk-ink-2: #4a5b76;
+    --tk-ink-3: #66758d;
+    --tk-line: #dfe6f0;
+    --tk-line-strong: #c3cfdf;
+    --tk-blue: #0070e6;
+    --tk-blue-bright: #2e97ff;
+    --tk-blue-soft: #eaf3ff;
+    --tk-yellow: #f7d618;
     --tk-red: #ce1126;
-    --tk-danger: #d92d20;
+    --tk-danger: #c4271b;
+    --tk-danger-soft: #fdf0ee;
+    --tk-success: #12824a;
+    --tk-radius: 16px;
+    --tk-radius-sm: 12px;
+    --tk-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --tk-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --tk-shadow: 0 1px 2px rgba(15, 31, 59, 0.04), 0 8px 24px -12px rgba(15, 31, 59, 0.12);
 
-    --tk-radius: 12px;
-  }
-
-  .tk-mono-page {
     min-height: 100vh;
-    background-color: var(--tk-bg);
-    color: var(--tk-ink-main);
-    font-family: var(--font-body);
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
-    padding-bottom: 6rem;
+    background: var(--tk-bg);
+    color: var(--tk-ink);
+    font-family: var(--tk-font);
+    font-size: 1rem;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
   }
 
-  /* -------------------------------------------------------------------------
-     HEADER BLANC TRÈS SIMPLE
-     ------------------------------------------------------------------------- */
+  .tk-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .tk-skip {
+    position: absolute;
+    left: 1rem;
+    top: -4rem;
+    z-index: 60;
+    padding: 0.7rem 1rem;
+    border-radius: 999px;
+    background: var(--tk-yellow);
+    color: var(--tk-night);
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .tk-skip:focus { top: 0.75rem; }
+
+  .tk :focus-visible {
+    outline: 3px solid var(--tk-blue-bright);
+    outline-offset: 2px;
+  }
+  .tk button { font-family: inherit; }
+
+  /* ---------------------------------------------------------------- En-tête */
   .tk-header {
-    background: #10213d;
-    border-bottom: 1px solid var(--tk-border);
-    height: 4.5rem;
     position: sticky;
     top: 0;
     z-index: 30;
+    background: var(--tk-night);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   }
   .tk-header-inner {
-    max-width: 76rem;
+    max-width: 72rem;
     margin: 0 auto;
-    height: 100%;
-    padding: 0 1.5rem;
+    min-height: 3.75rem;
+    padding: 0 1rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 1rem;
   }
-  .tk-brand-link {
-    text-decoration: none;
-    color: #ffffff;
-    display: flex;
-    align-items: center;
+  .tk-brand {
+    display: inline-flex;
+    align-items: baseline;
     gap: 0.6rem;
-  }
-  .tk-brand-title {
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: 0.95rem;
-    letter-spacing: 0.1em;
-  }
-  .tk-brand-caption { display: block; margin-left: 0.35rem; padding-left: 0.65rem; border-left: 1px solid rgba(255,255,255,0.24); color: rgba(255,255,255,0.68); font-size: 0.58rem; letter-spacing: 0.08em; line-height: 1.2; }
-
-  .tk-header-right {
-    display: flex;
-    align-items: center;
-    gap: 0.85rem;
-    font-size: 0.8rem;
-    font-weight: 700;
-  }
-  .tk-link-help {
+    min-height: 2.75rem;
+    padding: 0.5rem 0;
+    color: #fff;
     text-decoration: none;
-    color: rgba(255,255,255,0.75);
-    transition: color 150ms ease;
   }
-  .tk-link-help:hover {
-    color: var(--tk-ink-main);
-  }
-  .tk-header-sep {
-    color: rgba(255,255,255,0.22);
-  }
-  .tk-lang-box {
+  .tk-brand-title { font-size: 1.05rem; font-weight: 800; letter-spacing: 0.16em; }
+  .tk-brand-caption {
     display: none;
-    align-items: center;
-    gap: 0.35rem;
-  }
-  .tk-lang {
-    text-decoration: none;
-    color: rgba(255,255,255,0.75);
-  }
-  .tk-lang--active {
-    color: var(--tk-yellow);
-  }
-  .tk-campaign-logos { display: flex; align-items: center; gap: 0.65rem; margin-right: 0.25rem; }
-  .tk-campaign-logo { object-fit: contain; display: block; }
-  .tk-campaign-logo--qualifiers { width: 7.4rem; height: 2.2rem; }
-  .tk-campaign-logo--feco { width: 1.65rem; height: 2.4rem; }
-
-  /* -------------------------------------------------------------------------
-     LAYOUT MONO-PAGE (65% / 35%)
-     ------------------------------------------------------------------------- */
-  .tk-layout-container {
-    max-width: 76rem;
-    margin: 2.5rem auto 0;
-    padding: 0 1.5rem;
-    width: 100%;
-  }
-
-  .tk-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 2rem;
-    align-items: start;
-  }
-  @media (min-width: 960px) {
-    .tk-grid {
-      grid-template-columns: 65% 35%;
-      gap: 2.5rem;
-    }
-  }
-
-  /* SURFACES ET CARDS */
-  .tk-card {
-    background: var(--tk-card-bg);
-    border: 1px solid var(--tk-border);
-    border-radius: var(--tk-radius);
-    padding: 1.75rem;
-    margin-bottom: 1.5rem;
-  }
-  .tk-card:last-child {
-    margin-bottom: 0;
-  }
-
-  /* -------------------------------------------------------------------------
-     1 — MATCH COMPACT
-     ------------------------------------------------------------------------- */
-  .tk-match-eyebrow {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    margin-bottom: 1.25rem;
-  }
-  .tk-pill-tag {
-    font-family: var(--font-display);
-    font-size: 0.68rem;
-    font-weight: 800;
+    color: #a9b9d3;
+    font-size: 0.72rem;
+    font-weight: 600;
     letter-spacing: 0.08em;
-    color: var(--tk-blue-rdc);
+    text-transform: uppercase;
   }
-  .tk-round-tag {
-    font-family: var(--font-display);
-    font-size: 0.68rem;
-    font-weight: 700;
-    color: var(--tk-ink-muted);
-  }
-
-  .tk-fixture-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1.25rem;
-    padding-bottom: 1.25rem;
-    border-bottom: 1px solid var(--tk-border);
-  }
-  .tk-fixture-team {
-    display: flex;
-    align-items: center;
-    gap: 0.85rem;
-    flex: 1;
-  }
-  .tk-fixture-team--away {
-    flex-direction: row-reverse;
-    text-align: right;
-  }
-
-  /* DRAPEAUX PETITS ET PROPRES : 40–50px */
-  .tk-flag-img {
-    width: 44px;
-    height: 30px;
-    object-fit: cover;
-    border: 1px solid var(--tk-border);
-    border-radius: 2px;
-    flex-shrink: 0;
-  }
-
-  .tk-team-meta {
-    display: flex;
-    flex-direction: column;
-  }
-  .tk-team-code {
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: 1.15rem;
-    letter-spacing: -0.01em;
-    color: var(--tk-ink-main);
-  }
-  .tk-team-name {
-    font-size: 0.8rem;
-    color: var(--tk-ink-secondary);
-  }
-
-  .tk-fixture-vs {
-    font-family: var(--font-display);
-    font-size: 0.75rem;
-    font-weight: 800;
-    color: var(--tk-ink-muted);
-    padding: 0.2rem 0.5rem;
-    background: var(--tk-bg);
-    border-radius: 2px;
-  }
-
-  .tk-fixture-footer {
-    display: flex;
-    align-items: center;
-    gap: 0.65rem;
-    margin-top: 1rem;
-    font-size: 0.82rem;
-    color: var(--tk-ink-secondary);
-    flex-wrap: wrap;
-  }
-  .tk-fixture-info-item {
+  .tk-header-right { display: flex; align-items: center; gap: 0.75rem; }
+  .tk-campaign-logo { display: block; height: 1.5rem; width: auto; }
+  .tk-help-btn {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
+    min-height: 2.75rem;
+    padding: 0 0.9rem;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 999px;
+    background: transparent;
+    color: #fff;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
   }
-  .tk-dot-sep {
-    color: var(--tk-border);
-  }
+  .tk-help-btn:active { background: rgba(255, 255, 255, 0.16); }
 
-  /* -------------------------------------------------------------------------
-     2 — VOS BILLETS
-     ------------------------------------------------------------------------- */
-  .tk-section-header {
+  /* ------------------------------------------------------- Affiche du match */
+  .tk-hero {
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(60rem 26rem at 50% -8rem, rgba(46, 151, 255, 0.34), transparent 70%),
+      linear-gradient(180deg, var(--tk-night) 0%, var(--tk-night-2) 100%);
+    color: #fff;
+  }
+  /* Rappel du drapeau : la bande diagonale rouge bordée de jaune. */
+  .tk-hero::before {
+    content: "";
+    position: absolute;
+    inset: -40% -10%;
+    background: linear-gradient(
+      118deg,
+      transparent 45.5%,
+      rgba(247, 214, 24, 0.5) 45.5% 46.3%,
+      rgba(206, 17, 38, 0.5) 46.3% 49.7%,
+      rgba(247, 214, 24, 0.5) 49.7% 50.5%,
+      transparent 50.5%
+    );
+    opacity: 0.22;
+    pointer-events: none;
+  }
+  .tk-hero-inner {
+    position: relative;
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 3.75rem;
+  }
+  .tk-hero-tags {
     display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    margin-bottom: 1.25rem;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    justify-content: center;
+    gap: 0.4rem;
+    margin: 0 0 1.5rem;
   }
-  .tk-section-title {
-    font-family: var(--font-display);
-    font-size: 1.05rem;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-    color: var(--tk-ink-main);
+  .tk-tag {
+    padding: 0.3rem 0.7rem;
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    border-radius: 999px;
+    color: #dbe6f7;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
   }
-  .tk-max-tag {
-    font-size: 0.75rem;
-    color: var(--tk-ink-muted);
-  }
-  .tk-required-legend {
-    font-size: 0.75rem;
-    color: var(--tk-ink-muted);
-  }
+  .tk-tag--solid { border-color: var(--tk-yellow); background: var(--tk-yellow); color: var(--tk-night); }
 
-  .tk-ticket-row {
-    display: flex;
+  .tk-fixture {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     align-items: center;
-    justify-content: space-between;
-    gap: 1.5rem;
-    padding: 1rem 0;
-    border-top: 1px solid var(--tk-border);
-    flex-wrap: wrap;
+    gap: 0.5rem;
+    max-width: 44rem;
+    margin: 0 auto;
   }
-  .tk-ticket-info {
+  .tk-team { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; text-align: center; }
+  .tk-flag {
+    width: 4.25rem;
+    height: 3.2rem;
+    object-fit: cover;
+    border-radius: 8px;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.22), 0 14px 28px -10px rgba(0, 0, 0, 0.6);
+  }
+  .tk-team-name {
+    margin-top: 0.5rem;
+    font-size: clamp(1.05rem, 4.6vw, 2rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .tk-team-nick { color: #a9b9d3; font-size: 0.8rem; }
+  .tk-kickoff { display: flex; flex-direction: column; align-items: center; padding: 0 0.25rem; text-align: center; }
+  .tk-kickoff-day { color: #dbe6f7; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+  .tk-kickoff-time {
+    font-size: clamp(1.9rem, 9vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+  }
+  .tk-kickoff-label { color: var(--tk-yellow); font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+
+  .tk-hero-foot {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
   }
-  .tk-ticket-name-wrap {
+  .tk-venue { display: inline-flex; align-items: center; gap: 0.45rem; margin: 0; color: #dbe6f7; font-size: 0.95rem; font-weight: 600; }
+  .tk-countdown { display: flex; flex-direction: column; align-items: center; gap: 0.45rem; }
+  .tk-countdown[hidden] { display: none; }
+  .tk-countdown-label { color: #a9b9d3; font-size: 0.8rem; font-weight: 600; white-space: nowrap; }
+  .tk-countdown-units { display: flex; gap: 0.35rem; }
+  .tk-countdown--live .tk-countdown-units { display: none; }
+  .tk-countdown--live .tk-countdown-label { color: var(--tk-yellow); font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+  .tk-unit {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.15rem;
+    min-width: 3rem;
+    justify-content: center;
+    padding: 0.35rem 0.45rem;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.07);
+  }
+  .tk-unit b { font-size: 1.05rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .tk-unit i { color: #a9b9d3; font-size: 0.7rem; font-style: normal; font-weight: 600; }
+
+  /* -------------------------------------------------------------- Contenu */
+  .tk-main {
+    position: relative;
+    width: 100%;
+    max-width: 72rem;
+    margin: -2.5rem auto 0;
+    padding: 0 1rem 2rem;
+    flex: 1;
+  }
+
+  .tk-how {
+    display: grid;
+    gap: 0;
+    margin: 0 0 1rem;
+    padding: 0.35rem 1rem;
+    list-style: none;
+    border: 1px solid var(--tk-line);
+    border-radius: var(--tk-radius);
+    background: var(--tk-card);
+    box-shadow: var(--tk-shadow);
+  }
+  .tk-how-step { display: flex; align-items: center; gap: 0.75rem; padding: 0.7rem 0; }
+  .tk-how-step + .tk-how-step { border-top: 1px solid var(--tk-line); }
+  .tk-how-num {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    background: var(--tk-blue-soft);
+    color: var(--tk-blue);
+    font-size: 0.85rem;
+    font-weight: 800;
+  }
+  .tk-how-text { color: var(--tk-ink-2); font-size: 0.875rem; line-height: 1.35; }
+  .tk-how-text strong { display: block; color: var(--tk-ink); font-size: 0.95rem; }
+
+  .tk-soldout {
+    margin-bottom: 1rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid #f2c3bd;
+    border-radius: var(--tk-radius-sm);
+    background: var(--tk-danger-soft);
+    color: #8f1c13;
+  }
+
+  .tk-grid { display: grid; gap: 1rem; }
+  .tk-content-col { display: grid; gap: 1rem; min-width: 0; }
+
+  .tk-card {
+    padding: 1.25rem 1rem;
+    border: 1px solid var(--tk-line);
+    border-radius: var(--tk-radius);
+    background: var(--tk-card);
+    box-shadow: var(--tk-shadow);
+  }
+  .tk-card-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.25rem 1rem; }
+  .tk-card-title {
     display: flex;
     align-items: center;
     gap: 0.6rem;
-  }
-  .tk-ticket-name {
-    font-family: var(--font-display);
+    margin: 0;
+    font-size: 1.2rem;
     font-weight: 800;
-    font-size: 0.95rem;
-    letter-spacing: 0.02em;
-    color: var(--tk-ink-main);
+    letter-spacing: -0.01em;
   }
-  .tk-ticket-sub {
-    font-size: 0.8rem;
-    color: var(--tk-ink-secondary);
+  .tk-card-num {
+    display: grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    background: var(--tk-night);
+    color: #fff;
+    font-size: 0.85rem;
   }
+  .tk-card-aside { color: var(--tk-ink-3); font-size: 0.8rem; }
+  .tk-card-helper { margin: 0.5rem 0 0; color: var(--tk-ink-2); font-size: 0.9rem; }
 
-  .tk-ticket-pricing {
-    display: flex;
+  /* Billet */
+  .tk-ticket {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "info info" "price counter";
     align-items: center;
-    gap: 1.5rem;
+    gap: 0.75rem 1rem;
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 1.5px solid var(--tk-blue);
+    border-radius: var(--tk-radius-sm);
+    background: linear-gradient(180deg, #f6faff 0%, #fff 100%);
   }
-  .tk-price-val {
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: 1.35rem;
-    color: var(--tk-ink-main);
-  }
+  .tk-ticket-info { grid-area: info; display: flex; flex-direction: column; min-width: 0; }
+  .tk-ticket-name { font-size: 1.05rem; font-weight: 800; }
+  .tk-ticket-sub { color: var(--tk-ink-2); font-size: 0.85rem; }
+  .tk-ticket-price { grid-area: price; font-size: 1.35rem; white-space: nowrap; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .tk-ticket-price small { display: block; color: var(--tk-ink-3); font-size: 0.78rem; font-weight: 500; }
 
-  /* COMPTEUR [- 1 +] */
   .tk-counter {
+    grid-area: counter;
     display: inline-flex;
     align-items: center;
-    border: 1px solid var(--tk-input-border);
-    border-radius: var(--tk-radius);
-    background: #ffffff;
-    height: 2.25rem;
+    gap: 0.15rem;
+    padding: 0.2rem;
+    border: 1px solid var(--tk-line-strong);
+    border-radius: 999px;
+    background: #fff;
   }
   .tk-counter-btn {
-    width: 2.25rem;
-    height: 100%;
-    border: none;
-    background: transparent;
-    font-size: 1.15rem;
-    font-weight: 600;
-    color: var(--tk-ink-main);
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 0;
+    border-radius: 50%;
+    background: var(--tk-blue-soft);
+    color: var(--tk-blue);
     cursor: pointer;
-    transition: background 150ms ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    touch-action: manipulation;
+    transition: background-color 0.18s, transform 0.18s var(--tk-ease);
   }
-  .tk-counter-btn:hover:not(:disabled) {
+  .tk-counter-btn:active:not(:disabled) { transform: scale(0.92); background: #d5e8ff; }
+  .tk-counter-btn:disabled { background: #f1f4f8; color: #a7b3c4; cursor: not-allowed; }
+  .tk-counter-num {
+    min-width: 2.25rem;
+    text-align: center;
+    font-size: 1.25rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+  .tk-counter-num:global(.tk-bump) { animation: tk-bump 0.28s var(--tk-ease); }
+  @keyframes tk-bump {
+    0% { transform: scale(0.8); opacity: 0.5; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .tk-stock { display: flex; align-items: center; gap: 0.5rem; margin: 0.85rem 0 0; color: var(--tk-ink-2); font-size: 0.875rem; }
+  .tk-stock-dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--tk-success); }
+  .tk-stock--low { color: #8a4b00; font-weight: 600; }
+  .tk-stock--low .tk-stock-dot { background: #e08a00; }
+  .tk-stock--out { color: var(--tk-danger); font-weight: 700; }
+  .tk-stock--out .tk-stock-dot { background: var(--tk-danger); }
+
+  /* Formulaire */
+  .tk-form { margin-top: 1.1rem; }
+  .tk-form-grid { display: grid; gap: 1rem; }
+  .tk-field { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
+  .tk-label { font-size: 0.9rem; font-weight: 700; }
+  .tk-input {
+    width: 100%;
+    min-height: 3.1rem;
+    padding: 0.7rem 0.9rem;
+    border: 1.5px solid var(--tk-line-strong);
+    border-radius: var(--tk-radius-sm);
+    background: #fff;
+    color: var(--tk-ink);
+    font: inherit;
+    font-size: 1rem;
+    transition: border-color 0.18s, box-shadow 0.18s;
+  }
+  .tk-input::placeholder { color: #8d9ab0; }
+  .tk-input:focus { outline: none; border-color: var(--tk-blue); box-shadow: 0 0 0 4px rgba(0, 112, 230, 0.16); }
+  .tk-select {
+    appearance: none;
+    padding-right: 2.6rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234a5b76' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.9rem center;
+    cursor: pointer;
+  }
+  .tk-field--error .tk-input { border-color: var(--tk-danger); background: var(--tk-danger-soft); }
+  .tk-field--error .tk-input:focus { box-shadow: 0 0 0 4px rgba(196, 39, 27, 0.16); }
+  .tk-error { color: var(--tk-danger); font-size: 0.85rem; font-weight: 600; }
+  .tk-error:empty { display: none; }
+  .tk-hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+  .tk-turnstile-wrap { margin-top: 1rem; }
+  .tk-turnstile-wrap:empty { display: none; }
+
+  .tk-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    margin-top: 1rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid #f2c3bd;
+    border-radius: var(--tk-radius-sm);
+    background: var(--tk-danger-soft);
+    color: #8f1c13;
+    font-size: 0.92rem;
+    font-weight: 600;
+  }
+  .tk-alert[hidden] { display: none; }
+  .tk-alert svg { flex: none; margin-top: 0.1rem; }
+
+  /* Récapitulatif en forme de billet */
+  .tk-summary {
+    border-radius: var(--tk-radius);
+    background: var(--tk-card);
+    box-shadow: var(--tk-shadow);
+    overflow: hidden;
+  }
+  .tk-summary-top { padding: 1.15rem 1rem 1.25rem; background: var(--tk-night); color: #fff; }
+  .tk-summary-title { margin: 0; color: var(--tk-yellow); font-size: 0.75rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+  .tk-summary-match { margin: 0.4rem 0 0.2rem; font-size: 1.3rem; font-weight: 800; letter-spacing: -0.01em; }
+  .tk-summary-meta { margin: 0; color: #c2cfe3; font-size: 0.875rem; line-height: 1.45; }
+  .tk-summary-notch {
+    position: relative;
+    height: 0;
+    border-top: 2px dashed var(--tk-line-strong);
+  }
+  .tk-summary-notch::before,
+  .tk-summary-notch::after {
+    content: "";
+    position: absolute;
+    top: -0.7rem;
+    width: 1.3rem;
+    height: 1.3rem;
+    border-radius: 50%;
     background: var(--tk-bg);
   }
-  .tk-counter-btn:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-  }
-  .tk-counter-num {
-    min-width: 2rem;
-    text-align: center;
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: 0.95rem;
-    color: var(--tk-ink-main);
-  }
-
-  /* -------------------------------------------------------------------------
-     3 — VOS INFORMATIONS
-     ------------------------------------------------------------------------- */
-  .tk-form-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1.25rem 1.5rem;
-  }
-  @media (min-width: 640px) {
-    .tk-form-grid {
-      grid-template-columns: 1fr 1fr;
-    }
-  }
-
-  .tk-form-group {
+  .tk-summary-notch::before { left: -0.65rem; }
+  .tk-summary-notch::after { right: -0.65rem; }
+  .tk-summary-body { padding: 1.15rem 1rem 1.25rem; border: 1px solid var(--tk-line); border-top: 0; border-radius: 0 0 var(--tk-radius) var(--tk-radius); }
+  .tk-sum-line { display: flex; justify-content: space-between; gap: 1rem; }
+  .tk-sum-line b { display: block; font-size: 1rem; }
+  .tk-sum-line small { color: var(--tk-ink-2); font-size: 0.875rem; font-variant-numeric: tabular-nums; }
+  .tk-sum-amount { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tk-sum-total {
     display: flex;
-    flex-direction: column;
-    position: relative;
-  }
-  .tk-label {
-    font-family: var(--font-display);
-    font-size: 0.72rem;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    color: var(--tk-ink-secondary);
-    margin-bottom: 0.35rem;
-  }
-  .tk-input {
-    background: #ffffff;
-    border: 1px solid var(--tk-input-border);
-    border-radius: var(--tk-radius);
-    padding: 0.65rem 0.85rem;
-    font-family: var(--font-body);
-    font-size: 0.95rem;
-    color: var(--tk-ink-main);
-    outline: none;
-    transition: border-color 150ms ease, box-shadow 150ms ease;
-    width: 100%;
-  }
-  .tk-input::placeholder {
-    color: #adadad;
-    font-size: 0.88rem;
-  }
-  .tk-input:focus {
-    border-color: var(--tk-blue-rdc);
-    box-shadow: 0 0 0 1px var(--tk-blue-rdc);
-  }
-
-  .tk-select {
-    cursor: pointer;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 0.75rem center;
-  }
-
-  .tk-form-group--error .tk-input {
-    border-color: var(--tk-danger);
-  }
-  .tk-error-text {
-    font-size: 0.7rem;
-    color: var(--tk-danger);
-    margin-top: 0.25rem;
-    min-height: 0.9rem;
-    font-weight: 600;
-  }
-
-  /* -------------------------------------------------------------------------
-     4 — RÉSUMÉ STICKY (VOTRE COMMANDE)
-     ------------------------------------------------------------------------- */
-  .tk-summary-card {
-    background: var(--tk-card-bg);
-    border: 1px solid var(--tk-border);
-    border-radius: var(--tk-radius);
-    padding: 1.75rem;
-    position: sticky;
-    top: 5rem;
-  }
-
-  .tk-summary-title {
-    font-family: var(--font-display);
-    font-size: 0.85rem;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    color: var(--tk-ink-secondary);
-    margin-bottom: 1.25rem;
-  }
-
-  .tk-sum-match {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-  }
-  .tk-sum-teams {
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: 1.05rem;
-    color: var(--tk-ink-main);
-  }
-  .tk-sum-vs {
-    font-weight: 600;
-    color: var(--tk-ink-muted);
-    font-size: 0.9rem;
-  }
-  .tk-sum-date {
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: var(--tk-ink-secondary);
-  }
-  .tk-sum-stadium {
-    font-size: 0.78rem;
-    color: var(--tk-ink-muted);
-  }
-  .tk-sum-pickup { display: grid; gap: 0.18rem; margin-top: 0.7rem; padding: 0.65rem 0.75rem; border: 1px solid #e4e4e0; border-radius: 5px; background: #f7f7f4; }
-  .tk-sum-pickup-label { color: var(--tk-ink-secondary); font-family: var(--font-display); font-size: 0.62rem; font-weight: 800; letter-spacing: 0.1em; }
-  .tk-sum-pickup strong { color: var(--tk-ink-main); font-size: 0.86rem; }
-
-  .tk-divider {
-    border: none;
-    border-top: 1px solid var(--tk-border);
-    margin: 1.25rem 0;
-  }
-
-  .tk-sum-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-  }
-  .tk-sum-item-header {
-    display: flex;
-    justify-content: space-between;
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 0.92rem;
-  }
-  .tk-sum-item-calc {
-    font-size: 0.78rem;
-    color: var(--tk-ink-muted);
-  }
-
-  .tk-sum-total-row {
-    display: flex;
-    justify-content: space-between;
     align-items: baseline;
-    margin-bottom: 1.5rem;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--tk-line);
   }
-  .tk-sum-total-lbl {
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: 0.9rem;
-    letter-spacing: 0.05em;
-    color: var(--tk-ink-main);
+  .tk-sum-total span { color: var(--tk-ink-2); font-size: 0.875rem; font-weight: 600; }
+  .tk-sum-total strong { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tk-sum-pickup {
+    display: flex;
+    gap: 0.6rem;
+    margin-top: 1rem;
+    padding: 0.8rem 0.9rem;
+    border-radius: var(--tk-radius-sm);
+    background: var(--tk-blue-soft);
+    color: #0b3f7d;
+    font-size: 0.875rem;
+    line-height: 1.4;
   }
-  .tk-sum-total-amount {
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: 1.6rem;
-    color: var(--tk-ink-main);
-  }
+  .tk-sum-pickup svg { flex: none; margin-top: 0.1rem; color: var(--tk-blue); }
 
-  /* BOUTON BLEU RDC RECTANGLE */
-  .tk-btn-submit {
-    width: 100%;
-    background: var(--tk-blue-rdc);
-    color: #ffffff;
-    border: none;
-    border-radius: var(--tk-radius);
-    padding: 0.95rem 1.5rem;
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: 0.85rem;
-    letter-spacing: 0.06em;
-    cursor: pointer;
+  /* Boutons */
+  .tk-submit {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.6rem;
-    transition: background 150ms ease, opacity 150ms ease;
-    height: 3.1rem;
+    width: 100%;
+    min-height: 3.25rem;
+    padding: 0 1.25rem;
+    border: 0;
+    border-radius: 999px;
+    background: var(--tk-blue);
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    touch-action: manipulation;
+    box-shadow: 0 10px 22px -10px rgba(0, 112, 230, 0.7);
+    transition: background-color 0.18s, transform 0.18s var(--tk-ease), box-shadow 0.18s;
   }
-  .tk-btn-submit:hover:not(:disabled) {
-    background: var(--tk-blue-hover);
-  }
-  .tk-btn-submit:disabled {
-    background: #b8cde6;
-    color: #ffffff;
-    cursor: not-allowed;
-    opacity: 0.75;
-  }
-  .tk-btn-submit--loading {
-    cursor: wait !important;
-  }
-
-  .tk-inline-spinner {
+  .tk-submit:active:not(:disabled) { transform: scale(0.98); }
+  .tk-submit:disabled { background: #c9d3e1; color: #5b6b83; box-shadow: none; cursor: not-allowed; }
+  .tk-submit[hidden] { display: none; }
+  .tk-submit--desktop { display: none; margin-top: 1rem; }
+  .tk-spinner {
     display: none;
-    width: 14px;
-    height: 14px;
-    border: 2px solid rgba(255, 255, 255, 0.4);
-    border-top-color: #ffffff;
+    width: 1.1rem;
+    height: 1.1rem;
+    border: 2.5px solid rgba(91, 107, 131, 0.35);
+    border-top-color: #33435c;
     border-radius: 50%;
     animation: tk-spin 0.7s linear infinite;
   }
+  .tk-submit--loading .tk-spinner { display: inline-block; }
+  @keyframes tk-spin { to { transform: rotate(360deg); } }
 
-  .tk-security-note {
+  .tk-ghost {
+    width: 100%;
+    min-height: 3rem;
+    border: 1.5px solid var(--tk-line-strong);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--tk-ink);
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .tk-footer {
     display: flex;
-    align-items: center;
+    flex-wrap: wrap;
     justify-content: center;
-    gap: 0.4rem;
-    margin-top: 1rem;
-    font-size: 0.75rem;
-    color: var(--tk-ink-muted);
+    gap: 0.25rem 1rem;
+    padding: 0.5rem 1rem calc(6.5rem + env(safe-area-inset-bottom));
+    color: var(--tk-ink-3);
+    font-size: 0.85rem;
+    text-align: center;
   }
+  .tk-footer p { margin: 0; }
+  .tk-footer a { color: var(--tk-blue); font-weight: 600; }
 
-  /* -------------------------------------------------------------------------
-     MOBILE STICKY ACTION BAR
-     ------------------------------------------------------------------------- */
-  .tk-mobile-sticky-bar {
+  /* Barre mobile */
+  .tk-mobile-bar {
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: #ffffff;
-    border-top: 1px solid var(--tk-border);
-    padding: 0.75rem 1.25rem;
-    z-index: 25;
-    box-shadow: 0 -3px 10px rgba(0, 0, 0, 0.04);
-  }
-  @media (min-width: 960px) {
-    .tk-mobile-sticky-bar { display: none; }
-  }
-  .tk-mobile-bar-content {
+    inset: auto 0 0 0;
+    z-index: 40;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    max-width: 32rem;
-    margin: 0 auto;
+    padding: 0.7rem 1rem calc(0.7rem + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--tk-line);
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 -8px 24px -14px rgba(15, 31, 59, 0.3);
   }
-  .tk-mobile-total-box {
-    display: flex;
-    flex-direction: column;
-  }
-  .tk-mobile-total-caption {
-    font-size: 0.65rem;
-    font-weight: 700;
-    color: var(--tk-ink-muted);
-  }
-  .tk-mobile-total-val {
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: 1.35rem;
-    color: var(--tk-ink-main);
-  }
-  .tk-btn-submit--mobile {
-    width: auto;
-    min-width: 9rem;
-    height: 2.75rem;
-  }
+  .tk-mobile-total { display: flex; flex-direction: column; min-width: 0; }
+  .tk-mobile-total-caption { color: var(--tk-ink-2); font-size: 0.78rem; font-weight: 600; }
+  .tk-mobile-total-val { font-size: 1.25rem; font-weight: 800; line-height: 1.15; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tk-submit--mobile { width: auto; min-width: 9.5rem; }
 
-  .tk-turnstile-wrap {
-    grid-column: 1 / -1;
-    display: flex;
-    justify-content: flex-start;
-    margin-top: 0.5rem;
-  }
-
-  /* -------------------------------------------------------------------------
-     CHARGEMENT INFINI ("SITE QUI RAME")
-     ------------------------------------------------------------------------- */
-  .tk-loading-backdrop {
+  /* Messages */
+  .tk-toast {
     position: fixed;
-    inset: 0;
-    background: rgba(247, 247, 244, 0.98);
-    z-index: 100;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 1.5rem;
-    opacity: 0;
-    transition: opacity 350ms ease;
-  }
-  .tk-loading-backdrop--active {
-    display: flex;
-    opacity: 1;
-  }
-
-  .tk-loading-modal {
-    max-width: 28rem;
-    width: 100%;
-    text-align: center;
-    background: #ffffff;
-    border: 1px solid var(--tk-border);
-    border-radius: var(--tk-radius);
-    padding: 3rem 2rem;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
-  }
-  .tk-loading-kicker {
-    font-family: var(--font-display);
-    font-size: 0.72rem;
-    font-weight: 800;
-    letter-spacing: 0.1em;
-    color: var(--tk-blue-rdc);
-    margin-bottom: 0.75rem;
-  }
-  .tk-loading-title {
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: 1.25rem;
-    color: var(--tk-ink-main);
-    margin-bottom: 2rem;
-  }
-
-  .tk-spinner-ring {
-    width: 36px;
-    height: 36px;
-    border: 2px solid var(--tk-border);
-    border-top-color: var(--tk-blue-rdc);
-    border-radius: 50%;
-    margin: 0 auto 1.5rem;
-    animation: tk-spin 0.9s cubic-bezier(0.6, 0.2, 0.4, 0.8) infinite;
-  }
-
-  @keyframes tk-spin {
-    to { transform: rotate(360deg); }
-  }
-
-  .tk-loading-message {
-    font-size: 0.92rem;
-    color: var(--tk-ink-secondary);
-    min-height: 1.5rem;
-    transition: opacity 200ms ease;
-  }
-
-  .tk-patience-note {
-    margin-top: 1.75rem;
-    font-size: 0.78rem;
-    color: var(--tk-ink-muted);
-    opacity: 0;
-    transition: opacity 500ms ease;
-    line-height: 1.45;
-  }
-  .tk-patience-note--visible {
-    opacity: 1;
-  }
-
-  .tk-card, .tk-summary-card {
-    box-shadow: 0 10px 30px rgba(16, 33, 61, 0.06);
-  }
-  .tk-pill-tag { color: var(--tk-red); background: #fff1f2; padding: 0.35rem 0.55rem; border-radius: 999px; }
-  .tk-section-helper { color: var(--tk-ink-secondary); font-size: 0.84rem; margin: -0.65rem 0 1rem; }
-  .tk-tension-toast { position: fixed; z-index: 60; top: 5.35rem; right: 1rem; transform: translateY(-0.6rem); width: min(calc(100% - 2rem), 25rem); padding: 0.7rem 0.9rem; border: 1px solid rgba(255,255,255,0.12); border-radius: 0.7rem; background: #10213d; color: #fff; font-family: var(--font-display); font-size: 0.76rem; font-weight: 700; box-shadow: 0 8px 24px rgba(16, 33, 61, 0.12); opacity: 0; pointer-events: none; transition: opacity 240ms ease, transform 240ms ease; display: flex; align-items: center; gap: 0.5rem; }
-  .tk-tension-toast svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: 0 0 auto; }
-  .tk-tension-toast--visible { opacity: 1; transform: translateY(0); }
-  .tk-confirmation { position: fixed; inset: 0; z-index: 70; display: flex; align-items: center; justify-content: center; padding: 1rem; background: rgba(16,33,61,0.42); opacity: 0; pointer-events: none; transition: opacity 240ms ease; }
-  .tk-confirmation--visible { opacity: 1; pointer-events: auto; }
-  .tk-confirmation-card { position: relative; width: min(100%, 30rem); max-height: calc(100vh - 2rem); overflow: auto; border: 1px solid var(--tk-border); border-radius: 1rem; background: #fff; padding: 2rem; color: var(--tk-ink-main); text-align: center; box-shadow: 0 20px 60px rgba(16,33,61,0.2); }
-  .tk-confirmation-close { position: absolute; top: 0.75rem; right: 0.85rem; width: 2.2rem; height: 2.2rem; border: 1px solid var(--tk-border); border-radius: 999px; background: #fff; color: var(--tk-ink-muted); cursor: pointer; font-size: 1.5rem; line-height: 1; transition: background 180ms ease, color 180ms ease, border-color 180ms ease; }
-  .tk-confirmation-close:hover, .tk-confirmation-close:focus-visible { border-color: var(--tk-blue-rdc); background: #eef5ff; color: var(--tk-blue-rdc); outline: none; }
-  .tk-confirmation-kicker, .tk-booking-label { color: var(--tk-blue-rdc); font-family: var(--font-display); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; }
-  .tk-confirmation-card h2 { margin: 0.65rem 0; font-family: var(--font-display); font-size: 1.65rem; font-weight: 800; }
-  .tk-confirmation-match { font-family: var(--font-display); font-size: 1.1rem; font-weight: 800; }
-  .tk-confirmation-match span { color: var(--tk-blue-rdc); }
-  .tk-confirmation-meta, .tk-confirmation-note { color: var(--tk-ink-secondary); font-size: 0.82rem; line-height: 1.5; }
-  .tk-confirmation-pickup { display: grid; gap: 0.25rem; margin: 1.15rem 0; padding: 0.85rem 1rem; border: 1px solid #e4e4e0; border-radius: 5px; background: #f7f7f4; text-align: left; }
-  .tk-confirmation-pickup span { color: var(--tk-ink-secondary); font-family: var(--font-display); font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; }
-  .tk-confirmation-pickup strong { color: var(--tk-ink-main); font-family: var(--font-display); font-size: 1rem; }
-  .tk-confirmation-pickup small { color: var(--tk-ink-secondary); font-size: 0.75rem; }
-  .tk-booking-label { margin-top: 1.5rem; color: var(--tk-ink-muted); }
-  .tk-booking-number { display: block; margin-top: 0.25rem; color: var(--tk-ink-main); font-family: monospace; font-size: 1.45rem; letter-spacing: 0.06em; }
-  .tk-booking-qr { display: block; margin: 1rem auto; border: 0.5rem solid #fff; box-shadow: 0 0 0 1px var(--tk-border); }
-  .tk-confirmation-actions { display: grid; gap: 0.6rem; margin-top: 1.25rem; }
-  .tk-confirmation-actions button { min-height: 2.8rem; border: 0; border-radius: 999px; background: var(--tk-blue-rdc); color: #fff; cursor: pointer; font-family: var(--font-display); font-size: 0.75rem; font-weight: 800; text-transform: uppercase; }
-  .tk-input { min-height: 3rem; }
-  .tk-counter { height: 2.75rem; }
-  .tk-counter-btn { width: 2.75rem; min-width: 44px; }
-  .tk-btn-submit { min-height: 3.25rem; }
-  .tk-mobile-intro { display: none; }
-
-  /* -------------------------------------------------------------------------
-     BANDEAU D'INFORMATION RETRAIT & PAIEMENT SUR LE SITE
-     ------------------------------------------------------------------------- */
-  .tk-trust-callout {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.85rem;
-    padding: 1rem 1.25rem;
-    margin-bottom: 1.25rem;
-    background: #eef6ff;
-    border: 1px solid #bfdbfe;
-    border-radius: var(--tk-radius);
-    color: #1e3a8a;
-  }
-  .tk-trust-icon {
-    flex: none;
-    color: var(--tk-blue-rdc);
-    margin-top: 0.1rem;
-  }
-  .tk-trust-text {
-    font-size: 0.88rem;
-    line-height: 1.45;
-    color: #1e3a8a;
-  }
-  .tk-trust-text strong {
-    color: #172554;
-    font-weight: 700;
-  }
-  .tk-trust-link {
-    color: var(--tk-blue-rdc);
-    font-weight: 700;
-    text-decoration: underline;
-    margin-left: 0.25rem;
-    cursor: pointer;
-  }
-  .tk-trust-link:hover {
-    color: #10213d;
-  }
-
-  .tk-sum-reassurance {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.65rem 0.85rem;
-    margin-bottom: 1rem;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 8px;
-    color: #dbeafe;
-    font-size: 0.76rem;
-    line-height: 1.35;
-  }
-  .tk-sum-reassurance svg {
-    flex: none;
-    color: #60a5fa;
-  }
-
-  /* -------------------------------------------------------------------------
-     MODALE D'AIDE (#aide)
-     ------------------------------------------------------------------------- */
-  .tk-help-modal-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 90;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1.25rem;
-    background: rgba(16, 33, 61, 0.55);
-    backdrop-filter: blur(4px);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 220ms ease;
-  }
-  .tk-help-modal-backdrop.tk-help-modal--visible {
-    opacity: 1;
-    pointer-events: auto;
-  }
-  .tk-help-modal-card {
-    position: relative;
-    width: min(100%, 34rem);
-    max-height: calc(100vh - 2.5rem);
-    overflow-y: auto;
-    background: #ffffff;
-    border: 1px solid var(--tk-border);
-    border-radius: 1.25rem;
-    padding: 2.25rem 2rem;
-    box-shadow: 0 25px 60px rgba(16, 33, 61, 0.25);
-    transform: scale(0.96) translateY(8px);
-    transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  .tk-help-modal--visible .tk-help-modal-card {
-    transform: scale(1) translateY(0);
-  }
-  .tk-help-modal-close {
-    position: absolute;
-    top: 1rem;
-    right: 1.15rem;
-    width: 2.25rem;
-    height: 2.25rem;
-    display: grid;
-    place-items: center;
-    border: 1px solid var(--tk-border);
-    border-radius: 50%;
-    background: #f8fafc;
-    color: var(--tk-ink-muted);
-    font-size: 1.5rem;
-    line-height: 1;
-    cursor: pointer;
-    transition: all 160ms ease;
-  }
-  .tk-help-modal-close:hover,
-  .tk-help-modal-close:focus-visible {
-    background: #eef5ff;
-    color: var(--tk-blue-rdc);
-    border-color: var(--tk-blue-rdc);
-    outline: none;
-  }
-
-  .tk-help-kicker {
-    display: inline-block;
-    color: var(--tk-blue-rdc);
-    font-family: var(--font-display);
-    font-size: 0.72rem;
-    font-weight: 800;
-    letter-spacing: 0.12em;
-    margin-bottom: 0.4rem;
-  }
-  .tk-help-modal-header h2 {
-    margin: 0 0 1.25rem;
-    font-family: var(--font-display);
-    font-size: 1.45rem;
-    font-weight: 800;
-    color: var(--tk-ink-main);
-    line-height: 1.2;
-    padding-right: 2rem;
-  }
-
-  .tk-help-notice-box {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.85rem;
-    padding: 1.1rem 1.25rem;
-    background: #f0fdf4;
-    border: 1.5px solid #86efac;
+    left: 50%;
+    top: 4.5rem;
+    z-index: 70;
+    width: max-content;
+    max-width: calc(100vw - 2rem);
+    padding: 0.75rem 1rem;
     border-radius: 12px;
-    margin-bottom: 1.75rem;
+    background: var(--tk-night);
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: 0 16px 36px -14px rgba(11, 23, 48, 0.6);
+    opacity: 0;
+    visibility: hidden;
+    transform: translate(-50%, -0.6rem);
+    transition: opacity 0.25s, transform 0.25s var(--tk-ease), visibility 0.25s;
+    pointer-events: none;
   }
-  .tk-help-notice-icon {
-    font-size: 1.35rem;
-    line-height: 1;
-    flex: none;
-  }
-  .tk-help-notice-box p {
-    margin: 0;
-    color: #14532d;
-    font-size: 0.92rem;
-    line-height: 1.5;
-  }
-  .tk-help-notice-box strong {
-    color: #052e16;
-  }
+  .tk-toast:global(.tk-toast--visible) { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
+  .tk-toast:global(.tk-toast--error) { background: #8f1c13; }
 
-  .tk-help-steps {
-    display: grid;
-    gap: 1.15rem;
-    margin-bottom: 1.75rem;
+  /* ------------------------------------------------------- Fenêtres modales */
+  .tk-dialog {
+    width: min(100% - 1.5rem, 30rem);
+    max-width: none;
+    max-height: calc(100dvh - 1.5rem);
+    margin: auto;
+    padding: 0;
+    border: 0;
+    border-radius: 20px;
+    background: transparent;
+    color: var(--tk-ink);
+    overflow: auto;
+    overscroll-behavior: contain;
   }
-  .tk-help-step {
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
+  .tk-dialog::backdrop { background: rgba(8, 16, 34, 0.66); backdrop-filter: blur(3px); }
+  .tk-dialog[open] { animation: tk-pop 0.32s var(--tk-ease); }
+  .tk-dialog[open]::backdrop { animation: tk-fade 0.25s ease-out; }
+  @keyframes tk-pop {
+    from { opacity: 0; transform: translateY(1rem) scale(0.98); }
+    to { opacity: 1; transform: none; }
   }
-  .tk-help-step-num {
-    width: 2rem;
-    height: 2rem;
-    border-radius: 50%;
-    background: #eef5ff;
-    color: var(--tk-blue-rdc);
-    font-family: var(--font-display);
-    font-size: 0.95rem;
-    font-weight: 800;
+  @keyframes tk-fade { from { opacity: 0; } to { opacity: 1; } }
+
+  .tk-dialog-close {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.6rem;
     display: grid;
     place-items: center;
-    flex: none;
-    border: 1px solid #bfdbfe;
-  }
-  .tk-help-step-body strong {
-    display: block;
-    color: var(--tk-ink-main);
-    font-size: 0.95rem;
-    margin-bottom: 0.2rem;
-  }
-  .tk-help-step-body p {
-    margin: 0;
-    color: var(--tk-ink-secondary);
-    font-size: 0.84rem;
-    line-height: 1.45;
-  }
-
-  .tk-help-modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    padding-top: 0.75rem;
-    border-top: 1px solid var(--tk-border);
-  }
-  .tk-btn-help-ok {
-    padding: 0.75rem 1.75rem;
+    width: 2.75rem;
+    height: 2.75rem;
     border: 0;
-    border-radius: 999px;
-    background: var(--tk-blue-rdc);
-    color: #fff;
-    font-family: var(--font-display);
-    font-size: 0.82rem;
-    font-weight: 800;
-    letter-spacing: 0.04em;
+    border-radius: 50%;
+    background: #eef2f7;
+    color: var(--tk-ink);
     cursor: pointer;
-    transition: background 160ms ease, transform 160ms ease;
   }
-  .tk-btn-help-ok:hover {
-    background: #0d4fa6;
-    transform: translateY(-1px);
+  .tk-dialog-close--light { background: rgba(255, 255, 255, 0.14); color: #fff; }
+
+  .tk-help { position: relative; padding: 1.5rem 1.25rem 1.25rem; border-radius: 20px; background: #fff; }
+  .tk-help-kicker { margin: 0; color: var(--tk-blue); font-size: 0.75rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+  .tk-help h2 { margin: 0.35rem 2.5rem 0.9rem 0; font-size: 1.4rem; font-weight: 800; line-height: 1.2; letter-spacing: -0.01em; }
+  .tk-help-notice { margin: 0 0 1rem; padding: 0.85rem 1rem; border-radius: var(--tk-radius-sm); background: var(--tk-blue-soft); color: #0b3f7d; font-size: 0.92rem; }
+  .tk-help-steps { display: grid; gap: 1rem; margin: 0 0 1.25rem; padding: 0; list-style: none; }
+  .tk-help-steps li { display: flex; gap: 0.75rem; }
+  .tk-help-steps strong { display: block; font-size: 0.98rem; }
+  .tk-help-steps p { margin: 0.2rem 0 0; color: var(--tk-ink-2); font-size: 0.9rem; }
+
+  .tk-pass { position: relative; border-radius: 20px; background: #fff; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16); }
+  .tk-pass-top { padding: 1.5rem 1.25rem 1.4rem; background: var(--tk-night); color: #fff; text-align: center; }
+  .tk-pass-check {
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    margin: 0 auto 0.75rem;
+    border-radius: 50%;
+    background: #1fa463;
+    color: #fff;
+  }
+  .tk-pass-kicker { margin: 0; color: var(--tk-yellow); font-size: 0.75rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+  .tk-pass-top h2 { margin: 0.35rem 2rem 0.9rem; font-size: 1.3rem; font-weight: 800; line-height: 1.2; text-wrap: balance; }
+  .tk-pass-match { margin: 0; font-size: 1.15rem; font-weight: 800; }
+  .tk-pass-meta { margin: 0.2rem 0 0; color: #c2cfe3; font-size: 0.875rem; }
+  .tk-summary-notch--pass::before,
+  .tk-summary-notch--pass::after { background: #3d4657; }
+  .tk-pass-body { padding: 1.25rem; text-align: center; }
+  .tk-pass-label { display: block; color: var(--tk-ink-3); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+  .tk-pass-code { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.25rem 0.75rem; }
+  .tk-pass-code .tk-pass-label { flex-basis: 100%; }
+  .tk-booking-number { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 1.5rem; font-weight: 800; letter-spacing: 0.02em; user-select: all; }
+  .tk-copy {
+    min-height: 2.75rem;
+    padding: 0 0.9rem;
+    border: 1px solid var(--tk-line-strong);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--tk-blue);
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .tk-pass-qr { margin: 0.9rem auto 0; width: max-content; padding: 0.5rem; border: 1px solid var(--tk-line); border-radius: 14px; }
+  .tk-pass-qr[hidden] { display: none; }
+  .tk-booking-qr { display: block; width: 11rem; height: 11rem; }
+  .tk-pass-qr-error { margin: 0.9rem 0 0; padding: 0.75rem; border-radius: var(--tk-radius-sm); background: #fff7e0; color: #6b4a00; font-size: 0.875rem; }
+  .tk-pass-pickup { margin-top: 1rem; padding: 0.85rem 1rem; border-left: 4px solid var(--tk-blue); border-radius: 0 var(--tk-radius-sm) var(--tk-radius-sm) 0; background: var(--tk-blue-soft); text-align: left; }
+  .tk-pass-pickup strong { display: block; font-size: 1.05rem; }
+  .tk-pass-pickup small { color: var(--tk-ink-2); font-size: 0.85rem; }
+  .tk-pass-note { margin: 0.9rem 0 0; color: var(--tk-ink-2); font-size: 0.875rem; text-align: left; }
+  .tk-pass-actions { display: grid; gap: 0.6rem; margin-top: 1.1rem; }
+
+  /* ---------------------------------------------------------------- Entrée */
+  @media (prefers-reduced-motion: no-preference) {
+    .tk-fixture, .tk-hero-foot, .tk-how, .tk-card, .tk-summary {
+      animation: tk-rise 0.6s var(--tk-ease) both;
+    }
+    .tk-hero-foot { animation-delay: 0.08s; }
+    .tk-how { animation-delay: 0.14s; }
+    .tk-content-col .tk-card:nth-child(1) { animation-delay: 0.2s; }
+    .tk-content-col .tk-card:nth-child(2) { animation-delay: 0.26s; }
+    .tk-summary { animation-delay: 0.32s; }
+  }
+  @keyframes tk-rise {
+    from { opacity: 0; transform: translateY(0.75rem); }
+    to { opacity: 1; transform: none; }
   }
 
-  @media (max-width: 639px) {
-    .tk-header { height: 4rem; }
-    .tk-header-inner { padding: 0 1rem; }
-    .tk-brand-caption, .tk-campaign-logo--feco, .tk-header-sep { display: none; }
-    .tk-link-help {
-      display: inline-flex;
-      align-items: center;
-      padding: 0.35rem 0.7rem;
-      border: 1px solid rgba(255, 255, 255, 0.28);
-      border-radius: 999px;
-      color: #fff;
-      font-size: 0.7rem;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-decoration: none;
-    }
-    .tk-campaign-logo--qualifiers { width: 6.3rem; height: 1.8rem; }
-    .tk-header-right { gap: 0.5rem; }
-    .tk-layout-container { margin-top: 0; padding: 0 0.85rem 1rem; }
-    .tk-mobile-intro { display: block; padding: 1.7rem 0.3rem 1.2rem; }
-    .tk-mobile-kicker { color: var(--tk-red); font-family: var(--font-display); font-weight: 800; font-size: 0.68rem; letter-spacing: 0.1em; }
-    .tk-mobile-intro h1 { font-size: clamp(1.8rem, 8vw, 2.5rem); line-height: 0.98; margin: 0.55rem 0 0.65rem; color: var(--tk-ink-main); }
-    .tk-mobile-intro p { color: var(--tk-ink-secondary); font-size: 0.92rem; max-width: 29rem; }
-    .tk-card { padding: 1.1rem; border-radius: 14px; margin-bottom: 0.8rem; }
-    .tk-fixture-row { gap: 0.4rem; padding-bottom: 1rem; }
-    .tk-fixture-team { gap: 0.5rem; min-width: 0; }
-    .tk-fixture-team--away { gap: 0.5rem; }
-    .tk-flag-img { width: 35px; height: 25px; }
-    .tk-team-code { font-size: 0.96rem; }
-    .tk-team-name { font-size: 0.68rem; line-height: 1.15; }
-    .tk-fixture-vs { font-size: 0.65rem; flex-shrink: 0; }
-    .tk-fixture-footer { font-size: 0.73rem; gap: 0.4rem; line-height: 1.35; }
-    .tk-dot-sep { display: none; }
-    .tk-section-header { align-items: flex-start; flex-direction: column; gap: 0.3rem; margin-bottom: 0.8rem; }
-    .tk-section-title { font-size: 1rem; }
-    .tk-max-tag, .tk-required-legend { font-size: 0.7rem; }
-    .tk-ticket-row { align-items: flex-start; gap: 1rem; }
-    .tk-ticket-pricing { width: 100%; justify-content: space-between; gap: 0.5rem; }
-    .tk-price-val { font-size: 1.5rem; }
-    .tk-form-grid { gap: 0.8rem; }
-    .tk-label { font-size: 0.68rem; }
-    .tk-summary-col { order: 2; }
-    .tk-summary-card { padding: 1rem; border-radius: 14px; background: #10213d; color: #fff; }
-    .tk-summary-title, .tk-sum-teams, .tk-sum-total-lbl, .tk-sum-total-amount { color: #fff; }
-    .tk-sum-date, .tk-sum-item-calc { color: rgba(255,255,255,0.72); }
-    .tk-sum-stadium, .tk-summary-title { color: rgba(255,255,255,0.65); }
-    .tk-divider { border-color: rgba(255,255,255,0.16); }
-    .tk-summary-card .tk-btn-submit { display: none; }
-    .tk-mobile-sticky-bar { padding: 0.65rem 0.85rem max(0.65rem, env(safe-area-inset-bottom)); }
-    .tk-tension-toast { top: 4.75rem; right: 0.75rem; width: calc(100% - 1.5rem); max-width: none; padding: 0.55rem 0.7rem; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .tk-mobile-bar-content { max-width: none; }
-    .tk-btn-submit--mobile { min-width: 8.5rem; height: 3rem; }
+  @media (hover: hover) and (pointer: fine) {
+    .tk-help-btn:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.4); }
+    .tk-counter-btn:hover:not(:disabled) { background: #d5e8ff; }
+    .tk-submit:hover:not(:disabled) { background: #005fc4; box-shadow: 0 14px 26px -10px rgba(0, 112, 230, 0.75); }
+    .tk-ghost:hover, .tk-copy:hover { border-color: var(--tk-ink-2); }
+    .tk-dialog-close:hover { background: #dfe6f0; }
+    .tk-dialog-close--light:hover { background: rgba(255, 255, 255, 0.26); }
+  }
+
+  /* --------------------------------------------------------------- Tablette */
+  @media (min-width: 40rem) {
+    .tk-brand-caption { display: inline; }
+    .tk-header-inner { padding: 0 1.5rem; }
+    .tk-hero-inner { padding: 2.25rem 1.5rem 4.75rem; }
+    .tk-flag { width: 6rem; height: 4.5rem; border-radius: 10px; }
+    .tk-fixture { gap: 1.5rem; }
+    .tk-kickoff-day { font-size: 0.85rem; }
+    .tk-hero-foot { flex-direction: row; justify-content: center; gap: 1.75rem; }
+    .tk-countdown { flex-direction: row; gap: 0.75rem; }
+    .tk-ticket { grid-template-areas: "info counter" "price counter"; gap: 0.35rem 1.5rem; padding: 1.15rem 1.25rem; }
+    .tk-ticket-price small { display: inline; }
+    .tk-main { margin-top: -3rem; padding: 0 1.5rem 2.5rem; }
+    .tk-how { grid-template-columns: repeat(3, 1fr); padding: 0.4rem 0.5rem; }
+    .tk-how-step { padding: 0.75rem 1rem; }
+    .tk-how-step + .tk-how-step { border-top: 0; border-left: 1px solid var(--tk-line); }
+    .tk-card { padding: 1.5rem; }
+    .tk-form-grid { grid-template-columns: 1fr 1fr; }
+    .tk-summary-top, .tk-summary-body { padding-left: 1.5rem; padding-right: 1.5rem; }
+    .tk-help { padding: 2rem 1.75rem 1.75rem; }
+    .tk-pass-actions { grid-template-columns: 1fr auto; }
+    .tk-pass-actions .tk-ghost { padding: 0 1.25rem; }
+  }
+
+  /* ---------------------------------------------------------------- Bureau */
+  @media (min-width: 62rem) {
+    .tk-grid { grid-template-columns: minmax(0, 1fr) 23rem; gap: 1.5rem; align-items: start; }
+    .tk-content-col { gap: 1.5rem; }
+    .tk-how { margin-bottom: 1.5rem; }
+    .tk-summary-col { position: sticky; top: 5rem; }
+    .tk-submit--desktop { display: inline-flex; }
+    .tk-mobile-bar { display: none; }
+    .tk-footer { padding-bottom: 2rem; }
+    .tk-toast { top: auto; bottom: 1.5rem; transform: translate(-50%, 0.6rem); }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .tk-inline-spinner, .tk-spinner-ring { animation: none; }
-    *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+    .tk *, .tk *::before, .tk *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+    .tk-spinner { animation-duration: 1.4s !important; animation-iteration-count: infinite !important; }
   }
 </style>
