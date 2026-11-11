@@ -916,7 +916,9 @@ export class Chars3D {
   kickFoot = new THREE.Vector3();
 
   constructor(public canvas: HTMLCanvasElement, ballKind: "foot" | "basket" = "foot") {
-    this.renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: "high-performance" });
+    // écrans haute densité : l'antialiasing ne se voit presque pas et coûte cher sur téléphone
+    const hiDpi = typeof window !== "undefined" && (window.devicePixelRatio || 1) >= 2;
+    this.renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: !hiDpi, powerPreference: "high-performance" });
     this.renderer.setClearColor(0x000000, 0);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -949,11 +951,12 @@ export class Chars3D {
     ground.position.set(0, 0.002, 8);
     ground.receiveShadow = true;
     this.scene.add(ground);
+    this.shadowGround = ground;
     const rim = new THREE.DirectionalLight(0xbcd2ff, 1.4);
     rim.position.set(8, 9, 30);
     this.scene.add(rim);
     this.ball = new THREE.Mesh(
-      new THREE.SphereGeometry(ballKind === "foot" ? 0.11 : 0.12, 48, 32),
+      new THREE.SphereGeometry(ballKind === "foot" ? 0.11 : 0.12, 32, 20),
       new THREE.MeshStandardMaterial({ map: ballTexture(ballKind), roughness: ballKind === "foot" ? 0.32 : 0.7, metalness: 0 })
     );
     this.ball.castShadow = true;
@@ -1514,9 +1517,111 @@ export class Chars3D {
     for (const a of [...this.actors]) this.remove(a);
   }
 
+  private lastSize = { w: 0, h: 0, dpr: 1 };
   resize(w: number, h: number, dpr: number) {
-    this.renderer.setPixelRatio(dpr);
+    this.lastSize = { w, h, dpr };
+    this.renderer.setPixelRatio(Math.min(dpr, this.qualityDpr()));
     this.renderer.setSize(w, h, false);
+  }
+
+  /* ---------------- Qualité adaptative ---------------- */
+
+  /** 0 = minimale … 3 = maximale. Réglée selon le FPS réel par GameView. */
+  quality = 3;
+  private shadowGround: THREE.Mesh | null = null;
+  private qualityDpr() {
+    const dev = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+    return [1, 1.25, 1.5, Math.min(2, dev)][this.quality];
+  }
+  get shadowsOn() {
+    return this.quality >= 2;
+  }
+  setQuality(q: number) {
+    q = Math.max(0, Math.min(3, Math.round(q)));
+    if (q === this.quality) return;
+    const hadShadows = this.shadowsOn;
+    this.quality = q;
+    const { w, h, dpr } = this.lastSize;
+    if (w) this.resize(w, h, dpr);
+    if (hadShadows !== this.shadowsOn) {
+      this.renderer.shadowMap.enabled = this.shadowsOn;
+      this.key.castShadow = this.shadowsOn;
+      // le sol « receveur d'ombres » couvre tout l'écran : inutile sans ombres
+      if (this.shadowGround) this.shadowGround.visible = this.shadowsOn;
+      // recompile les matériaux une seule fois (changement rare)
+      this.scene.traverse((o: any) => {
+        const ms = o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : [];
+        ms.forEach((m: THREE.Material) => (m.needsUpdate = true));
+      });
+    }
+    const size = q >= 3 ? 2048 : 1024;
+    if (this.key.shadow.mapSize.x !== size) {
+      this.key.shadow.mapSize.set(size, size);
+      this.key.shadow.map?.dispose();
+      (this.key.shadow as any).map = null;
+    }
+  }
+
+  /** Ombres de contact (disque flou) quand les vraies ombres sont coupées : 1 dessin par personnage. */
+  private blobTex: THREE.Texture | null = null;
+  private blobs = new Map<Actor | "ball", THREE.Mesh>();
+  private blobFor(key: Actor | "ball") {
+    let b = this.blobs.get(key);
+    if (!b) {
+      if (!this.blobTex) {
+        const cv = document.createElement("canvas");
+        cv.width = cv.height = 64;
+        const c = cv.getContext("2d")!;
+        const g = c.createRadialGradient(32, 32, 0, 32, 32, 32);
+        g.addColorStop(0, "rgba(0,0,0,0.75)");
+        g.addColorStop(0.55, "rgba(0,0,0,0.35)");
+        g.addColorStop(1, "rgba(0,0,0,0)");
+        c.fillStyle = g;
+        c.fillRect(0, 0, 64, 64);
+        this.blobTex = new THREE.CanvasTexture(cv);
+      }
+      b = new THREE.Mesh(
+        new THREE.PlaneGeometry(1, 1),
+        new THREE.MeshBasicMaterial({ map: this.blobTex, transparent: true, depthWrite: false, opacity: 0.55 })
+      );
+      b.rotation.x = -Math.PI / 2;
+      b.renderOrder = -1;
+      this.scene.add(b);
+      this.blobs.set(key, b);
+    }
+    return b;
+  }
+  private blobPos = new THREE.Vector3();
+  private updateBlobs() {
+    const on = !this.shadowsOn;
+    for (const [k, b] of this.blobs) {
+      if (k !== "ball" && !this.actors.includes(k)) {
+        this.scene.remove(b);
+        b.geometry.dispose();
+        this.blobs.delete(k);
+      } else b.visible = on;
+    }
+    if (!on) return;
+    for (const a of this.actors) {
+      const pel = a.bones[BONE.pelvis];
+      if (!pel || !a.root.visible) continue;
+      pel.getWorldPosition(this.blobPos);
+      const b = this.blobFor(a);
+      const lift = Math.max(0, this.blobPos.y - 0.9);
+      const s = 0.95 + lift * 0.4;
+      b.position.set(this.blobPos.x, 0.004, this.blobPos.z);
+      b.scale.set(s, s * 0.75, 1);
+      (b.material as THREE.MeshBasicMaterial).opacity = Math.max(0.15, 0.55 - lift * 0.3);
+      b.visible = true;
+    }
+    if (this.ball.visible) {
+      const b = this.blobFor("ball");
+      const hgt = this.ball.position.y;
+      b.position.set(this.ball.position.x, 0.005, this.ball.position.z);
+      b.scale.setScalar(0.28 + hgt * 0.06);
+      (b.material as THREE.MeshBasicMaterial).opacity = Math.max(0.08, 0.5 - hgt * 0.12);
+      b.visible = true;
+    } else this.blobs.get("ball")?.visible && (this.blobs.get("ball")!.visible = false);
   }
 
   /** Recopie la caméra du jeu (focale, horizon, centre, zoom) dans Three. */
@@ -1850,6 +1955,7 @@ export class Chars3D {
   }
 
   render() {
+    this.updateBlobs();
     this.renderer.render(this.scene, this.camera);
   }
 

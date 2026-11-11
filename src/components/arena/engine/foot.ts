@@ -18,6 +18,8 @@ import type { Actor, Chars3D } from "./chars3d";
 
 type C3Mod = typeof import("./chars3d");
 
+type CamPose = { x: number; y: number; z: number; yaw: number; f: number; cx: number; hz: number };
+
 export interface FootSetup {
   stage: FootStage;
   diff: DiffCfg;
@@ -171,6 +173,8 @@ export class FootEngine {
   private keeperRead = false;
   private keeperSk: Skeleton | null = null;
   private kickT = 0;
+  /** Position du ballon au moment de la frappe (ancre du tireur). */
+  private kickX = 0;
   private wallBodies: Body[] = [];
 
   // ballon
@@ -230,7 +234,8 @@ export class FootEngine {
   private c3: Chars3D | null = null;
   private c3m: C3Mod | null = null;
   private A: { shooter?: Actor; keeper?: Actor; mate?: Actor; wall: Actor[] } = { wall: [] };
-  private celeb = { x: 0, z: 0, captured: false };
+  private celeb = { x: 0, z: 0, captured: false, px: 0, pz: 0, yaw0: 0, fx: 0, fz: 0 };
+  private celebCam = false;
   private viewOff = { x: 0, y: 0 };
 
   async attach3D(c3: Chars3D, mod: C3Mod): Promise<void> {
@@ -267,8 +272,9 @@ export class FootEngine {
     this.A = { wall: [] };
     const hasJ = m.hasJersey(pc);
     if (this.passStep === "shoot" && tm && mc) {
-      // une-deux : c'est le receveur qui enchaîne la frappe
+      // une-deux : c'est le receveur qui enchaîne la frappe ; le passeur reste sur le terrain, derrière
       this.A.shooter = c3.actor({ ...m.LEOPARDS_PAINT(tm.name, m.hasJersey(mc) ? tm.number : undefined, this.shooterBody.skin), female: tmFem }, mc);
+      this.A.mate = c3.actor({ ...m.LEOPARDS_PAINT(s.name, hasJ ? s.number : undefined, this.shooterBody.skin), female: fem }, pc);
     } else {
       this.A.shooter = c3.actor({ ...m.LEOPARDS_PAINT(s.name, hasJ ? s.number : undefined, this.shooterBody.skin), female: fem }, pc);
       if (isPass && tm && mc) this.A.mate = c3.actor({ ...m.LEOPARDS_PAINT(tm.name, m.hasJersey(mc) ? tm.number : undefined, this.shooterBody.skin), female: tmFem }, mc);
@@ -277,7 +283,7 @@ export class FootEngine {
     for (let i = 0; i < defCount; i++) {
       this.A.wall.push(c3.actor({ ...m.RIVAL_PAINT(4 + i * 3, this.wallBodies[i]?.skin || "#5a3520"), female: kFem }, wallIds[i]));
     }
-    this.celeb = { x: 0, z: 0, captured: false };
+    this.celeb = { x: 0, z: 0, captured: false, px: 0, pz: 0, yaw0: 0, fx: 0, fz: 0 };
     c3.buildGoal(this.D);
     this.drive3D();
   }
@@ -315,12 +321,17 @@ export class FootEngine {
     this.parts = [];
     this.zoom = 1;
     this.shake = 0;
+    this.slowUntil = 0;
     this.currentDistance = s.stage.distance;
     this.passSuccessFlash = 0;
     this.passAnim = null;
     this.passPending = null;
+    this.camBlend = null;
+    this.celebCam = false;
+    this.passOrigin = null;
     this.passStep = s.stage.type === "pass_shoot" && s.stage.pass ? "pass" : null;
     this.bx = s.stage.ballX;
+    this.kickX = s.stage.ballX;
     this.by = BALL_R;
     this.bz = 0;
     this.vx = this.vy = this.vz = this.ax = 0;
@@ -388,22 +399,22 @@ export class FootEngine {
     cam.z = isPass ? (portrait ? -10.2 : -9.0) : fk ? (portrait ? -9.2 : -8.2) : (portrait ? -12 : -11);
     cam.setYaw(Math.atan2(-cam.x * 0.85, D - cam.z));
     cam.cx = this.w / 2;
-    if (isPass) {
-      // vue « Score! Hero » : passeur, receveur, défenseurs et cage tous visibles
-      const tgt = this.setupData.stage.pass!.teammate;
-      cam.x = (bx + tgt.x) * 0.35;
-      cam.y = portrait ? 7.2 : 6.2;
-      cam.z = portrait ? -12.5 : -11;
-      cam.setYaw(Math.atan2(((bx + tgt.x) / 2 - cam.x) * 0.6, D - cam.z));
+    if (isPass || (fk && portrait)) {
+      // coups francs (téléphone) et passes : tireur (derrière le ballon), mur et cage tous visibles
+      const tgt = isPass ? this.setupData.stage.pass!.teammate : null;
+      const midX = tgt ? (bx + tgt.x) / 2 : bx * 0.5;
+      cam.x = tgt ? (bx + tgt.x) * 0.35 : bx * 0.55;
+      cam.y = tgt ? (portrait ? 7.2 : 6.2) : portrait ? 5.6 : 4.8;
+      cam.z = tgt ? (portrait ? -12.5 : -11) : portrait ? -11.5 : -10;
+      cam.setYaw(Math.atan2((midX - cam.x) * 0.6, D - cam.z));
       const fit = [
         [-GOAL_W - 0.4, GOAL_H, D],
         [GOAL_W + 0.4, GOAL_H, D],
-        [bx - 1.1, 0, -1.4], // pieds du passeur (derrière le ballon)
-        [bx - 1.1, 1.9, -1.4],
-        [bx + 0.6, 0, 0.3],
-        [tgt.x - 0.8, 0, tgt.z],
-        [tgt.x + 0.8, 2.0, tgt.z]
+        [bx - 1.4, 0, -2.7], // pieds du tireur, en retrait pour l'élan
+        [bx - 1.4, 1.9, -2.7],
+        [bx + 0.6, 0, 0.3]
       ];
+      if (tgt) fit.push([tgt.x - 0.8, 0, tgt.z], [tgt.x + 0.8, 2.0, tgt.z]);
       const q = fit.map(([X, Y, Z]) => {
         const [rx, rz] = cam.rel(X, Z);
         return { u: rx / rz, v: -(Y - cam.y) / rz };
@@ -539,20 +550,27 @@ export class FootEngine {
     ctx.strokeStyle = "rgba(255,255,255,0.85)";
     ctx.lineCap = "round";
     const line = (pts: [number, number][]) => {
-      ctx.beginPath();
-      let first = true;
+      // chaque tronçon a sa propre épaisseur, écrasée par la perspective (ligne au sol vue de biais) :
+      // sans ça, une ligne proche d'une caméra basse devient une bande énorme
+      let prev: { x: number; y: number; s: number; z: number } | null = null;
       for (const [x, z] of pts) {
         const p = cam.p(x, 0, z);
         if (p.z < 0.6) {
-          first = true;
+          prev = null;
           continue;
         }
-        ctx.lineWidth = Math.max(1, 0.12 * p.s);
-        if (first) ctx.moveTo(p.x, p.y);
-        else ctx.lineTo(p.x, p.y);
-        first = false;
+        if (prev) {
+          const sMid = (prev.s + p.s) / 2;
+          const rz = (prev.z + p.z) / 2;
+          const flat = Math.min(1, Math.max(0.18, (cam.y / rz) * 1.6));
+          ctx.lineWidth = Math.max(1, 0.12 * sMid * flat);
+          ctx.beginPath();
+          ctx.moveTo(prev.x, prev.y);
+          ctx.lineTo(p.x, p.y);
+          ctx.stroke();
+        }
+        prev = p;
       }
-      ctx.stroke();
     };
     const seg = (x0: number, z0: number, x1: number, z1: number, n = 24) => {
       const pts: [number, number][] = [];
@@ -707,8 +725,12 @@ export class FootEngine {
     if (!pass) return;
     this.passAnim = null;
     this.passStep = "shoot";
-    this.currentDistance = pass.finishDistance;
-    this.bx = pass.finishBallX;
+    const tm0 = pass.teammate;
+    // la frappe part de là où le receveur a contrôlé : on décale juste l'origine du repère
+    const from = { x: this.cam.x, y: this.cam.y, z: this.cam.z - tm0.z, yaw: this.cam.yaw, f: this.cam.f, cx: this.cam.cx, hz: this.cam.hz };
+    this.passOrigin = { x: this.setupData.stage.ballX, z: -tm0.z };
+    this.currentDistance = Math.max(9, this.setupData.stage.distance - tm0.z);
+    this.bx = tm0.x;
     this.by = BALL_R;
     this.bz = 0;
     this.vx = this.vy = this.vz = this.ax = 0;
@@ -717,10 +739,61 @@ export class FootEngine {
     this.phaseT = 0;
     const tm = pass.teammate;
     this.shooterKit = LEOPARDS_KIT(tm.name, tm.number);
-    this.keeperX = pass.finishBallX * 0.12;
+    this.keeperX = tm0.x * 0.12;
     this.bgDirty = true;
     this.layout();
+    const c = this.cam;
+    this.camBlend = { from, to: { x: c.x, y: c.y, z: c.z, yaw: c.yaw, f: c.f, cx: c.cx, hz: c.hz }, t: 0 };
+    this.applyCamBlend(0);
     if (this.c3?.ready) this.build3D();
+  }
+
+  /** Plan télé sur le buteur : la caméra s'approche, de trois quarts, à hauteur d'homme. */
+  private startCelebCam() {
+    if (this.celebCam || !this.use3d || !this.celeb.captured || this.camBlend || this.setupData.reduced) return;
+    this.celebCam = true;
+    const c = this.cam;
+    const from: CamPose = { x: c.x, y: c.y, z: c.z, yaw: c.yaw, f: c.f, cx: c.cx, hz: c.hz };
+    const tx = this.celeb.px;
+    const tz = this.celeb.pz;
+    // côté opposé au poteau le plus proche, pour garder la cage et la foule derrière lui
+    const side = tx > 0 ? -1 : 1;
+    const camX = tx + side * 1.3;
+    const camY = 1.6;
+    const camZ = tz - 4.4;
+    const d = Math.hypot(tx - camX, tz - camZ);
+    const portrait = this.h > this.w;
+    // le joueur prend un peu plus de la moitié de la hauteur d'écran
+    const f = ((portrait ? this.h * 0.5 : this.h * 0.62) * d) / 1.85;
+    const to: CamPose = {
+      x: camX,
+      y: camY,
+      z: camZ,
+      yaw: Math.atan2(tx - camX, tz - camZ),
+      f,
+      cx: this.w / 2,
+      hz: this.h * 0.56 + ((1.0 - camY) * f) / d
+    };
+    this.camBlend = { from, to, t: 0, dur: 1.1 };
+  }
+
+  /** Glissement de caméra (passe → frappe) au lieu d'une coupure. */
+  private camBlend: { from: CamPose; to: CamPose; t: number; dur?: number } | null = null;
+  private passOrigin: { x: number; z: number } | null = null;
+  private applyCamBlend(k: number) {
+    const b = this.camBlend;
+    if (!b) return;
+    const e = easeInOut(clamp(k, 0, 1));
+    const c = this.cam;
+    c.x = lerp(b.from.x, b.to.x, e);
+    c.y = lerp(b.from.y, b.to.y, e);
+    c.z = lerp(b.from.z, b.to.z, e);
+    c.setYaw(lerp(b.from.yaw, b.to.yaw, e));
+    c.f = lerp(b.from.f, b.to.f, e);
+    c.cx = lerp(b.from.cx, b.to.cx, e);
+    c.hz = lerp(b.from.hz, b.to.hz, e);
+    this.bgDirty = true;
+    if (k >= 1) this.camBlend = null;
   }
 
   cancel() {
@@ -966,6 +1039,10 @@ export class FootEngine {
   private curve: { x: number; y: number; z: number }[] = [];
 
   update(dt: number) {
+    if (this.camBlend) {
+      this.camBlend.t += dt;
+      this.applyCamBlend(this.camBlend.t / (this.camBlend.dur ?? 0.8));
+    }
     if (!this.setupData) return;
     dt = Math.min(dt, 1 / 30);
     this.lastDt = dt;
@@ -1085,6 +1162,7 @@ export class FootEngine {
     if (this.outcome && !s.reduced) {
       const celebrating = this.outcome.scored && this.t - this.resolvedAt > 0.6;
       this.zoom = lerp(this.zoom, celebrating ? 1 : 1.06, dt * 2);
+      if (celebrating) this.startCelebCam();
     }
     this.shake = Math.max(0, this.shake - dt * 3);
     updateParticles(this.parts, dt);
@@ -1103,10 +1181,12 @@ export class FootEngine {
     this.vy = v0.y;
     this.vz = v0.z;
     this.kickT = this.t;
+    this.kickX = this.bx;
     this.phase = "flight";
     this.phaseT = 0;
     this.planKeeper();
     audio.kick(clamp(p.v / 30, 0.3, 1));
+    haptic(12);
     if (!this.setupData.reduced) {
       const b = this.cam.p(this.bx, 0, this.bz);
       dustBurst(this.parts, b.x, b.y, 10, "#3f8f4f", b.s / 120);
@@ -1240,6 +1320,7 @@ export class FootEngine {
           zone: this.pending!.zone
         });
         if (!this.setupData.reduced) this.shake = 0.4;
+        haptic(22);
       }
     }
 
@@ -1255,6 +1336,8 @@ export class FootEngine {
       const barHit = Math.abs(y - GOAL_H) < BALL_R + 0.06 && ax < GOAL_W + 0.06;
       if (postHit || barHit) {
         audio.post();
+        this.slowmo(0.22);
+        haptic(45);
         if (!this.setupData.reduced) this.shake = 0.75;
         const inside = postHit ? ax < GOAL_W - 0.02 && this.rng() < 0.45 : y < GOAL_H - 0.03 && this.rng() < 0.4;
         if (inside) {
@@ -1317,8 +1400,19 @@ export class FootEngine {
     }
   }
 
+  /** Ralenti (temps du jeu) : le filet qui se gonfle, le poteau qui tremble. */
+  private slowUntil = 0;
+  get timeScale() {
+    return this.t < this.slowUntil ? 0.3 : 1;
+  }
+  private slowmo(sec: number) {
+    if (!this.setupData.reduced) this.slowUntil = this.t + sec;
+  }
+
   private goal(p: NonNullable<FootEngine["pending"]>, extra: string[], label: string) {
     this.inNet = true;
+    this.slowmo(0.32);
+    haptic([28, 40, 70]);
     this.crowdReaction = "goal";
     const tags = [...extra];
     let base = this.D > 15 ? 150 : 100;
@@ -1983,9 +2077,29 @@ export class FootEngine {
     const tc = SM.kickContact;
     const foot = SM.kickFoot;
     // le passeur reste à l'endroit de la passe pendant que le ballon voyage
-    const anchorX = this.passAnim ? this.passAnim.x0 : this.bx;
-    const rootX = anchorX - foot.x - 0.05;
-    const rootZ = -foot.z - 0.14;
+    const pa = this.passAnim || this.passPending;
+    // ancré là où la frappe a eu lieu : le tireur ne suit pas le ballon une fois parti
+    const anchorX = pa ? pa.x0 : this.phase === "aim" || this.phase === "runup" ? this.bx : this.kickX;
+    // le tireur s'oriente vers sa cible (coin visé, centre de la cage ou coéquipier) : l'élan est dans l'axe
+    let tx = 0;
+    let tz = D;
+    if (pa) {
+      tx = pa.x1;
+      tz = pa.z1;
+    } else if (this.pending) tx = this.pending.tx;
+    else if (this.passStep === "pass" && s.stage.pass) {
+      tx = s.stage.pass.teammate.x;
+      tz = s.stage.pass.teammate.z;
+    }
+    const ang = clamp(Math.atan2(tx - anchorX, Math.max(1, tz)) * 0.9, -0.75, 0.75);
+    const ca = Math.cos(ang);
+    const sa = Math.sin(ang);
+    // pied de frappe tourné avec le corps : le contact tombe pile sur le ballon
+    const fxr = foot.x * ca + foot.z * sa;
+    const fzr = -foot.x * sa + foot.z * ca;
+    const rootX = anchorX - fxr - 0.05 * ca;
+    const rootZ = -fzr - 0.14 * ca;
+    const yawK = -ang;
     const END = Math.min(tc + 0.5, sh.duration("kick") - 0.15);
 
     /* --- tireur --- */
@@ -1994,12 +2108,12 @@ export class FootEngine {
     const tAim = sh.rig === "mx" ? (D > 15 ? 0.12 : 0.02) : D > 15 ? 0.22 : 0.02;
     if (this.phase === "aim") {
       const breath = Math.sin(this.t * 2.8) * 0.015;
-      sh.place(rootX, rootZ, 0, false, breath * 0.5);
+      sh.place(rootX, rootZ, yawK, false, breath * 0.5);
       sh.pose("kick", tAim);
       const V = m.THREE.Vector3;
       sh.aim(B.spine2, B.neck, new V(0, 1, breath * 0.4));
     } else if (this.phase === "runup") {
-      sh.place(rootX, rootZ, 0);
+      sh.place(rootX, rootZ, yawK);
       sh.pose("kick", tAim + ((tc - tAim) * this.phaseT) / RUN);
     } else {
       const since = this.t - this.kickT;
@@ -2007,17 +2121,29 @@ export class FootEngine {
       const c = o ? this.t - this.resolvedAt - 0.3 : -1;
       const kt = Math.min(END, tc + since);
       if (!o || c < 0) {
-        sh.place(rootX, rootZ, 0);
+        sh.place(rootX, rootZ, yawK);
         sh.pose("kick", kt);
       } else {
         if (!this.celeb.captured) {
-          sh.place(rootX, rootZ, 0);
+          sh.place(rootX, rootZ, yawK);
           sh.pose("kick", kt);
           sh.root.updateMatrixWorld(true);
           const hp = sh.bone(B.pelvis);
-          this.celeb = { x: hp.x, z: Math.min(hp.z, -0.6), captured: true };
+          this.celeb = { x: hp.x, z: Math.min(hp.z, -0.6), captured: true, px: hp.x, pz: hp.z, yaw0: yawK, fx: 0, fz: 0 };
         }
         this.celebrate3D(sh, c, o.scored, END);
+        // pas de glissade : le bassin reste là où la frappe s'est terminée,
+        // et le corps revient doucement de l'axe de frappe vers la célébration
+        const P0 = this.celeb;
+        sh.root.rotation.y += P0.yaw0 * (1 - easeInOut(clamp(c / 0.5, 0, 1)));
+        sh.root.updateMatrixWorld(true);
+        if (c < 0.55) {
+          const hp = sh.bone(B.pelvis);
+          P0.fx = P0.px - hp.x;
+          P0.fz = P0.pz - hp.z;
+        }
+        sh.root.position.x -= P0.fx;
+        sh.root.position.z += P0.fz;
       }
     }
 
@@ -2140,6 +2266,22 @@ export class FootEngine {
     const sinceK = this.phase === "flight" || this.phase === "done" ? this.t - this.kickT : -1;
     const delay = Math.max(0.04, 0.12 - levelFactor * 0.08);
     const jumpK = sinceK < delay ? 0 : Math.sin(clamp((sinceK - delay) / 0.54, 0, 1) * Math.PI);
+
+    /* finition après une passe : le passeur suit l'action, un peu en retrait */
+    if (this.passStep === "shoot" && A.mate && this.passOrigin) {
+      const pm = A.mate;
+      const o0 = this.passOrigin;
+      // il remonte au trot vers la surface pendant la frappe
+      const run = clamp((this.t - (this.kickT || this.t)) * 0.6, 0, 1) * (this.phase === "aim" ? 0 : 1);
+      pm.inPlace = true;
+      pm.place(lerp(o0.x, this.bx * 0.4, 0.5), o0.z + 2 + run * 2.5, Math.atan2(-(this.bx - o0.x), D - o0.z) * 0.5);
+      if (this.outcome?.scored && this.t - this.resolvedAt > 0.4) {
+        // il lève les bras sur le but
+        pm.pose("catch", 0.02);
+        pm.aim(B.lUpper, B.lFore, new m.THREE.Vector3(0.3, 1, 0.1));
+        pm.aim(B.rUpper, B.rFore, new m.THREE.Vector3(-0.3, 1, 0.1));
+      } else pm.pose("catch", 0.02);
+    }
 
     /* action passe : défenseurs qui suivent le ballon, receveur qui appelle puis contrôle */
     if (this.passStep === "pass" && s.stage.pass) {
@@ -2997,4 +3139,13 @@ function keeperHit(sk: Skeleton, x: number, y: number): "glove" | "body" | null 
   }
   if (Math.hypot(P.x - sk.head.x, P.y - sk.head.y) < sk.headR + R) return "body";
   return null;
+}
+
+/** Petite vibration (téléphones qui le permettent ; ignorée ailleurs). */
+function haptic(pattern: number | number[]) {
+  try {
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(pattern);
+  } catch {
+    /* vibration indisponible */
+  }
 }

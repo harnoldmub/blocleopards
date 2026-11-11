@@ -1189,6 +1189,7 @@ export class BasketEngine {
     this.integrate(st, dt, this.kind !== "block");
     if (st.rim && this.t - this.lastRimSound > 0.08) {
       audio.rim();
+      haptic(18);
       this.lastRimSound = this.t;
       this.netPulse = Math.max(this.netPulse, 0.25);
     }
@@ -1237,8 +1238,16 @@ export class BasketEngine {
     }
   }
 
+  /** Ralenti du filet qui claque (temps du jeu). */
+  private slowUntil = 0;
+  get timeScale() {
+    return this.t < this.slowUntil ? 0.32 : 1;
+  }
+
   private made(label: string, detail: string, tags: string[]) {
     this.scored = true;
+    if (!this.s.reduced) this.slowUntil = this.t + (tags.includes("swish") ? 0.3 : 0.22);
+    haptic(tags.includes("swish") ? [30, 40, 80] : [25, 40, 50]);
     this.netPulse = 1;
     audio.swish();
     audio.crowd("goal");
@@ -1600,3 +1609,12 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
   ctx.closePath();
 }
 
+
+/** Petite vibration (téléphones qui le permettent ; ignorée ailleurs). */
+function haptic(pattern: number | number[]) {
+  try {
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(pattern);
+  } catch {
+    /* vibration indisponible */
+  }
+}

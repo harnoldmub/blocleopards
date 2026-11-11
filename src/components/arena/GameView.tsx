@@ -93,7 +93,10 @@ export default function GameView(props: {
     engineRef.current = engine;
     let c3: import("./engine/chars3d").Chars3D | null = null;
     let disposed = false;
+    let pausedDrawn = false;
+    let pausedFrames = 0;
     const fit = () => {
+      pausedDrawn = false;
       const r = cv.getBoundingClientRect();
       const dpr = Math.min(2, window.devicePixelRatio || 1);
       engine.resize(r.width, r.height, dpr);
@@ -111,6 +114,8 @@ export default function GameView(props: {
             if (!disposed) setLoadState("error");
             return;
           }
+          // qualité de départ : un cran plus bas sur téléphone, puis réglage automatique selon le FPS réel
+          c3.setQuality(window.matchMedia?.("(pointer: coarse)").matches ? 2 : 3);
           fit();
           await c3.load(props.game === "foot" ? ["kick", "dive", "catch", "scoop", "twist", "bboy"] : ["dribble", "catch"]);
           if (disposed) return;
@@ -147,11 +152,45 @@ export default function GameView(props: {
     let raf = 0;
     let last = performance.now();
     let lastShown = -1;
+    // qualité adaptative : on mesure le temps réel entre deux images
+    const perf = { acc: 0, sq: 0, n: 0, t0: performance.now(), good: 0, cooldown: 0 };
+    const adapt = (now: number, frameMs: number) => {
+      if (!c3 || frameMs > 250) return;
+      perf.acc += frameMs;
+      perf.sq += frameMs * frameMs;
+      perf.n++;
+      if (now - perf.t0 < 1200 || perf.n < 20) return;
+      const avg = perf.acc / perf.n;
+      const sd = Math.sqrt(Math.max(0, perf.sq / perf.n - avg * avg));
+      perf.acc = perf.sq = perf.n = 0;
+      perf.t0 = now;
+      // écran bridé à 30 i/s (économie d'énergie, onglet en arrière-plan) : images très régulières,
+      // baisser la qualité n'y changerait rien
+      const capped = sd < 2.5 && (Math.abs(avg - 33.3) < 3 || avg > 60);
+      if (avg > 21 && !capped && c3.quality > 0) {
+        // sous ~48 images/s : on baisse d'un cran et on attend avant de remonter
+        c3.setQuality(c3.quality - 1);
+        perf.good = 0;
+        perf.cooldown = now + 8000;
+      } else if (avg < 17.6) {
+        perf.good++;
+        if (perf.good >= 4 && now > perf.cooldown && c3.quality < 3) {
+          c3.setQuality(c3.quality + 1);
+          perf.good = 0;
+          perf.cooldown = now + 4000;
+        }
+      } else perf.good = 0;
+    };
     const loop = (now: number) => {
-      const dt = Math.min(0.05, (now - last) / 1000);
+      const frameMs = now - last;
+      const dt = Math.min(0.05, frameMs / 1000);
       last = now;
-      if (!pausedRef.current && !document.hidden) {
-        engine.update(dt);
+      const paused = pausedRef.current || document.hidden;
+      if (!paused) {
+        // ralenti sur les grands moments (but, poteau) : le moteur choisit l'échelle de temps
+        const ts = (engine as any).timeScale ?? 1;
+        engine.update(dt * ts);
+        adapt(now, frameMs);
         const c = clockRef.current;
         if (c.running && c.left > 0) {
           c.left = Math.max(0, c.left - dt);
@@ -165,8 +204,13 @@ export default function GameView(props: {
           lastShown = shown;
           setClock(c.left);
         }
+        pausedDrawn = false;
+        engine.render();
+      } else if (!pausedDrawn || ++pausedFrames % 12 === 0) {
+        // en pause, la scène est figée : quelques images par seconde suffisent (au cas où le tir change)
+        engine.render();
+        pausedDrawn = true;
       }
-      engine.render();
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
