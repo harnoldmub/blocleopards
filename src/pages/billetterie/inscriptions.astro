@@ -14,7 +14,7 @@ const historicalReservations = 0;
 try {
   const sql = requireDatabase();
   reservations = await sql`
-    select reservation_code, first_name, last_name, whatsapp, status, quantity
+    select reservation_code, first_name, last_name, whatsapp, status, quantity, created_at
     from billetterie_reservations
     where status <> 'cancelled'
       and created_at >= ${cfg.reservationsSince}
@@ -28,6 +28,19 @@ try {
 // Gagnants d'un jeu-concours lié au match en cours. Les 5 gagnants du match
 // RDC – Guinée équatoriale (septembre 2026) restent affichés sur /gagnants.
 const contestWinners: { rank: number; name: string }[] = [];
+
+// Date d'inscription, à l'heure de Kinshasa. « Aujourd'hui » pour celles du jour.
+const TZ = "Africa/Kinshasa";
+const dayKey = new Intl.DateTimeFormat("fr-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" });
+const dayFmt = new Intl.DateTimeFormat("fr-FR", { timeZone: TZ, weekday: "short", day: "numeric", month: "short" });
+const timeFmt = new Intl.DateTimeFormat("fr-FR", { timeZone: TZ, hour: "2-digit", minute: "2-digit" });
+const todayKey = dayKey.format(new Date());
+const signupDate = (value: string | Date) => {
+  const d = new Date(value);
+  const isToday = dayKey.format(d) === todayKey;
+  return { isToday, label: `${isToday ? "Aujourd'hui" : dayFmt.format(d)} à ${timeFmt.format(d)}` };
+};
+const todayCount = reservations.filter((r) => signupDate(r.created_at).isToday).length;
 
 const passedCount = reservations.filter((r) => r.status === "paid").length;
 const totalTickets = reservations.reduce((acc, r) => acc + (Number(r.quantity) || 1), 0);
@@ -46,6 +59,7 @@ const totalTickets = reservations.reduce((acc, r) => acc + (Number(r.quantity) |
       <header class="header">
         <a href="/billetterie" class="brand">TIKEO</a>
         <span>BILLETTERIE OFFICIELLE</span>
+        <button type="button" class="logout-btn" id="logout-btn">Déconnexion</button>
       </header>
 
       <section class="hero">
@@ -58,6 +72,8 @@ const totalTickets = reservations.reduce((acc, r) => acc + (Number(r.quantity) |
           <span class="activity-tickets"><strong>{totalTickets}</strong> billets demandés</span>
           <span aria-hidden="true">·</span>
           <strong>{reservations.length}</strong> réservation{reservations.length > 1 ? "s" : ""}
+          <span aria-hidden="true">·</span>
+          <strong>{todayCount}</strong> aujourd'hui
           <span aria-hidden="true">·</span>
           <span class="passed-pill"><strong id="passed-count">{passedCount}</strong> présent{passedCount > 1 ? "s" : ""}</span>
         </p>
@@ -103,6 +119,7 @@ const totalTickets = reservations.reduce((acc, r) => acc + (Number(r.quantity) |
             const isWinner = reservation.reservation_code?.startsWith("BL-2026-WIN");
             const cleanDigits = (reservation.whatsapp || "").replace(/[^\d]/g, "");
             const waLink = cleanDigits ? `https://wa.me/${cleanDigits}` : null;
+            const signup = signupDate(reservation.created_at);
             return (
               <article
                 class:list={["reservation", { "reservation--passed": isPassed, "reservation--winner": isWinner }]}
@@ -132,6 +149,9 @@ const totalTickets = reservations.reduce((acc, r) => acc + (Number(r.quantity) |
                       <strong>{reservation.first_name} {reservation.last_name}</strong>
                       {isWinner && <span class="winner-badge">Gagnant Concours</span>}
                     </div>
+                    <span class:list={["signup-date", { "signup-date--today": signup.isToday }]}>
+                      Inscrit <time datetime={new Date(reservation.created_at).toISOString()}>{signup.label.charAt(0).toLowerCase() + signup.label.slice(1)}</time>
+                    </span>
 
                     {!isWinner && reservation.whatsapp && waLink && (
                       <a
@@ -194,6 +214,17 @@ const totalTickets = reservations.reduce((acc, r) => acc + (Number(r.quantity) |
     if (empty) empty.toggleAttribute('hidden', !query || visible > 0);
   };
   input?.addEventListener('input', filterReservations);
+
+  // Déconnexion : même appel que l'espace admin, puis retour à la connexion.
+  const logoutBtn = document.getElementById('logout-btn') as HTMLButtonElement | null;
+  logoutBtn?.addEventListener('click', async () => {
+    logoutBtn.disabled = true;
+    logoutBtn.textContent = 'Déconnexion…';
+    try {
+      await fetch('/api/admin/auth', { method: 'DELETE' });
+    } catch (e) {}
+    window.location.href = '/admin/login?next=/billetterie/inscriptions';
+  });
 
   // Synchronisation des cases à cocher (Base de données + localStorage backup)
   const LOCAL_STORAGE_KEY = 'tikeo_checked_reservations_v2';
@@ -265,6 +296,12 @@ const totalTickets = reservations.reduce((acc, r) => acc + (Number(r.quantity) |
   body { margin: 0; background: #f5f8fc; color: #10213d; font-family: Arial, sans-serif; }
   .page { min-height: 100vh; }
   .header { display: flex; align-items: center; gap: 1rem; padding: 1.25rem max(1.25rem, calc((100% - 76rem) / 2)); background: #10213d; color: #aebbd0; font-size: .72rem; font-weight: 700; letter-spacing: .12em; }
+  .logout-btn { margin-left: auto; min-height: 2.75rem; padding: 0 1.1rem; border: 1px solid rgba(255,255,255,.3); border-radius: 999px; background: transparent; color: #fff; font: inherit; font-size: .8rem; letter-spacing: .04em; cursor: pointer; }
+  .logout-btn:hover { background: rgba(255,255,255,.12); }
+  .logout-btn:focus-visible { outline: 3px solid #2e97ff; outline-offset: 2px; }
+  .logout-btn:disabled { opacity: .6; cursor: wait; }
+  .signup-date { display: block; margin-top: .2rem; color: #637692; font-size: .78rem; }
+  .signup-date--today { color: #16824b; font-weight: 700; }
   .brand { color: #fff; font-size: 1.15rem; letter-spacing: .2em; text-decoration: none; }
   .hero, .results { width: min(100% - 2rem, 58rem); margin: auto; }
   .hero { padding: 4rem 0 2rem; }
