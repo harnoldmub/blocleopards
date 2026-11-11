@@ -228,17 +228,21 @@ const answers: Answer[] = [
       try { (window as any).gtag?.('event', 'captain_question', { topic }); } catch { /* statistiques indisponibles */ }
     };
 
+    // Sur mobile et tablette, le lanceur est le bouton « Captain » de la navigation basse.
+    const triggers = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-cap-trigger]'));
+    let opener: HTMLElement = launcher;
+
     // Jamais d'ouverture automatique : le panneau ne s'ouvre qu'au clic.
     const setOpen = (open: boolean) => {
       panel.hidden = !open;
-      launcher.setAttribute('aria-expanded', String(open));
+      [launcher, ...triggers].forEach((b) => b.setAttribute('aria-expanded', String(open)));
       root.classList.toggle('is-open', open);
       if (open) {
         showMenu(false);
         root.querySelector<HTMLButtonElement>('[data-cap-topic]')?.focus();
         track('ouverture');
       } else {
-        launcher.focus();
+        opener.focus();
       }
     };
 
@@ -271,7 +275,10 @@ const answers: Answer[] = [
       track(id);
     };
 
-    launcher.addEventListener('click', () => setOpen(panel.hidden));
+    [launcher, ...triggers].forEach((b) => b.addEventListener('click', () => {
+      opener = b;
+      setOpen(panel.hidden);
+    }));
     $('[data-cap-close]').addEventListener('click', () => setOpen(false));
     $('[data-cap-back]').addEventListener('click', () => showMenu());
     root.querySelectorAll<HTMLButtonElement>('[data-cap-topic]').forEach((btn) => {
@@ -351,7 +358,8 @@ const answers: Answer[] = [
     .cap__close:hover { background: rgba(255, 255, 255, 0.22); }
   }
   /* Petit écran : le libellé laisse la place au contenu, le logo reste. */
-  @media (max-width: 380px) { .cap__launcher span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); } .cap__launcher { padding: 0.35rem; } }
+  /* Sous 1024 px, le Captain s'ouvre depuis la navigation basse (Header.astro). */
+  @media (max-width: 1023px) { .cap__launcher { display: none; } }
   @media (min-width: 1024px) { .cap { right: 1.5rem; bottom: 1.5rem; } }
   @media (prefers-reduced-motion: reduce) { .cap__panel { animation: none; } .cap__launcher, .cap__topics button { transition: none; } }
 </style>

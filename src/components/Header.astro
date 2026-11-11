@@ -107,7 +107,14 @@ const bottomNav = [
 
 <!-- Navigation basse : mobile et tablette -->
 <nav class="bl-tabbar" aria-label="Accès rapide">
-  {bottomNav.map((item) => (
+  {bottomNav.map((item, i) => (
+    <>
+    {i === 2 && (
+      <button type="button" class="bl-tabbar__item bl-tabbar__captain" data-cap-trigger aria-haspopup="dialog" aria-expanded="false" aria-controls="captain-panel">
+        <img src="/brand/logo-2026.png" alt="" width="28" height="28" />
+        <span>Captain</span>
+      </button>
+    )}
     <a href={item.href} class:list={["bl-tabbar__item", item.icon === "join" && "bl-tabbar__item--join"]} aria-current={isActive(item) ? "page" : undefined}>
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         {item.icon === "home" && <><path d="M3 11.5 12 4l9 7.5" /><path d="M5.5 10v10h13V10" /></>}
@@ -117,6 +124,7 @@ const bottomNav = [
       </svg>
       <span>{item.label}</span>
     </a>
+    </>
   ))}
 </nav>
 
@@ -166,8 +174,8 @@ const bottomNav = [
   }
   .bl-header__brand { display: flex; align-items: center; gap: 0.75rem; flex: none; }
   .bl-header__brand img:first-child { height: 2.75rem; width: auto; }
-  .bl-header__sep { display: none; width: 1px; height: 1.75rem; background: var(--bl-line); }
-  .bl-header__inst { display: none; height: 2.1rem; width: auto; opacity: 0.85; }
+  .bl-header__sep { display: block; width: 1px; height: 1.5rem; background: var(--bl-line); }
+  .bl-header__inst { display: block; height: 1.75rem; width: auto; opacity: 0.85; }
 
   .bl-header__nav { display: none; align-items: stretch; height: 100%; }
   .bl-header__item { position: relative; display: flex; }
@@ -221,7 +229,7 @@ const bottomNav = [
   .bl-menu__inst { display: block; height: 2.25rem; width: auto; margin: 1.25rem auto 0; opacity: 0.8; }
 
   .bl-tabbar {
-    position: fixed; inset: auto 0 0 0; z-index: 45; display: grid; grid-template-columns: repeat(4, 1fr);
+    position: fixed; inset: auto 0 0 0; z-index: 45; display: grid; grid-template-columns: repeat(5, 1fr);
     height: calc(var(--bl-nav-h) + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom);
     background: #fff; border-top: 1px solid var(--bl-line); color: var(--bl-ink-2);
   }
@@ -232,6 +240,10 @@ const bottomNav = [
   .bl-tabbar__item:focus-visible { outline: 3px solid var(--bl-blue-vif); outline-offset: -3px; }
   .bl-tabbar__item[aria-current="page"] { color: var(--bl-blue); }
   .bl-tabbar__item[aria-current="page"]::before { content: ""; position: absolute; top: 0; left: 25%; right: 25%; height: 3px; background: var(--bl-blue); }
+  /* Captain Léopard : ouvre le guide des supporters (panneau dans ChatAssistant.astro). */
+  .bl-tabbar__captain { border: 0; background: none; color: inherit; font-family: inherit; cursor: pointer; }
+  .bl-tabbar__captain img { width: 1.5rem; height: 1.5rem; margin-block: -1px; object-fit: contain; }
+  .bl-tabbar__captain[aria-expanded="true"] { color: var(--bl-blue); }
   .bl-tabbar__item--join { background: var(--bl-yellow); color: var(--bl-ink); }
   .bl-tabbar__item--join[aria-current="page"] { color: var(--bl-ink); }
 
@@ -247,7 +259,8 @@ const bottomNav = [
   @media (min-width: 1024px) {
     .bl-header__bar { height: 4.25rem; padding-inline: 2rem; }
     .bl-header__brand img:first-child { height: 3.25rem; }
-    .bl-header__sep, .bl-header__inst { display: block; }
+    .bl-header__sep { height: 1.75rem; }
+    .bl-header__inst { height: 2.1rem; }
     .bl-header__nav { display: flex; }
     .bl-header__burger, .bl-tabbar { display: none; }
     .bl-menu { display: none; }
