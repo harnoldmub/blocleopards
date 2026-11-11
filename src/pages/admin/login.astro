@@ -1,8 +1,12 @@
 ---
 import { isAdminAuthed } from "../../lib/auth";
 
+// Retour vers la page demandée après connexion (chemin interne uniquement).
+const nextParam = Astro.url.searchParams.get("next") || "";
+const nextPath = /^\/(?!\/)[\w\-./]*$/.test(nextParam) ? nextParam : "/admin/dashboard";
+
 if (isAdminAuthed(Astro.cookies)) {
-  return Astro.redirect("/admin/dashboard");
+  return Astro.redirect(nextPath);
 }
 ---
 <!doctype html>
@@ -123,7 +127,8 @@ if (isAdminAuthed(Astro.cookies)) {
             body: JSON.stringify({ username, password }),
           });
           if (res.ok) {
-            window.location.href = '/admin/dashboard';
+            const next = new URLSearchParams(window.location.search).get('next') || '';
+            window.location.href = /^\/(?!\/)[\w\-./]*$/.test(next) ? next : '/admin/dashboard';
           } else {
             errorMsg.style.display = 'block';
             btn.textContent = "Entrer dans l'Admin";

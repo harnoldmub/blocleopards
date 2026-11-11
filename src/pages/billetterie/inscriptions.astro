@@ -1,6 +1,11 @@
 ---
 import { requireDatabase } from "../../lib/neon";
 import { billetterie as cfg } from "../../data/billetterie";
+import { isAdminAuthed, hasPermission } from "../../lib/auth";
+
+// Liste nominative (noms et numéros) : réservée aux comptes admin autorisés.
+if (!isAdminAuthed(Astro.cookies)) return Astro.redirect("/admin/login?next=/billetterie/inscriptions");
+if (!hasPermission(Astro.cookies, "billetterie")) return Astro.redirect("/admin/dashboard");
 
 let reservations: any[] = [];
 // Liste du match en cours uniquement : les réservations du match précédent
@@ -33,7 +38,8 @@ const totalTickets = reservations.reduce((acc, r) => acc + (Number(r.quantity) |
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Inscriptions — Billetterie Tikeo</title>
+    <title>Émargement {cfg.home.name} – {cfg.away.name} — Billetterie Tikeo</title>
+    <meta name="robots" content="noindex, nofollow" />
   </head>
   <body>
     <main class="page">
@@ -237,11 +243,13 @@ const totalTickets = reservations.reduce((acc, r) => acc + (Number(r.quantity) |
 
       if (code) {
         try {
-          await fetch('/api/billetterie/checkin', {
+          const res = await fetch('/api/billetterie/checkin', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ code, checked: isChecked })
           });
+          // Session expirée : retour à la connexion, puis à cette liste.
+          if (res.status === 401) window.location.href = '/admin/login?next=/billetterie/inscriptions';
         } catch (err) {
           console.warn('[checkin] Erreur sync réseau:', err);
         }

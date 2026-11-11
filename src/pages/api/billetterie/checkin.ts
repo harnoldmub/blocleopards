@@ -1,11 +1,16 @@
 import type { APIRoute } from "astro";
 import { requireDatabase } from "../../../lib/neon";
+import { isAdminAuthed, hasPermission } from "../../../lib/auth";
+import { billetterie } from "../../../data/billetterie";
 
 export const prerender = false;
 
 const headers = { "Content-Type": "application/json", "Cache-Control": "no-store" };
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, cookies }) => {
+  if (!isAdminAuthed(cookies) || !hasPermission(cookies, "billetterie")) {
+    return new Response(JSON.stringify({ error: "Connexion requise" }), { status: 401, headers });
+  }
   try {
     const body = await request.json();
     const code = String(body.code || "").trim();
@@ -22,6 +27,7 @@ export const POST: APIRoute = async ({ request }) => {
       update billetterie_reservations
       set status = ${newStatus}, updated_at = now()
       where reservation_code = ${code}
+        and created_at >= ${billetterie.reservationsSince}
       returning reservation_code, status
     `;
 
