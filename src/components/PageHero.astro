@@ -1,22 +1,23 @@
 ---
+/**
+ * En-tête de page : photo réelle, voile fonctionnel en bas pour la lisibilité,
+ * titre condensé, liseré drapeau. Même grammaire que l'accueil.
+ */
 const { title, subtitle, image, eyebrow } = Astro.props;
 ---
-<section class="relative flex min-h-[52vh] items-end overflow-hidden bg-congo-night text-white">
-  {/* z-0 : en -z-10 l'image passerait derrière le fond opaque de la section. */}
-  <div class="absolute inset-0 z-0">
-    {image
-      ? <img src={image} alt="" aria-hidden="true" class="h-full w-full object-cover opacity-40" />
-      : <div class="h-full w-full bg-congo-night"></div>}
-  </div>
-  <div class="absolute inset-0 z-0 bg-gradient-to-t from-congo-night via-congo-night/70 to-congo-night/40"></div>
+<section class="relative flex min-h-[44svh] items-end overflow-hidden bg-[var(--bl-night)] text-white lg:min-h-[52vh]">
+  {image && (
+    <img src={image} alt="" aria-hidden="true" decoding="async" class="absolute inset-0 z-0 h-full w-full object-cover" />
+  )}
+  <div class="absolute inset-0 z-0 bg-[linear-gradient(180deg,rgba(7,18,38,.25)_0%,rgba(7,18,38,.55)_45%,rgba(7,18,38,.94)_100%)]" aria-hidden="true"></div>
 
-  <div class="relative z-10 mx-auto w-full max-w-[84rem] px-4 pb-14 pt-28 lg:px-8">
-    {eyebrow && <span data-reveal class="inline-flex items-center gap-3 text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-or before:h-px before:w-9 before:bg-or/70">{eyebrow}</span>}
-    <h1 data-reveal class="mt-5 font-display uppercase leading-[0.9] [font-size:clamp(2.6rem,7vw,6.5rem)]">{title}</h1>
-    {subtitle && <p data-reveal data-reveal-delay="120" class="mt-5 max-w-2xl text-lg leading-relaxed text-white/75">{subtitle}</p>}
+  <div class="bl-wrap relative z-10 pb-10 pt-24 lg:pb-14 lg:pt-32">
+    {eyebrow && <p class="bl-label text-[var(--bl-yellow)]">{eyebrow}</p>}
+    <h1 class="bl-title bl-title--xl mt-3">{title}</h1>
+    {subtitle && <p class="bl-lead mt-4 text-white/85">{subtitle}</p>}
   </div>
 
-  <div class="absolute bottom-0 left-0 right-0 z-10 grid h-[3px] grid-cols-3" aria-hidden="true">
+  <div class="absolute bottom-0 left-0 right-0 z-10 grid h-[4px] grid-cols-3" aria-hidden="true">
     <div class="bg-flag-blue"></div>
     <div class="bg-flag-yellow"></div>
     <div class="bg-flag-red"></div>

@@ -39,7 +39,8 @@ export default {
       fontFamily: {
         // Méga-statements éditoriaux (surdimensionnés)
         mega: ["'Anton'", "'Bebas Neue'", "system-ui", "sans-serif"],
-        display: ["'Bebas Neue'", "system-ui", "sans-serif"],
+        // Titres : Anton, la typo condensée du design system (src/styles/bloc.css)
+        display: ["'Anton'", "'Bebas Neue'", "system-ui", "sans-serif"],
         body: ["'Sora'", "system-ui", "sans-serif"]
       },
       letterSpacing: {

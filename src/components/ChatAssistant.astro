@@ -1,266 +1,357 @@
 ---
+/**
+ * Captain Léopard — concierge des supporters.
+ * Un guide pratique à boutons : il ne s'ouvre jamais seul, répond court, cite sa
+ * source et sa date, distingue l'officiel, le confirmé et le provisoire, et
+ * renvoie vers un humain. Il ne répond qu'avec les données du site.
+ */
 import { requireDatabase } from "../lib/neon";
+import { TEAMS, PROGRAMME_SOURCE, PROGRAMME_UPDATED, formatMatchTime, nextRdcFixture } from "../data/can2027";
+import { SHOP_ENABLED } from "../data/merch";
 
-// Matchs de poule Mondial 2026 — utilisés si aucun événement n'est publié dans l'admin.
-const FALLBACK_MONDIAL_MATCHES = [
-  { label: "17 juin : RDC vs Portugal, NRG Stadium, Houston (USA)." },
-  { label: "23 juin : RDC vs Colombie, Estadio Akron, Guadalajara (Mexique)." },
-  { label: "27 juin : RDC vs Ouzbékistan, Mercedes-Benz Stadium, Atlanta (USA)." }
-];
+type Status = "official" | "confirmed" | "provisional";
+interface Answer {
+  id: string;
+  question: string;
+  status: Status;
+  title: string;
+  lines: string[];
+  source?: string;
+  updated?: string;
+  link: { label: string; href: string };
+}
 
+const TZ = "Africa/Kinshasa";
+const longDate = (iso: string) =>
+  new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long", timeZone: TZ }).format(new Date(iso));
+const dayMonthYear = (iso: string) =>
+  new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: TZ }).format(new Date(iso));
+
+// --- Prochain match ---
+const next = nextRdcFixture();
+const matchAnswer: Answer = next
+  ? {
+      id: "match",
+      question: "Prochain match",
+      status: next.venue ? "confirmed" : "provisional",
+      title: `${TEAMS[next.home].name} – ${TEAMS[next.away].name}`,
+      lines: [
+        `${longDate(next.kickoff!).replace(/^./, (c) => c.toUpperCase())}, ${formatMatchTime(next.kickoff!)} (heure de Kinshasa).`,
+        next.venue ? `${next.venue}, ${next.city}.` : "Stade : information en attente de confirmation.",
+        "Diffuseur : information en attente de confirmation."
+      ],
+      source: PROGRAMME_SOURCE.label,
+      updated: dayMonthYear(PROGRAMME_UPDATED),
+      link: { label: "Voir le programme", href: PROGRAMME_SOURCE.href }
+    }
+  : {
+      id: "match",
+      question: "Prochain match",
+      status: "provisional",
+      title: "Date en attente",
+      lines: ["Le prochain match n'est pas encore daté. La date sera publiée dès l'annonce de la CAF."],
+      source: PROGRAMME_SOURCE.label,
+      updated: dayMonthYear(PROGRAMME_UPDATED),
+      link: { label: "Voir le programme", href: PROGRAMME_SOURCE.href }
+    };
+
+// --- Rassemblements : uniquement ce qui est publié dans l'agenda ---
 const today = new Date().toISOString().slice(0, 10);
-const FR_MONTHS = ["jan.", "fév.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
-const formatEventDate = (d: string) => {
-  const [, m, day] = d.split("-");
-  return `${parseInt(day)} ${FR_MONTHS[parseInt(m) - 1]}`;
-};
+const FR_MONTHS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+const shortDay = (d: string) => `${parseInt(d.split("-")[2])} ${FR_MONTHS[parseInt(d.split("-")[1]) - 1]}`;
 
-let upcomingEvents: string[] = [];
+let gatherAnswer: Answer = {
+  id: "rassemblement",
+  question: "Où se rassembler ?",
+  status: "provisional",
+  title: "Lieu en attente",
+  lines: ["Aucun lieu de rassemblement n'est confirmé pour l'instant. Il sera annoncé dans le calendrier."],
+  source: "Calendrier du Bloc",
+  link: { label: "Ouvrir le calendrier", href: "/evenements" }
+};
 try {
   const sql = requireDatabase();
-  const rows = await sql`
-    SELECT title, description, date::text as date, location
+  const rows = (await sql`
+    SELECT title, date::text as date, time, location, updated_at
     FROM events
     WHERE published = true AND date >= ${today}
     ORDER BY date ASC
     LIMIT 3
-  `;
-  upcomingEvents = rows.map((e: any) => `${formatEventDate(e.date)} : ${e.title}${e.location ? `, ${e.location}` : ""}.`);
+  `) as any[];
+  if (rows.length > 0) {
+    const pending = rows.some((e) => !e.location || /confirmer/i.test(`${e.time ?? ""} ${e.location ?? ""}`));
+    const latest = rows.map((e) => e.updated_at).filter(Boolean).sort().pop();
+    gatherAnswer = {
+      ...gatherAnswer,
+      status: pending ? "provisional" : "confirmed",
+      title: "Au calendrier du Bloc",
+      lines: rows.map((e) => `${shortDay(e.date)} : ${e.title}${e.location ? `, ${e.location}` : ""}${e.time ? ` (${e.time})` : ""}.`),
+      updated: latest ? dayMonthYear(new Date(latest).toISOString()) : undefined
+    };
+  }
 } catch {
-  upcomingEvents = [];
+  /* agenda indisponible : on garde la réponse « en attente » */
 }
 
-const events = upcomingEvents.length > 0 ? upcomingEvents : FALLBACK_MONDIAL_MATCHES.map((m) => m.label);
-
-const quickActions = ["Prochain match", "Quiz Léopards", "Recruter"];
+const answers: Answer[] = [
+  matchAnswer,
+  gatherAnswer,
+  {
+    id: "rejoindre",
+    question: "Comment rejoindre le Bloc ?",
+    status: "official",
+    title: "Trois étapes",
+    lines: ["Remplis le formulaire d'adhésion.", "Accepte la charte du supporter.", "Choisis ton rôle : tribune, animation, relais diaspora."],
+    source: "Formulaire d'adhésion",
+    link: { label: "Rejoindre le Bloc", href: "/rejoindre" }
+  },
+  {
+    id: "kit",
+    question: "Télécharger le kit supporter",
+    status: "official",
+    title: "Le kit est en ligne",
+    lines: ["Chants, slogans et visuels du Bloc, à utiliser en tribune et sur tes réseaux."],
+    source: "Page Kit supporters",
+    link: { label: "Ouvrir le kit", href: "/kit-supporters" }
+  },
+  SHOP_ENABLED
+    ? {
+        id: "boutique",
+        question: "Boutique et commandes",
+        status: "official" as Status,
+        title: "La boutique est ouverte",
+        lines: ["Maillots, écharpes et accessoires du Bloc. Pour suivre une commande, écris à l'équipe boutique depuis la page."],
+        source: "Boutique Bloc Léopards",
+        link: { label: "Voir la boutique", href: "/boutique" }
+      }
+    : {
+        id: "boutique",
+        question: "Boutique et commandes",
+        status: "provisional" as Status,
+        title: "Pas encore ouverte",
+        lines: ["La boutique en ligne n'est pas encore ouverte. L'ouverture sera annoncée sur le site."],
+        source: "Bloc Léopards",
+        link: { label: "Écrire à l'équipe", href: "/contact" }
+      },
+  {
+    id: "equipe",
+    question: "Parler à l'équipe",
+    status: "official",
+    title: "Une personne te répond",
+    lines: ["Écris-nous par le formulaire de contact. L'équipe du Bloc lit chaque message."],
+    source: "Page Contact",
+    link: { label: "Contacter l'équipe", href: "/contact" }
+  }
+];
 ---
 
-<div class="bloc-chat" data-bloc-chat data-events={JSON.stringify(events)}>
-  <button class="bloc-chat__launcher" type="button" data-chat-launcher aria-label="Ouvrir Captain Léopard">
-    <img src="/brand/logo-2026.png" alt="Bloc Léopards" style="width:34px;height:34px;object-fit:contain;" />
-    <span class="bloc-chat__pulse" aria-hidden="true"></span>
+<div class="cap" data-captain data-answers={JSON.stringify(answers)}>
+  <button type="button" class="cap__launcher" data-cap-open aria-haspopup="dialog" aria-expanded="false" aria-controls="captain-panel">
+    <img src="/brand/logo-2026.png" alt="" width="32" height="32" />
+    <span>Demander au Captain</span>
   </button>
 
-  <section class="bloc-chat__panel" data-chat-panel aria-label="Captain Léopard, assistant Bloc Léopards">
-    <header class="bloc-chat__header">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <div style="width:38px;height:38px;flex-shrink:0;"><img src="/brand/logo-2026.png" alt="Bloc Léopards" style="width:38px;height:38px;object-fit:contain;" /></div>
-        <div>
-          <p>Assistant officiel</p>
-          <strong>Captain Léopard</strong>
-        </div>
+  <section id="captain-panel" class="cap__panel" role="dialog" aria-labelledby="captain-title" hidden data-lenis-prevent>
+    <header class="cap__head">
+      <img src="/brand/logo-2026.png" alt="" width="40" height="40" />
+      <div>
+        <h2 id="captain-title">Captain Léopard</h2>
+        <p>Guide des supporters. Je réponds avec les infos publiées sur le site.</p>
       </div>
-      <button type="button" data-chat-close aria-label="Fermer le chat">×</button>
+      <button type="button" class="cap__close" data-cap-close aria-label="Fermer">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" /></svg>
+      </button>
     </header>
 
-    <div class="bloc-chat__status">
-      <span data-chat-mood>● Mondial 2026</span>
-      <span><img src="/flags/cd.png" height="12" style="vertical-align:middle;border-radius:2px;margin-right:4px;" alt="RDC" />Houston · Guadalajara · Atlanta</span>
-    </div>
+    <div class="cap__body" data-cap-body>
+      <div data-cap-menu>
+        <p class="cap__prompt">Que cherches-tu ?</p>
+        <ul class="cap__topics">
+          {answers.map((a) => (
+            <li><button type="button" data-cap-topic={a.id}>{a.question}</button></li>
+          ))}
+        </ul>
+      </div>
 
-    <div class="bloc-chat__messages" data-chat-messages data-lenis-prevent>
-      <div class="bloc-chat__message bloc-chat__message--bot">
-        Bienvenue dans le Bloc des Léopards !<br/>
-        Je suis Captain Léopard, ton guide supporter officiel.<br/>
-        Dis-moi ce que tu veux faire !
+      <div data-cap-answer hidden aria-live="polite">
+        <button type="button" class="cap__back" data-cap-back>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 6-6 6 6 6" /></svg>
+          Autres questions
+        </button>
+        <p class="cap__question" data-cap-question></p>
+        <article class="cap__card">
+          <span class="bl-status" data-cap-status></span>
+          <h3 data-cap-title tabindex="-1"></h3>
+          <ul data-cap-lines></ul>
+          <p class="cap__source" data-cap-source></p>
+          <a class="bl-btn bl-btn--blue" data-cap-link href="/"></a>
+        </article>
+        <p class="cap__human">Ce n'est pas ce que tu cherchais ? <a href="/contact">Écris à l'équipe</a>.</p>
       </div>
     </div>
 
-    <div class="bloc-chat__chips" aria-label="Actions rapides">
-      {quickActions.map((action) => (
-        <button type="button" data-chat-chip={action}>{action}</button>
-      ))}
-    </div>
-
-    <form class="bloc-chat__form" data-chat-form>
-      <input data-chat-input type="text" autocomplete="off" />
-      <button type="submit">→</button>
-    </form>
+    <footer class="cap__legend">
+      <span><i class="cap__dot cap__dot--official"></i>Officiel</span>
+      <span><i class="cap__dot cap__dot--confirmed"></i>Confirmé</span>
+      <span><i class="cap__dot cap__dot--provisional"></i>Provisoire</span>
+    </footer>
   </section>
 </div>
 
 <script>
-  const root = document.querySelector('[data-bloc-chat]');
+  const root = document.querySelector<HTMLElement>('[data-captain]');
   if (root) {
-    const launcher = root.querySelector('[data-chat-launcher]');
-    const panel = root.querySelector('[data-chat-panel]');
-    const close = root.querySelector('[data-chat-close]');
-    const form = root.querySelector('[data-chat-form]');
-    const input = root.querySelector('[data-chat-input]') as HTMLInputElement;
-    const messages = root.querySelector('[data-chat-messages]');
-    const mood = root.querySelector('[data-chat-mood]');
-    const chips = root.querySelectorAll('[data-chat-chip]');
+    const $ = <T extends HTMLElement>(sel: string) => root.querySelector<T>(sel)!;
+    const launcher = $<HTMLButtonElement>('[data-cap-open]');
+    const panel = $('#captain-panel');
+    const menu = $('[data-cap-menu]');
+    const answerBox = $('[data-cap-answer]');
+    const statusEl = $('[data-cap-status]');
+    const titleEl = $('[data-cap-title]');
+    const linesEl = $('[data-cap-lines]');
+    const sourceEl = $('[data-cap-source]');
+    const linkEl = $<HTMLAnchorElement>('[data-cap-link]');
+    const questionEl = $('[data-cap-question]');
 
-    const state = {
-      score: Number(localStorage.getItem('cap-quiz-score') ?? 0),
-      answered: Number(localStorage.getItem('cap-quiz-answered') ?? 0),
-      quizIndex: Number(localStorage.getItem('cap-quiz-index') ?? 0),
-      activeQuiz: null as any,
-      opened: localStorage.getItem('cap-chat-open') === 'true'
+    let answers: any[] = [];
+    try { answers = JSON.parse(root.dataset.answers || '[]'); } catch { answers = []; }
+
+    const STATUS: Record<string, { label: string; cls: string }> = {
+      official: { label: 'Officiel', cls: 'bl-status--official' },
+      confirmed: { label: 'Confirmé', cls: 'bl-status--ok' },
+      provisional: { label: 'Provisoire', cls: 'bl-status--pending' }
     };
 
-    let liveEvents: string[] = [];
-    try {
-      liveEvents = JSON.parse(root.getAttribute('data-events') || '[]');
-    } catch {
-      liveEvents = [];
-    }
-
-    const data = {
-      events: liveEvents,
-      quiz: [
-        { q: "Depuis quelle année la RDC n'était-elle pas au Mondial ?", options: ['1974', '1998', '2006'], answer: '1974', fact: "La RDC retrouve le Mondial après 52 ans d'absence — depuis 1974 !" },
-        { q: 'Où se joue RDC vs Portugal ?', options: ['Houston', 'Atlanta', 'Guadalajara'], answer: 'Houston', fact: 'Le match se joue au NRG Stadium le 17 juin, à Houston (USA).' },
-        { q: 'Contre qui joue la RDC à Guadalajara ?', options: ['Colombie', 'Portugal', 'Ouzbékistan'], answer: 'Colombie', fact: 'RDC vs Colombie se joue le 23 juin à Guadalajara, Mexique.' },
-        { q: 'Qui est le sélectionneur des Léopards ?', options: ['Sebastien Desabre', 'Hector Cuper', 'Claude Le Roy'], answer: 'Sebastien Desabre', fact: 'Sébastien Desabre conduit les Léopards dans cette préparation Mondial 2026.' },
-      ]
+    // Les sujets demandés remontent dans les statistiques du site (aucun texte libre,
+    // aucune donnée personnelle) : ils servent à compléter les pages les plus consultées.
+    const track = (topic: string) => {
+      try { (window as any).gtag?.('event', 'captain_question', { topic }); } catch { /* statistiques indisponibles */ }
     };
 
-    const setOpen = (value: boolean) => {
-      root.classList.toggle('is-open', value);
-      localStorage.setItem('cap-chat-open', String(value));
-      state.opened = value;
-    };
-
-    const addMessage = (text: string, who = 'bot') => {
-      const bubble = document.createElement('div');
-      bubble.className = `bloc-chat__message bloc-chat__message--${who}`;
-      bubble.innerHTML = text;
-      messages!.appendChild(bubble);
-      messages!.scrollTop = messages!.scrollHeight;
-    };
-
-    const addTypingReply = (text: string, delay = 500) => {
-      const typing = document.createElement('div');
-      typing.className = 'bloc-chat__message bloc-chat__message--bot bloc-chat__message--typing';
-      typing.textContent = 'Captain Léopard prépare sa réponse...';
-      messages!.appendChild(typing);
-      messages!.scrollTop = messages!.scrollHeight;
-      setTimeout(() => {
-        typing.remove();
-        addMessage(text);
-      }, delay);
-    };
-
-    const addActionMessage = (html: string) => {
-      const bubble = document.createElement('div');
-      bubble.className = 'bloc-chat__message bloc-chat__message--bot bloc-chat__message--wide';
-      bubble.innerHTML = html;
-      messages!.appendChild(bubble);
-      messages!.scrollTop = messages!.scrollHeight;
-    };
-
-    // ─── Quiz ─────────────────────────────────────────────────────────────────
-
-    const quizProgress = () => `${state.score}/${state.answered}`;
-
-    const startQuiz = () => {
-      const item = data.quiz[state.quizIndex % data.quiz.length];
-      state.activeQuiz = item;
-      mood!.textContent = `Quiz : ${quizProgress()}`;
-      addActionMessage(`
-        <strong>Quiz Léopards</strong>
-        <span>Question ${(state.quizIndex % data.quiz.length) + 1}/${data.quiz.length} · Score ${quizProgress()}</span>
-        <span>${item.q}</span>
-        <div class="bloc-chat__choice-grid">
-          ${item.options.map((o: string) => `<button type="button" data-quiz-answer="${o}">${o}</button>`).join('')}
-        </div>
-      `);
-    };
-
-    const showRecruit = () => {
-      const inviteUrl = `${window.location.origin}/mondial`;
-      const text = encodeURIComponent(`Rejoins le Bloc des Léopards ! Suis les Léopards au Mondial 2026 ici : ${inviteUrl}`);
-      addActionMessage(`
-        <strong>Recruter des supporters</strong>
-        <span>Partage et agrandis le Bloc !</span>
-        <div class="bloc-chat__choice-grid">
-          <a href="https://wa.me/?text=${text}" target="_blank" rel="noopener">Inviter sur WhatsApp</a>
-          <a href="/mondial">Hub Mondial 2026</a>
-        </div>
-      `);
-    };
-
-    const normalize = (v: string) => v.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
-
-    const answer = (raw: string) => {
-      const text = normalize(raw);
-      if (text.includes('rejoindre') || text.includes('adherer') || text.includes('membre') || text.includes('inscri')) {
-        window.location.href = "/rejoindre";
-        return '';
+    // Jamais d'ouverture automatique : le panneau ne s'ouvre qu'au clic.
+    const setOpen = (open: boolean) => {
+      panel.hidden = !open;
+      launcher.setAttribute('aria-expanded', String(open));
+      root.classList.toggle('is-open', open);
+      if (open) {
+        showMenu(false);
+        root.querySelector<HTMLButtonElement>('[data-cap-topic]')?.focus();
+        track('ouverture');
+      } else {
+        launcher.focus();
       }
-      if (text.includes('match') || text.includes('prochain') || text.includes('quand') || text.includes('evenement')) {
-        return `Prochains rendez-vous du Bloc<br/>${data.events.join('<br/>')}`;
-      }
-      if (text.includes('quiz') || text.includes('question')) {
-        startQuiz();
-        return '';
-      }
-      if (text.includes('recrut') || text.includes('invit')) {
-        showRecruit();
-        return '';
-      }
-      if (text.includes('diaspora') || text.includes('houston') || text.includes('atlanta') || text.includes('guadalajara')) {
-        return 'Plan diaspora : 1. Choisis ton point de ralliement (Houston, Guadalajara ou Atlanta), 2. Apprends le chant du Bloc, 3. Arrive en couleurs, 4. Partage tes photos au Bloc après le match !';
-      }
-      if (text.includes('chant') || text.includes('fimbu')) {
-        return '"Un seul bloc, une seule voix, pour la nation on donne la voix."';
-      }
-      if (text.includes('merci') || text.includes('super') || text.includes('bravo')) {
-        return 'Parfait supporter ! Le bloc compte sur toi. Allez les Léopards !';
-      }
-      return "Je peux t'aider à : voir les prochains matchs, lancer un quiz Léopards, rejoindre le Bloc, ou recruter un ami. Que veux-tu faire ?";
     };
 
-    // ─── Event listeners ──────────────────────────────────────────────────────
+    const showMenu = (focus = true) => {
+      answerBox.hidden = true;
+      menu.hidden = false;
+      if (focus) root.querySelector<HTMLButtonElement>('[data-cap-topic]')?.focus();
+    };
 
-    launcher!.addEventListener('click', () => setOpen(!state.opened));
-    close!.addEventListener('click', () => setOpen(false));
+    const showAnswer = (id: string) => {
+      const a = answers.find((x) => x.id === id);
+      if (!a) return;
+      const s = STATUS[a.status] || STATUS.provisional;
+      questionEl.textContent = a.question;
+      statusEl.className = `bl-status ${s.cls}`;
+      statusEl.textContent = s.label;
+      titleEl.textContent = a.title;
+      linesEl.replaceChildren(...a.lines.map((line: string) => {
+        const li = document.createElement('li');
+        li.textContent = line;
+        return li;
+      }));
+      sourceEl.textContent = [a.source && `Source : ${a.source}`, a.updated && `mise à jour le ${a.updated}`].filter(Boolean).join(' · ');
+      sourceEl.hidden = !sourceEl.textContent;
+      linkEl.textContent = a.link.label;
+      linkEl.href = a.link.href;
+      menu.hidden = true;
+      answerBox.hidden = false;
+      titleEl.focus();
+      track(id);
+    };
 
-    chips.forEach((chip) => {
-      chip.addEventListener('click', () => {
-        const value = (chip as HTMLElement).dataset.chatChip!;
-        addMessage(value, 'user');
-        const reply = answer(value);
-        if (reply) addTypingReply(reply);
-      });
+    launcher.addEventListener('click', () => setOpen(panel.hidden));
+    $('[data-cap-close]').addEventListener('click', () => setOpen(false));
+    $('[data-cap-back]').addEventListener('click', () => showMenu());
+    root.querySelectorAll<HTMLButtonElement>('[data-cap-topic]').forEach((btn) => {
+      btn.addEventListener('click', () => showAnswer(btn.dataset.capTopic!));
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !panel.hidden) setOpen(false);
     });
 
-    messages!.addEventListener('click', (event) => {
-      const target = event.target as HTMLElement;
-
-      // Quiz answer
-      const quizBtn = target.closest('[data-quiz-answer]') as HTMLElement;
-      if (quizBtn && state.activeQuiz) {
-        const selected = quizBtn.dataset.quizAnswer!;
-        const correct = selected === state.activeQuiz.answer;
-        state.answered++;
-        if (correct) state.score++;
-        state.quizIndex++;
-        localStorage.setItem('cap-quiz-score', String(state.score));
-        localStorage.setItem('cap-quiz-answered', String(state.answered));
-        localStorage.setItem('cap-quiz-index', String(state.quizIndex));
-        addMessage(selected, 'user');
-        const next = state.quizIndex % data.quiz.length === 0
-          ? 'Série terminée. Tape "quiz" pour recommencer !'
-          : 'Tape "quiz" pour la question suivante.';
-        addTypingReply(`${correct ? 'Bonne réponse !' : `Pas tout à fait. La réponse : <strong>${state.activeQuiz.answer}</strong>.`} ${state.activeQuiz.fact}<br/>Score : ${quizProgress()}. ${next}`);
-        state.activeQuiz = null;
-        mood!.textContent = `Quiz : ${quizProgress()}`;
-        return;
-      }
-    });
-
-    form!.addEventListener('submit', (event) => {
-      event.preventDefault();
-      const value = input.value.trim();
-      if (!value) return;
-      addMessage(value, 'user');
-      input.value = '';
-      const reply = answer(value);
-      if (reply) addTypingReply(reply);
-    });
-
-    setOpen(state.opened);
+    // Ancien comportement : l'état « ouvert » était mémorisé. On l'efface.
+    try { localStorage.removeItem('cap-chat-open'); } catch { /* stockage indisponible */ }
   }
 </script>
+
+<style>
+  .cap { position: fixed; right: 1rem; bottom: calc(var(--bl-nav-h, 0px) + env(safe-area-inset-bottom) + 0.75rem); z-index: 60; font-family: "Sora", system-ui, sans-serif; }
+
+  .cap__launcher {
+    display: inline-flex; align-items: center; gap: 0.6rem; min-height: 3rem; padding: 0.35rem 1rem 0.35rem 0.4rem;
+    border: 0; border-radius: 4px; background: var(--bl-night); color: #fff;
+    font: inherit; font-size: 0.85rem; font-weight: 800; letter-spacing: 0.02em; cursor: pointer;
+    box-shadow: 0 10px 24px -10px rgba(7, 18, 38, 0.7), inset 0 -3px 0 var(--bl-yellow);
+    transition: transform 0.18s var(--bl-ease);
+  }
+  .cap__launcher img { width: 2.25rem; height: 2.25rem; object-fit: contain; }
+  .cap__launcher:active { transform: scale(0.97); }
+  .cap__launcher:focus-visible, .cap button:focus-visible, .cap a:focus-visible { outline: 3px solid var(--bl-blue-vif); outline-offset: 2px; }
+  .cap.is-open .cap__launcher { display: none; }
+
+  .cap__panel {
+    display: flex; flex-direction: column;
+    width: min(23.5rem, calc(100vw - 2rem)); max-height: min(36rem, calc(100dvh - var(--bl-nav-h, 0px) - 6rem));
+    background: #fff; color: var(--bl-ink); border-radius: 8px; overflow: hidden;
+    box-shadow: 0 24px 60px -20px rgba(7, 18, 38, 0.6), 0 0 0 1px rgba(7, 18, 38, 0.12);
+    animation: cap-in 0.24s var(--bl-ease);
+  }
+  .cap__panel[hidden] { display: none; }
+  @keyframes cap-in { from { opacity: 0; transform: translateY(0.75rem); } }
+
+  .cap__head { display: flex; align-items: center; gap: 0.75rem; padding: 0.9rem 0.75rem 0.9rem 1rem; background: var(--bl-night); color: #fff; border-bottom: 3px solid var(--bl-yellow); }
+  .cap__head img { flex: none; width: 2.5rem; height: 2.5rem; object-fit: contain; }
+  .cap__head div { flex: 1; min-width: 0; }
+  .cap__head h2 { font-family: "Anton", system-ui, sans-serif; font-weight: 400; font-size: 1.35rem; text-transform: uppercase; line-height: 1.1; }
+  .cap__head p { margin-top: 0.15rem; font-size: 0.75rem; line-height: 1.35; color: #c9d5ea; }
+  .cap__close { flex: none; display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border: 0; border-radius: 4px; background: rgba(255, 255, 255, 0.1); color: #fff; cursor: pointer; }
+
+  .cap__body { flex: 1; overflow-y: auto; padding: 1rem; overscroll-behavior: contain; }
+  .cap__prompt { font-size: 0.8rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bl-ink-2); }
+  .cap__topics { display: grid; gap: 0.4rem; margin-top: 0.6rem; }
+  .cap__topics button {
+    display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; width: 100%; min-height: 3rem; padding: 0.6rem 0.9rem;
+    border: 1.5px solid var(--bl-line); border-radius: 6px; background: #fff; color: var(--bl-ink);
+    font: inherit; font-size: 0.95rem; font-weight: 700; text-align: left; cursor: pointer;
+    transition: border-color 0.15s, background-color 0.15s;
+  }
+  .cap__topics button::after { content: ""; flex: none; width: 0.5rem; height: 0.5rem; border-top: 2.5px solid var(--bl-blue); border-right: 2.5px solid var(--bl-blue); transform: rotate(45deg); }
+
+  .cap__back { display: inline-flex; align-items: center; gap: 0.3rem; min-height: 2.75rem; padding: 0 0.5rem 0 0; border: 0; background: none; color: var(--bl-blue); font: inherit; font-size: 0.85rem; font-weight: 800; cursor: pointer; }
+  .cap__question { margin: 0.25rem 0 0.6rem; font-size: 0.8rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--bl-ink-2); }
+  .cap__card { display: grid; justify-items: start; gap: 0.6rem; padding: 1rem; background: var(--bl-paper); border-radius: 6px; }
+  .cap__card h3 { font-size: 1.2rem; font-weight: 800; line-height: 1.2; outline: none; }
+  .cap__card ul { display: grid; gap: 0.3rem; font-size: 0.95rem; line-height: 1.45; }
+  .cap__source { font-size: 0.75rem; color: var(--bl-ink-2); }
+  .cap__card .bl-btn { margin-top: 0.25rem; }
+  .cap__human { margin-top: 0.9rem; font-size: 0.85rem; color: var(--bl-ink-2); }
+  .cap__human a { color: var(--bl-blue); font-weight: 800; text-decoration: underline; text-underline-offset: 0.25em; }
+
+  .cap__legend { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; padding: 0.6rem 1rem; border-top: 1px solid var(--bl-line); font-size: 0.7rem; font-weight: 700; color: var(--bl-ink-2); }
+  .cap__legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+  .cap__dot { width: 0.55rem; height: 0.55rem; border-radius: 50%; }
+  .cap__dot--official { background: var(--bl-blue); }
+  .cap__dot--confirmed { background: #0f6a3a; }
+  .cap__dot--provisional { background: #c99f00; }
+
+  @media (hover: hover) and (pointer: fine) {
+    .cap__topics button:hover { border-color: var(--bl-blue); background: #f2f6ff; }
+    .cap__close:hover { background: rgba(255, 255, 255, 0.22); }
+  }
+  /* Petit écran : le libellé laisse la place au contenu, le logo reste. */
+  @media (max-width: 380px) { .cap__launcher span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); } .cap__launcher { padding: 0.35rem; } }
+  @media (min-width: 1024px) { .cap { right: 1.5rem; bottom: 1.5rem; } }
+  @media (prefers-reduced-motion: reduce) { .cap__panel { animation: none; } .cap__launcher, .cap__topics button { transition: none; } }
+</style>

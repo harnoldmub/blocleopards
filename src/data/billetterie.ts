@@ -6,6 +6,12 @@
  * place : ne pas les changer sans confirmation de l'organisation.
  */
 export const billetterie = {
+  /**
+   * Liens vers /billetterie affichés sur le site (accueil, gagnants…).
+   * À `false`, ils sont masqués partout ; la page reste accessible par son URL.
+   */
+  showLinks: false,
+
   competition: "Éliminatoires CAN 2027",
   round: "Journée 3",
   group: "Groupe E",

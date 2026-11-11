@@ -2,8 +2,8 @@
 const { items } = Astro.props;
 const loop = [...items, ...items];
 ---
-<div class="ticker overflow-hidden border-y border-white/10 bg-congo-night py-4 text-white">
-  <div class="ticker__track items-center font-display text-lg uppercase tracking-[0.14em] md:text-2xl">
+<div class="ticker overflow-hidden border-y border-white/10 bg-[var(--bl-night)] py-4 text-white">
+  <div class="ticker__track items-center bl-title text-lg tracking-[0.06em] md:text-2xl">
     {loop.map((item) => (
       <span class="inline-flex items-center gap-6">
         <span aria-hidden="true" class="text-or">◆</span>

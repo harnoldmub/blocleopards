@@ -1,132 +1,317 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import NewsletterForm from "../components/NewsletterForm.astro";
-import MatchBanner from "../components/MatchBanner.astro";
-import Marquee from "../components/Marquee.astro";
-import site from "../data/site.json";
-import { TEAMS, formatMatchTime, nextRdcFixture } from "../data/can2027";
+import { getCollection } from "astro:content";
+import { TEAMS, formatMatchDate, formatMatchDay, formatMatchTime, nextRdcFixture, rdcFixtures } from "../data/can2027";
+import { billetterie } from "../data/billetterie";
+import { MERCH_PRODUCTS, MERCH_CURRENCY, SHOP_ENABLED } from "../data/merch";
 import { getSetting } from "../lib/settings";
 import { requireDatabase } from "../lib/neon";
 
-const partners = [
-  { name: "R.D. Congo, Cœur de l'Afrique", logo: "/logo-rdc.png" },
-  { name: "SONAS", logo: "/media/partenaires/LOGO SONAS.png" },
-  { name: "Equity BCDC", logo: "/media/partenaires/Logo_EquityBCDC.png" },
-  { name: "MFS Groupe", logo: "/media/partenaires/MFS GROUPE.png" },
-  { name: "Shalina Healthcare", logo: "/media/partenaires/Shalina-Logo-Blue.png" },
-  { name: "Fonarev", logo: "/media/partenaires/logo-fonarev.webp" },
-  { name: "Visa", logo: "/media/partenaires/logo-visa.png" }
-];
+const TZ = "Africa/Kinshasa";
+const shortDate = (iso: string) =>
+  new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "short", timeZone: TZ }).format(new Date(iso));
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-const today = new Date().toISOString().slice(0, 10);
-
-// Bandeau match : affiché automatiquement dans les 14 jours qui précèdent un
-// match de la RDC (sinon, `site.json` permet encore de forcer un bandeau).
+// --- Matchs : source unique src/data/can2027.ts (jamais de date inventée) ---
 const nextMatch = nextRdcFixture();
-const matchSoon = nextMatch && Date.parse(nextMatch.kickoff!) - Date.now() < 14 * 86_400_000;
-const matchBanner = matchSoon
-  ? {
-      label: `Éliminatoires CAN 2027 · ${TEAMS[nextMatch.home].name} – ${TEAMS[nextMatch.away].name} · ${new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "short", timeZone: "Africa/Kinshasa" }).format(new Date(nextMatch.kickoff!))} ${formatMatchTime(nextMatch.kickoff!)}, ${nextMatch.city}`,
-      href: "/can-2027",
-      ctaLabel: "Le programme"
-    }
-  : site.matchDay
-    ? { label: site.matchDayLabel, href: site.matchDayCTA, ctaLabel: site.matchDayCTALabel }
-    : null;
-// Résilient : la home ne doit pas crasher si la table events n'est pas encore migrée.
-let allEvents = [];
+const lastResult = rdcFixtures("FINISHED").filter((f) => f.kickoff && f.score).sort((a, b) => Date.parse(b.kickoff!) - Date.parse(a.kickoff!))[0];
+
+const home = nextMatch ? TEAMS[nextMatch.home] : null;
+const away = nextMatch ? TEAMS[nextMatch.away] : null;
+// La billetterie Tikeo ne couvre que le match pour lequel elle est configurée.
+const hasTickets = billetterie.showLinks && Boolean(nextMatch && Date.parse(billetterie.kickoff) === Date.parse(nextMatch.kickoff!));
+
+// --- Agenda du Bloc (base) : la page reste debout si la table manque ---
+const today = new Date().toISOString().slice(0, 10);
+let events: any[] = [];
+let eventsError = false;
 try {
   const sql = requireDatabase();
-  allEvents = await sql`
+  const rows = await sql`
     SELECT slug, title, description, CAST(date AS text) as date, time, location
     FROM events
-    WHERE published = true
+    WHERE published = true AND date >= ${today}
     ORDER BY date ASC, created_at ASC
+    LIMIT 3
   `;
+  events = rows as any[];
 } catch (err) {
   console.error("[index] chargement events échoué (table absente ?)", err);
-  allEvents = [];
+  eventsError = true;
 }
-// Léopards Basket — fenêtre de Dakar (qualif. Mondial FIBA 2027).
-// La section reste visible même si la migration 015 n'est pas encore passée :
-// BasketMission.astro embarque son propre calendrier de repli.
-const BASKET_SLUGS = [
-  "2026-08-27-leopards-basket-rdc-angola",
-  "2026-08-29-leopards-basket-rdc-mali",
-  "2026-08-30-leopards-basket-rdc-egypte"
-];
-const basketEvents = allEvents.filter((event) => BASKET_SLUGS.includes(event.slug));
-
-const upcomingEvents = allEvents.filter((event) => event.date >= today);
-const events = upcomingEvents.slice(0, 4);
-const FR_MONTHS = ["JAN","FEV","MAR","AVR","MAI","JUIN","JUIL","AOUT","SEPT","OCT","NOV","DEC"];
-const getMonth = (d) => FR_MONTHS[parseInt(d.split("-")[1]) - 1];
-const getDay = (d) => String(parseInt(d.split("-")[2])).padStart(2, "0");
+// On n'affiche que les informations connues : « À confirmer » est retiré.
+const known = (v?: string | null) => Boolean(v && !/confirmer/i.test(v));
+const agenda = eventsError ? [] : events.map((e) => ({ ...e, meta: [e.time, e.location].filter(known).join(" · ") }));
+const FR_MONTHS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+const eventDay = (d: string) => String(parseInt(d.split("-")[2]));
+const eventMonth = (d: string) => FR_MONTHS[parseInt(d.split("-")[1]) - 1];
 
 const guadalajaraActive = (await getSetting("guadalajara_active", "true")) !== "false";
 
-const tickerItems = [
-  "Un seul bloc. Une seule voix.",
-  "Tous en bleu et jaune.",
-  "Tous en maillot Léopards.",
-  "Support positif et respectueux.",
-  "Toko bloque bango tii na tii.",
-  "Toza bomoko."
+// --- Campagne active (collection de contenu) ---
+const campaigns = (await getCollection("campaigns")).sort((a, b) => b.id.localeCompare(a.id));
+const campaign = campaigns[0];
+
+// --- Barre d'information : des faits, pas de slogans ---
+const infoItems = [
+  nextMatch && {
+    label: "Prochain match",
+    text: `${home!.name} – ${away!.name}, ${shortDate(nextMatch.kickoff!)} à ${formatMatchTime(nextMatch.kickoff!)}, ${nextMatch.city}`,
+    href: "#match"
+  },
+  lastResult && {
+    label: "Dernier résultat",
+    text: `${TEAMS[lastResult.home].name} ${lastResult.score!.home}–${lastResult.score!.away} ${TEAMS[lastResult.away].name}, ${shortDate(lastResult.kickoff!)}`,
+    href: "/can-2027"
+  },
+  campaign && { label: "Campagne", text: campaign.data.title, href: "/campagnes" },
+].filter(Boolean) as { label: string; text: string; href: string; pending?: boolean }[];
+
+// --- Actions du Bloc : une action, un lien ---
+const actions = [
+  { title: "Rejoins une mobilisation", text: "Les rendez-vous confirmés, match après match.", cta: "Voir le calendrier", href: "/evenements", image: "/media/home/action-mobilisation.webp", w: 800, h: 1065 },
+  { title: "Participe à une campagne de civisme", text: "Respect, propreté, fair-play.", cta: "Voir les campagnes", href: "/campagnes", image: "/media/home/action-civisme.webp", w: 800, h: 1067 },
+  { title: "Trouve un rassemblement", text: "Kinshasa, provinces, diaspora.", cta: "Voir le programme", href: "/can-2027", image: "/media/home/action-rassemblement.webp", w: 800, h: 532 },
+  { title: "Rejoins le Bloc depuis la diaspora", text: "Un relais dans chaque ville.", cta: "S'inscrire", href: "/rejoindre", image: "/media/home/action-diaspora.webp", w: 800, h: 1067 }
 ];
 
+// --- Galerie : bandeau d'origine ---
 const homeGallery = [
-  { title: "Tribune debout", label: "01 · Ferveur", image: "/media/ivanor-tribune-drapeaux.jpg" },
-  { title: "Un seul bloc", label: "02 · Voix", image: "/media/ivanor-foule-tribune.jpg" },
-  { title: "Joie en tribune", label: "03 · Moment", image: "/media/ivanor-joie-tribune.jpg" },
-  { title: "Couleurs en mouvement", label: "04 · Diaspora", image: "/media/supporters-diaspora-03.jpg" },
-  { title: "La nuit du bloc", label: "05 · Après match", image: "/media/ivanor-supporters-nuit.jpg" }
+  { title: "Tribune debout", image: "/media/ivanor-tribune-drapeaux.jpg" },
+  { title: "Un seul bloc", image: "/media/ivanor-foule-tribune.jpg" },
+  { title: "Joie en tribune", image: "/media/ivanor-joie-tribune.jpg" },
+  { title: "Couleurs en mouvement", image: "/media/supporters-diaspora-03.jpg" },
+  { title: "La nuit du bloc", image: "/media/ivanor-supporters-nuit.jpg" }
+];
+
+// --- Partenaires ---
+const partnerGroups = [
+  {
+    label: "Partenaires institutionnels",
+    items: [
+      { name: "R.D. Congo, Cœur de l'Afrique", logo: "/logo-rdc.png" },
+      { name: "Ministère des Sports et Loisirs", logo: "/brand/logo-min-sport-black.webp" },
+      { name: "Fonarev", logo: "/media/partenaires/logo-fonarev.webp" }
+    ]
+  },
+  {
+    label: "Partenaires officiels",
+    items: [
+      { name: "SONAS", logo: "/media/partenaires/LOGO SONAS.png" },
+      { name: "Equity BCDC", logo: "/media/partenaires/Logo_EquityBCDC.png" },
+      { name: "MFS Groupe", logo: "/media/partenaires/MFS GROUPE.png" },
+      { name: "Shalina Healthcare", logo: "/media/partenaires/Shalina-Logo-Blue.png" },
+      { name: "Visa", logo: "/media/partenaires/logo-visa.png" }
+    ]
+  },
+  { label: "Partenaires techniques", items: [] as { name: string; logo: string }[] }
+].filter((g) => g.items.length > 0);
+
+// --- Boutique : quatre produits au plus, seulement si la boutique est ouverte ---
+const AVAILABILITY: Record<string, string> = { in_stock: "En stock", low_stock: "Derniers exemplaires", preorder: "En précommande", out_of_stock: "Épuisé" };
+const shopProducts = SHOP_ENABLED ? MERCH_PRODUCTS.slice(0, 4) : [];
+
+const benefits = [
+  "Recevoir les mobilisations confirmées",
+  "Accéder au kit supporter",
+  "Participer aux actions",
+  "Rejoindre le réseau de la diaspora"
 ];
 ---
-<BaseLayout title="Accueil" description="Bloc Léopards — supporters des Léopards de la RDC. Un seul bloc, une seule voix. Mobilisation positive, informée et respectueuse.">
-  {matchBanner && <MatchBanner {...matchBanner} />}
+<BaseLayout title="Accueil" description="Bloc Léopards, le mouvement des supporters des Léopards de la RDC. Prochain match, rassemblements, kit supporter et actions du Bloc.">
 
   <!-- ================= HERO ================= -->
-  <!-- Plein écran, vidéo dominante : un seul voile en bas à gauche pour la lisibilité, le reste respire. -->
-  <section class="relative flex min-h-[100svh] items-end overflow-hidden bg-congo-night text-white">
-    <video autoplay muted loop playsinline preload="auto" poster="/videos/hero-can-poster.jpg" data-hero-media class="absolute inset-0 z-0 h-full w-full object-cover">
+  <section class="hero">
+    <video autoplay muted loop playsinline preload="metadata" poster="/videos/hero-can-poster.jpg" class="hero__photo" aria-hidden="true">
       <source src="/videos/hero-can.mp4" type="video/mp4" />
     </video>
-    <div class="absolute inset-x-0 bottom-0 z-0 h-2/3 bg-gradient-to-t from-congo-night/85 via-congo-night/30 to-transparent"></div>
-    <div class="absolute inset-0 z-0 bg-gradient-to-r from-congo-night/45 via-transparent to-transparent"></div>
+    <div class="hero__scrim" aria-hidden="true"></div>
 
-    <div class="relative z-10 mx-auto w-full max-w-[84rem] px-4 pb-20 pt-40 sm:pb-28 lg:px-8 lg:pb-32">
-      <img data-reveal src="/logo-rdc--white.png" alt="R.D. Congo, Cœur de l'Afrique" width="1183" height="331" class="h-10 w-auto sm:h-12" />
-      <h1 class="mt-8 max-w-5xl font-mega uppercase leading-[0.88] [font-size:clamp(3rem,7.5vw,7.5rem)]">
-        <span class="lux-line-mask"><span data-reveal="mask" class="text-transparent [-webkit-text-stroke:2px_#ffffff]">Bloc Moko</span></span>
-        <span class="lux-line-mask"><span data-reveal="mask" data-reveal-delay="120" class="text-transparent [-webkit-text-stroke:2px_#F4C400]">Ekolo Moko</span></span>
-      </h1>
-      <div data-reveal data-reveal-delay="300" class="mt-10 flex flex-wrap items-center gap-4">
-        <a href="/rejoindre" class="group inline-flex min-h-12 items-center gap-3 rounded-full bg-or px-8 py-3.5 text-[0.8rem] font-black uppercase tracking-[0.12em] text-congo-night shadow-xl shadow-or/20 transition-colors hover:bg-yellow-300"><span>Rejoindre le Bloc</span><span aria-hidden="true" class="transition-transform group-hover:translate-x-1">→</span></a>
-        <a href="/evenements" class="inline-flex min-h-12 items-center rounded-full border border-white/30 bg-white/10 backdrop-blur-sm px-7 py-3.5 text-[0.78rem] font-bold uppercase tracking-[0.12em] text-white transition-colors hover:border-or hover:text-or">Voir le calendrier</a>
+    <div class="bl-wrap hero__inner">
+      <div class="hero__copy">
+        <h1 class="bl-title bl-title--xl hero__title">Un seul bloc.<br /><span>Une seule voix.</span></h1>
+        <p class="hero__sub">Derrière les Léopards, partout où ils jouent.</p>
+        <div class="hero__cta">
+          <a href="/can-2027" class="bl-btn">Voir le programme</a>
+          <a href="/rejoindre" class="bl-btn bl-btn--line">Rejoindre la mobilisation</a>
+        </div>
       </div>
+
     </div>
-    <div class="absolute bottom-8 right-5 hidden items-center gap-3 text-[0.62rem] uppercase tracking-[0.28em] text-white/50 lg:flex lg:right-8">Scroll<span class="h-8 w-px animate-[float_2.4s_ease-in-out_infinite] bg-gradient-to-b from-or to-transparent"></span></div>
   </section>
 
-  <Marquee items={tickerItems} />
+  <!-- ================= BARRE D'INFORMATION ================= -->
+  <section class="infobar" aria-label="En ce moment">
+    <ul class="infobar__list" data-lenis-prevent>
+      {infoItems.map((item) => (
+        <li>
+          <a href={item.href} class="infobar__item">
+            <span class="infobar__label">{item.label}</span>
+            <span class:list={["infobar__text", item.pending && "bl-pending"]}>{item.text}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <!-- ================= PROCHAIN RENDEZ-VOUS ================= -->
+  <section id="match" class="bl-section bl-on-paper">
+    <div class="bl-wrap">
+      <div class="head">
+        <div>
+          <p class="bl-label">Match center</p>
+          <h2 class="bl-title bl-title--lg">Le prochain rendez-vous</h2>
+        </div>
+        <a href="/can-2027" class="bl-link">Tout le programme</a>
+      </div>
+
+      {nextMatch ? (
+        <article class="mc bl-cut" data-kickoff={nextMatch.kickoff}>
+          <p class="mc__top">Éliminatoires CAN 2027 · Groupe E · Journée {nextMatch.matchday}</p>
+
+          <div class="mc__fixture">
+            <div class="mc__team">
+              <img src={home!.flag} alt="" width="96" height="72" loading="lazy" />
+              <strong>{home!.name}</strong>
+            </div>
+            <div class="mc__center">
+              <span class="mc__time">{formatMatchTime(nextMatch.kickoff!)}</span>
+              <span class="mc__day">{cap(formatMatchDay(nextMatch.kickoff!))} {formatMatchDate(nextMatch.kickoff!)}</span>
+            </div>
+            <div class="mc__team">
+              <img src={away!.flag} alt="" width="96" height="72" loading="lazy" />
+              <strong>{away!.name}</strong>
+            </div>
+          </div>
+
+          <p class="mc__place">
+            {[nextMatch.venue, nextMatch.city].filter(Boolean).join(" · ")}
+            <span class="mc__local" data-local-time hidden></span>
+          </p>
+
+          <div class="mc__countdown">
+            <span class="mc__countdown-label" data-countdown-label>Coup d'envoi dans</span>
+            <div class="mc__units" data-countdown-units aria-hidden="true">
+              <span><b data-cd="d">––</b><i>jours</i></span>
+              <span><b data-cd="h">––</b><i>heures</i></span>
+              <span><b data-cd="m">––</b><i>min</i></span>
+              <span><b data-cd="s">––</b><i>s</i></span>
+            </div>
+          </div>
+
+          <div class="mc__links">
+            {hasTickets && <a href="/billetterie" class="bl-btn">Billetterie</a>}
+            <a href="/can-2027" class="bl-btn bl-btn--line">Programme</a>
+          </div>
+        </article>
+      ) : (
+        <div class="empty">
+          <p class="bl-title bl-title--md">Le programme des Léopards</p>
+          <a href="/can-2027" class="bl-btn bl-btn--blue">Voir le programme</a>
+        </div>
+      )}
+
+      {agenda.length > 0 && (
+        <div class="agenda">
+          <h3 class="bl-title bl-title--md">Voici où nous retrouver</h3>
+          <ul class="agenda__list">
+            {agenda.map((event) => (
+              <li>
+                <a href={`/evenements/${event.slug}`} class="agenda__item bl-focus">
+                  <span class="agenda__date"><b>{eventDay(event.date)}</b>{eventMonth(event.date)}</span>
+                  <span class="agenda__body">
+                    <strong>{event.title}</strong>
+                    {event.meta && <span>{event.meta}</span>}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+          <div class="agenda__links">
+            <a href="/evenements" class="bl-link">Calendrier complet</a>
+            {guadalajaraActive && <a href="/mondial" class="bl-link">Programme diaspora, Mondial 2026</a>}
+          </div>
+        </div>
+      )}
+    </div>
+  </section>
+
+  <!-- ================= ACTIONS DU BLOC ================= -->
+  <section class="bl-section bl-on-night">
+    <div class="bl-wrap">
+      <div class="head">
+        <div>
+          <p class="bl-label">Sur le terrain</p>
+          <h2 class="bl-title bl-title--lg">Les actions du Bloc</h2>
+        </div>
+      </div>
+      <ul class="actions">
+        {actions.map((a, i) => (
+          <li class:list={["actions__tile", i === 0 && "actions__tile--lead"]}>
+            <a href={a.href} class="actions__link">
+              <img src={a.image} alt="" width={a.w} height={a.h} loading="lazy" decoding="async" />
+              <span class="actions__body">
+                <strong class="bl-title">{a.title}</strong>
+                <span class="actions__text">{a.text}</span>
+                <span class="actions__cta">{a.cta}</span>
+              </span>
+            </a>
+          </li>
+        ))}
+        <li class="actions__band">
+          <div>
+            <strong class="bl-title bl-title--md">Propose une action dans ta ville</strong>
+            <span>Nettoyage de tribune, projection, collecte : dis-nous ce que tu veux lancer.</span>
+          </div>
+          <a href="/contact" class="bl-btn">Écrire à l'équipe</a>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ================= LE MOUVEMENT ================= -->
+  <section class="bl-on-yellow mvt">
+    <div class="bl-wrap mvt__inner">
+      <div class="mvt__copy">
+        <p class="bl-label">Le mouvement</p>
+        <h2 class="bl-title mvt__manifesto" lang="ln">
+          <span>Toza bomoko.</span>
+          <span>Bloc moko.</span>
+          <span>Ekolo moko.</span>
+        </h2>
+        <p class="bl-lead">Nous sommes ensemble. Un seul bloc, une seule nation : des supporters qui chantent, respectent et rassemblent, à Kinshasa, en province et dans la diaspora.</p>
+        <ul class="mvt__links">
+          <li><a href="/mouvement">L'histoire du mouvement</a></li>
+          <li><a href="/charte">La charte du supporter</a></li>
+          <li><a href="/campagnes">Nos engagements</a></li>
+          <li><a href="/partenaires">Les partenaires</a></li>
+        </ul>
+      </div>
+      <figure class="mvt__photo">
+        <img src="/media/home/mouvement-joie.webp" alt="Une supportrice en maillot rouge des Léopards rit, drapeau de la RDC levé derrière elle." width="900" height="1200" loading="lazy" decoding="async" class="bl-cut" />
+        <figcaption>Photo @ivanor_shoot</figcaption>
+      </figure>
+    </div>
+  </section>
 
   <!-- ================= GALERIE (bandeau photos horizontal) ================= -->
-  <section class="bg-congo-night py-20 text-white lg:py-24" aria-label="Galerie du bloc">
-    <div class="mx-auto max-w-[84rem] px-4 lg:px-8">
-      <div class="mb-10 flex flex-wrap items-end justify-between gap-6">
+  <section class="bl-section bl-on-night" aria-labelledby="galerie-titre">
+    <div class="bl-wrap">
+      <div class="head">
         <div>
-          <span data-reveal class="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-or">Ambiance</span>
-          <h2 data-reveal class="mt-3 font-display text-4xl uppercase leading-[0.95] md:text-6xl">La galerie</h2>
+          <p class="bl-label">Ambiance</p>
+          <h2 id="galerie-titre" class="bl-title bl-title--lg">La galerie</h2>
         </div>
-        <a data-reveal href="/media" class="text-[0.74rem] font-bold uppercase tracking-[0.14em] text-or transition-colors hover:text-white">Voir toutes les photos →</a>
+        <a href="/media" class="bl-link">Voir toutes les photos</a>
       </div>
     </div>
-    <div class="photo-strip" data-reveal="fade">
+    <div class="photo-strip">
       <div class="photo-strip__track">
         <div class="photo-strip__set">
-          {homeGallery.map((item, i) => (
+          {homeGallery.map((item) => (
             <figure class="photo-strip__item">
-              <img src={item.image} alt={item.title} loading={i === 0 ? "eager" : "lazy"} />
+              <img src={item.image} alt={item.title} loading="lazy" decoding="async" />
               <figcaption>{item.title}</figcaption>
             </figure>
           ))}
@@ -134,7 +319,7 @@ const homeGallery = [
         <div class="photo-strip__set" aria-hidden="true">
           {homeGallery.map((item) => (
             <figure class="photo-strip__item">
-              <img src={item.image} alt="" loading="lazy" />
+              <img src={item.image} alt="" loading="lazy" decoding="async" />
               <figcaption>{item.title}</figcaption>
             </figure>
           ))}
@@ -143,177 +328,313 @@ const homeGallery = [
     </div>
   </section>
 
-  <!-- ================= 52 ANS / RETOUR ================= -->
-  <section class="bg-white py-20 lg:py-28">
-    <div class="mx-auto grid max-w-[84rem] items-center gap-12 px-4 lg:grid-cols-[0.85fr_1.15fr] lg:px-8">
-      <div>
-        <span data-reveal class="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-feu">52 ans après</span>
-        <h2 data-reveal class="mt-3 font-display text-4xl uppercase leading-[0.95] text-congo-night md:text-6xl">Les Léopards<br />sont de retour</h2>
-        <p data-reveal class="mt-5 max-w-md leading-relaxed text-slate-600">Première nation d'Afrique subsaharienne à avoir joué une Coupe du monde, la RDC retrouve la scène mondiale avec ambition.</p>
-        <a data-reveal href="/actus/2026-05-25-retour-mondial-52-ans" class="mt-7 inline-flex rounded-full bg-congo px-7 py-3.5 text-[0.78rem] font-bold uppercase tracking-[0.1em] text-white transition-transform hover:-translate-y-0.5">Lire le contexte</a>
-      </div>
-      <div data-reveal="fade" class="overflow-hidden rounded-[6px] border border-slate-200 shadow-deep">
-        <video class="aspect-video w-full bg-congo-night object-cover" autoplay muted controls playsinline preload="metadata">
-          <source src="/videos/retour-mondial-52-ans.mp4" type="video/mp4" />
-        </video>
-      </div>
-    </div>
-  </section>
-
-  <!-- ================= ÉVÉNEMENTS (affiches) ================= -->
-  {events.length > 0 && (
-    <section class="bg-congo-night py-20 text-white lg:py-28">
-      <div class="mx-auto max-w-[84rem] px-4 lg:px-8">
-        <div class="mb-12 flex flex-wrap items-end justify-between gap-6">
+  <!-- ================= BOUTIQUE (si ouverte) ================= -->
+  {shopProducts.length > 0 && (
+    <section class="bl-section bl-on-paper">
+      <div class="bl-wrap">
+        <div class="head">
           <div>
-            <span data-reveal class="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-or">Mobilisation</span>
-            <h2 data-reveal class="mt-3 font-display text-4xl uppercase leading-[0.95] md:text-6xl">Prochains rendez-vous</h2>
+            <p class="bl-label">Merch</p>
+            <h2 class="bl-title bl-title--lg">Porte les couleurs</h2>
           </div>
-          <a data-reveal href="/evenements" class="text-[0.74rem] font-bold uppercase tracking-[0.14em] text-or transition-colors hover:text-white">Calendrier complet →</a>
+          <a href="/boutique" class="bl-btn bl-btn--blue">Voir la boutique</a>
         </div>
-        <div class="grid gap-4">
-          {events.map((event, i) => (
-            <a href={`/evenements/${event.slug}`} data-reveal data-reveal-delay={(i % 2) * 90} class="group flex items-stretch gap-0 overflow-hidden rounded-[4px] border border-white/10 bg-white/[0.03] transition-colors hover:border-or/40">
-              <div class="w-1.5 shrink-0 bg-gradient-to-b from-flag-yellow to-feu"></div>
-              <div class="flex w-24 shrink-0 flex-col items-center justify-center px-4 py-6 text-center md:w-32">
-                <span class="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-or">{getMonth(event.date)}</span>
-                <span class="font-mega text-5xl leading-none md:text-6xl">{getDay(event.date)}</span>
-                <span class="mt-1 text-[0.7rem] text-white/50">{event.time}</span>
-              </div>
-              <div class="w-px self-stretch bg-white/10"></div>
-              <div class="flex flex-1 flex-col justify-center px-5 py-6 md:px-8">
-                <p class="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-or/90">{event.description}</p>
-                <h3 class="mt-1.5 font-display text-2xl uppercase leading-none md:text-4xl">{event.title}</h3>
-                <p class="mt-2 text-sm text-white/55">{event.location}</p>
-              </div>
-              <div class="hidden items-center pr-8 text-or opacity-0 transition-opacity group-hover:opacity-100 md:flex">→</div>
-            </a>
+        <ul class="shop">
+          {shopProducts.map((p) => (
+            <li>
+              <a href={`/boutique/${p.id}`} class="shop__item bl-focus">
+                <img src={p.image} alt={p.name} loading="lazy" width="600" height="600" />
+                <strong>{p.name}</strong>
+                <span class="shop__price">{p.price} {MERCH_CURRENCY}</span>
+                <span class="shop__stock">{AVAILABILITY[p.availability]}</span>
+              </a>
+            </li>
           ))}
-        </div>
-        {guadalajaraActive && (
-          <div data-reveal class="mt-10">
-            <a href="/mondial" class="inline-flex items-center gap-2 rounded-full border border-or/40 bg-or/10 px-8 py-4 text-[0.78rem] font-bold uppercase tracking-[0.1em] text-or transition-colors hover:bg-or hover:text-congo-night">
-              Programme diaspora · Mondial 2026 →
-            </a>
-          </div>
-        )}
+        </ul>
       </div>
     </section>
   )}
 
   <!-- ================= PARTENAIRES ================= -->
-  <section class="bg-white py-20 lg:py-24">
-    <div class="mx-auto max-w-[84rem] px-4 lg:px-8">
-      <div data-reveal class="mb-10 text-center">
-        <span class="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-slate-400">Ils soutiennent le Bloc</span>
-        <h2 class="mt-2 font-display text-3xl uppercase text-congo-night md:text-4xl">Nos partenaires</h2>
+  <section class="bl-section partners">
+    <div class="bl-wrap">
+      <div class="head">
+        <div>
+          <p class="bl-label">Ils soutiennent le Bloc</p>
+          <h2 class="bl-title bl-title--lg">Nos partenaires</h2>
+        </div>
+        <a href="/partenaires" class="bl-link">Devenir partenaire</a>
       </div>
-      <div class="grid grid-cols-2 gap-px overflow-hidden rounded-[6px] border border-slate-200 bg-slate-200 sm:grid-cols-3 lg:grid-cols-7">
-        {partners.map((p, i) => (
-          <div
-            data-reveal
-            data-reveal-delay={(i % 6) * 60}
-            class:list={[
-              "group flex min-h-[110px] items-center justify-center bg-white p-6 transition-colors hover:bg-slate-50",
-              i === 0 && "order-2 sm:order-none sm:col-span-3 lg:col-span-1",
-              i === 1 && "order-1 sm:order-none col-span-2 sm:col-span-1",
-              i > 1 && "order-3 sm:order-none"
-            ]}
-          >
-            <img src={p.logo} alt={p.name} loading="lazy" class="max-h-11 w-auto max-w-[120px] object-contain opacity-70 grayscale transition-all duration-500 group-hover:opacity-100 group-hover:grayscale-0" />
-          </div>
-        ))}
-      </div>
+      {partnerGroups.map((group) => (
+        <div class="partners__group">
+          <h3>{group.label}</h3>
+          <ul>
+            {group.items.map((p) => (
+              <li><img src={p.logo} alt={p.name} loading="lazy" decoding="async" /></li>
+            ))}
+          </ul>
+        </div>
+      ))}
     </div>
   </section>
 
-  <!-- ================= REJOINDRE LE BLOC ================= -->
-  <section class="relative overflow-hidden bg-congo-night text-white">
-    <img src="/media/bloc-jersey-tribune-01.jpg" alt="" aria-hidden="true" class="absolute inset-0 h-full w-full object-cover opacity-25" />
-    <div class="absolute inset-0 bg-gradient-to-t from-congo-night via-congo-night/80 to-congo-night/60"></div>
-    <div class="relative mx-auto grid max-w-[84rem] items-center gap-12 px-4 py-24 lg:grid-cols-2 lg:px-8 lg:py-32">
+  <!-- ================= ADHÉSION ================= -->
+  <section class="bl-on-blue join">
+    <div class="bl-wrap join__inner">
       <div>
-        <span data-reveal class="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-or">Rejoindre</span>
-        <h2 data-reveal class="mt-4 font-mega uppercase leading-[0.85] [font-size:clamp(2.8rem,7vw,6rem)]">Rejoins<br />le mouvement</h2>
-        <p data-reveal class="mt-6 max-w-md text-lg leading-relaxed text-white/75">Reçois le kit supporters et participe aux mobilisations confirmées. Un seul bloc, une seule voix.</p>
-        <div data-reveal class="mt-8 flex flex-wrap gap-4">
-          <a href="/rejoindre" class="rounded-full bg-or px-8 py-4 text-[0.8rem] font-bold uppercase tracking-[0.1em] text-congo-night transition-transform hover:-translate-y-0.5">Formulaire d'adhésion</a>
-          <a href="/charte" class="rounded-full border border-white/30 px-8 py-4 text-[0.8rem] font-bold uppercase tracking-[0.1em] text-white transition-colors hover:border-or hover:text-or">Lire la charte</a>
-        </div>
+        <h2 class="bl-title bl-title--xl">Rejoins le Bloc</h2>
+        <ul class="join__list">
+          {benefits.map((b) => (
+            <li>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
+              {b}
+            </li>
+          ))}
+        </ul>
+        <a href="/rejoindre" class="bl-btn">Rejoindre le mouvement</a>
       </div>
-      <div data-reveal="fade" class="rounded-[6px] border border-white/10 bg-white p-7 text-slate-900 shadow-deep">
-        <span class="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-congo">Newsletter</span>
-        <p class="mt-3 text-sm text-slate-600">Recevoir les mobilisations confirmées, fan zones et kits supporters.</p>
+      <div class="join__news">
+        <h3>Pas encore prêt ? Reçois d'abord les infos.</h3>
+        <p>Mobilisations confirmées, fan zones et kits : un e-mail quand il y a du nouveau.</p>
         <NewsletterForm />
       </div>
     </div>
   </section>
 </BaseLayout>
 
+<script>
+  // Compte à rebours + heure locale du visiteur. Sans JS, la date de Kinshasa reste affichée.
+  const card = document.querySelector<HTMLElement>('[data-kickoff]');
+  const kickoff = card ? Date.parse(card.dataset.kickoff || '') : NaN;
+
+  if (card && Number.isFinite(kickoff)) {
+    const local = document.querySelector<HTMLElement>('[data-local-time]');
+    try {
+      const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const fmt = (tz: string) => new Intl.DateTimeFormat('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: tz }).format(kickoff);
+      if (local && zone && fmt(zone) !== fmt('Africa/Kinshasa')) {
+        local.textContent = `Chez toi : ${fmt(zone).replace(':', 'h')} (${zone.split('/').pop()!.replace(/_/g, ' ')})`;
+        local.hidden = false;
+      }
+    } catch {
+      /* fuseau indisponible : on garde l'heure de Kinshasa */
+    }
+
+    const label = document.querySelector<HTMLElement>('[data-countdown-label]');
+    const units = document.querySelector<HTMLElement>('[data-countdown-units]');
+    const cells: Record<string, HTMLElement | null> = {
+      d: document.querySelector('[data-cd="d"]'),
+      h: document.querySelector('[data-cd="h"]'),
+      m: document.querySelector('[data-cd="m"]'),
+      s: document.querySelector('[data-cd="s"]')
+    };
+    const pad = (n: number) => String(n).padStart(2, '0');
+    let timer = 0;
+    const tick = () => {
+      const diff = kickoff - Date.now();
+      if (diff <= 0) {
+        window.clearInterval(timer);
+        if (units) units.hidden = true;
+        if (label) label.textContent = diff > -2 * 3600_000 ? 'Match en cours' : 'Match terminé';
+        return;
+      }
+      const s = Math.floor(diff / 1000);
+      if (cells.d) cells.d.textContent = pad(Math.floor(s / 86400));
+      if (cells.h) cells.h.textContent = pad(Math.floor((s % 86400) / 3600));
+      if (cells.m) cells.m.textContent = pad(Math.floor((s % 3600) / 60));
+      if (cells.s) cells.s.textContent = pad(s % 60);
+    };
+    tick();
+    timer = window.setInterval(tick, 1000);
+  }
+</script>
+
 <style>
-  /* Galerie home — bandeau photos qui defile en continu de gauche a droite */
-  .photo-strip {
-    position: relative;
-    overflow: hidden;
-    -webkit-mask-image: linear-gradient(90deg, transparent, black 5%, black 95%, transparent);
-    mask-image: linear-gradient(90deg, transparent, black 5%, black 95%, transparent);
+  /* ---------- En-têtes de section ---------- */
+  .head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 0.75rem 2rem; margin-bottom: 1.75rem; }
+  .head .bl-title { margin-top: 0.6rem; }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    position: relative; display: flex; align-items: flex-end; overflow: hidden;
+    min-height: calc(100svh - 3.75rem - var(--bl-nav-h) - 3.5rem);
+    background: var(--bl-night); color: #fff;
   }
-  .photo-strip__track {
-    display: flex;
-    width: max-content;
-    animation: photo-strip-scroll 48s linear infinite;
-  }
-  .photo-strip:hover .photo-strip__track {
-    animation-play-state: paused;
-  }
-  .photo-strip__set {
-    display: flex;
-    gap: 1rem;
-    padding: 0 0.5rem;
-  }
-  .photo-strip__item {
-    position: relative;
-    flex: 0 0 auto;
-    width: clamp(15rem, 26vw, 24rem);
-    aspect-ratio: 4 / 3;
-    margin: 0;
-    overflow: hidden;
-    border-radius: 6px;
-    background: #0d1a35;
-  }
-  .photo-strip__item img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-  .photo-strip__item::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(180deg, transparent 55%, rgba(5,11,24,0.85));
-  }
-  .photo-strip__item figcaption {
-    position: absolute;
-    left: 0.85rem;
-    bottom: 0.75rem;
-    z-index: 1;
-    font-size: 0.66rem;
-    font-weight: 800;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: #fff;
-  }
-  @keyframes photo-strip-scroll {
-    from { transform: translateX(0); }
-    to { transform: translateX(-50%); }
-  }
+  .hero__photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 22%; }
+  /* Voile fonctionnel : le texte ne repose jamais sur une zone claire de la photo. */
+  .hero__scrim { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(7, 18, 38, 0.1) 0%, rgba(7, 18, 38, 0.2) 30%, rgba(7, 18, 38, 0.86) 62%, var(--bl-night) 100%); }
+  .hero__inner { position: relative; display: grid; gap: 1.25rem; padding-top: 9rem; padding-bottom: 2.5rem; }
+  .hero__title span { color: var(--bl-yellow); }
+  .hero__sub { margin-top: 0.75rem; font-size: 1.0625rem; font-weight: 600; }
+  .hero__cta { display: grid; gap: 0.6rem; margin-top: 1.25rem; }
+
+  /* ---------- Barre d'information ---------- */
+  .infobar { background: var(--bl-blue); color: #fff; }
+  .infobar__list { display: flex; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; max-width: var(--bl-wrap); margin-inline: auto; }
+  .infobar__list::-webkit-scrollbar { display: none; }
+  .infobar__list li { flex: none; scroll-snap-align: start; border-right: 1px solid rgba(255, 255, 255, 0.18); }
+  .infobar__item { display: grid; gap: 0.1rem; min-height: 3.5rem; align-content: center; padding: 0.55rem 1.1rem; max-width: 19rem; text-decoration: none; }
+  .infobar__item:focus-visible { outline: 3px solid var(--bl-yellow); outline-offset: -3px; }
+  .infobar__label { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--bl-yellow); }
+  .infobar__text { font-size: 0.875rem; font-weight: 600; line-height: 1.3; }
+
+  /* ---------- Match center ---------- */
+  .mc { max-width: 56rem; padding: 1.5rem 1rem; background: var(--bl-night); color: #fff; border-radius: var(--bl-radius) 0 var(--bl-radius) var(--bl-radius); text-align: center; }
+  .mc__top { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #c9d5ea; }
+  .mc__fixture { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 0.5rem; margin-top: 1.5rem; }
+  .mc__team { display: grid; justify-items: center; gap: 0.6rem; }
+  .mc__team img { width: 4rem; height: 3rem; object-fit: cover; border-radius: 3px; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25); }
+  .mc__team strong { font-family: "Anton", system-ui, sans-serif; font-weight: 400; font-size: clamp(1.05rem, 4.6vw, 1.9rem); text-transform: uppercase; line-height: 1.05; text-wrap: balance; }
+  .mc__center { display: grid; justify-items: center; gap: 0.2rem; }
+  .mc__time { font-family: "Anton", system-ui, sans-serif; font-size: clamp(2.2rem, 10vw, 4rem); line-height: 1; color: var(--bl-yellow); }
+  .mc__day { max-width: 9rem; font-size: 0.75rem; font-weight: 600; color: #c9d5ea; }
+  .mc__place { margin-top: 1.25rem; font-weight: 700; }
+  .mc__local { display: block; margin-top: 0.2rem; font-size: 0.85rem; font-weight: 600; color: var(--bl-yellow); }
+  .mc__local[hidden] { display: none; }
+  .mc__countdown { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.6rem 1rem; margin-top: 1.25rem; padding-top: 1.1rem; border-top: 1px solid rgba(255, 255, 255, 0.14); }
+  .mc__countdown-label { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #c9d5ea; }
+  .mc__units { display: flex; gap: 0.4rem; }
+  .mc__units[hidden] { display: none; }
+  .mc__units span { display: grid; justify-items: center; min-width: 3.4rem; padding: 0.4rem 0.3rem; background: rgba(255, 255, 255, 0.08); border-radius: 4px; }
+  .mc__units b { font-family: "Anton", system-ui, sans-serif; font-weight: 400; font-size: 1.5rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .mc__units i { font-style: normal; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #c9d5ea; }
+  .mc__links { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6rem; margin-top: 1.5rem; }
+  .mc__links .bl-btn { flex: 1 1 10rem; max-width: 16rem; }
+
+  .empty { display: grid; justify-items: start; gap: 0.75rem; padding: 2rem 1.25rem; background: #fff; border: 1px dashed var(--bl-ink-2); border-radius: var(--bl-radius); }
+
+  .agenda { margin-top: 2.75rem; }
+  .agenda__note { margin-top: 0.75rem; color: var(--bl-ink-2); }
+  .agenda__list { display: grid; gap: 0.6rem; margin-top: 1rem; }
+  .agenda__item { display: flex; align-items: stretch; background: #fff; border: 1px solid var(--bl-line); border-radius: var(--bl-radius); overflow: hidden; text-decoration: none; }
+  .agenda__date { flex: none; display: grid; place-content: center; justify-items: center; width: 4.5rem; padding: 0.6rem 0; background: var(--bl-blue); color: #fff; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+  .agenda__date b { font-family: "Anton", system-ui, sans-serif; font-weight: 400; font-size: 1.9rem; line-height: 1; }
+  .agenda__body { display: grid; align-content: center; gap: 0.15rem; padding: 0.75rem 1rem; min-width: 0; }
+  .agenda__body strong { font-size: 1rem; line-height: 1.25; }
+  .agenda__body span { font-size: 0.875rem; color: var(--bl-ink-2); }
+  .agenda__links { display: flex; flex-wrap: wrap; gap: 0 1.75rem; margin-top: 0.75rem; }
+
+  /* ---------- Actions ---------- */
+  .actions { display: grid; gap: 0.6rem; }
+  .actions__link { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); min-height: 7rem; background: var(--bl-night-2); border-radius: var(--bl-radius); overflow: hidden; text-decoration: none; color: #fff; }
+  .actions__link:focus-visible { outline: 3px solid var(--bl-yellow); outline-offset: 2px; }
+  .actions__link img { width: 100%; height: 100%; object-fit: cover; }
+  .actions__body { display: grid; align-content: center; gap: 0.3rem; padding: 0.9rem 1rem; }
+  .actions__body strong { font-size: 1.25rem; line-height: 1.05; }
+  .actions__text { font-size: 0.875rem; color: #c9d5ea; }
+  .actions__cta { font-size: 0.78rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--bl-yellow); }
+  .actions__band { display: grid; gap: 1rem; padding: 1.25rem 1rem; background: var(--bl-blue); border-radius: var(--bl-radius); }
+  .actions__band div { display: grid; gap: 0.4rem; }
+  .actions__band span { color: #dbe5f7; font-size: 0.95rem; }
+
+  /* ---------- Mouvement ---------- */
+  .mvt__inner { display: grid; gap: 2rem; padding-block: 3.5rem; }
+  .mvt__manifesto { margin: 0.75rem 0 1.25rem; font-size: clamp(2.9rem, 13vw, 6.5rem); line-height: 0.92; }
+  .mvt__manifesto span { display: block; }
+  .mvt__manifesto span:nth-child(2) { color: var(--bl-blue); }
+  .mvt__links { display: grid; margin-top: 1.5rem; border-top: 2px solid var(--bl-ink); max-width: 30rem; }
+  .mvt__links a { display: flex; align-items: center; justify-content: space-between; min-height: 3.25rem; border-bottom: 1px solid rgba(10, 23, 48, 0.3); font-weight: 800; text-decoration: none; }
+  .mvt__links a::after { content: ""; width: 0.6rem; height: 0.6rem; border-top: 2.5px solid currentColor; border-right: 2.5px solid currentColor; transform: rotate(45deg); transition: transform 0.2s var(--bl-ease); margin-right: 0.35rem; }
+  .mvt__links a:focus-visible { outline: 3px solid var(--bl-ink); outline-offset: 2px; }
+  .mvt__photo img { width: 100%; height: auto; max-height: 34rem; object-fit: cover; object-position: 50% 30%; --bl-cut: 2.5rem; }
+  .mvt__photo figcaption { margin-top: 0.4rem; font-size: 0.75rem; font-weight: 600; }
+
+  /* ---------- Galerie ---------- */
+  .photo-strip { position: relative; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, black 5%, black 95%, transparent); mask-image: linear-gradient(90deg, transparent, black 5%, black 95%, transparent); }
+  .photo-strip__track { display: flex; width: max-content; animation: photo-strip-scroll 48s linear infinite; }
+  .photo-strip:hover .photo-strip__track { animation-play-state: paused; }
+  .photo-strip__set { display: flex; gap: 1rem; padding: 0 0.5rem; }
+  .photo-strip__item { position: relative; flex: 0 0 auto; width: clamp(15rem, 26vw, 24rem); aspect-ratio: 4 / 3; margin: 0; overflow: hidden; border-radius: var(--bl-radius); background: var(--bl-night-2); }
+  .photo-strip__item img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .photo-strip__item::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, rgba(5, 11, 24, 0.85)); }
+  .photo-strip__item figcaption { position: absolute; left: 0.85rem; bottom: 0.75rem; z-index: 1; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #fff; }
+  @keyframes photo-strip-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  @media (max-width: 640px) { .photo-strip__item { width: 72vw; } }
   @media (prefers-reduced-motion: reduce) {
     .photo-strip { overflow-x: auto; -webkit-mask-image: none; mask-image: none; }
     .photo-strip__track { animation: none; }
     .photo-strip__set[aria-hidden="true"] { display: none; }
   }
-  @media (max-width: 640px) {
-    .photo-strip__item { width: 72vw; }
+
+  /* ---------- Boutique ---------- */
+  .shop { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+  .shop__item { display: grid; gap: 0.2rem; text-decoration: none; }
+  .shop__item img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--bl-radius); background: #fff; margin-bottom: 0.4rem; }
+  .shop__price { font-weight: 800; }
+  .shop__stock { font-size: 0.8rem; color: var(--bl-ink-2); }
+
+  /* ---------- Partenaires ---------- */
+  .partners { background: #fff; color: var(--bl-ink); }
+  .partners__group { display: grid; gap: 0.75rem; padding-block: 1.25rem; border-top: 1px solid var(--bl-line); }
+  .partners__group h3 { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--bl-ink-2); }
+  .partners__group ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
+  .partners__group li { display: grid; place-items: center; height: 5.5rem; padding: 1rem; background: var(--bl-paper); border-radius: var(--bl-radius); }
+  /* Même boîte pour tous : aucun logo n'est déformé. */
+  .partners__group img { max-width: 100%; max-height: 2.75rem; width: auto; height: auto; object-fit: contain; }
+
+  /* ---------- Adhésion ---------- */
+  .join__inner { display: grid; gap: 2.5rem; padding-block: 3.5rem; }
+  .join__list { display: grid; gap: 0.6rem; margin: 1.5rem 0 1.75rem; font-size: 1.0625rem; font-weight: 600; }
+  .join__list li { display: flex; align-items: flex-start; gap: 0.7rem; }
+  .join__list svg { flex: none; margin-top: 0.15rem; color: var(--bl-yellow); }
+  .join__news { align-self: start; padding: 1.5rem 1.25rem; background: #fff; color: var(--bl-ink); border-radius: var(--bl-radius); }
+  .join__news h3 { font-size: 1.125rem; font-weight: 800; line-height: 1.25; }
+  .join__news p { margin-top: 0.4rem; font-size: 0.9rem; color: var(--bl-ink-2); }
+
+  @media (hover: hover) and (pointer: fine) {
+    .actions__link img { transition: transform 0.5s var(--bl-ease); }
+    .actions__link:hover img { transform: scale(1.04); }
+    .actions__link:hover .actions__cta { text-decoration: underline; text-underline-offset: 0.3em; }
+    .agenda__item:hover { border-color: var(--bl-blue); }
+    .mvt__links a:hover::after { transform: translateX(4px) rotate(45deg); }
+    .infobar__item:hover .infobar__text { text-decoration: underline; text-underline-offset: 0.25em; }
+  }
+
+  /* ---------- Tablette ---------- */
+  @media (min-width: 640px) {
+    .hero__cta { display: flex; flex-wrap: wrap; }
+    .mc { padding: 2rem; }
+    .mc__team img { width: 6rem; height: 4.5rem; }
+    .actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .actions__band { grid-column: 1 / -1; grid-template-columns: minmax(0, 1fr) auto; align-items: center; padding: 1.5rem; }
+    .partners__group ul { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .shop { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .agenda__list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
+  /* ---------- Bureau ---------- */
+  @media (min-width: 1024px) {
+    .head { margin-bottom: 2.5rem; }
+    .hero { min-height: calc(100svh - 4.25rem - 4rem); }
+    .hero__photo { object-position: 50% 40%; }
+    .hero__scrim { background: linear-gradient(90deg, rgba(7, 18, 38, 0.82) 0%, rgba(7, 18, 38, 0.5) 45%, rgba(7, 18, 38, 0.1) 75%), linear-gradient(180deg, transparent 55%, rgba(7, 18, 38, 0.75) 100%); }
+    .hero__inner { padding-top: 6rem; padding-bottom: 4rem; }
+    .hero__sub { font-size: 1.25rem; }
+      .infobar__list li { flex: 1 1 0; }
+    .infobar__item { max-width: none; min-height: 4rem; }
+    .infobar__list li:last-child { border-right: 0; }
+
+    .mc { padding: 2.5rem 3rem; }
+
+    /* Grille asymétrique : une action en tête, quatre autour, une bande. */
+    .actions { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: 15.5rem 15.5rem auto; gap: 0.75rem; }
+    .actions__tile--lead { grid-column: span 2; grid-row: span 2; }
+    /* Quatre actions : la dernière couvre les deux colonnes restantes. */
+    .actions__tile:nth-child(4) { grid-column: span 2; }
+    .actions__link { position: relative; display: block; height: 100%; }
+    .actions__link img { position: absolute; inset: 0; }
+    .actions__body { position: absolute; inset: auto 0 0 0; padding: 3.5rem 1.1rem 1.1rem; background: linear-gradient(180deg, transparent, rgba(7, 18, 38, 0.92) 55%); }
+    .actions__tile--lead .actions__body strong { font-size: 2.4rem; }
+    .actions__tile--lead .actions__body { padding: 5rem 1.5rem 1.5rem; }
+    .actions__band { grid-auto-rows: auto; }
+
+    .mvt__inner { grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); align-items: center; gap: 4rem; padding-block: 5.5rem; }
+    .partners__group { grid-template-columns: 14rem minmax(0, 1fr); align-items: start; padding-block: 1.5rem; }
+    .partners__group ul { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .join__inner { grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); gap: 4rem; padding-block: 6rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .actions__link img, .mvt__links a::after { transition: none; }
   }
 </style>

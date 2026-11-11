@@ -1,10 +1,16 @@
 ---
 const { title, url } = Astro.props;
 const encodedUrl = encodeURIComponent(url ?? "");
-const encodedTitle = encodeURIComponent(title ?? "Bloc Leopards");
+const encodedTitle = encodeURIComponent(title ?? "Bloc Léopards");
+const links = [
+  { label: "WhatsApp", href: `https://wa.me/?text=${encodedTitle}%20${encodedUrl}` },
+  { label: "Facebook", href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}` },
+  { label: "X", href: `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}` }
+];
 ---
-<div class="mt-6 flex flex-wrap gap-3 text-xs">
-  <a class="rounded-full border border-slate-300 px-4 py-2" href={`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`} target="_blank" rel="noopener">Partager Facebook</a>
-  <a class="rounded-full border border-slate-300 px-4 py-2" href={`https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`} target="_blank" rel="noopener">Partager X</a>
-  <a class="rounded-full border border-slate-300 px-4 py-2" href={`https://wa.me/?text=${encodedTitle}%20${encodedUrl}`} target="_blank" rel="noopener">Partager WhatsApp</a>
+<div class="mt-8 flex flex-wrap items-center gap-2">
+  <span class="mr-1 text-[0.78rem] font-extrabold uppercase tracking-[0.08em] text-[var(--bl-ink-2)]">Partager</span>
+  {links.map((l) => (
+    <a class="bl-btn bl-btn--line-ink min-h-[2.75rem] px-4 text-[0.8rem]" href={l.href} target="_blank" rel="noopener">{l.label}</a>
+  ))}
 </div>

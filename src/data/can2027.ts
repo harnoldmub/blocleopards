@@ -7,6 +7,10 @@
  * Résultats J1/J2 vérifiés (Radio Okapi, France 24, Mediacongo, sept. 2026).
  */
 
+/** Dernière mise à jour du programme (actu du 2 novembre 2026). À changer à chaque modification des matchs. */
+export const PROGRAMME_UPDATED = "2026-11-02";
+export const PROGRAMME_SOURCE = { label: "Programme des éliminatoires CAN 2027", href: "/can-2027" };
+
 export type TeamCode = "RDC" | "GQ" | "SL" | "ZW";
 
 export interface Team {

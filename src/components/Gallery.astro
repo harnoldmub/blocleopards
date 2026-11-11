@@ -12,7 +12,7 @@ const pageEnd = pageStart + activePageSize;
     return (
     <button
       class:list={[
-        "group relative block w-full break-inside-avoid overflow-hidden rounded-[4px] bg-slate-100 text-left",
+        "group relative block w-full break-inside-avoid overflow-hidden rounded-[6px] bg-slate-100 text-left focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--bl-yellow)]",
         isOutsidePage && "is-hidden"
       ]}
       data-reveal="fade"
@@ -31,20 +31,20 @@ const pageEnd = pageStart + activePageSize;
       <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-congo-night/70 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100"></div>
       <span class="pointer-events-none absolute bottom-3 left-3 translate-y-2 text-[0.66rem] font-bold uppercase tracking-[0.14em] text-white opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">{item.title}</span>
       {item.credit && (
-        <span class="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-congo-night/70 px-2 py-0.5 text-[10px] font-medium text-white/90 backdrop-blur-sm"><Icon name="camera" size={10} />{item.credit}</span>
+        <span class="absolute right-2 top-2 flex items-center gap-1 rounded-[3px] bg-[var(--bl-night)] px-2 py-0.5 text-[11px] font-semibold text-white"><Icon name="camera" size={10} />{item.credit}</span>
       )}
     </button>
     );
   })}
 </div>
 
-<dialog class="rounded-[6px] border border-white/10 bg-congo-night p-0 text-white backdrop:bg-congo-night/80 backdrop:backdrop-blur-sm" data-gallery-modal data-lenis-prevent>
+<dialog class="rounded-[6px] border border-white/10 bg-congo-night p-0 text-white backdrop:bg-[rgba(7,18,38,.85)]" data-gallery-modal data-lenis-prevent>
   <div class="relative">
-    <button class="absolute right-4 top-4 z-10 rounded-full bg-white/15 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.1em] text-white backdrop-blur-sm transition-colors hover:bg-or hover:text-congo-night" data-gallery-close>Fermer</button>
+    <button class="bl-btn bl-btn--white absolute right-3 top-3 z-10 min-h-[2.75rem] px-4 text-xs" data-gallery-close>Fermer</button>
     <img src="" alt="" class="max-h-[78vh] w-full object-contain" data-gallery-image />
     <div class="flex items-center justify-between gap-3 border-t border-white/10 px-5 py-4" data-gallery-footer>
       <div>
-        <p class="font-display text-lg uppercase" data-gallery-modal-title></p>
+        <p class="bl-title text-xl" data-gallery-modal-title></p>
         <p class="text-xs uppercase tracking-[0.14em] text-or" data-gallery-modal-category></p>
       </div>
       <p class="shrink-0 text-xs text-white/50" data-gallery-modal-credit></p>

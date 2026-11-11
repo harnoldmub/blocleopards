@@ -1,8 +1,8 @@
 ---
 const { title, eyebrow, description } = Astro.props;
 ---
-<div class="mb-10 max-w-3xl" data-reveal>
-  {eyebrow && <span class="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-congo">{eyebrow}</span>}
-  <h2 class="mt-3 font-display text-4xl uppercase leading-[0.95] text-congo-night md:text-5xl">{title}</h2>
-  {description && <p class="mt-4 max-w-2xl leading-relaxed text-slate-600">{description}</p>}
+<div class="mb-8 max-w-3xl lg:mb-10">
+  {eyebrow && <p class="bl-label text-[var(--bl-ink)]">{eyebrow}</p>}
+  <h2 class="bl-title bl-title--lg mt-3 text-[var(--bl-ink)]">{title}</h2>
+  {description && <p class="bl-lead mt-4 text-[var(--bl-ink-2)]">{description}</p>}
 </div>

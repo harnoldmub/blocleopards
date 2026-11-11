@@ -5,7 +5,7 @@ import SectionHeader from "../components/SectionHeader.astro";
 import Gallery from "../components/Gallery.astro";
 import media from "../data/media.json";
 
-const perPage = 6;
+const perPage = 24;
 const totalPages = Math.max(1, Math.ceil(media.length / perPage));
 const requestedPage = Number(Astro.url.searchParams.get("page") ?? 1);
 const currentPage = Math.min(totalPages, Math.max(1, Number.isFinite(requestedPage) ? requestedPage : 1));

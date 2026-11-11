@@ -1,0 +1,207 @@
+/* ==========================================================================
+   Bloc Léopards — design system (préfixe bl-)
+   Média-supporter : aplats bleu profond et jaune, rouge en accent seulement,
+   titres condensés, angles coupés, rayon maximal de 8 px. Fonds unis :
+   pas de trame, pas de dégradés décoratifs, pas de verre dépoli.
+   ========================================================================== */
+
+:root {
+  --bl-blue: #0b3fa8;        /* bleu profond des aplats */
+  --bl-blue-vif: #1466e0;    /* bleu Congo, liens et accents */
+  --bl-night: #071226;       /* fond sombre */
+  --bl-night-2: #0d1d3d;
+  --bl-yellow: #f4c400;
+  --bl-yellow-dark: #c99f00;
+  --bl-red: #d81e27;         /* accent uniquement */
+  --bl-paper: #f5f2ea;       /* blanc cassé, tissu */
+  --bl-ink: #0a1730;
+  --bl-ink-2: #46546e;
+  --bl-line: #d9d4c7;
+  --bl-radius: 6px;          /* 8 px au maximum */
+  --bl-cut: 14px;            /* taille de l'angle coupé */
+  --bl-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --bl-wrap: 80rem;
+  --bl-nav-h: 60px;          /* navigation basse mobile */
+}
+
+/* --- Mise en page ------------------------------------------------------- */
+.bl-wrap { width: 100%; max-width: var(--bl-wrap); margin-inline: auto; padding-inline: 1rem; }
+@media (min-width: 1024px) { .bl-wrap { padding-inline: 2rem; } }
+
+.bl-section { padding-block: 3.5rem; }
+@media (min-width: 1024px) { .bl-section { padding-block: 5.5rem; } }
+
+.bl-on-paper { background: var(--bl-paper); color: var(--bl-ink); }
+.bl-on-night { background: var(--bl-night); color: #fff; }
+.bl-on-blue { background: var(--bl-blue); color: #fff; }
+.bl-on-yellow { background: var(--bl-yellow); color: var(--bl-ink); }
+
+/* --- Typographie -------------------------------------------------------- */
+.bl-title {
+  font-family: "Anton", "Bebas Neue", system-ui, sans-serif;
+  font-weight: 400;
+  text-transform: uppercase;
+  line-height: 0.95;
+  letter-spacing: 0.005em;
+  text-wrap: balance;
+}
+.bl-title--xl { font-size: clamp(2.6rem, 9.5vw, 6.25rem); }
+.bl-title--lg { font-size: clamp(2.1rem, 6vw, 4rem); }
+.bl-title--md { font-size: clamp(1.5rem, 3.6vw, 2.1rem); }
+
+/* Étiquette de section : un trait rouge, puis le mot. */
+.bl-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.bl-label::before { content: ""; width: 1.5rem; height: 3px; background: var(--bl-red); }
+
+.bl-lead { font-size: 1.0625rem; line-height: 1.55; max-width: 34rem; }
+
+/* --- Boutons ------------------------------------------------------------ */
+.bl-btn {
+  --_bg: var(--bl-yellow);
+  --_fg: var(--bl-ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  min-height: 3rem;
+  padding: 0.7rem 1.4rem;
+  border: 0;
+  background: var(--_bg);
+  color: var(--_fg);
+  font-family: "Sora", system-ui, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  transition: background-color 0.18s, color 0.18s, transform 0.18s var(--bl-ease);
+}
+.bl-btn:active { transform: scale(0.97); }
+.bl-btn:focus-visible { outline: 3px solid currentColor; outline-offset: -6px; }
+.bl-btn--blue { --_bg: var(--bl-blue); --_fg: #fff; }
+.bl-btn--night { --_bg: var(--bl-night); --_fg: #fff; }
+.bl-btn--white { --_bg: #fff; --_fg: var(--bl-ink); }
+/* Contour : sur photo ou aplat sombre. */
+.bl-btn--line { --_bg: transparent; --_fg: #fff; box-shadow: inset 0 0 0 2px currentColor; clip-path: none; border-radius: 2px; }
+.bl-btn--line-ink { --_bg: transparent; --_fg: var(--bl-ink); box-shadow: inset 0 0 0 2px currentColor; clip-path: none; border-radius: 2px; }
+@media (hover: hover) and (pointer: fine) {
+  .bl-btn:hover { --_bg: #ffd633; }
+  .bl-btn--blue:hover { --_bg: #0a3590; }
+  .bl-btn--night:hover { --_bg: #12264f; }
+  .bl-btn--white:hover { --_bg: var(--bl-yellow); }
+  .bl-btn--line:hover { --_bg: #fff; --_fg: var(--bl-ink); }
+  .bl-btn--line-ink:hover { --_bg: var(--bl-ink); --_fg: #fff; }
+}
+
+/* Lien éditorial souligné. */
+.bl-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  font-weight: 800;
+  font-size: 0.9rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.35em;
+  text-decoration-color: var(--bl-yellow);
+}
+.bl-link:focus-visible, .bl-focus:focus-visible { outline: 3px solid var(--bl-blue-vif); outline-offset: 3px; }
+@media (hover: hover) and (pointer: fine) { .bl-link:hover { text-decoration-color: currentColor; } }
+
+/* --- Formes ------------------------------------------------------------- */
+.bl-cut { clip-path: polygon(0 0, calc(100% - var(--bl-cut)) 0, 100% var(--bl-cut), 100% 100%, 0 100%); }
+.bl-cut-bl { clip-path: polygon(0 0, 100% 0, 100% 100%, var(--bl-cut) 100%, 0 calc(100% - var(--bl-cut))); }
+.bl-card { border-radius: var(--bl-radius); overflow: hidden; }
+
+/* --- États d'information ------------------------------------------------ */
+.bl-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 3px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.bl-status::before { content: ""; width: 0.45rem; height: 0.45rem; border-radius: 50%; background: currentColor; }
+.bl-status--ok { background: #dff3e6; color: #0f6a3a; }
+.bl-status--official { background: var(--bl-blue); color: #fff; }
+.bl-status--pending { background: #fff1c2; color: #6b4a00; }
+
+.bl-pending { color: #6b4a00; font-style: italic; }
+.bl-on-night .bl-pending, .bl-on-blue .bl-pending { color: #ffe27a; }
+
+/* Squelette de chargement */
+.bl-skeleton { border-radius: 4px; background: rgba(10, 23, 48, 0.1); animation: bl-pulse 1.4s ease-in-out infinite; }
+@keyframes bl-pulse { 50% { opacity: 0.45; } }
+
+/* --- Navigation basse (mobile) ------------------------------------------ */
+@media (max-width: 1023px) {
+  body.bl-site { padding-bottom: calc(var(--bl-nav-h) + env(safe-area-inset-bottom)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bl-btn, .bl-skeleton { transition: none; animation: none; }
+}
+
+/* ==========================================================================
+   Harmonisation des pages existantes
+   Les pages écrites avant ce design system gardent leur structure ; ces règles
+   leur appliquent la même grammaire : rayon 8 px au plus, boutons à angle
+   coupé, pas de verre dépoli, champs de formulaire sobres.
+   ========================================================================== */
+.bl-site main :is(.rounded-3xl, .rounded-2xl, .rounded-xl, .rounded-\[2rem\], .rounded-\[1\.5rem\], .rounded-\[1\.75rem\]) { border-radius: 8px; }
+.bl-site main :is(.rounded-lg) { border-radius: 6px; }
+
+/* Boutons et liens « pilule » → bouton à angle coupé du Bloc. Les pastilles
+   décoratives (span, div : points, avatars) restent rondes. */
+.bl-site :is(main, footer) :is(a, button).rounded-full:not(.bl-keep-round) {
+  border-radius: 2px;
+}
+
+.bl-site main [class*="backdrop-blur"] { -webkit-backdrop-filter: none; backdrop-filter: none; }
+
+/* Champs */
+.bl-site .bloc-control {
+  border: 1.5px solid #c9c3b4;
+  border-radius: 4px;
+  background: #fff;
+  box-shadow: none;
+}
+.bl-site .bloc-control:hover { border-color: var(--bl-ink-2); }
+.bl-site .bloc-control:focus,
+.bl-site .bloc-control:focus-visible,
+.bl-site .bloc-control[aria-expanded="true"] { border-color: var(--bl-blue); box-shadow: 0 0 0 3px rgba(11, 63, 168, 0.2); }
+.bl-site .bloc-label { color: var(--bl-ink); font-size: 0.85rem; }
+.bl-site .bloc-panel { border-color: var(--bl-line); background: #fff; box-shadow: none; border-radius: 6px; }
+.bl-site .bloc-submit {
+  border-radius: 0;
+  background: var(--bl-blue);
+  box-shadow: none;
+  letter-spacing: 0.06em;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+}
+.bl-site .bloc-submit:hover { background: #0a3590; box-shadow: none; transform: none; }
+.bl-site .bloc-submit:focus-visible { outline: 3px solid #fff; outline-offset: -6px; }
+
+/* Cartes de liste (Card.astro) */
+@media (hover: hover) and (pointer: fine) {
+  .bl-tile:hover { border-color: var(--bl-blue); }
+}
+.bl-tile:focus-visible { outline: 3px solid var(--bl-blue-vif); outline-offset: 3px; }
