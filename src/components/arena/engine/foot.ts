@@ -315,6 +315,7 @@ export class FootEngine {
     this.ballHeld = false;
     this.postHitPending = null;
     this.crowdReaction = "idle";
+    this.trophyPose = null;
     if (this.c3) this.c3.setTrophy(false);
     this.trail = [];
     this.curve = [];
@@ -748,6 +749,29 @@ export class FootEngine {
     if (this.c3?.ready) this.build3D();
   }
 
+  /** Coupe dans les mains du capitaine : base juste sous les paumes, droite, un peu penchée. */
+  private trophyPose: { lift: number; c: number } | null = null;
+  private placeTrophy(sh: Actor) {
+    const tp = this.trophyPose;
+    if (!this.c3) return;
+    if (!tp) {
+      this.c3.setTrophy(false);
+      return;
+    }
+    const B = this.c3m!.BONE;
+    sh.root.updateMatrixWorld(true);
+    const l = sh.bone(B.lHand);
+    const r = sh.bone(B.rHand);
+    this.c3.setTrophy(
+      true,
+      (l.x + r.x) / 2,
+      (l.y + r.y) / 2 - lerp(0.2, 0.3, tp.lift),
+      (l.z + r.z) / 2 - lerp(0.12, 0.02, tp.lift),
+      0,
+      Math.sin(tp.c * 2.2) * 0.05 * tp.lift
+    );
+  }
+
   /** Plan télé sur le buteur : la caméra s'approche, de trois quarts, à hauteur d'homme. */
   private startCelebCam() {
     if (this.celebCam || !this.use3d || !this.celeb.captured || this.camBlend || this.setupData.reduced) return;
@@ -763,8 +787,9 @@ export class FootEngine {
     const camZ = tz - 4.4;
     const d = Math.hypot(tx - camX, tz - camZ);
     const portrait = this.h > this.w;
-    // le joueur prend un peu plus de la moitié de la hauteur d'écran
-    const f = ((portrait ? this.h * 0.5 : this.h * 0.62) * d) / 1.85;
+    // le joueur prend un peu plus de la moitié de la hauteur d'écran (plus large si la coupe est levée)
+    const trophy = !!this.setupData.trophy;
+    const f = ((portrait ? this.h * (trophy ? 0.38 : 0.5) : this.h * (trophy ? 0.46 : 0.62)) * d) / 1.85;
     const to: CamPose = {
       x: camX,
       y: camY,
@@ -772,7 +797,7 @@ export class FootEngine {
       yaw: Math.atan2(tx - camX, tz - camZ),
       f,
       cx: this.w / 2,
-      hz: this.h * 0.56 + ((1.0 - camY) * f) / d
+      hz: this.h * 0.56 + (((trophy ? 1.4 : 1.0) - camY) * f) / d
     };
     this.camBlend = { from, to, t: 0, dur: 1.1 };
   }
@@ -2144,6 +2169,7 @@ export class FootEngine {
         }
         sh.root.position.x -= P0.fx;
         sh.root.position.z += P0.fz;
+        this.placeTrophy(sh);
       }
     }
 
@@ -2394,30 +2420,32 @@ export class FootEngine {
       return;
     }
 
-    // Célébration spéciale du Palier 15 (Le Sacre Suprême) : le joueur brandit la Coupe d'Afrique en or !
+    // Palier 15 gagné : le capitaine tient la coupe contre lui, puis la soulève au-dessus de la tête
     if (this.setupData.trophy) {
-      const turn = Math.PI * easeInOut(clamp(c / 0.45, 0, 1));
-      const jump = c > 0.3 ? Math.max(0, Math.sin((c - 0.3) * 5.8)) * 0.36 : 0;
-      const sway = Math.sin(c * 3.5) * 0.08;
-      sh.place(P.x, P.z, turn + sway, false, jump);
+      const turn = Math.PI * easeInOut(clamp(c / 0.6, 0, 1));
+      // 0 → poitrine, 1 → bras tendus au-dessus de la tête
+      const lift = easeInOut(clamp((c - 1.0) / 0.7, 0, 1));
+      // petits coups de bras quand la coupe est en l'air, comme sur un podium
+      const pump = lift >= 1 ? Math.max(0, Math.sin((c - 1.7) * 7)) * 0.07 : 0;
+      const hop = lift >= 1 ? Math.max(0, Math.sin((c - 1.7) * 3.5)) * 0.12 : 0;
+      sh.place(P.x, P.z, turn, false, hop);
       sh.blend("kick", END, "catch", 0.02, into);
-      // Deux bras tendus vers le ciel pour brandir la coupe bien haut
-      sh.aim(B.rUpper, B.rFore, new V(-0.16, 1, 0.12), into);
-      sh.aim(B.rFore, B.rHand, new V(-0.06, 1, 0.06), into);
-      sh.aim(B.lUpper, B.lFore, new V(0.16, 1, 0.12), into);
-      sh.aim(B.lFore, B.lHand, new V(0.06, 1, 0.06), into);
-      // Positionne le trophée 3D doré entre les deux mains levées
-      const headY = sh.bone(B.head).y;
-      if (this.c3) {
-        this.c3.setTrophy(true, P.x, headY + 0.38 + jump, P.z - 0.05, (c * 1.6) % (Math.PI * 2));
-      }
-      // Pluie royale de confettis dorés
-      if (Math.random() < 0.4) {
-        confettiBurst(this.parts, this.w * (0.2 + 0.6 * Math.random()), this.h * 0.35, 20, this.w * 0.3);
+      // bras : contre la poitrine (coudes pliés, mains réunies devant) puis tendus vers le ciel
+      const up = (x: number) => new V(lerp(x * 1.6, x, lift), lerp(-0.25, 1, lift), lerp(0.75, 0.12, lift));
+      const fore = (x: number) => new V(lerp(-x * 2.2, -x * 0.6, lift), lerp(0.55, 1, lift) + pump, lerp(0.6, 0.06, lift));
+      sh.aim(B.rUpper, B.rFore, up(-0.18), into);
+      sh.aim(B.rFore, B.rHand, fore(-0.18), into);
+      sh.aim(B.lUpper, B.lFore, up(0.18), into);
+      sh.aim(B.lFore, B.lHand, fore(0.18), into);
+      // la coupe est posée dans les mains après le recalage du corps (voir placeTrophy)
+      this.trophyPose = into > 0.5 ? { lift, c } : null;
+      if (lift >= 1 && Math.random() < 0.3) {
+        confettiBurst(this.parts, this.w * (0.2 + 0.6 * Math.random()), this.h * 0.3, 18, this.w * 0.3);
       }
       return;
     }
 
+    this.trophyPose = null;
     if (this.c3) this.c3.setTrophy(false);
     const kind = this.celebrationKind();
     const turn = Math.PI * easeInOut(clamp(c / 0.45, 0, 1));

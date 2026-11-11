@@ -1554,11 +1554,6 @@ function Results(props: {
               <Stars n={result.stars} size={34} />
             </div>
           )}
-          {session.mode === "carriere" && session.stageIdx === 14 && result.won && (
-            <div className="my-2 flex items-center justify-center gap-2">
-              <span className="text-[48px] animate-bounce filter drop-shadow-[0_0_20px_rgba(244,196,0,0.6)]">🏆</span>
-            </div>
-          )}
           <h2 id="res-title" className="display text-[52px] text-[var(--a-gold)]">
             {result.title}
           </h2>

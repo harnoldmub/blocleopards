@@ -1886,7 +1886,8 @@ export class Chars3D {
   /* ---------------- Trophée 3D de la victoire (Niveau 15) ---------------- */
   private trophy: THREE.Group | null = null;
 
-  setTrophy(visible: boolean, x = 0, y = 0, z = 0, rotY = 0) {
+  /** Coupe tenue par le joueur : (x, y, z) = base de la coupe (repère du jeu), légèrement inclinée. */
+  setTrophy(visible: boolean, x = 0, y = 0, z = 0, rotY = 0, tilt = 0) {
     if (!this.trophy) {
       this.trophy = this.buildTrophy();
       this.scene.add(this.trophy);
@@ -1894,63 +1895,79 @@ export class Chars3D {
     this.trophy.visible = visible;
     if (visible) {
       this.trophy.position.set(-x, y, z);
-      this.trophy.rotation.set(0, rotY, 0);
+      this.trophy.rotation.set(0, rotY, tilt);
     }
   }
 
+  /** Coupe d'Afrique stylisée : socle noir à deux étages, tige et coupe dorées, deux anses. */
   private buildTrophy(): THREE.Group {
     const g = new THREE.Group();
     const gold = new THREE.MeshStandardMaterial({
-      color: 0xffd700,
-      roughness: 0.16,
-      metalness: 0.92,
-      emissive: 0x664400,
-      emissiveIntensity: 0.35
+      color: 0xd9ab2a,
+      roughness: 0.26,
+      metalness: 0.78,
+      emissive: 0x3d2a05,
+      emissiveIntensity: 0.45,
+      side: THREE.DoubleSide
     });
-    const wood = new THREE.MeshStandardMaterial({
-      color: 0x181005,
-      roughness: 0.45,
-      metalness: 0.1
-    });
-
-    // Socle
-    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.15, 0.11, 24), wood);
-    base.position.y = 0.055;
-    g.add(base);
-
-    // Bague dorée
-    const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.025, 24), gold);
-    ring.position.y = 0.11;
-    g.add(ring);
-
-    // Tige
-    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.065, 0.14, 20), gold);
-    stem.position.y = 0.19;
-    g.add(stem);
-
-    // Calice doré évasé
-    const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.05, 0.26, 24), gold);
-    cup.position.y = 0.38;
-    g.add(cup);
-
-    // Globe central à l'intérieur
-    const globe = new THREE.Mesh(new THREE.SphereGeometry(0.065, 20, 16), gold);
-    globe.position.y = 0.42;
-    g.add(globe);
-
-    // Anses gauche et droite
-    const handleGeo = new THREE.TorusGeometry(0.12, 0.02, 12, 24, Math.PI * 1.15);
-    const hL = new THREE.Mesh(handleGeo, gold);
-    hL.position.set(-0.15, 0.36, 0);
-    hL.rotation.z = Math.PI * 0.45;
-    g.add(hL);
-
-    const hR = new THREE.Mesh(handleGeo, gold);
-    hR.position.set(0.15, 0.36, 0);
-    hR.rotation.z = -Math.PI * 0.45;
-    g.add(hR);
-
-    g.scale.set(0.9, 0.9, 0.9);
+    const black = new THREE.MeshStandardMaterial({ color: 0x141414, roughness: 0.35, metalness: 0.2 });
+    const lathe = (pts: [number, number][], mat: THREE.Material) => {
+      const m = new THREE.Mesh(new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), 36), mat);
+      m.castShadow = true;
+      g.add(m);
+      return m;
+    };
+    // socle à deux étages
+    lathe(
+      [
+        [0, 0],
+        [0.1, 0],
+        [0.1, 0.055],
+        [0.088, 0.06],
+        [0.082, 0.105],
+        [0.064, 0.112],
+        [0, 0.112]
+      ],
+      black
+    );
+    // plaque dorée sur le socle
+    lathe(
+      [
+        [0.1005, 0.022],
+        [0.1005, 0.036]
+      ],
+      gold
+    );
+    // tige, nœud et coupe évasée (profil de révolution)
+    lathe(
+      [
+        [0.0, 0.112],
+        [0.05, 0.112],
+        [0.036, 0.13],
+        [0.03, 0.18],
+        [0.052, 0.2],
+        [0.03, 0.22],
+        [0.045, 0.25],
+        [0.085, 0.29],
+        [0.112, 0.34],
+        [0.122, 0.4],
+        [0.118, 0.44],
+        [0.128, 0.455],
+        [0.12, 0.462],
+        [0.108, 0.45],
+        [0.0, 0.445]
+      ],
+      gold
+    );
+    // anses latérales
+    const handle = new THREE.TorusGeometry(0.075, 0.012, 10, 28, Math.PI * 1.25);
+    for (const sx of [-1, 1]) {
+      const h = new THREE.Mesh(handle, gold);
+      h.position.set(sx * 0.13, 0.36, 0);
+      h.rotation.z = sx > 0 ? -Math.PI * 0.62 : Math.PI * 0.38;
+      h.castShadow = true;
+      g.add(h);
+    }
     return g;
   }
 
