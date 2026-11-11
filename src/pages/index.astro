@@ -88,8 +88,8 @@ const homeGallery = [
   <!-- ================= HERO ================= -->
   <!-- Plein écran, vidéo dominante : un seul voile en bas à gauche pour la lisibilité, le reste respire. -->
   <section class="relative flex min-h-[100svh] items-end overflow-hidden bg-congo-night text-white">
-    <video autoplay muted loop playsinline preload="auto" poster="/videos/hero-new-poster.jpg" data-hero-media class="absolute inset-0 z-0 h-full w-full object-cover">
-      <source src="/videos/hero-new.mp4" type="video/mp4" />
+    <video autoplay muted loop playsinline preload="auto" poster="/videos/hero-can-poster.jpg" data-hero-media class="absolute inset-0 z-0 h-full w-full object-cover">
+      <source src="/videos/hero-can.mp4" type="video/mp4" />
     </video>
     <div class="absolute inset-x-0 bottom-0 z-0 h-2/3 bg-gradient-to-t from-congo-night/85 via-congo-night/30 to-transparent"></div>
     <div class="absolute inset-0 z-0 bg-gradient-to-r from-congo-night/45 via-transparent to-transparent"></div>
@@ -97,12 +97,9 @@ const homeGallery = [
     <div class="relative z-10 mx-auto w-full max-w-[84rem] px-4 pb-20 pt-40 sm:pb-28 lg:px-8 lg:pb-32">
       <img data-reveal src="/logo-rdc--white.png" alt="R.D. Congo, Cœur de l'Afrique" width="1183" height="331" class="h-10 w-auto sm:h-12" />
       <h1 class="mt-8 max-w-5xl font-mega uppercase leading-[0.88] [font-size:clamp(3rem,7.5vw,7.5rem)]">
-        <span class="lux-line-mask"><span data-reveal="mask" class="text-transparent [-webkit-text-stroke:2px_#ffffff]">Un seul bloc.</span></span>
-        <span class="lux-line-mask"><span data-reveal="mask" data-reveal-delay="120" class="text-transparent [-webkit-text-stroke:2px_#F4C400]">Une seule voix.</span></span>
+        <span class="lux-line-mask"><span data-reveal="mask" class="text-transparent [-webkit-text-stroke:2px_#ffffff]">Bloc Moko</span></span>
+        <span class="lux-line-mask"><span data-reveal="mask" data-reveal-delay="120" class="text-transparent [-webkit-text-stroke:2px_#F4C400]">Ekolo Moko</span></span>
       </h1>
-      <p data-reveal data-reveal-delay="220" class="mt-8 max-w-md text-base leading-relaxed text-white/80 sm:text-lg">
-        Derrière les Léopards, partout où ils jouent.
-      </p>
       <div data-reveal data-reveal-delay="300" class="mt-10 flex flex-wrap items-center gap-4">
         <a href="/rejoindre" class="group inline-flex min-h-12 items-center gap-3 rounded-full bg-or px-8 py-3.5 text-[0.8rem] font-black uppercase tracking-[0.12em] text-congo-night shadow-xl shadow-or/20 transition-colors hover:bg-yellow-300"><span>Rejoindre le Bloc</span><span aria-hidden="true" class="transition-transform group-hover:translate-x-1">→</span></a>
         <a href="/evenements" class="inline-flex min-h-12 items-center rounded-full border border-white/30 bg-white/10 backdrop-blur-sm px-7 py-3.5 text-[0.78rem] font-bold uppercase tracking-[0.12em] text-white transition-colors hover:border-or hover:text-or">Voir le calendrier</a>
@@ -112,19 +109,6 @@ const homeGallery = [
   </section>
 
   <Marquee items={tickerItems} />
-
-  <!-- ================= MANIFESTE ================= -->
-  <section id="manifeste" class="scroll-mt-24 bg-congo py-24 text-white lg:py-32">
-    <div class="mx-auto max-w-[84rem] px-4 lg:px-8">
-      <span data-reveal class="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-congo-night">Le manifeste</span>
-      <div class="mt-6 font-mega uppercase leading-[0.86] [font-size:clamp(2.8rem,8vw,8rem)]">
-        <div class="lux-line-mask"><span data-reveal="mask">Toza bo moko</span></div>
-        <div class="lux-line-mask"><span data-reveal="mask" data-reveal-delay="100" class="text-congo-night">Bloc moko</span></div>
-        <div class="lux-line-mask"><span data-reveal="mask" data-reveal-delay="200">Ekolo moko</span></div>
-      </div>
-      <p data-reveal data-reveal-delay="280" class="mt-8 font-display text-2xl uppercase tracking-[0.06em] text-white/90 md:text-3xl">Tous derrière les Léopards.</p>
-    </div>
-  </section>
 
   <!-- ================= GALERIE (bandeau photos horizontal) ================= -->
   <section class="bg-congo-night py-20 text-white lg:py-24" aria-label="Galerie du bloc">
