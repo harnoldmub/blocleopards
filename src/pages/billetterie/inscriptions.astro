@@ -118,8 +118,10 @@ const totalTickets = reservations.reduce((acc, r) => acc + (Number(r.quantity) |
             const qty = Number(reservation.quantity) || 1;
             const isWinner = reservation.reservation_code?.startsWith("BL-2026-WIN");
             const cleanDigits = (reservation.whatsapp || "").replace(/[^\d]/g, "");
-            const waLink = cleanDigits ? `https://wa.me/${cleanDigits}` : null;
             const signup = signupDate(reservation.created_at);
+            // Message prérempli : l'équipe n'a plus qu'à compléter et envoyer.
+            const waMessage = `Bonjour ${reservation.first_name}, ici le Bloc Léopards. Nous vous contactons au sujet de votre réservation ${reservation.reservation_code} (${qty} ${qty > 1 ? "billets" : "billet"}) pour ${cfg.home.name} – ${cfg.away.name}, ${cfg.dateLong.toLowerCase()} à ${cfg.time}, ${cfg.venue}.`;
+            const waLink = cleanDigits ? `https://wa.me/${cleanDigits}?text=${encodeURIComponent(waMessage)}` : null;
             return (
               <article
                 class:list={["reservation", { "reservation--passed": isPassed, "reservation--winner": isWinner }]}
@@ -159,12 +161,13 @@ const totalTickets = reservations.reduce((acc, r) => acc + (Number(r.quantity) |
                         target="_blank"
                         rel="noopener noreferrer"
                         class="whatsapp-pill"
-                        title={`Ouvrir WhatsApp (${reservation.whatsapp})`}
+                        title={`Écrire à ${reservation.first_name} sur WhatsApp (message prérempli)`}
                       >
                         <svg class="whatsapp-icon" viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true">
                           <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.23 8.23 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.2 8.2 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24m4.52 11.66c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.01-1.24-.75-.67-1.25-1.49-1.4-1.74-.14-.25-.02-.39.11-.51.11-.11.25-.29.37-.43.13-.15.17-.25.25-.42.08-.17.04-.32-.02-.45s-.56-1.35-.77-1.85c-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1s.9 2.44 1.03 2.61c.13.17 1.77 2.7 4.28 3.79.6.26 1.07.41 1.43.53.6.19 1.15.16 1.58.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.06-.11-.23-.18-.48-.3"/>
                         </svg>
                         <span>{reservation.whatsapp}</span>
+                        <span class="whatsapp-cta">Écrire</span>
                       </a>
                     )}
                   </div>
@@ -564,6 +567,7 @@ const totalTickets = reservations.reduce((acc, r) => acc + (Number(r.quantity) |
     transform: translateY(-1px);
   }
   .whatsapp-icon { color: #25d366; flex: none; }
+  .whatsapp-cta { padding-left: .45rem; border-left: 1px solid rgba(37, 211, 102, 0.5); text-transform: uppercase; letter-spacing: .04em; font-size: .68rem; }
 
   /* Meta code & Status */
   .reservation-meta { display: flex; align-items: center; gap: .65rem; flex: none; flex-wrap: wrap; justify-content: flex-end; }
